@@ -52,6 +52,8 @@ const fadeIn = {
 };
 
 const PropertyDetail = () => {
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
