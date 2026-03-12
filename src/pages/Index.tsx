@@ -1,11 +1,38 @@
+import { useState, useCallback } from "react";
+import Preloader from "@/components/Preloader";
+import Header from "@/components/Header";
+import HeroSection from "@/components/HeroSection";
+import LifestyleSection from "@/components/LifestyleSection";
+import FeaturedPropertySection from "@/components/FeaturedPropertySection";
+import NewArrivalsSection from "@/components/NewArrivalsSection";
+import ContactSection from "@/components/ContactSection";
+import AlphavilleMapSection from "@/components/AlphavilleMapSection";
+import InstitutionalSection from "@/components/InstitutionalSection";
+import Footer from "@/components/Footer";
+
 const Index = () => {
+  const [loaded, setLoaded] = useState(false);
+  const handleComplete = useCallback(() => setLoaded(true), []);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold text-foreground">AlphaBusiness</h1>
-        <p className="text-xl text-muted-foreground">Projeto base pronto para receber o front-end.</p>
-      </div>
-    </div>
+    <>
+      <Preloader onComplete={handleComplete} />
+      {loaded && (
+        <>
+          <Header />
+          <main>
+            <HeroSection />
+            <LifestyleSection />
+            <FeaturedPropertySection />
+            <NewArrivalsSection />
+            <AlphavilleMapSection />
+            <ContactSection />
+            <InstitutionalSection />
+          </main>
+          <Footer />
+        </>
+      )}
+    </>
   );
 };
 
