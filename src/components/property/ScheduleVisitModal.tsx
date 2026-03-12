@@ -286,7 +286,7 @@ const ScheduleVisitModal = ({
                       <Button
                         type="submit"
                         disabled={isSubmitting}
-                        className="w-full bg-primary text-primary-foreground hover:bg-primary/90 text-body text-sm tracking-wide uppercase"
+                        className="w-full bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-semibold tracking-wide uppercase"
                       >
                         {isSubmitting ? (
                           <Loader2 className="animate-spin" size={18} />
