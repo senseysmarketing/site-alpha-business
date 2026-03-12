@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { MessageCircle } from "lucide-react";
 import Header from "@/components/Header";
@@ -6,6 +7,7 @@ import PropertyGallery from "@/components/property/PropertyGallery";
 import PropertySpecs from "@/components/property/PropertySpecs";
 import PropertySidebar from "@/components/property/PropertySidebar";
 import PropertyNeighborhood from "@/components/property/PropertyNeighborhood";
+import ScheduleVisitModal from "@/components/property/ScheduleVisitModal";
 
 import property1 from "@/assets/property-1.jpg";
 import property2 from "@/assets/property-2.jpg";
@@ -50,6 +52,8 @@ const fadeIn = {
 };
 
 const PropertyDetail = () => {
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -104,7 +108,10 @@ const PropertyDetail = () => {
               <MessageCircle size={16} />
               WhatsApp
             </a>
-            <button className="hidden md:block px-6 py-2.5 border border-border text-body text-xs tracking-[0.1em] uppercase text-foreground hover:bg-muted transition-colors">
+            <button
+              onClick={() => setScheduleOpen(true)}
+              className="hidden md:block px-6 py-2.5 border border-border text-body text-xs tracking-[0.1em] uppercase text-foreground hover:bg-muted transition-colors"
+            >
               Agendar visita
             </button>
           </div>
@@ -161,6 +168,7 @@ const PropertyDetail = () => {
             <PropertySidebar
               brokerName={property.broker.name}
               brokerTitle={property.broker.title}
+              propertyCode={property.code}
             />
           </div>
         </div>
@@ -180,6 +188,13 @@ const PropertyDetail = () => {
           Falar com {property.broker.name.split(" ")[0]}
         </a>
       </div>
+
+      <ScheduleVisitModal
+        open={scheduleOpen}
+        onOpenChange={setScheduleOpen}
+        propertyCode={property.code}
+        brokerName={property.broker.name}
+      />
     </div>
   );
 };
