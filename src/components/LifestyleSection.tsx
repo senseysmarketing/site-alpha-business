@@ -59,7 +59,7 @@ const LifestyleSection = () => {
           </motion.h2>
         </div>
 
-        <motion.div className="flex gap-6 md:gap-10 px-6 md:px-12 lg:px-24" style={{ x }}>
+        <motion.div className="flex gap-6 md:gap-10 px-6 md:px-12 lg:px-24 pr-[25vw] md:pr-12 lg:pr-24" style={{ x }}>
           {categories.map((cat, i) => (
             <motion.div
               key={cat.title}
