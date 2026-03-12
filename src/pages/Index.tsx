@@ -17,21 +17,22 @@ const Index = () => {
   return (
     <>
       <Preloader onComplete={handleComplete} />
-      {loaded && (
-        <>
-          <Header />
-          <main>
-            <HeroSection />
-            <LifestyleSection />
-            <FeaturedPropertySection />
-            <NewArrivalsSection />
-            <AlphavilleMapSection />
-            <ContactSection />
-            <InstitutionalSection />
-          </main>
-          <Footer />
-        </>
-      )}
+      <div
+        className="transition-opacity duration-700 ease-out"
+        style={{ opacity: loaded ? 1 : 0 }}
+      >
+        <Header />
+        <main>
+          <HeroSection />
+          <LifestyleSection />
+          <FeaturedPropertySection />
+          <NewArrivalsSection />
+          <AlphavilleMapSection />
+          <ContactSection />
+          <InstitutionalSection />
+        </main>
+        <Footer />
+      </div>
     </>
   );
 };
