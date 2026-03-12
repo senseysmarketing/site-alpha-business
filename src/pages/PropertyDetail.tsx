@@ -108,7 +108,10 @@ const PropertyDetail = () => {
               <MessageCircle size={16} />
               WhatsApp
             </a>
-            <button className="hidden md:block px-6 py-2.5 border border-border text-body text-xs tracking-[0.1em] uppercase text-foreground hover:bg-muted transition-colors">
+            <button
+              onClick={() => setScheduleOpen(true)}
+              className="hidden md:block px-6 py-2.5 border border-border text-body text-xs tracking-[0.1em] uppercase text-foreground hover:bg-muted transition-colors"
+            >
               Agendar visita
             </button>
           </div>
