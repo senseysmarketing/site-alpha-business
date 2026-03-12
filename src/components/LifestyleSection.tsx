@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
+import { useIsMobile } from "@/hooks/use-mobile";
 import mansionModern from "@/assets/mansion-modern.jpg";
 import familyHome from "@/assets/family-home.jpg";
 import sustainableHome from "@/assets/sustainable-home.jpg";
