@@ -41,7 +41,7 @@ const HeroSection = () => {
           className="glass-panel rounded-sm p-1.5 max-w-xl mx-auto relative"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 3.9, duration: 0.8 }}
+          transition={{ delay: 0.8, duration: 0.8 }}
         >
           {/* Input row */}
           <div className="flex items-center gap-2 md:gap-3 md:pr-20">
@@ -87,7 +87,7 @@ const HeroSection = () => {
         className="absolute bottom-8 left-1/2 -translate-x-1/2"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 4.5, duration: 1 }}
+        transition={{ delay: 1.5, duration: 1 }}
       >
         <motion.div
           className="w-px h-12 bg-cashmere/40"

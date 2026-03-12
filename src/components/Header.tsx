@@ -21,7 +21,7 @@ const Header = () => {
       className="fixed top-0 left-0 right-0 z-50 glass-panel"
       initial={{ y: -100 }}
       animate={{ y: 0 }}
-      transition={{ delay: 3.2, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ delay: 0.3, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
     >
       <div className="flex items-center justify-between px-6 md:px-12 lg:px-24 py-4">
         <a href="/">
