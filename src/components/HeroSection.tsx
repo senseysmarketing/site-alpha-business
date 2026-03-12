@@ -28,7 +28,10 @@ const HeroSection = () => {
           playsInline
           className="md:hidden w-full h-full object-cover object-center"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-foreground/40 via-foreground/20 to-background" />
+        {/* Mobile overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-foreground/40 via-foreground/20 to-background md:hidden" />
+        {/* Desktop subtle bottom fade */}
+        <div className="hidden md:block absolute inset-x-0 top-[85%] bottom-0 bg-gradient-to-b from-transparent to-background" />
       </div>
 
       {/* Content */}
