@@ -188,6 +188,13 @@ const PropertyDetail = () => {
           Falar com {property.broker.name.split(" ")[0]}
         </a>
       </div>
+
+      <ScheduleVisitModal
+        open={scheduleOpen}
+        onOpenChange={setScheduleOpen}
+        propertyCode={property.code}
+        brokerName={property.broker.name}
+      />
     </div>
   );
 };
