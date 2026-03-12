@@ -116,7 +116,7 @@ const InstitutionalSection = () => {
           </div>
 
           {/* Right — Instagram (1/3) */}
-          <div>
+          <div className="flex flex-col">
             <motion.div
               className="flex items-center gap-3 mb-6"
               initial={{ opacity: 0 }}
