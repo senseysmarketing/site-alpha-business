@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { MessageCircle } from "lucide-react";
 import Header from "@/components/Header";
@@ -6,6 +7,7 @@ import PropertyGallery from "@/components/property/PropertyGallery";
 import PropertySpecs from "@/components/property/PropertySpecs";
 import PropertySidebar from "@/components/property/PropertySidebar";
 import PropertyNeighborhood from "@/components/property/PropertyNeighborhood";
+import ScheduleVisitModal from "@/components/property/ScheduleVisitModal";
 
 import property1 from "@/assets/property-1.jpg";
 import property2 from "@/assets/property-2.jpg";
