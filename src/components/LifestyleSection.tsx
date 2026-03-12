@@ -28,15 +28,16 @@ const categories = [
 
 const LifestyleSection = () => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start start", "end end"],
   });
 
-  const x = useTransform(scrollYProgress, [0, 1], ["0%", "-45%"]);
+  const x = useTransform(scrollYProgress, [0, 1], ["0%", isMobile ? "-65%" : "-45%"]);
 
   return (
-    <section ref={containerRef} className="relative h-[200vh]">
+    <section ref={containerRef} className={isMobile ? "relative h-[300vh]" : "relative h-[200vh]"}>
       <div className="sticky top-0 h-screen flex flex-col justify-center overflow-hidden">
         <div className="section-padding pb-8">
           <motion.p
