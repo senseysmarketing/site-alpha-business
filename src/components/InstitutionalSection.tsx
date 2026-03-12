@@ -99,6 +99,7 @@ const InstitutionalSection = () => {
             </div>
 
             <motion.div
+              className="mt-auto"
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
