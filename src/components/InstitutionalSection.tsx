@@ -146,13 +146,13 @@ const InstitutionalSection = () => {
               href="https://instagram.com/alphabusiness"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 mt-4 text-body text-[10px] tracking-[0.15em] uppercase text-muted-foreground line-reveal pb-1"
+              className="inline-flex items-center gap-2 mt-auto pt-4 text-body text-xs tracking-[0.15em] uppercase text-foreground line-reveal pb-1"
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
             >
               Seguir no Instagram
-              <ArrowUpRight size={12} />
+              <ArrowUpRight size={14} />
             </motion.a>
           </div>
         </div>
