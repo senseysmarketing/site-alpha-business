@@ -30,7 +30,7 @@ const InstitutionalSection = () => {
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-16 md:gap-12">
           {/* Left — Blog Editorial (2/3) */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 flex flex-col">
             <motion.p
               className="text-body text-xs tracking-[0.3em] uppercase text-muted-foreground mb-3"
               initial={{ opacity: 0 }}
