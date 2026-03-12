@@ -30,7 +30,7 @@ const InstitutionalSection = () => {
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-16 md:gap-12">
           {/* Left — Blog Editorial (2/3) */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 flex flex-col">
             <motion.p
               className="text-body text-xs tracking-[0.3em] uppercase text-muted-foreground mb-3"
               initial={{ opacity: 0 }}
@@ -99,6 +99,7 @@ const InstitutionalSection = () => {
             </div>
 
             <motion.div
+              className="mt-auto"
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
@@ -115,7 +116,7 @@ const InstitutionalSection = () => {
           </div>
 
           {/* Right — Instagram (1/3) */}
-          <div>
+          <div className="flex flex-col">
             <motion.div
               className="flex items-center gap-3 mb-6"
               initial={{ opacity: 0 }}
@@ -127,7 +128,7 @@ const InstitutionalSection = () => {
             </motion.div>
 
             <div className="grid grid-cols-2 gap-2">
-              {[1, 2, 3, 4].map((i) => (
+              {[1, 2, 3, 4, 5, 6].map((i) => (
                 <motion.div
                   key={i}
                   className="aspect-square bg-muted overflow-hidden group cursor-pointer"
@@ -145,13 +146,13 @@ const InstitutionalSection = () => {
               href="https://instagram.com/alphabusiness"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 mt-4 text-body text-[10px] tracking-[0.15em] uppercase text-muted-foreground line-reveal pb-1"
+              className="inline-flex items-center gap-2 mt-auto pt-4 text-body text-xs tracking-[0.15em] uppercase text-foreground line-reveal pb-1"
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
             >
               Seguir no Instagram
-              <ArrowUpRight size={12} />
+              <ArrowUpRight size={14} />
             </motion.a>
           </div>
         </div>
