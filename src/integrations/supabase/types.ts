@@ -116,6 +116,42 @@ export type Database = {
         }
         Relationships: []
       }
+      visits_scheduling: {
+        Row: {
+          broker_name: string
+          created_at: string
+          id: string
+          lead_email: string
+          lead_name: string
+          lead_phone: string
+          property_code: string
+          visit_date: string
+          visit_time: string
+        }
+        Insert: {
+          broker_name: string
+          created_at?: string
+          id?: string
+          lead_email: string
+          lead_name: string
+          lead_phone: string
+          property_code: string
+          visit_date: string
+          visit_time: string
+        }
+        Update: {
+          broker_name?: string
+          created_at?: string
+          id?: string
+          lead_email?: string
+          lead_name?: string
+          lead_phone?: string
+          property_code?: string
+          visit_date?: string
+          visit_time?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
