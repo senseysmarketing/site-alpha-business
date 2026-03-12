@@ -128,7 +128,7 @@ const InstitutionalSection = () => {
             </motion.div>
 
             <div className="grid grid-cols-2 gap-2">
-              {[1, 2, 3, 4].map((i) => (
+              {[1, 2, 3, 4, 5, 6].map((i) => (
                 <motion.div
                   key={i}
                   className="aspect-square bg-muted overflow-hidden group cursor-pointer"
