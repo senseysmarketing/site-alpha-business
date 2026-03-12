@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
+import { useIsMobile } from "@/hooks/use-mobile";
 import mansionModern from "@/assets/mansion-modern.jpg";
 import familyHome from "@/assets/family-home.jpg";
 import sustainableHome from "@/assets/sustainable-home.jpg";
@@ -27,15 +28,16 @@ const categories = [
 
 const LifestyleSection = () => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start start", "end end"],
   });
 
-  const x = useTransform(scrollYProgress, [0, 1], ["0%", "-45%"]);
+  const x = useTransform(scrollYProgress, [0, 1], ["0%", isMobile ? "-65%" : "-45%"]);
 
   return (
-    <section ref={containerRef} className="relative h-[200vh]">
+    <section ref={containerRef} className={isMobile ? "relative h-[300vh]" : "relative h-[200vh]"}>
       <div className="sticky top-0 h-screen flex flex-col justify-center overflow-hidden">
         <div className="section-padding pb-8">
           <motion.p
@@ -57,7 +59,7 @@ const LifestyleSection = () => {
           </motion.h2>
         </div>
 
-        <motion.div className="flex gap-6 md:gap-10 px-6 md:px-12 lg:px-24" style={{ x }}>
+        <motion.div className="flex gap-6 md:gap-10 px-6 md:px-12 lg:px-24 pr-[25vw] md:pr-12 lg:pr-24" style={{ x }}>
           {categories.map((cat, i) => (
             <motion.div
               key={cat.title}
