@@ -118,7 +118,7 @@ const BlogPost = () => {
           </div>
         </section>
 
-        <article className="max-w-2xl mx-auto px-6 md:px-12 py-16 md:py-24">
+        <article className="max-w-3xl mx-auto px-6 md:px-12 py-16 md:py-24">
           {contentBlocks.map((block, i) => {
             const isHeading = block.startsWith("## ");
             if (isHeading) {
