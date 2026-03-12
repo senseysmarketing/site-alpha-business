@@ -168,6 +168,7 @@ const PropertyDetail = () => {
             <PropertySidebar
               brokerName={property.broker.name}
               brokerTitle={property.broker.title}
+              propertyCode={property.code}
             />
           </div>
         </div>
