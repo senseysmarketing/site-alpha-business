@@ -1,22 +1,27 @@
+import { useState } from "react";
 import { MessageCircle, Calendar } from "lucide-react";
+import ScheduleVisitModal from "./ScheduleVisitModal";
 
 interface PropertySidebarProps {
   brokerName: string;
   brokerTitle: string;
   whatsappNumber?: string;
+  propertyCode: string;
 }
 
 const PropertySidebar = ({
   brokerName,
   brokerTitle,
   whatsappNumber = "5511999999999",
+  propertyCode,
 }: PropertySidebarProps) => {
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+
   return (
     <div className="sticky top-24 space-y-6">
       {/* Broker card */}
       <div className="border border-border rounded-sm p-6 bg-card">
         <div className="flex items-center gap-4 mb-6">
-          {/* Avatar placeholder */}
           <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center">
             <span className="text-display text-lg font-semibold text-muted-foreground">
               {brokerName.charAt(0)}
@@ -39,17 +44,26 @@ const PropertySidebar = ({
             Falar com {brokerName.split(" ")[0]}
           </a>
 
-          <button className="flex items-center justify-center gap-2 w-full py-3 border border-border text-body text-sm font-medium text-foreground rounded-sm hover:bg-muted transition-colors">
+          <button
+            onClick={() => setScheduleOpen(true)}
+            className="flex items-center justify-center gap-2 w-full py-3 border border-border text-body text-sm font-medium text-foreground rounded-sm hover:bg-muted transition-colors"
+          >
             <Calendar size={18} />
             Agendar visita
           </button>
         </div>
       </div>
 
-      {/* Property code */}
       <p className="text-body text-[11px] text-muted-foreground text-center uppercase tracking-widest">
         Atendimento exclusivo e personalizado
       </p>
+
+      <ScheduleVisitModal
+        open={scheduleOpen}
+        onOpenChange={setScheduleOpen}
+        propertyCode={propertyCode}
+        brokerName={brokerName}
+      />
     </div>
   );
 };
