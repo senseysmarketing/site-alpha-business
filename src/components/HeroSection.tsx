@@ -45,17 +45,10 @@ const HeroSection = () => {
         >
           {/* Input row */}
           <div className="flex items-center gap-2 md:gap-3 md:pr-20">
-            <Search size={18} className="text-muted-foreground ml-2 md:ml-4 flex-shrink-0" />
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Descreva o lar dos seus sonhos..."
-              className="flex-1 bg-transparent text-body text-sm text-foreground placeholder:text-muted-foreground outline-none py-3 min-w-0"
-            />
+            {/* Mic button - moved to left */}
             <button
               onClick={() => setListening(!listening)}
-              className={`p-3 rounded-sm transition-all duration-300 flex-shrink-0 relative ${
+              className={`p-3 rounded-sm transition-all duration-300 flex-shrink-0 relative ml-2 md:ml-4 ${
                 listening
                   ? "bg-accent text-accent-foreground"
                   : "hover:bg-muted text-muted-foreground"
@@ -70,6 +63,14 @@ const HeroSection = () => {
                 />
               )}
             </button>
+            <Search size={18} className="text-muted-foreground flex-shrink-0" />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Descreva o lar dos seus sonhos..."
+              className="flex-1 bg-transparent text-body text-sm text-foreground placeholder:text-muted-foreground outline-none py-3 min-w-0"
+            />
           </div>
           {/* Buscar button - full width on mobile, inline on desktop */}
           <button className="w-full md:hidden bg-primary text-primary-foreground py-3 text-body text-xs tracking-[0.1em] uppercase hover-magnetic mt-1.5">
