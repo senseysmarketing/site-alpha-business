@@ -346,6 +346,7 @@ const Agenda = () => {
           if (!open) fetchVisits();
         }}
         propertyCode=""
+        brokerName="Admin"
       />
     </div>
   );
