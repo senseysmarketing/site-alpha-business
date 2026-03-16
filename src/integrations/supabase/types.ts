@@ -71,6 +71,129 @@ export type Database = {
         }
         Relationships: []
       }
+      lead_activities: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          lead_id: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          lead_id: string
+          type: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          lead_id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_activities_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lead_notes: {
+        Row: {
+          author: string
+          content: string
+          created_at: string
+          id: string
+          lead_id: string
+        }
+        Insert: {
+          author?: string
+          content: string
+          created_at?: string
+          id?: string
+          lead_id: string
+        }
+        Update: {
+          author?: string
+          content?: string
+          created_at?: string
+          id?: string
+          lead_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_notes_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads: {
+        Row: {
+          ai_insights: string | null
+          avatar_url: string | null
+          created_at: string
+          deal_value: number | null
+          email: string | null
+          id: string
+          last_contact_at: string
+          name: string
+          origin: string
+          phone: string | null
+          pipeline_stage: string
+          property_id: string | null
+          score: string
+          updated_at: string
+        }
+        Insert: {
+          ai_insights?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          deal_value?: number | null
+          email?: string | null
+          id?: string
+          last_contact_at?: string
+          name: string
+          origin?: string
+          phone?: string | null
+          pipeline_stage?: string
+          property_id?: string | null
+          score?: string
+          updated_at?: string
+        }
+        Update: {
+          ai_insights?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          deal_value?: number | null
+          email?: string | null
+          id?: string
+          last_contact_at?: string
+          name?: string
+          origin?: string
+          phone?: string | null
+          pipeline_stage?: string
+          property_id?: string | null
+          score?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       market_data: {
         Row: {
           avg_price_sqm: number

@@ -15,6 +15,7 @@ import AdminLayout from "./components/admin/AdminLayout.tsx";
 import Dashboard from "./pages/admin/Dashboard.tsx";
 import Properties from "./pages/admin/Properties.tsx";
 import PropertyForm from "./pages/admin/PropertyForm.tsx";
+import CRM from "./pages/admin/CRM.tsx";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ const AnimatedRoutes = () => {
         <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
           <Route index element={<Dashboard />} />
           <Route path="imoveis" element={<Properties />} />
+          <Route path="leads" element={<CRM />} />
           <Route path="imoveis/novo" element={<PropertyForm />} />
           <Route path="imoveis/:id" element={<PropertyForm />} />
         </Route>
