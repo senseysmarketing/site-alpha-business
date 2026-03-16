@@ -139,7 +139,7 @@ const PropertyDetail = () => {
           <div className="flex-1 lg:max-w-[65%] space-y-16">
             {/* Sobre o Imóvel */}
             <motion.section {...fadeIn}>
-              <h2 className="text-serif text-2xl font-light tracking-wide text-foreground mb-6">
+              <h2 className="text-display text-2xl font-light tracking-wide text-foreground mb-6">
                 Sobre o Imóvel
               </h2>
               <div className="text-body text-sm text-muted-foreground leading-[1.9] whitespace-pre-line">
