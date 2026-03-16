@@ -1,87 +1,128 @@
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { motion } from "framer-motion";
+import { Play, Images } from "lucide-react";
+import VideoTourModal from "./VideoTourModal";
+import PhotoLightbox from "./PhotoLightbox";
 
 interface PropertyGalleryProps {
   images: string[];
+  videoUrl?: string;
 }
 
-const PropertyGallery = ({ images }: PropertyGalleryProps) => {
-  const [current, setCurrent] = useState(0);
-  const maxThumbs = 5;
-  const remaining = images.length - maxThumbs;
+const PropertyGallery = ({ images, videoUrl }: PropertyGalleryProps) => {
+  const [videoOpen, setVideoOpen] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
 
-  const prev = () => setCurrent((c) => (c === 0 ? images.length - 1 : c - 1));
-  const next = () => setCurrent((c) => (c === images.length - 1 ? 0 : c + 1));
+  const openLightbox = (index: number) => {
+    setLightboxIndex(index);
+    setLightboxOpen(true);
+  };
 
   return (
-    <div className="relative w-full">
-      {/* Main image */}
-      <div className="relative aspect-[16/9] md:aspect-[21/9] overflow-hidden bg-muted">
-        <AnimatePresence mode="wait">
-          <motion.img
-            key={current}
-            src={images[current]}
-            alt={`Foto ${current + 1}`}
-            className="absolute inset-0 w-full h-full object-cover"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.4 }}
+    <>
+      {/* Desktop hero grid */}
+      <div className="hidden md:grid grid-cols-3 grid-rows-2 gap-1.5 h-[70vh] max-h-[680px]">
+        {/* Main large image */}
+        <motion.div
+          layoutId="property-hero"
+          className="col-span-2 row-span-2 relative overflow-hidden cursor-pointer group"
+          onClick={() => openLightbox(0)}
+        >
+          <img
+            src={images[0]}
+            alt="Foto principal"
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
           />
-        </AnimatePresence>
+          <div className="absolute inset-0 bg-gradient-to-t from-foreground/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-        {/* Navigation arrows */}
-        <button
-          onClick={prev}
-          className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-background/60 backdrop-blur-sm flex items-center justify-center text-foreground hover:bg-background/80 transition-colors"
-          aria-label="Foto anterior"
-        >
-          <ChevronLeft size={20} />
-        </button>
-        <button
-          onClick={next}
-          className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-background/60 backdrop-blur-sm flex items-center justify-center text-foreground hover:bg-background/80 transition-colors"
-          aria-label="Próxima foto"
-        >
-          <ChevronRight size={20} />
-        </button>
+          {/* Video tour button */}
+          {videoUrl && (
+            <button
+              onClick={(e) => { e.stopPropagation(); setVideoOpen(true); }}
+              className="absolute top-6 right-6 flex items-center gap-2.5 px-5 py-2.5 glass-panel text-body text-xs tracking-[0.1em] uppercase text-foreground hover:bg-background/90 transition-colors"
+            >
+              <Play size={14} strokeWidth={1.5} />
+              Assistir Tour em Vídeo
+            </button>
+          )}
+        </motion.div>
 
-        {/* Counter */}
-        <div className="absolute bottom-4 right-4 text-body text-xs tracking-wider bg-background/60 backdrop-blur-sm px-3 py-1.5 rounded-sm text-foreground">
-          {current + 1} / {images.length}
+        {/* Top right image */}
+        <div
+          className="relative overflow-hidden cursor-pointer group"
+          onClick={() => openLightbox(1)}
+        >
+          <img
+            src={images[1] || images[0]}
+            alt="Foto 2"
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+          />
+        </div>
+
+        {/* Bottom right image */}
+        <div
+          className="relative overflow-hidden cursor-pointer group"
+          onClick={() => openLightbox(2)}
+        >
+          <img
+            src={images[2] || images[0]}
+            alt="Foto 3"
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+          />
+
+          {/* Explore all photos button */}
+          {images.length > 3 && (
+            <button
+              onClick={(e) => { e.stopPropagation(); openLightbox(0); }}
+              className="absolute bottom-4 right-4 flex items-center gap-2 px-4 py-2 glass-panel text-body text-[11px] tracking-[0.1em] uppercase text-foreground hover:bg-background/90 transition-colors"
+            >
+              <Images size={14} strokeWidth={1.5} />
+              Explorar todas as fotos
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Thumbnails */}
-      <div className="flex gap-2 mt-2 px-4 md:px-0">
-        {images.slice(0, maxThumbs).map((img, i) => (
+      {/* Mobile: single image with dots */}
+      <div className="md:hidden relative aspect-[4/3] overflow-hidden">
+        <img
+          src={images[0]}
+          alt="Foto principal"
+          className="w-full h-full object-cover"
+          onClick={() => openLightbox(0)}
+        />
+
+        {videoUrl && (
           <button
-            key={i}
-            onClick={() => setCurrent(i)}
-            className={`relative flex-1 aspect-[4/3] overflow-hidden rounded-sm transition-all duration-300 ${
-              current === i
-                ? "ring-2 ring-primary opacity-100"
-                : "opacity-60 hover:opacity-90"
-            }`}
+            onClick={() => setVideoOpen(true)}
+            className="absolute top-4 right-4 flex items-center gap-2 px-4 py-2 glass-panel text-body text-[10px] tracking-[0.1em] uppercase text-foreground"
           >
-            <img
-              src={img}
-              alt={`Miniatura ${i + 1}`}
-              className="w-full h-full object-cover"
-            />
-            {/* "+N ver todas" overlay on last visible thumbnail */}
-            {i === maxThumbs - 1 && remaining > 0 && (
-              <div className="absolute inset-0 bg-foreground/50 flex items-center justify-center">
-                <span className="text-body text-sm font-medium text-primary-foreground">
-                  +{remaining} fotos
-                </span>
-              </div>
-            )}
+            <Play size={12} strokeWidth={1.5} />
+            Tour em Vídeo
           </button>
-        ))}
+        )}
+
+        <button
+          onClick={() => openLightbox(0)}
+          className="absolute bottom-4 right-4 flex items-center gap-2 px-3 py-1.5 glass-panel text-body text-[10px] tracking-[0.1em] uppercase text-foreground"
+        >
+          <Images size={12} strokeWidth={1.5} />
+          {images.length} fotos
+        </button>
       </div>
-    </div>
+
+      {/* Modals */}
+      {videoUrl && (
+        <VideoTourModal open={videoOpen} onOpenChange={setVideoOpen} videoUrl={videoUrl} />
+      )}
+      <PhotoLightbox
+        open={lightboxOpen}
+        onOpenChange={setLightboxOpen}
+        images={images}
+        initialIndex={lightboxIndex}
+      />
+    </>
   );
 };
 

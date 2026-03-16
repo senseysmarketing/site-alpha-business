@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, Calendar, FileText, Building2, Wrench } from "lucide-react";
+import { Link } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import PropertyGallery from "@/components/property/PropertyGallery";
@@ -8,6 +9,12 @@ import PropertySpecs from "@/components/property/PropertySpecs";
 import PropertySidebar from "@/components/property/PropertySidebar";
 import PropertyNeighborhood from "@/components/property/PropertyNeighborhood";
 import ScheduleVisitModal from "@/components/property/ScheduleVisitModal";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 import property1 from "@/assets/property-1.jpg";
 import property2 from "@/assets/property-2.jpg";
@@ -27,11 +34,11 @@ const property = {
   parking: "4",
   title: "Residência Altos de Alphaville",
   subtitle: "Arquitetura contemporânea com vista panorâmica",
-  description: `Residência de alto padrão com 850m² de área construída, localizada em um dos endereços mais exclusivos de Alphaville. O projeto arquitetônico valoriza a integração entre os ambientes internos e externos, com amplos painéis de vidro que proporcionam iluminação natural abundante e vista privilegiada para a reserva verde.
+  description: `O living com pé-direito duplo de 120m² integra-se perfeitamente ao espaço gourmet, criando uma área social que flui naturalmente para a varanda equipada com churrasqueira, forno de pizza e adega climatizada. Amplos painéis de vidro dissolvem os limites entre interior e exterior, convidando a luz natural a protagonizar cada ambiente.
 
-O living de 120m² com pé-direito duplo se conecta à varanda gourmet equipada com churrasqueira, forno de pizza e espaço para adega climatizada. A suíte master de 65m² conta com closet planejado, banheiro com cuba dupla em mármore Carrara e banheira de imersão freestanding.
+A suíte master ocupa 65m² de pura sofisticação — closet planejado sob medida, banheiro revestido em mármore Carrara com cuba dupla e banheira de imersão freestanding posicionada diante de uma vista que se estende até a reserva verde.
 
-Acabamentos premium incluem piso em mármore Travertino, iluminação Lumini em todos os ambientes, automação residencial completa (Savant), sistema de som ambiente Bose e ar-condicionado central VRF. A área externa possui piscina com borda infinita de 15 metros, deck em madeira cumaru e paisagismo assinado por Gilberto Elkis.`,
+Cada detalhe foi pensado para quem não aceita o ordinário: piso em mármore Travertino, iluminação Lumini, automação Savant, sistema de som Bose integrado e ar-condicionado central VRF. A área externa abraça uma piscina com borda infinita de 15 metros, deck em madeira cumaru e paisagismo assinado por Gilberto Elkis.`,
   images: [property1, property2, property3, property4, mansionModern, familyHome],
   broker: {
     name: "Carolina Mendes",
@@ -43,6 +50,13 @@ Acabamentos premium incluem piso em mármore Travertino, iluminação Lumini em 
       "Alphaville é referência em qualidade de vida, segurança e infraestrutura completa. A região combina a tranquilidade de condomínios fechados com acesso rápido aos principais centros empresariais e gastronômicos da Grande São Paulo.",
   },
 };
+
+const similarProperties = [
+  { id: 2, image: property2, title: "Penthouse Sky Residence", location: "Barueri", price: "R$ 8.900.000" },
+  { id: 3, image: property3, title: "Villa Pedra & Vidro", location: "Alphaville 11", price: "R$ 9.200.000" },
+  { id: 4, image: property4, title: "Casa Contemporânea Light", location: "Tamboré", price: "R$ 7.800.000" },
+  { id: 5, image: mansionModern, title: "Mansão Jardim Europa", location: "Alphaville 0", price: "R$ 15.200.000" },
+];
 
 const fadeIn = {
   initial: { opacity: 0, y: 20 },
@@ -60,7 +74,7 @@ const PropertyDetail = () => {
 
       {/* Gallery */}
       <div className="pt-[72px]">
-        <PropertyGallery images={property.images} />
+        <PropertyGallery images={property.images} videoUrl="/videos/hero-bg.mp4" />
       </div>
 
       {/* Quick Info */}
@@ -80,12 +94,12 @@ const PropertyDetail = () => {
         {/* Price + Title */}
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-display text-2xl md:text-3xl font-light tracking-wide text-foreground mb-1">
+            <h1 className="text-serif text-3xl md:text-4xl font-light tracking-wide text-foreground mb-1">
               {property.title}
             </h1>
             <p className="text-body text-sm text-muted-foreground">{property.subtitle}</p>
           </div>
-          <p className="text-display text-2xl md:text-3xl font-semibold text-foreground whitespace-nowrap">
+          <p className="text-serif text-3xl md:text-4xl font-semibold text-foreground whitespace-nowrap">
             {property.price}
           </p>
         </div>
@@ -125,7 +139,7 @@ const PropertyDetail = () => {
           <div className="flex-1 lg:max-w-[65%] space-y-16">
             {/* Sobre o Imóvel */}
             <motion.section {...fadeIn}>
-              <h2 className="text-display text-xl font-light tracking-wide text-foreground mb-6">
+              <h2 className="text-serif text-2xl font-light tracking-wide text-foreground mb-6">
                 Sobre o Imóvel
               </h2>
               <div className="text-body text-sm text-muted-foreground leading-[1.9] whitespace-pre-line">
@@ -133,27 +147,65 @@ const PropertyDetail = () => {
               </div>
             </motion.section>
 
-            {/* Galeria Completa */}
+            {/* Technical Details Accordion */}
             <motion.section {...fadeIn}>
-              <h2 className="text-display text-xl font-light tracking-wide text-foreground mb-6">
-                Galeria
+              <h2 className="text-serif text-2xl font-light tracking-wide text-foreground mb-6">
+                Detalhes do Imóvel
               </h2>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {property.images.map((img, i) => (
-                  <div
-                    key={i}
-                    className={`overflow-hidden rounded-sm ${
-                      i === 0 ? "col-span-2 row-span-2" : ""
-                    }`}
-                  >
-                    <img
-                      src={img}
-                      alt={`Galeria ${i + 1}`}
-                      className="w-full h-full object-cover aspect-[4/3] hover:scale-105 transition-transform duration-500"
-                    />
-                  </div>
-                ))}
-              </div>
+              <Accordion type="multiple" className="w-full">
+                <AccordionItem value="docs" className="border-border">
+                  <AccordionTrigger className="text-body text-sm font-medium text-foreground hover:no-underline py-4">
+                    <span className="flex items-center gap-3">
+                      <FileText size={16} strokeWidth={1} className="text-muted-foreground" />
+                      Documentação
+                    </span>
+                  </AccordionTrigger>
+                  <AccordionContent className="text-body text-sm text-muted-foreground leading-relaxed pb-4">
+                    Matrícula atualizada disponível. Imóvel livre de ônus e pendências judiciais. Escritura definitiva em nome do proprietário. Certidões negativas de débitos municipais e federais emitidas.
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="costs" className="border-border">
+                  <AccordionTrigger className="text-body text-sm font-medium text-foreground hover:no-underline py-4">
+                    <span className="flex items-center gap-3">
+                      <Building2 size={16} strokeWidth={1} className="text-muted-foreground" />
+                      IPTU & Condomínio
+                    </span>
+                  </AccordionTrigger>
+                  <AccordionContent className="text-body text-sm text-muted-foreground leading-relaxed pb-4">
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span>IPTU (2026)</span>
+                        <span className="font-mono text-foreground">R$ 18.500/ano</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Condomínio</span>
+                        <span className="font-mono text-foreground">R$ 3.200/mês</span>
+                      </div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="tech" className="border-border">
+                  <AccordionTrigger className="text-body text-sm font-medium text-foreground hover:no-underline py-4">
+                    <span className="flex items-center gap-3">
+                      <Wrench size={16} strokeWidth={1} className="text-muted-foreground" />
+                      Características Técnicas
+                    </span>
+                  </AccordionTrigger>
+                  <AccordionContent className="text-body text-sm text-muted-foreground leading-relaxed pb-4">
+                    <ul className="space-y-1.5">
+                      <li>• Automação residencial Savant (iluminação, cortinas, climatização)</li>
+                      <li>• Ar-condicionado central VRF com controle por zona</li>
+                      <li>• Sistema de som ambiente Bose integrado</li>
+                      <li>• Iluminação Lumini com cenas programáveis</li>
+                      <li>• Piso em mármore Travertino (áreas sociais)</li>
+                      <li>• Esquadrias em alumínio anodizado com vidro duplo</li>
+                      <li>• Aquecimento solar + boiler a gás de passagem</li>
+                    </ul>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             </motion.section>
 
             {/* Localização */}
@@ -174,19 +226,60 @@ const PropertyDetail = () => {
         </div>
       </div>
 
+      {/* Similar Properties */}
+      <motion.section {...fadeIn} className="px-6 md:px-12 lg:px-24 py-16 border-t border-border">
+        <h2 className="text-serif text-2xl md:text-3xl font-light tracking-wide text-foreground mb-10">
+          Imóveis que você também pode gostar
+        </h2>
+        <div className="flex gap-5 overflow-x-auto pb-4 -mx-2 px-2 scrollbar-hide">
+          {similarProperties.map((prop) => (
+            <Link
+              key={prop.id}
+              to={`/imovel/${prop.id}`}
+              className="flex-shrink-0 w-[280px] group cursor-pointer"
+            >
+              <div className="relative overflow-hidden aspect-[4/3] rounded-sm mb-3">
+                <img
+                  src={prop.image}
+                  alt={prop.title}
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  loading="lazy"
+                />
+              </div>
+              <p className="text-body text-[11px] tracking-[0.15em] uppercase text-muted-foreground mb-1">
+                {prop.location}
+              </p>
+              <h3 className="text-serif text-lg font-light text-foreground mb-1">
+                {prop.title}
+              </h3>
+              <p className="font-mono text-sm font-medium text-foreground">
+                {prop.price}
+              </p>
+            </Link>
+          ))}
+        </div>
+      </motion.section>
+
       <Footer />
 
-      {/* Mobile sticky WhatsApp bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-primary p-4">
+      {/* Mobile sticky bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-background/95 backdrop-blur-sm border-t border-border p-3 flex gap-2">
         <a
           href="https://wa.me/5511999999999"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 w-full py-3 bg-[#25D366] text-white text-body text-sm font-medium rounded-sm"
+          className="flex-1 flex items-center justify-center gap-2 py-3 bg-[#25D366] text-white text-body text-sm font-medium rounded-sm"
         >
           <MessageCircle size={18} />
-          Falar com {property.broker.name.split(" ")[0]}
+          WhatsApp
         </a>
+        <button
+          onClick={() => setScheduleOpen(true)}
+          className="flex-1 flex items-center justify-center gap-2 py-3 bg-primary text-primary-foreground text-body text-sm font-medium rounded-sm"
+        >
+          <Calendar size={18} />
+          Agendar visita
+        </button>
       </div>
 
       <ScheduleVisitModal

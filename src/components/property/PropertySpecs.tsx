@@ -21,9 +21,9 @@ const PropertySpecs = ({ area, bedrooms, suites, parking }: PropertySpecsProps) 
     <div className="flex items-center divide-x divide-border">
       {specs.map((spec, i) => (
         <div key={spec.label} className="flex items-center gap-2.5 px-5 first:pl-0">
-          <spec.icon size={18} className="text-muted-foreground" strokeWidth={1.5} />
+          <spec.icon size={18} className="text-muted-foreground" strokeWidth={1} />
           <div className="flex flex-col">
-            <span className="text-body text-sm font-medium text-foreground">
+            <span className="font-mono text-sm font-medium text-foreground">
               {values[i]}{spec.suffix}
             </span>
             <span className="text-body text-[11px] text-muted-foreground uppercase tracking-wider">

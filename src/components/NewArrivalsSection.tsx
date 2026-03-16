@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import property1 from "@/assets/property-1.jpg";
 import property2 from "@/assets/property-2.jpg";
 import property3 from "@/assets/property-3.jpg";
@@ -39,18 +40,23 @@ const NewArrivalsSection = () => {
               viewport={{ once: true, margin: "-50px" }}
               transition={{ delay: i * 0.1, duration: 0.6 }}
             >
-              <div className={`relative overflow-hidden mb-4 ${i === 0 ? "aspect-[4/5]" : "aspect-square"}`}>
-                <img src={prop.image} alt={prop.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
-                {prop.tag && (
-                  <span className="absolute top-4 left-4 text-body text-[10px] tracking-[0.2em] uppercase px-3 py-1.5 glass-panel">{prop.tag}</span>
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-foreground/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              </div>
-              <div>
-                <p className="text-body text-[11px] tracking-[0.15em] uppercase text-muted-foreground mb-1">{prop.location} · {prop.area} · {prop.rooms}</p>
-                <h3 className="text-display text-lg md:text-xl font-light mb-2">{prop.title}</h3>
-                <p className="text-body text-sm font-medium text-foreground">{prop.price}</p>
-              </div>
+              <Link to={`/imovel/${prop.id}`}>
+                <motion.div
+                  layoutId={`property-${prop.id}`}
+                  className={`relative overflow-hidden mb-4 ${i === 0 ? "aspect-[4/5]" : "aspect-square"}`}
+                >
+                  <img src={prop.image} alt={prop.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
+                  {prop.tag && (
+                    <span className="absolute top-4 left-4 text-body text-[10px] tracking-[0.2em] uppercase px-3 py-1.5 glass-panel">{prop.tag}</span>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-foreground/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                </motion.div>
+                <div>
+                  <p className="text-body text-[11px] tracking-[0.15em] uppercase text-muted-foreground mb-1">{prop.location} · {prop.area} · {prop.rooms}</p>
+                  <h3 className="text-display text-lg md:text-xl font-light mb-2">{prop.title}</h3>
+                  <p className="text-body text-sm font-medium text-foreground">{prop.price}</p>
+                </div>
+              </Link>
             </motion.article>
           ))}
         </div>

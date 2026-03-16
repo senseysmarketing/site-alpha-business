@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600&family=Inter:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Raleway:wght@300;400;500;600&family=Inter:wght@300;400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -74,6 +74,9 @@
   }
   .text-body {
     font-family: var(--font-body);
+  }
+  .text-serif {
+    font-family: 'Cormorant Garamond', serif;
   }
   .glass-panel {
     @apply backdrop-blur-xl border border-border/50;
