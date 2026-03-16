@@ -98,7 +98,7 @@ const Dashboard = () => {
                         <Area
                           type="monotone"
                           dataKey="v"
-                          stroke="hsl(var(--primary))"
+                          stroke="#2A070C"
                           strokeWidth={1.5}
                           fill="url(#sparkGrad)"
                           dot={false}
