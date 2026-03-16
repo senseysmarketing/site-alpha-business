@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Search, Mic } from "lucide-react";
-import { useState } from "react";
+import React, { useState } from "react";
 
 const HeroSection = () => {
   const [query, setQuery] = useState("");
@@ -68,7 +68,7 @@ const HeroSection = () => {
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Descreva o lar dos seus sonhos..."
+              placeholder="Busque por nome, código ou região..."
               className="flex-1 bg-transparent text-body text-sm text-foreground placeholder:text-muted-foreground outline-none py-3 min-w-0"
             />
           </div>
@@ -79,6 +79,26 @@ const HeroSection = () => {
           <button className="hidden md:block bg-primary text-primary-foreground px-6 py-3 text-body text-xs tracking-[0.1em] uppercase hover-magnetic absolute right-1.5 top-1.5 bottom-1.5">
             Buscar
           </button>
+        </motion.div>
+
+        {/* Quick links */}
+        <motion.div
+          className="flex items-center justify-center gap-2 md:gap-4 mt-4 flex-wrap"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.1, duration: 0.8 }}
+        >
+          {["Casas em Condomínio", "Mansões Exclusive", "Lançamentos"].map((label, i) => (
+            <React.Fragment key={label}>
+              {i > 0 && <span className="text-cashmere/40 text-xs hidden md:inline">·</span>}
+              <a
+                href="#"
+                className="text-body text-[10px] md:text-xs tracking-[0.12em] uppercase text-cashmere/70 hover:text-cashmere transition-colors duration-300"
+              >
+                {label}
+              </a>
+            </React.Fragment>
+          ))}
         </motion.div>
       </div>
 
