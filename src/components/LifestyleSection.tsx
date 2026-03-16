@@ -58,21 +58,21 @@ const LifestyleSection = () => {
   }, [emblaApi, onSelect]);
 
   return (
-    <section className="bg-foreground py-12 md:py-16 group">
-      <div className="section-padding mb-8 md:mb-10">
-        <p className="text-body text-xs tracking-[0.3em] uppercase text-white/50 mb-3">
+    <section className="bg-background py-8 md:py-12 group">
+      <div className="px-6 md:px-12 lg:px-24 mb-4 md:mb-6">
+        <p className="text-body text-xs tracking-[0.3em] uppercase text-foreground/50 mb-3">
           Lifestyle
         </p>
-        <h2 className="text-display text-3xl md:text-5xl font-light text-white">
+        <h2 className="text-display text-3xl md:text-5xl font-light text-foreground">
           Navegue pelo seu{" "}
-          <em className="italic text-white/80">estilo de vida</em>
+          <em className="italic text-foreground/60">estilo de vida</em>
         </h2>
       </div>
 
       <div className="relative">
         {/* Carousel */}
-        <div ref={emblaRef} className="overflow-hidden section-padding">
-          <div className="flex gap-6 md:gap-8">
+        <div ref={emblaRef} className="overflow-hidden px-6 md:px-12 lg:px-24">
+          <div className="flex gap-4 md:gap-6">
             {categories.map((cat) => (
               <div
                 key={cat.title}
@@ -113,7 +113,7 @@ const LifestyleSection = () => {
             <button
               onClick={() => emblaApi?.scrollPrev()}
               disabled={!canScrollPrev}
-              className="absolute left-4 top-1/2 -translate-y-1/2 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 disabled:opacity-0 text-white/70 hover:text-white"
+              className="absolute left-4 top-1/2 -translate-y-1/2 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 disabled:opacity-0 text-foreground/50 hover:text-foreground"
               aria-label="Previous"
             >
               <ChevronLeft size={32} strokeWidth={1} />
@@ -121,7 +121,7 @@ const LifestyleSection = () => {
             <button
               onClick={() => emblaApi?.scrollNext()}
               disabled={!canScrollNext}
-              className="absolute right-4 top-1/2 -translate-y-1/2 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 disabled:opacity-0 text-white/70 hover:text-white"
+              className="absolute right-4 top-1/2 -translate-y-1/2 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 disabled:opacity-0 text-foreground/50 hover:text-foreground"
               aria-label="Next"
             >
               <ChevronRight size={32} strokeWidth={1} />
@@ -131,13 +131,13 @@ const LifestyleSection = () => {
       </div>
 
       {/* Dots */}
-      <div className="flex justify-center gap-2 mt-6">
+      <div className="flex justify-center gap-2 mt-4">
         {categories.map((_, i) => (
           <button
             key={i}
             onClick={() => emblaApi?.scrollTo(i)}
             className={`w-2 h-2 rounded-full transition-colors duration-300 ${
-              i === selectedIndex ? "bg-bordeaux" : "bg-white/30"
+              i === selectedIndex ? "bg-bordeaux" : "bg-foreground/20"
             }`}
             aria-label={`Go to slide ${i + 1}`}
           />
