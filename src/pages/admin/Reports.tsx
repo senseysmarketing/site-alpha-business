@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { format, subDays, startOfMonth, startOfYear } from "date-fns";
+import { subDays, startOfMonth, startOfYear } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   Users,
