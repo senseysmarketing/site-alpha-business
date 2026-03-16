@@ -15,6 +15,7 @@ import AdminLayout from "./components/admin/AdminLayout.tsx";
 import Dashboard from "./pages/admin/Dashboard.tsx";
 import Properties from "./pages/admin/Properties.tsx";
 import PropertyForm from "./pages/admin/PropertyForm.tsx";
+import CRM from "./pages/admin/CRM.tsx";
 
 const queryClient = new QueryClient();
 
