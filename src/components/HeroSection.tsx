@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Search, Mic } from "lucide-react";
-import { useState } from "react";
+import React, { useState } from "react";
 
 const HeroSection = () => {
   const [query, setQuery] = useState("");
