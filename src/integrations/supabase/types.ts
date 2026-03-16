@@ -98,6 +98,87 @@ export type Database = {
         }
         Relationships: []
       }
+      properties: {
+        Row: {
+          address: string | null
+          area_built: number | null
+          area_total: number | null
+          bathrooms: number | null
+          bedrooms: number | null
+          city: string | null
+          code: string
+          condominium: string | null
+          created_at: string | null
+          description: string | null
+          engineering_highlights: string[] | null
+          id: string
+          is_featured: boolean | null
+          neighborhood: string | null
+          parking_spots: number | null
+          photos: string[] | null
+          price: number | null
+          property_type: string
+          rental_price: number | null
+          status: string | null
+          title: string
+          transaction_type: string
+          updated_at: string | null
+          video_url: string | null
+        }
+        Insert: {
+          address?: string | null
+          area_built?: number | null
+          area_total?: number | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          city?: string | null
+          code: string
+          condominium?: string | null
+          created_at?: string | null
+          description?: string | null
+          engineering_highlights?: string[] | null
+          id?: string
+          is_featured?: boolean | null
+          neighborhood?: string | null
+          parking_spots?: number | null
+          photos?: string[] | null
+          price?: number | null
+          property_type?: string
+          rental_price?: number | null
+          status?: string | null
+          title: string
+          transaction_type?: string
+          updated_at?: string | null
+          video_url?: string | null
+        }
+        Update: {
+          address?: string | null
+          area_built?: number | null
+          area_total?: number | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          city?: string | null
+          code?: string
+          condominium?: string | null
+          created_at?: string | null
+          description?: string | null
+          engineering_highlights?: string[] | null
+          id?: string
+          is_featured?: boolean | null
+          neighborhood?: string | null
+          parking_spots?: number | null
+          photos?: string[] | null
+          price?: number | null
+          property_type?: string
+          rental_price?: number | null
+          status?: string | null
+          title?: string
+          transaction_type?: string
+          updated_at?: string | null
+          video_url?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
