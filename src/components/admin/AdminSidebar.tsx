@@ -2,6 +2,8 @@ import {
   LayoutDashboard,
   Building2,
   Users,
+  CalendarCheck,
+  BarChart3,
   FileText,
   Settings,
 } from "lucide-react";
@@ -25,6 +27,8 @@ const menuItems = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
   { title: "Imóveis", url: "/admin/imoveis", icon: Building2 },
   { title: "Pipeline CRM", url: "/admin/leads", icon: Users },
+  { title: "Agenda", url: "/admin/agenda", icon: CalendarCheck },
+  { title: "Relatórios", url: "/admin/relatorios", icon: BarChart3 },
   { title: "Blog", url: "/admin/blog", icon: FileText },
   { title: "Configurações", url: "/admin/configuracoes", icon: Settings },
 ];
