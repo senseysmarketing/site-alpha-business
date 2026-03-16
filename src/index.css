@@ -75,6 +75,9 @@
   .text-body {
     font-family: var(--font-body);
   }
+  .text-serif {
+    font-family: 'Cormorant Garamond', serif;
+  }
   .glass-panel {
     @apply backdrop-blur-xl border border-border/50;
     background: hsl(var(--background) / 0.7);

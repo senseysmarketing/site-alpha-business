@@ -57,6 +57,9 @@ const PropertySidebar = ({
       <p className="text-body text-[11px] text-muted-foreground text-center uppercase tracking-widest">
         Atendimento exclusivo e personalizado
       </p>
+      <p className="text-body text-[10px] text-muted-foreground/60 text-center tracking-wider">
+        CRECI 123.456-F
+      </p>
 
       <ScheduleVisitModal
         open={scheduleOpen}
