@@ -340,10 +340,10 @@ const Agenda = () => {
       </div>
 
       <ScheduleVisitModal
-        isOpen={showModal}
-        onClose={() => {
-          setShowModal(false);
-          fetchVisits();
+        open={showModal}
+        onOpenChange={(open) => {
+          setShowModal(open);
+          if (!open) fetchVisits();
         }}
         propertyCode=""
       />
