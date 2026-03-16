@@ -2,6 +2,8 @@ import {
   LayoutDashboard,
   Building2,
   Users,
+  CalendarCheck,
+  BarChart3,
   FileText,
   Settings,
 } from "lucide-react";
