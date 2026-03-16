@@ -96,7 +96,7 @@ export default function CRM() {
   }, []);
 
   return (
-    <div className="p-6">
+    <div>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="font-[Raleway] text-2xl font-semibold text-foreground">Pipeline</h1>
