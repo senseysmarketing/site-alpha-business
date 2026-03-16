@@ -124,7 +124,7 @@ export default function CRM() {
               onDrop={(e) => handleDrop(e, stage.key)}
             >
               {/* Column header — glassmorphism */}
-              <div className="sticky top-0 z-10 rounded-t-xl px-4 py-3 backdrop-blur-md bg-card/70 border-b border-border/30">
+              <div className="sticky top-0 z-10 rounded-t-sm px-4 py-3 backdrop-blur-md bg-background/90 border-b border-border/30">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <h3 className="font-[Raleway] text-sm font-semibold text-foreground">{stage.label}</h3>
