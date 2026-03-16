@@ -94,7 +94,7 @@ const PropertyDetail = () => {
         {/* Price + Title */}
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-serif text-3xl md:text-4xl font-light tracking-wide text-foreground mb-1">
+            <h1 className="text-display text-3xl md:text-4xl font-light tracking-wide text-foreground mb-1">
               {property.title}
             </h1>
             <p className="text-body text-sm text-muted-foreground">{property.subtitle}</p>
