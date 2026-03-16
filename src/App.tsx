@@ -9,6 +9,12 @@ import PropertyDetail from "./pages/PropertyDetail.tsx";
 import Blog from "./pages/Blog.tsx";
 import BlogPost from "./pages/BlogPost.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import AdminLogin from "./pages/AdminLogin.tsx";
+import ProtectedRoute from "./components/admin/ProtectedRoute.tsx";
+import AdminLayout from "./components/admin/AdminLayout.tsx";
+import Dashboard from "./pages/admin/Dashboard.tsx";
+import Properties from "./pages/admin/Properties.tsx";
+import PropertyForm from "./pages/admin/PropertyForm.tsx";
 
 const queryClient = new QueryClient();
 
