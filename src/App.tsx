@@ -27,6 +27,13 @@ const AnimatedRoutes = () => {
         <Route path="/imovel/:id" element={<PropertyDetail />} />
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/:slug" element={<BlogPost />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
+          <Route index element={<Dashboard />} />
+          <Route path="imoveis" element={<Properties />} />
+          <Route path="imoveis/novo" element={<PropertyForm />} />
+          <Route path="imoveis/:id" element={<PropertyForm />} />
+        </Route>
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AnimatePresence>
