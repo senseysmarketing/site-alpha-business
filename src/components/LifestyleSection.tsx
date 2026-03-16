@@ -65,7 +65,7 @@ const LifestyleSection = () => {
         </p>
         <h2 className="text-display text-3xl md:text-5xl font-light text-foreground">
           Navegue pelo seu{" "}
-          <em className="italic text-foreground/60">estilo de vida</em>
+           <em className="italic">estilo de vida</em>
         </h2>
       </div>
 
