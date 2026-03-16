@@ -249,7 +249,7 @@ const PropertyDetail = () => {
               <p className="text-body text-[11px] tracking-[0.15em] uppercase text-muted-foreground mb-1">
                 {prop.location}
               </p>
-              <h3 className="text-serif text-lg font-light text-foreground mb-1">
+              <h3 className="text-display text-lg font-light text-foreground mb-1">
                 {prop.title}
               </h3>
               <p className="font-mono text-sm font-medium text-foreground">
