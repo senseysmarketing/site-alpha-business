@@ -94,12 +94,12 @@ const PropertyDetail = () => {
         {/* Price + Title */}
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-serif text-3xl md:text-4xl font-light tracking-wide text-foreground mb-1">
+            <h1 className="text-display text-3xl md:text-4xl font-light tracking-wide text-foreground mb-1">
               {property.title}
             </h1>
             <p className="text-body text-sm text-muted-foreground">{property.subtitle}</p>
           </div>
-          <p className="text-serif text-3xl md:text-4xl font-semibold text-foreground whitespace-nowrap">
+          <p className="text-display text-3xl md:text-4xl font-semibold text-foreground whitespace-nowrap">
             {property.price}
           </p>
         </div>
@@ -139,7 +139,7 @@ const PropertyDetail = () => {
           <div className="flex-1 lg:max-w-[65%] space-y-16">
             {/* Sobre o Imóvel */}
             <motion.section {...fadeIn}>
-              <h2 className="text-serif text-2xl font-light tracking-wide text-foreground mb-6">
+              <h2 className="text-display text-2xl font-light tracking-wide text-foreground mb-6">
                 Sobre o Imóvel
               </h2>
               <div className="text-body text-sm text-muted-foreground leading-[1.9] whitespace-pre-line">
@@ -149,7 +149,7 @@ const PropertyDetail = () => {
 
             {/* Technical Details Accordion */}
             <motion.section {...fadeIn}>
-              <h2 className="text-serif text-2xl font-light tracking-wide text-foreground mb-6">
+              <h2 className="text-display text-2xl font-light tracking-wide text-foreground mb-6">
                 Detalhes do Imóvel
               </h2>
               <Accordion type="multiple" className="w-full">
@@ -228,7 +228,7 @@ const PropertyDetail = () => {
 
       {/* Similar Properties */}
       <motion.section {...fadeIn} className="px-6 md:px-12 lg:px-24 py-16 border-t border-border">
-        <h2 className="text-serif text-2xl md:text-3xl font-light tracking-wide text-foreground mb-10">
+        <h2 className="text-display text-2xl md:text-3xl font-light tracking-wide text-foreground mb-10">
           Imóveis que você também pode gostar
         </h2>
         <div className="flex gap-5 overflow-x-auto pb-4 -mx-2 px-2 scrollbar-hide">
@@ -249,7 +249,7 @@ const PropertyDetail = () => {
               <p className="text-body text-[11px] tracking-[0.15em] uppercase text-muted-foreground mb-1">
                 {prop.location}
               </p>
-              <h3 className="text-serif text-lg font-light text-foreground mb-1">
+              <h3 className="text-display text-lg font-light text-foreground mb-1">
                 {prop.title}
               </h3>
               <p className="font-mono text-sm font-medium text-foreground">
