@@ -149,7 +149,7 @@ const PropertyDetail = () => {
 
             {/* Technical Details Accordion */}
             <motion.section {...fadeIn}>
-              <h2 className="text-serif text-2xl font-light tracking-wide text-foreground mb-6">
+              <h2 className="text-display text-2xl font-light tracking-wide text-foreground mb-6">
                 Detalhes do Imóvel
               </h2>
               <Accordion type="multiple" className="w-full">
