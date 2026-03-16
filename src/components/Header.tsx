@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Menu, X, Instagram, Phone } from "lucide-react";
+import { Menu, X, Instagram, Youtube, Phone } from "lucide-react";
 import { Link } from "react-router-dom";
 import logoAlpha from "@/assets/logo-alpha.png";
 
@@ -20,17 +20,30 @@ const Header = () => {
       {/* Utility bar */}
       <div className="hidden md:block fixed top-0 left-0 right-0 z-[51] h-8 bg-card border-b border-border/40">
         <div className="flex items-center justify-between px-6 md:px-12 lg:px-24 h-full">
-          <a
-            href="https://instagram.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-muted-foreground hover:text-foreground transition-colors duration-300"
-          >
-            <Instagram size={14} />
-          </a>
+          <div className="flex items-center gap-4">
+            <a
+              href="https://instagram.com/alphaville.sp"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors duration-300 text-[11px] tracking-[0.1em]"
+            >
+              <Instagram size={12} />
+              alphaville.sp
+            </a>
+            <span className="text-border">|</span>
+            <a
+              href="https://www.youtube.com/@alphavilleab"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors duration-300 text-[11px] tracking-[0.1em]"
+            >
+              <Youtube size={12} />
+              AlphaBusiness
+            </a>
+          </div>
           <a
             href="tel:+5511999999999"
-            className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors duration-300 text-body text-[11px] tracking-[0.1em]"
+            className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors duration-300 text-[11px] tracking-[0.1em]"
           >
             <Phone size={12} />
             (11) 9999-9999
