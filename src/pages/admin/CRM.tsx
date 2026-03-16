@@ -96,7 +96,7 @@ export default function CRM() {
   }, []);
 
   return (
-    <div className="p-6">
+    <div>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="font-[Raleway] text-2xl font-semibold text-foreground">Pipeline</h1>
@@ -117,14 +117,14 @@ export default function CRM() {
               className={cn(
                 "flex-shrink-0 w-[280px] rounded-sm flex flex-col border border-border/40",
                 "transition-colors duration-200",
-                dragOverStage === stage.key ? "bg-background border-primary/20" : "bg-background"
+                dragOverStage === stage.key ? "bg-white border-primary/20" : "bg-white"
               )}
               onDragOver={(e) => handleDragOver(e, stage.key)}
               onDragLeave={handleDragLeave}
               onDrop={(e) => handleDrop(e, stage.key)}
             >
               {/* Column header — glassmorphism */}
-              <div className="sticky top-0 z-10 rounded-t-sm px-4 py-3 backdrop-blur-md bg-background/90 border-b border-border/30">
+              <div className="sticky top-0 z-10 rounded-t-sm px-4 py-3 backdrop-blur-md bg-white/90 border-b border-border/30">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <h3 className="font-[Raleway] text-sm font-semibold text-foreground">{stage.label}</h3>
