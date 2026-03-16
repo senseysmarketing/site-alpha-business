@@ -91,8 +91,8 @@ const Dashboard = () => {
                       <AreaChart data={sparkData}>
                         <defs>
                           <linearGradient id="sparkGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                            <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                            <stop offset="0%" stopColor="#2A070C" stopOpacity={0.3} />
+                            <stop offset="100%" stopColor="#2A070C" stopOpacity={0} />
                           </linearGradient>
                         </defs>
                         <Area
