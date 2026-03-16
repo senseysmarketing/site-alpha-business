@@ -73,7 +73,7 @@ const Dashboard = () => {
               <CardTitle className="font-[Inter] text-xs font-medium uppercase tracking-widest text-muted-foreground">
                 {card.title}
               </CardTitle>
-              <card.icon className="h-4 w-4 text-muted-foreground/50" />
+              <card.icon className="h-4 w-4 text-[#2A070C]/40" />
             </CardHeader>
             <CardContent>
               <div className="flex items-end justify-between">
