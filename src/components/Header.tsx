@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Menu, X, Instagram, Phone } from "lucide-react";
+import { Menu, X, Instagram, Youtube, Phone } from "lucide-react";
 import { Link } from "react-router-dom";
 import logoAlpha from "@/assets/logo-alpha.png";
 
