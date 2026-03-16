@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Mic, Plus, Trash2, Upload, X } from "lucide-react";
+import { ArrowLeft, Mic, MicOff, Plus, Sparkles, Trash2, Upload, X, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,7 +20,13 @@ const PropertyForm = () => {
   const { toast } = useToast();
 
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState("basics");
+  const [activeTab, setActiveTab] = useState(isEditing ? "basics" : "ai");
+
+  // AI input
+  const [aiText, setAiText] = useState("");
+  const [aiProcessing, setAiProcessing] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [recognition, setRecognition] = useState<any>(null);
 
   // Basic data
   const [code, setCode] = useState("");
@@ -47,6 +53,89 @@ const PropertyForm = () => {
 
   // Engineering
   const [highlights, setHighlights] = useState<string[]>([""]);
+
+  // Initialize speech recognition
+  useEffect(() => {
+    const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+    if (SpeechRecognition) {
+      const rec = new SpeechRecognition();
+      rec.lang = "pt-BR";
+      rec.continuous = true;
+      rec.interimResults = true;
+
+      rec.onresult = (event: any) => {
+        let transcript = "";
+        for (let i = 0; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+        setAiText(transcript);
+      };
+
+      rec.onerror = () => {
+        setIsListening(false);
+        toast({ title: "Erro no microfone", description: "Não foi possível capturar áudio.", variant: "destructive" });
+      };
+
+      rec.onend = () => setIsListening(false);
+
+      setRecognition(rec);
+    }
+  }, []);
+
+  const toggleListening = () => {
+    if (!recognition) {
+      toast({ title: "Não suportado", description: "Seu navegador não suporta transcrição por voz.", variant: "destructive" });
+      return;
+    }
+    if (isListening) {
+      recognition.stop();
+      setIsListening(false);
+    } else {
+      recognition.start();
+      setIsListening(true);
+    }
+  };
+
+  const handleAiProcess = async () => {
+    if (!aiText.trim()) {
+      toast({ title: "Descreva o imóvel", description: "Digite ou dite uma descrição antes de processar.", variant: "destructive" });
+      return;
+    }
+
+    setAiProcessing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("parse-property", {
+        body: { text: aiText },
+      });
+
+      if (error) throw error;
+
+      // Fill form fields with AI response
+      if (data.title) setTitle(data.title);
+      if (data.code) setCode(data.code);
+      if (data.description) setDescription(data.description);
+      if (data.property_type) setPropertyType(data.property_type);
+      if (data.transaction_type) setTransactionType(data.transaction_type);
+      if (data.condominium) setCondominium(data.condominium);
+      if (data.address) setAddress(data.address);
+      if (data.bedrooms != null) setBedrooms(data.bedrooms);
+      if (data.bathrooms != null) setBathrooms(data.bathrooms);
+      if (data.parking_spots != null) setParkingSpots(data.parking_spots);
+      if (data.area_total != null) setAreaTotal(String(data.area_total));
+      if (data.area_built != null) setAreaBuilt(String(data.area_built));
+      if (data.price != null) setPrice(String(data.price));
+      if (data.rental_price != null) setRentalPrice(String(data.rental_price));
+      if (data.engineering_highlights?.length) setHighlights(data.engineering_highlights);
+
+      toast({ title: "Dados extraídos com sucesso", description: "Revise os campos preenchidos nas abas seguintes." });
+      setActiveTab("basics");
+    } catch (e: any) {
+      const msg = e?.message || "Erro ao processar com IA";
+      toast({ title: "Erro", description: msg, variant: "destructive" });
+    } finally {
+      setAiProcessing(false);
+    }
+  };
 
   // Load existing property
   useEffect(() => {
@@ -148,13 +237,6 @@ const PropertyForm = () => {
     setPhotos((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleMicClick = () => {
-    toast({
-      title: "Em breve",
-      description: "Funcionalidade de transcrição por voz será integrada em breve.",
-    });
-  };
-
   const inputClass = "h-10 bg-white border-border/50 font-[Inter] text-sm";
   const labelClass = "font-[Inter] text-xs uppercase tracking-widest text-muted-foreground";
 
@@ -174,10 +256,80 @@ const PropertyForm = () => {
       <div className="bg-white rounded-lg border border-border/50 p-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-6 bg-muted/30 font-[Inter]">
+            {!isEditing && (
+              <TabsTrigger value="ai" className="text-xs uppercase tracking-widest gap-1.5">
+                <Sparkles className="h-3.5 w-3.5" /> IA
+              </TabsTrigger>
+            )}
             <TabsTrigger value="basics" className="text-xs uppercase tracking-widest">Dados Básicos</TabsTrigger>
             <TabsTrigger value="photos" className="text-xs uppercase tracking-widest">Fotos & Vídeos</TabsTrigger>
             <TabsTrigger value="engineering" className="text-xs uppercase tracking-widest">Engenharia</TabsTrigger>
           </TabsList>
+
+          {/* Tab 0 — IA */}
+          <TabsContent value="ai">
+            <div className="space-y-6">
+              <div className="text-center max-w-lg mx-auto mb-2">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#2A070C]/5 mb-4">
+                  <Sparkles className="h-5 w-5 text-[#2A070C]/60" />
+                </div>
+                <h2 className="font-[Raleway] text-lg font-semibold text-foreground mb-1">Preenchimento Inteligente</h2>
+                <p className="font-[Inter] text-sm text-muted-foreground">
+                  Descreva o imóvel com suas palavras ou use o microfone. A IA extrairá os dados automaticamente.
+                </p>
+              </div>
+
+              <div className="relative max-w-2xl mx-auto">
+                <Textarea
+                  value={aiText}
+                  onChange={(e) => setAiText(e.target.value)}
+                  className="bg-white border-border/50 font-[Inter] text-sm min-h-[180px] pr-14 resize-none"
+                  placeholder="Ex: Casa no Residencial 2, 4 suítes, 6 banheiros, 380m² construídos em terreno de 500m², piscina com raia, 4 vagas, preço de venda R$ 3.200.000. Acabamentos em mármore importado, automação completa..."
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleListening}
+                  className={`absolute bottom-3 right-3 transition-colors ${
+                    isListening
+                      ? "text-red-500 hover:text-red-600 bg-red-50 hover:bg-red-100"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                </Button>
+              </div>
+
+              {isListening && (
+                <div className="flex items-center justify-center gap-2 text-sm font-[Inter] text-red-500">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500" />
+                  </span>
+                  Ouvindo... fale agora
+                </div>
+              )}
+
+              <div className="flex justify-center">
+                <Button
+                  onClick={handleAiProcess}
+                  disabled={aiProcessing || !aiText.trim()}
+                  className="font-[Inter] text-xs uppercase tracking-widest gap-2"
+                >
+                  {aiProcessing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" /> Processando...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4" /> Processar com IA
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </TabsContent>
 
           {/* Tab 1 — Dados Básicos */}
           <TabsContent value="basics">
@@ -320,23 +472,12 @@ const PropertyForm = () => {
             <div className="space-y-6">
               <div className="space-y-2">
                 <Label className={labelClass}>Descrição</Label>
-                <div className="relative">
-                  <Textarea
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    className="bg-white border-border/50 font-[Inter] text-sm min-h-[120px] pr-12"
-                    placeholder="Descreva o imóvel..."
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleMicClick}
-                    className="absolute bottom-2 right-2 text-muted-foreground hover:text-foreground"
-                  >
-                    <Mic className="h-4 w-4" />
-                  </Button>
-                </div>
+                <Textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="bg-white border-border/50 font-[Inter] text-sm min-h-[120px]"
+                  placeholder="Descreva o imóvel..."
+                />
               </div>
 
               <div className="space-y-3">

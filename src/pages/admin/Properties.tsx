@@ -68,7 +68,7 @@ const Properties = () => {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3 mb-4">
+      <div className="flex flex-wrap items-center gap-4 mb-4">
         <div className="relative flex-1 max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -79,36 +79,44 @@ const Properties = () => {
           />
         </div>
 
-        <div className="flex gap-1.5">
-          {condominiums.map((c) => (
-            <button
-              key={c}
-              onClick={() => setFilterCondo(c)}
-              className={`px-3 py-1.5 rounded-full text-xs font-[Inter] transition-colors border ${
-                filterCondo === c
-                  ? "bg-foreground text-background border-foreground"
-                  : "bg-white text-muted-foreground border-border/50 hover:border-foreground/30"
-              }`}
-            >
-              {c}
-            </button>
-          ))}
+        <div className="flex items-center gap-2">
+          <span className="font-[Inter] text-[10px] uppercase tracking-widest text-muted-foreground">Condomínio</span>
+          <div className="flex gap-1.5">
+            {condominiums.map((c) => (
+              <button
+                key={c}
+                onClick={() => setFilterCondo(c)}
+                className={`px-3 py-1.5 rounded-full text-xs font-[Inter] transition-colors border ${
+                  filterCondo === c
+                    ? "bg-foreground text-background border-foreground"
+                    : "bg-white text-muted-foreground border-border/50 hover:border-foreground/30"
+                }`}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className="flex gap-1.5">
-          {statuses.map((s) => (
-            <button
-              key={s}
-              onClick={() => setFilterStatus(s)}
-              className={`px-3 py-1.5 rounded-full text-xs font-[Inter] transition-colors border ${
-                filterStatus === s
-                  ? "bg-foreground text-background border-foreground"
-                  : "bg-white text-muted-foreground border-border/50 hover:border-foreground/30"
-              }`}
-            >
-              {s}
-            </button>
-          ))}
+        <div className="h-6 w-px bg-border/50" />
+
+        <div className="flex items-center gap-2">
+          <span className="font-[Inter] text-[10px] uppercase tracking-widest text-muted-foreground">Transação</span>
+          <div className="flex gap-1.5">
+            {statuses.map((s) => (
+              <button
+                key={s}
+                onClick={() => setFilterStatus(s)}
+                className={`px-3 py-1.5 rounded-full text-xs font-[Inter] transition-colors border ${
+                  filterStatus === s
+                    ? "bg-foreground text-background border-foreground"
+                    : "bg-white text-muted-foreground border-border/50 hover:border-foreground/30"
+                }`}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
