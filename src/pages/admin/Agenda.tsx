@@ -119,7 +119,7 @@ const Agenda = () => {
                   head_cell: "text-muted-foreground rounded-md w-full font-normal text-[0.8rem] font-[Inter]",
                   row: "flex w-full mt-2",
                   cell: "h-12 w-full text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
-                  day: "h-12 w-full p-0 font-normal font-[Inter] aria-selected:opacity-100 hover:bg-accent rounded-md transition-colors",
+                  day: "h-12 w-full p-0 font-normal font-[Inter] aria-selected:opacity-100 hover:bg-accent hover:text-accent-foreground rounded-md transition-colors",
                   day_selected: "bg-[#2A070C] text-white hover:bg-[#2A070C] hover:text-white focus:bg-[#2A070C] focus:text-white",
                   day_today: "bg-accent text-accent-foreground font-semibold",
                   caption_label: "text-sm font-semibold font-[Raleway]",
