@@ -1,5 +1,5 @@
-import { useRef } from "react";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useIsMobile } from "@/hooks/use-mobile";
 import mansionModern from "@/assets/mansion-modern.jpg";
 import familyHome from "@/assets/family-home.jpg";
@@ -27,69 +27,147 @@ const categories = [
 ];
 
 const LifestyleSection = () => {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
   const isMobile = useIsMobile();
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start start", "end end"],
-  });
+  const sectionRef = useRef<HTMLElement>(null);
+  const mouseX = useRef(0);
+  const mouseY = useRef(0);
+  const [parallax, setParallax] = useState({ x: 0, y: 0 });
+  const rafId = useRef<number>(0);
 
-  const x = useTransform(scrollYProgress, [0, 1], ["0%", isMobile ? "-65%" : "-45%"]);
+  const handleMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (isMobile) return;
+      const rect = sectionRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const cx = (e.clientX - rect.left) / rect.width - 0.5;
+      const cy = (e.clientY - rect.top) / rect.height - 0.5;
+      mouseX.current = cx * -20;
+      mouseY.current = cy * -20;
+
+      cancelAnimationFrame(rafId.current);
+      rafId.current = requestAnimationFrame(() => {
+        setParallax({ x: mouseX.current, y: mouseY.current });
+      });
+    },
+    [isMobile],
+  );
+
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el || isMobile) return;
+    el.addEventListener("mousemove", handleMouseMove);
+    return () => {
+      el.removeEventListener("mousemove", handleMouseMove);
+      cancelAnimationFrame(rafId.current);
+    };
+  }, [handleMouseMove, isMobile]);
+
+  const active = categories[activeIndex];
 
   return (
-    <section ref={containerRef} className={isMobile ? "relative h-[300vh]" : "relative h-[200vh]"}>
-      <div className="sticky top-0 h-screen flex flex-col justify-center overflow-hidden">
-        <div className="section-padding pb-8">
-          <motion.p
-            className="text-body text-xs tracking-[0.3em] uppercase text-muted-foreground mb-3"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-          >
+    <section
+      ref={sectionRef}
+      className="relative h-screen overflow-hidden bg-foreground"
+    >
+      {/* Background images */}
+      <AnimatePresence mode="popLayout">
+        <motion.div
+          key={activeIndex}
+          className="absolute inset-0"
+          initial={{ scale: 1.1, opacity: 0 }}
+          animate={{
+            scale: 1,
+            opacity: 1,
+            x: isMobile ? 0 : parallax.x,
+            y: isMobile ? 0 : parallax.y,
+          }}
+          exit={{ opacity: 0 }}
+          transition={{
+            scale: { duration: 1.2, ease: [0.25, 0.46, 0.45, 0.94] },
+            opacity: { duration: 0.8 },
+            x: { duration: 0.3, ease: "linear" },
+            y: { duration: 0.3, ease: "linear" },
+          }}
+        >
+          <img
+            src={active.image}
+            alt={active.title}
+            className="w-full h-full object-cover"
+          />
+        </motion.div>
+      </AnimatePresence>
+
+      {/* Gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/20 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-r from-black/40 to-transparent pointer-events-none" />
+
+      {/* Content */}
+      <div className="relative z-10 h-full flex flex-col justify-between section-padding">
+        {/* Top: label + title */}
+        <div className="pt-8 md:pt-12">
+          <p className="text-body text-xs tracking-[0.3em] uppercase text-white/50 mb-3">
             Lifestyle
-          </motion.p>
-          <motion.h2
-            className="text-display text-3xl md:text-5xl font-light"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-          >
-            Navegue pelo seu <em className="italic">estilo de vida</em>
-          </motion.h2>
+          </p>
+          <h2 className="text-display text-3xl md:text-5xl font-light text-white">
+            Navegue pelo seu <em className="italic text-white/80">estilo de vida</em>
+          </h2>
         </div>
 
-        <motion.div className="flex gap-6 md:gap-10 px-6 md:px-12 lg:px-24 pr-[25vw] md:pr-12 lg:pr-24" style={{ x }}>
-          {categories.map((cat, i) => (
+        {/* Center: active category info */}
+        <div className="flex-1 flex items-center">
+          <AnimatePresence mode="wait">
             <motion.div
-              key={cat.title}
-              className="flex-shrink-0 w-[80vw] md:w-[45vw] lg:w-[35vw] group cursor-pointer"
-              initial={{ opacity: 0, x: 60 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.15, duration: 0.8 }}
+              key={activeIndex}
+              initial={{ opacity: 0, y: 20, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.97 }}
+              transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
             >
-              <div className="relative overflow-hidden aspect-[4/5] mb-6">
-                <img
-                  src={cat.image}
-                  alt={cat.title}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  loading="lazy"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-foreground/50 to-transparent" />
-                <div className="absolute bottom-6 left-6 right-6">
-                  <p className="text-body text-xs tracking-[0.2em] uppercase text-cashmere/70 mb-2">
-                    {cat.count}
-                  </p>
-                  <h3 className="text-display text-2xl md:text-3xl font-light text-cashmere">
-                    {cat.title}
-                  </h3>
-                </div>
-              </div>
-              <p className="text-body text-sm text-muted-foreground">{cat.subtitle}</p>
+              <p className="text-body text-xs tracking-[0.2em] uppercase text-white/50 mb-3">
+                {active.count}
+              </p>
+              <h3 className="text-display text-4xl md:text-6xl lg:text-7xl font-light text-white mb-4">
+                {active.title}
+              </h3>
+              <p className="text-body text-sm md:text-base text-white/60 max-w-md">
+                {active.subtitle}
+              </p>
             </motion.div>
-          ))}
-        </motion.div>
+          </AnimatePresence>
+        </div>
+
+        {/* Bottom: navigation buttons */}
+        <div className="pb-8 md:pb-12">
+          <div className="flex items-center gap-8 md:gap-12">
+            {categories.map((cat, i) => (
+              <button
+                key={cat.title}
+                onClick={() => setActiveIndex(i)}
+                className="group relative text-left transition-colors duration-300"
+              >
+                <span
+                  className={`text-body text-xs md:text-sm tracking-[0.15em] uppercase transition-colors duration-300 ${
+                    i === activeIndex
+                      ? "text-white"
+                      : "text-white/40 group-hover:text-white/70"
+                  }`}
+                >
+                  {cat.title}
+                </span>
+                <motion.div
+                  className="absolute -bottom-2 left-0 h-px bg-white"
+                  initial={false}
+                  animate={{
+                    width: i === activeIndex ? "100%" : "0%",
+                    opacity: i === activeIndex ? 1 : 0,
+                  }}
+                  transition={{ duration: 0.4, ease: "easeInOut" }}
+                />
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
     </section>
   );
