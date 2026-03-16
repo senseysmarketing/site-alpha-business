@@ -99,7 +99,7 @@ const PropertyDetail = () => {
             </h1>
             <p className="text-body text-sm text-muted-foreground">{property.subtitle}</p>
           </div>
-          <p className="text-serif text-3xl md:text-4xl font-semibold text-foreground whitespace-nowrap">
+          <p className="text-display text-3xl md:text-4xl font-semibold text-foreground whitespace-nowrap">
             {property.price}
           </p>
         </div>
