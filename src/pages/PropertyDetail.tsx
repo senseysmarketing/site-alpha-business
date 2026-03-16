@@ -228,7 +228,7 @@ const PropertyDetail = () => {
 
       {/* Similar Properties */}
       <motion.section {...fadeIn} className="px-6 md:px-12 lg:px-24 py-16 border-t border-border">
-        <h2 className="text-serif text-2xl md:text-3xl font-light tracking-wide text-foreground mb-10">
+        <h2 className="text-display text-2xl md:text-3xl font-light tracking-wide text-foreground mb-10">
           Imóveis que você também pode gostar
         </h2>
         <div className="flex gap-5 overflow-x-auto pb-4 -mx-2 px-2 scrollbar-hide">
