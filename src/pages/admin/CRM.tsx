@@ -115,9 +115,9 @@ export default function CRM() {
             <div
               key={stage.key}
               className={cn(
-                "flex-shrink-0 w-[280px] rounded-xl flex flex-col",
+                "flex-shrink-0 w-[280px] rounded-sm flex flex-col border border-border/40",
                 "transition-colors duration-200",
-                dragOverStage === stage.key ? "bg-primary/5" : "bg-muted/30"
+                dragOverStage === stage.key ? "bg-background border-primary/20" : "bg-background"
               )}
               onDragOver={(e) => handleDragOver(e, stage.key)}
               onDragLeave={handleDragLeave}
