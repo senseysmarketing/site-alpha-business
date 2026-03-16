@@ -38,9 +38,6 @@ export function AdminHeader() {
       {/* Left: Sidebar toggle + Page title */}
       <div className="flex items-center gap-3 min-w-0">
         <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
-        <h2 className="font-[Raleway] text-base font-semibold text-foreground tracking-tight hidden sm:block">
-          {pageTitle}
-        </h2>
       </div>
 
       {/* Center: Global search */}
