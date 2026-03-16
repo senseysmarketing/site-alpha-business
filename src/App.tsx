@@ -9,6 +9,12 @@ import PropertyDetail from "./pages/PropertyDetail.tsx";
 import Blog from "./pages/Blog.tsx";
 import BlogPost from "./pages/BlogPost.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import AdminLogin from "./pages/AdminLogin.tsx";
+import ProtectedRoute from "./components/admin/ProtectedRoute.tsx";
+import AdminLayout from "./components/admin/AdminLayout.tsx";
+import Dashboard from "./pages/admin/Dashboard.tsx";
+import Properties from "./pages/admin/Properties.tsx";
+import PropertyForm from "./pages/admin/PropertyForm.tsx";
 
 const queryClient = new QueryClient();
 
@@ -21,6 +27,13 @@ const AnimatedRoutes = () => {
         <Route path="/imovel/:id" element={<PropertyDetail />} />
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/:slug" element={<BlogPost />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
+          <Route index element={<Dashboard />} />
+          <Route path="imoveis" element={<Properties />} />
+          <Route path="imoveis/novo" element={<PropertyForm />} />
+          <Route path="imoveis/:id" element={<PropertyForm />} />
+        </Route>
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AnimatePresence>
