@@ -22,8 +22,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
-import { cn } from "@/lib/utils";
-import { ScheduleVisitModal } from "@/components/property/ScheduleVisitModal";
+import ScheduleVisitModal from "@/components/property/ScheduleVisitModal";
 
 type Visit = {
   id: string;
