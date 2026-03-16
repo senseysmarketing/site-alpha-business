@@ -64,8 +64,8 @@ export function LeadCard({ lead, onDragStart, onClick }: LeadCardProps) {
         "group cursor-grab active:cursor-grabbing rounded-lg border bg-card p-3.5 transition-all duration-200",
         "hover:shadow-sm active:scale-[1.03] active:shadow-lg active:rotate-1",
         isQuente && "border-primary shadow-[0_0_12px_-3px_hsl(var(--primary)/0.3)]",
-        isMorno && "border-amber-400/50",
-        !isQuente && !isMorno && "border-blue-300/50"
+        isMorno && "border-secondary/60",
+        !isQuente && !isMorno && "border-border"
       )}
     >
       {/* Header: Avatar + Name + Origin */}

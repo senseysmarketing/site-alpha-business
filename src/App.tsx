@@ -32,6 +32,7 @@ const AnimatedRoutes = () => {
         <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
           <Route index element={<Dashboard />} />
           <Route path="imoveis" element={<Properties />} />
+          <Route path="leads" element={<CRM />} />
           <Route path="imoveis/novo" element={<PropertyForm />} />
           <Route path="imoveis/:id" element={<PropertyForm />} />
         </Route>

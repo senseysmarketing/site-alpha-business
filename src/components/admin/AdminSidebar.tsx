@@ -24,7 +24,7 @@ import logoAlpha from "@/assets/logo-alpha.png";
 const menuItems = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
   { title: "Imóveis", url: "/admin/imoveis", icon: Building2 },
-  { title: "Leads", url: "/admin/leads", icon: Users },
+  { title: "Pipeline CRM", url: "/admin/leads", icon: Users },
   { title: "Blog", url: "/admin/blog", icon: FileText },
   { title: "Configurações", url: "/admin/configuracoes", icon: Settings },
 ];
