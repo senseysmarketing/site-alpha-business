@@ -5,6 +5,7 @@ import { motion, useScroll, useSpring } from "framer-motion";
 import { ArrowLeft, Clock, Calendar } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { renderMarkdownContent } from "@/lib/markdown";
 
 const categoryLabels: Record<string, string> = {
   "inside-alphaville": "Inside Alphaville",
@@ -63,7 +64,21 @@ const BlogPost = () => {
     year: "numeric",
   });
 
-  const contentBlocks = post.content.split("\n\n").filter(Boolean);
+  const renderedContent = renderMarkdownContent(post.content, {
+    h2Class: "text-display text-2xl md:text-3xl font-light text-foreground mt-12 mb-6",
+    paragraphClass: "text-body text-base leading-relaxed text-muted-foreground mb-6",
+    wrapper: (node, i) => (
+      <motion.div
+        key={i}
+        initial={{ opacity: 0, y: 15 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-30px" }}
+        transition={{ duration: 0.5 }}
+      >
+        {node}
+      </motion.div>
+    ),
+  });
 
   return (
     <>
@@ -119,35 +134,7 @@ const BlogPost = () => {
         </section>
 
         <article className="max-w-3xl mx-auto px-6 md:px-12 py-16 md:py-24">
-          {contentBlocks.map((block, i) => {
-            const isHeading = block.startsWith("## ");
-            if (isHeading) {
-              return (
-                <motion.h2
-                  key={i}
-                  className="text-display text-2xl md:text-3xl font-light text-foreground mt-12 mb-6"
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-50px" }}
-                  transition={{ duration: 0.6 }}
-                >
-                  {block.replace("## ", "")}
-                </motion.h2>
-              );
-            }
-            return (
-              <motion.p
-                key={i}
-                className="text-body text-base leading-relaxed text-muted-foreground mb-6"
-                initial={{ opacity: 0, y: 15 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-30px" }}
-                transition={{ duration: 0.5 }}
-              >
-                {block}
-              </motion.p>
-            );
-          })}
+          {renderedContent}
         </article>
       </main>
       <Footer />
