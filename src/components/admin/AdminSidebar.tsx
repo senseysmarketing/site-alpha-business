@@ -4,6 +4,7 @@ import {
   Users,
   CalendarCheck,
   BarChart3,
+  Wallet,
   FileText,
   Settings,
 } from "lucide-react";
