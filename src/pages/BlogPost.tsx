@@ -134,35 +134,7 @@ const BlogPost = () => {
         </section>
 
         <article className="max-w-3xl mx-auto px-6 md:px-12 py-16 md:py-24">
-          {contentBlocks.map((block, i) => {
-            const isHeading = block.startsWith("## ");
-            if (isHeading) {
-              return (
-                <motion.h2
-                  key={i}
-                  className="text-display text-2xl md:text-3xl font-light text-foreground mt-12 mb-6"
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-50px" }}
-                  transition={{ duration: 0.6 }}
-                >
-                  {block.replace("## ", "")}
-                </motion.h2>
-              );
-            }
-            return (
-              <motion.p
-                key={i}
-                className="text-body text-base leading-relaxed text-muted-foreground mb-6"
-                initial={{ opacity: 0, y: 15 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-30px" }}
-                transition={{ duration: 0.5 }}
-              >
-                {block}
-              </motion.p>
-            );
-          })}
+          {renderedContent}
         </article>
       </main>
       <Footer />

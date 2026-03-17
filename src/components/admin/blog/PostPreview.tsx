@@ -66,23 +66,10 @@ const PostPreview = ({ open, onOpenChange, title, subtitle, content, category, a
 
         {/* Content */}
         <article className="max-w-3xl mx-auto px-6 md:px-12 py-12">
-          {contentBlocks.length === 0 ? (
+          {!content.trim() ? (
             <p className="text-body text-base text-muted-foreground italic">Comece a escrever para ver o preview...</p>
           ) : (
-            contentBlocks.map((block, i) => {
-              if (block.startsWith("## ")) {
-                return (
-                  <h2 key={i} className="text-display text-2xl md:text-3xl font-light text-foreground mt-10 mb-5">
-                    {block.replace("## ", "")}
-                  </h2>
-                );
-              }
-              return (
-                <p key={i} className="text-body text-base leading-relaxed text-muted-foreground mb-5">
-                  {block}
-                </p>
-              );
-            })
+            renderMarkdownContent(content)
           )}
         </article>
       </DialogContent>
