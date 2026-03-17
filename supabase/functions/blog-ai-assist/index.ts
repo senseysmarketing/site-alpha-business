@@ -26,6 +26,9 @@ const ACTION_PROMPTS: Record<string, (content: string) => string> = {
 
   "expand-content": (content) =>
     `Expanda o rascunho abaixo em parágrafos completos e bem escritos para um blog de imóveis de luxo. Use Markdown para formatação (## para subtítulos). Retorne APENAS o conteúdo expandido.\n\nRascunho:\n${content}`,
+
+  "generate-full-article": (content) =>
+    `Com base na descrição/referência abaixo, gere um artigo completo e bem estruturado para um blog de imóveis de luxo em Alphaville, São Paulo. O artigo deve ter pelo menos 800 palavras, usar Markdown com subtítulos (##), e ser otimizado para SEO com termos hiperlocais.\n\nDescrição/Referência:\n${content}`,
 };
 
 serve(async (req) => {
