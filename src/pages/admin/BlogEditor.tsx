@@ -230,6 +230,19 @@ Use ## para subtítulos e separe parágrafos com uma linha em branco."
 
       {/* Preview */}
       <PostPreview open={previewOpen} onOpenChange={setPreviewOpen} title={title} subtitle={subtitle} content={content} category={category} authorName="Alpha Business" readingTime={readingTime} />
+
+      {/* AI Generate Modal */}
+      <AIGenerateModal
+        open={generateModalOpen}
+        onOpenChange={setGenerateModalOpen}
+        onGenerated={({ title: t, subtitle: s, content: c, excerpt: e }) => {
+          setTitle(t);
+          setSubtitle(s);
+          setContent(c);
+          setExcerpt(e);
+          setSlugManual(false);
+        }}
+      />
     </div>
   );
 };
