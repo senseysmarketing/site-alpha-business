@@ -71,6 +71,41 @@ export type Database = {
         }
         Relationships: []
       }
+      expenses: {
+        Row: {
+          amount: number
+          category: Database["public"]["Enums"]["expense_category"]
+          created_at: string
+          description: string | null
+          id: string
+          property_id: string | null
+        }
+        Insert: {
+          amount?: number
+          category?: Database["public"]["Enums"]["expense_category"]
+          created_at?: string
+          description?: string | null
+          id?: string
+          property_id?: string | null
+        }
+        Update: {
+          amount?: number
+          category?: Database["public"]["Enums"]["expense_category"]
+          created_at?: string
+          description?: string | null
+          id?: string
+          property_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lead_activities: {
         Row: {
           created_at: string
@@ -302,6 +337,50 @@ export type Database = {
         }
         Relationships: []
       }
+      transactions: {
+        Row: {
+          broker_payout: number
+          broker_user_id: string | null
+          closed_at: string | null
+          commission_pct: number
+          created_at: string
+          id: string
+          property_id: string | null
+          sale_value: number
+          status: Database["public"]["Enums"]["transaction_status"]
+        }
+        Insert: {
+          broker_payout?: number
+          broker_user_id?: string | null
+          closed_at?: string | null
+          commission_pct?: number
+          created_at?: string
+          id?: string
+          property_id?: string | null
+          sale_value?: number
+          status?: Database["public"]["Enums"]["transaction_status"]
+        }
+        Update: {
+          broker_payout?: number
+          broker_user_id?: string | null
+          closed_at?: string | null
+          commission_pct?: number
+          created_at?: string
+          id?: string
+          property_id?: string | null
+          sale_value?: number
+          status?: Database["public"]["Enums"]["transaction_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
@@ -376,6 +455,8 @@ export type Database = {
         | "arquitetura-design"
         | "investimento"
         | "guia-condominios"
+      expense_category: "foto_video" | "trafego_pago" | "manutencao" | "outros"
+      transaction_status: "pendente" | "pago" | "cancelado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -510,6 +591,8 @@ export const Constants = {
         "investimento",
         "guia-condominios",
       ],
+      expense_category: ["foto_video", "trafego_pago", "manutencao", "outros"],
+      transaction_status: ["pendente", "pago", "cancelado"],
     },
   },
 } as const
