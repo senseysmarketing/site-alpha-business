@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { MessageCircle, Calendar, FileText, Building2, Wrench } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -68,12 +68,16 @@ const fadeIn = {
 const PropertyDetail = () => {
   const [scheduleOpen, setScheduleOpen] = useState(false);
 
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
 
       {/* Gallery */}
-      <div className="pt-[72px]">
+      <div className="pt-[100px]">
         <PropertyGallery images={property.images} videoUrl="/videos/hero-bg.mp4" />
       </div>
 
