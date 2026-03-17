@@ -32,6 +32,7 @@ const menuItems = [
   { title: "Agenda", url: "/admin/agenda", icon: CalendarCheck },
   { title: "Relatórios", url: "/admin/relatorios", icon: BarChart3 },
   { title: "Financeiro", url: "/admin/financeiro", icon: Wallet },
+  { title: "Marketing", url: "/admin/marketing", icon: Megaphone },
   { title: "Blog", url: "/admin/blog", icon: FileText },
   { title: "Configurações", url: "/admin/configuracoes", icon: Settings },
 ];

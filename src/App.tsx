@@ -39,6 +39,7 @@ const AnimatedRoutes = () => {
           <Route path="agenda" element={<Agenda />} />
           <Route path="relatorios" element={<Reports />} />
           <Route path="financeiro" element={<Financial />} />
+          <Route path="marketing" element={<Marketing />} />
           <Route path="imoveis/novo" element={<PropertyForm />} />
           <Route path="imoveis/:id" element={<PropertyForm />} />
         </Route>
