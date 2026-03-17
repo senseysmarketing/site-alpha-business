@@ -2,3 +2,6 @@ project_id = "cnzmxxvqmvhdtyqbqnlf"
 
 [functions.parse-property]
 verify_jwt = false
+
+[functions.blog-ai-assist]
+verify_jwt = false

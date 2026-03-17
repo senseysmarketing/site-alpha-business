@@ -64,7 +64,7 @@ const MediaSidebar = ({
   }, [handleUpload]);
 
   return (
-    <aside className="w-80 border-l border-border/50 bg-white flex-shrink-0 overflow-y-auto">
+    <div>
       <div className="p-5 space-y-6">
         {/* Cover Image */}
         <section>
@@ -171,7 +171,7 @@ const MediaSidebar = ({
           </div>
         </section>
       </div>
-    </aside>
+    </div>
   );
 };
 
