@@ -18,6 +18,7 @@ import PropertyForm from "./pages/admin/PropertyForm.tsx";
 import CRM from "./pages/admin/CRM.tsx";
 import Agenda from "./pages/admin/Agenda.tsx";
 import Reports from "./pages/admin/Reports.tsx";
+import Financial from "./pages/admin/Financial.tsx";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,7 @@ const AnimatedRoutes = () => {
           <Route path="leads" element={<CRM />} />
           <Route path="agenda" element={<Agenda />} />
           <Route path="relatorios" element={<Reports />} />
+          <Route path="financeiro" element={<Financial />} />
           <Route path="imoveis/novo" element={<PropertyForm />} />
           <Route path="imoveis/:id" element={<PropertyForm />} />
         </Route>

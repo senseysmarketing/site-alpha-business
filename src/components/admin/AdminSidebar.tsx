@@ -4,6 +4,7 @@ import {
   Users,
   CalendarCheck,
   BarChart3,
+  Wallet,
   FileText,
   Settings,
 } from "lucide-react";
@@ -29,6 +30,7 @@ const menuItems = [
   { title: "Pipeline CRM", url: "/admin/leads", icon: Users },
   { title: "Agenda", url: "/admin/agenda", icon: CalendarCheck },
   { title: "Relatórios", url: "/admin/relatorios", icon: BarChart3 },
+  { title: "Financeiro", url: "/admin/financeiro", icon: Wallet },
   { title: "Blog", url: "/admin/blog", icon: FileText },
   { title: "Configurações", url: "/admin/configuracoes", icon: Settings },
 ];
