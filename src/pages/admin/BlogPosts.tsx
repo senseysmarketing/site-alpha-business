@@ -51,7 +51,9 @@ const BlogPosts = () => {
         .from("blog_posts")
         .select("id, title, slug, category, published_at, is_featured, is_exclusive, author_name, reading_time_min");
 
-      if (filterCategory !== "Todos") query = query.eq("category", filterCategory);
+      if (filterCategory !== "Todos") {
+        query = query.eq("category", filterCategory as Database["public"]["Enums"]["blog_category"]);
+      }
 
       const { data } = await query.order("created_at", { ascending: false });
       setPosts(data ?? []);
