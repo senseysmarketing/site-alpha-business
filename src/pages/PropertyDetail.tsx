@@ -68,12 +68,16 @@ const fadeIn = {
 const PropertyDetail = () => {
   const [scheduleOpen, setScheduleOpen] = useState(false);
 
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
 
       {/* Gallery */}
-      <div className="pt-[72px]">
+      <div className="pt-[100px]">
         <PropertyGallery images={property.images} videoUrl="/videos/hero-bg.mp4" />
       </div>
 
