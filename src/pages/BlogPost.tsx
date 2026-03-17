@@ -64,7 +64,21 @@ const BlogPost = () => {
     year: "numeric",
   });
 
-  const contentBlocks = post.content.split("\n\n").filter(Boolean);
+  const renderedContent = renderMarkdownContent(post.content, {
+    h2Class: "text-display text-2xl md:text-3xl font-light text-foreground mt-12 mb-6",
+    paragraphClass: "text-body text-base leading-relaxed text-muted-foreground mb-6",
+    wrapper: (node, i) => (
+      <motion.div
+        key={i}
+        initial={{ opacity: 0, y: 15 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-30px" }}
+        transition={{ duration: 0.5 }}
+      >
+        {node}
+      </motion.div>
+    ),
+  });
 
   return (
     <>
