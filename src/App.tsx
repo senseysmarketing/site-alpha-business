@@ -19,6 +19,7 @@ import CRM from "./pages/admin/CRM.tsx";
 import Agenda from "./pages/admin/Agenda.tsx";
 import Reports from "./pages/admin/Reports.tsx";
 import Financial from "./pages/admin/Financial.tsx";
+import Marketing from "./pages/admin/Marketing.tsx";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +40,7 @@ const AnimatedRoutes = () => {
           <Route path="agenda" element={<Agenda />} />
           <Route path="relatorios" element={<Reports />} />
           <Route path="financeiro" element={<Financial />} />
+          <Route path="marketing" element={<Marketing />} />
           <Route path="imoveis/novo" element={<PropertyForm />} />
           <Route path="imoveis/:id" element={<PropertyForm />} />
         </Route>
