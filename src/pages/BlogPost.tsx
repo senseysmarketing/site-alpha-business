@@ -5,6 +5,7 @@ import { motion, useScroll, useSpring } from "framer-motion";
 import { ArrowLeft, Clock, Calendar } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { renderMarkdownContent } from "@/lib/markdown";
 
 const categoryLabels: Record<string, string> = {
   "inside-alphaville": "Inside Alphaville",
