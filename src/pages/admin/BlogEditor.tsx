@@ -144,7 +144,7 @@ const BlogEditor = () => {
             <ArrowLeft className="h-4 w-4" /> Voltar
           </button>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setSidebarTab("ai")} className="font-[Inter] text-xs gap-1.5 text-primary">
+            <Button variant="ghost" size="sm" onClick={() => setGenerateModalOpen(true)} className="font-[Inter] text-xs gap-1.5 text-primary">
               <Sparkles className="h-4 w-4" /> AI Assist
             </Button>
             <Button variant="ghost" size="sm" onClick={() => setPreviewOpen(true)} className="font-[Inter] text-xs gap-1.5">
