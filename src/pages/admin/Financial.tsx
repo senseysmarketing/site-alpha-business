@@ -251,7 +251,7 @@ const Financial = () => {
       {/* KPI Bento Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* VGV */}
-        <Card className="border-border/50">
+        <Card className="bg-white border-border/50 shadow-none">
           <CardHeader className="pb-2">
             <CardTitle className="font-[Inter] text-xs font-normal text-muted-foreground flex items-center gap-2">
               <DollarSign className="h-4 w-4" /> Volume de Vendas (VGV)
@@ -265,7 +265,7 @@ const Financial = () => {
         </Card>
 
         {/* Receita Líquida */}
-        <Card className="border-border/50">
+        <Card className="bg-white border-border/50 shadow-none">
           <CardHeader className="pb-2">
             <CardTitle className="font-[Inter] text-xs font-normal text-muted-foreground flex items-center gap-2">
               <TrendingUp className="h-4 w-4" /> Receita Líquida Alpha
@@ -294,7 +294,7 @@ const Financial = () => {
         </Card>
 
         {/* Comissões a Pagar */}
-        <Card className="border-border/50">
+        <Card className="bg-white border-border/50 shadow-none">
           <CardHeader className="pb-2">
             <CardTitle className="font-[Inter] text-xs font-normal text-muted-foreground flex items-center gap-2">
               <Wallet className="h-4 w-4" /> Comissões a Pagar
@@ -313,7 +313,7 @@ const Financial = () => {
         </Card>
 
         {/* ROI */}
-        <Card className="border-border/50">
+        <Card className="bg-white border-border/50 shadow-none">
           <CardHeader className="pb-2">
             <CardTitle className="font-[Inter] text-xs font-normal text-muted-foreground flex items-center gap-2">
               <TrendingUp className="h-4 w-4" /> ROI Médio/Campanha
@@ -331,7 +331,7 @@ const Financial = () => {
       </div>
 
       {/* Transactions Table */}
-      <Card className="border-border/50">
+      <Card className="bg-white border-border/50 shadow-none">
         <CardHeader>
           <CardTitle className="font-[Raleway] text-lg font-semibold">Transações</CardTitle>
         </CardHeader>
@@ -386,7 +386,7 @@ const Financial = () => {
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Revenue Origin Donut */}
-        <Card className="border-border/50">
+        <Card className="bg-white border-border/50 shadow-none">
           <CardHeader>
             <CardTitle className="font-[Raleway] text-lg font-semibold">Origem da Receita</CardTitle>
           </CardHeader>
@@ -417,7 +417,7 @@ const Financial = () => {
         </Card>
 
         {/* Sales Cycle by Condominium */}
-        <Card className="border-border/50">
+        <Card className="bg-white border-border/50 shadow-none">
           <CardHeader>
             <CardTitle className="font-[Raleway] text-lg font-semibold">Ciclo de Vendas por Condomínio</CardTitle>
           </CardHeader>
