@@ -23,7 +23,6 @@ const categoryLabels: Record<string, string> = {
 };
 
 const PostPreview = ({ open, onOpenChange, title, subtitle, content, category, authorName, readingTime }: Props) => {
-  const contentBlocks = content.split("\n\n").filter(Boolean);
   const formattedDate = new Date().toLocaleDateString("pt-BR", {
     day: "numeric", month: "long", year: "numeric",
   });
