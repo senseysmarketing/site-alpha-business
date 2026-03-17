@@ -386,7 +386,7 @@ const Financial = () => {
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Revenue Origin Donut */}
-        <Card className="border-border/50">
+        <Card className="bg-white border-border/50 shadow-none">
           <CardHeader>
             <CardTitle className="font-[Raleway] text-lg font-semibold">Origem da Receita</CardTitle>
           </CardHeader>
