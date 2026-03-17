@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { MessageCircle, Calendar, FileText, Building2, Wrench } from "lucide-react";
 import { Link } from "react-router-dom";
