@@ -20,6 +20,8 @@ import Agenda from "./pages/admin/Agenda.tsx";
 import Reports from "./pages/admin/Reports.tsx";
 import Financial from "./pages/admin/Financial.tsx";
 import Marketing from "./pages/admin/Marketing";
+import BlogPosts from "./pages/admin/BlogPosts";
+import BlogEditor from "./pages/admin/BlogEditor";
 
 const queryClient = new QueryClient();
 
