@@ -417,7 +417,7 @@ const Financial = () => {
         </Card>
 
         {/* Sales Cycle by Condominium */}
-        <Card className="border-border/50">
+        <Card className="bg-white border-border/50 shadow-none">
           <CardHeader>
             <CardTitle className="font-[Raleway] text-lg font-semibold">Ciclo de Vendas por Condomínio</CardTitle>
           </CardHeader>
