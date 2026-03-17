@@ -2,6 +2,7 @@ import { Calendar, Clock } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
+import { renderMarkdownContent } from "@/lib/markdown";
 
 type Props = {
   open: boolean;
