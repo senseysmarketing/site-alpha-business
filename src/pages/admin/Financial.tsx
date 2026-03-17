@@ -331,7 +331,7 @@ const Financial = () => {
       </div>
 
       {/* Transactions Table */}
-      <Card className="border-border/50">
+      <Card className="bg-white border-border/50 shadow-none">
         <CardHeader>
           <CardTitle className="font-[Raleway] text-lg font-semibold">Transações</CardTitle>
         </CardHeader>
