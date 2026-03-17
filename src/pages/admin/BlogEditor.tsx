@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Eye, Save, CalendarIcon, Send } from "lucide-react";
+import { ArrowLeft, Eye, Save, CalendarIcon, Send, Sparkles } from "lucide-react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -9,8 +9,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import EditorToolbar from "@/components/admin/blog/EditorToolbar";
 import MediaSidebar from "@/components/admin/blog/MediaSidebar";
+import AICopilotSidebar from "@/components/admin/blog/AICopilotSidebar";
 import PostPreview from "@/components/admin/blog/PostPreview";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -32,7 +34,6 @@ const BlogEditor = () => {
   const queryClient = useQueryClient();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Form state
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
   const [content, setContent] = useState("");
@@ -45,8 +46,8 @@ const BlogEditor = () => {
   const [scheduleDate, setScheduleDate] = useState<Date | undefined>();
   const [previewOpen, setPreviewOpen] = useState(false);
   const [slugManual, setSlugManual] = useState(false);
+  const [sidebarTab, setSidebarTab] = useState("media");
 
-  // Load existing post
   const { data: existingPost } = useQuery({
     queryKey: ["blog-post-edit", id],
     queryFn: async () => {
@@ -72,15 +73,12 @@ const BlogEditor = () => {
     }
   }, [existingPost]);
 
-  // Auto-slug from title
   useEffect(() => {
     if (!slugManual && title) setSlug(slugify(title));
   }, [title, slugManual]);
 
-  // Auto reading time
   const readingTime = Math.max(1, Math.ceil(content.split(/\s+/).filter(Boolean).length / 200));
 
-  // Insert markdown
   const handleInsertMarkdown = useCallback((before: string, after: string) => {
     const textarea = textareaRef.current;
     if (!textarea) return;
@@ -94,7 +92,6 @@ const BlogEditor = () => {
     }, 0);
   }, [content]);
 
-  // Auto-expand textarea
   useEffect(() => {
     const textarea = textareaRef.current;
     if (textarea) {
@@ -103,24 +100,16 @@ const BlogEditor = () => {
     }
   }, [content]);
 
-  // Save mutation
   const saveMutation = useMutation({
     mutationFn: async (publishedAt: string | null) => {
       const postData = {
-        title,
-        subtitle: subtitle || null,
-        content,
-        slug,
-        excerpt: excerpt || null,
-        category,
-        cover_image: coverImage,
-        is_featured: isFeatured,
-        is_exclusive: isExclusive,
+        title, subtitle: subtitle || null, content, slug,
+        excerpt: excerpt || null, category, cover_image: coverImage,
+        is_featured: isFeatured, is_exclusive: isExclusive,
         reading_time_min: readingTime,
         published_at: publishedAt ?? new Date(2099, 0, 1).toISOString(),
         author_name: "Alpha Business",
       };
-
       if (isEditing) {
         const { error } = await supabase.from("blog_posts").update(postData).eq("id", id!);
         if (error) throw error;
@@ -141,9 +130,7 @@ const BlogEditor = () => {
 
   const handleSaveDraft = () => saveMutation.mutate(null);
   const handlePublish = () => saveMutation.mutate(new Date().toISOString());
-  const handleSchedule = () => {
-    if (scheduleDate) saveMutation.mutate(scheduleDate.toISOString());
-  };
+  const handleSchedule = () => { if (scheduleDate) saveMutation.mutate(scheduleDate.toISOString()); };
 
   return (
     <div className="flex h-[calc(100vh-4rem)]">
@@ -151,14 +138,13 @@ const BlogEditor = () => {
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top bar */}
         <div className="flex items-center justify-between px-6 py-3 border-b border-border/50 bg-white">
-          <button
-            onClick={() => navigate("/admin/blog")}
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors font-[Inter] text-sm"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Voltar
+          <button onClick={() => navigate("/admin/blog")} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors font-[Inter] text-sm">
+            <ArrowLeft className="h-4 w-4" /> Voltar
           </button>
           <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setSidebarTab("ai")} className="font-[Inter] text-xs gap-1.5 text-primary">
+              <Sparkles className="h-4 w-4" /> AI Assist
+            </Button>
             <Button variant="ghost" size="sm" onClick={() => setPreviewOpen(true)} className="font-[Inter] text-xs gap-1.5">
               <Eye className="h-4 w-4" /> Pré-visualizar
             </Button>
@@ -172,13 +158,7 @@ const BlogEditor = () => {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="end">
-                <Calendar
-                  mode="single"
-                  selected={scheduleDate}
-                  onSelect={setScheduleDate}
-                  disabled={(date) => date < new Date()}
-                  className={cn("p-3 pointer-events-auto")}
-                />
+                <Calendar mode="single" selected={scheduleDate} onSelect={setScheduleDate} disabled={(date) => date < new Date()} className={cn("p-3 pointer-events-auto")} />
                 {scheduleDate && (
                   <div className="px-3 pb-3">
                     <Button size="sm" className="w-full font-[Inter] text-xs" onClick={handleSchedule} disabled={saveMutation.isPending}>
@@ -197,63 +177,57 @@ const BlogEditor = () => {
         {/* Editor area */}
         <div className="flex-1 overflow-y-auto bg-white">
           <div className="max-w-3xl mx-auto px-6 py-12">
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Título do artigo..."
-              className="w-full text-display text-4xl font-light text-foreground bg-transparent border-none outline-none placeholder:text-muted-foreground/30 mb-4"
-            />
-            <input
-              type="text"
-              value={subtitle}
-              onChange={(e) => setSubtitle(e.target.value)}
-              placeholder="Subtítulo (opcional)"
-              className="w-full font-[Inter] text-lg text-muted-foreground bg-transparent border-none outline-none placeholder:text-muted-foreground/20 mb-8"
-            />
+            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Título do artigo..."
+              className="w-full text-display text-4xl font-light text-foreground bg-transparent border-none outline-none placeholder:text-muted-foreground/30 mb-4" />
+            <input type="text" value={subtitle} onChange={(e) => setSubtitle(e.target.value)} placeholder="Subtítulo (opcional)"
+              className="w-full font-[Inter] text-lg text-muted-foreground bg-transparent border-none outline-none placeholder:text-muted-foreground/20 mb-8" />
             <div className="w-12 h-px bg-border mb-8" />
             <EditorToolbar textareaRef={textareaRef} onInsertMarkdown={handleInsertMarkdown} />
-            <textarea
-              ref={textareaRef}
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
+            <textarea ref={textareaRef} value={content} onChange={(e) => setContent(e.target.value)}
               placeholder="Comece a escrever seu artigo...
 
 Use ## para subtítulos e separe parágrafos com uma linha em branco."
-              className="w-full font-[Inter] text-lg leading-relaxed text-foreground bg-transparent border-none outline-none resize-none placeholder:text-muted-foreground/20 min-h-[400px]"
-            />
+              className="w-full font-[Inter] text-lg leading-relaxed text-foreground bg-transparent border-none outline-none resize-none placeholder:text-muted-foreground/20 min-h-[400px]" />
           </div>
         </div>
       </div>
 
-      {/* Sidebar */}
-      <MediaSidebar
-        coverImage={coverImage}
-        onCoverImageChange={setCoverImage}
-        slug={slug}
-        onSlugChange={(v) => { setSlugManual(true); setSlug(v); }}
-        excerpt={excerpt}
-        onExcerptChange={setExcerpt}
-        category={category}
-        onCategoryChange={setCategory}
-        isFeatured={isFeatured}
-        onFeaturedChange={setIsFeatured}
-        isExclusive={isExclusive}
-        onExclusiveChange={setIsExclusive}
-        readingTime={readingTime}
-      />
+      {/* Sidebar with tabs */}
+      <aside className="w-80 border-l border-border/50 bg-white flex-shrink-0 overflow-y-auto">
+        <Tabs value={sidebarTab} onValueChange={setSidebarTab}>
+          <TabsList className="w-full rounded-none border-b border-border/50 bg-white h-10">
+            <TabsTrigger value="media" className="flex-1 font-[Inter] text-xs data-[state=active]:shadow-none rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary">
+              Mídia & SEO
+            </TabsTrigger>
+            <TabsTrigger value="ai" className="flex-1 font-[Inter] text-xs data-[state=active]:shadow-none rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary gap-1">
+              <Sparkles className="h-3 w-3" /> AI Copilot
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="media" className="mt-0">
+            <MediaSidebar
+              coverImage={coverImage} onCoverImageChange={setCoverImage}
+              slug={slug} onSlugChange={(v) => { setSlugManual(true); setSlug(v); }}
+              excerpt={excerpt} onExcerptChange={setExcerpt}
+              category={category} onCategoryChange={setCategory}
+              isFeatured={isFeatured} onFeaturedChange={setIsFeatured}
+              isExclusive={isExclusive} onExclusiveChange={setIsExclusive}
+              readingTime={readingTime}
+            />
+          </TabsContent>
+          <TabsContent value="ai" className="mt-0">
+            <AICopilotSidebar
+              content={content}
+              title={title}
+              onApplyTitle={setTitle}
+              onApplyExcerpt={setExcerpt}
+              onApplyContent={setContent}
+            />
+          </TabsContent>
+        </Tabs>
+      </aside>
 
       {/* Preview */}
-      <PostPreview
-        open={previewOpen}
-        onOpenChange={setPreviewOpen}
-        title={title}
-        subtitle={subtitle}
-        content={content}
-        category={category}
-        authorName="Alpha Business"
-        readingTime={readingTime}
-      />
+      <PostPreview open={previewOpen} onOpenChange={setPreviewOpen} title={title} subtitle={subtitle} content={content} category={category} authorName="Alpha Business" readingTime={readingTime} />
     </div>
   );
 };
