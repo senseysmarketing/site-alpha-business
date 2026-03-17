@@ -265,7 +265,7 @@ const Financial = () => {
         </Card>
 
         {/* Receita Líquida */}
-        <Card className="border-border/50">
+        <Card className="bg-white border-border/50 shadow-none">
           <CardHeader className="pb-2">
             <CardTitle className="font-[Inter] text-xs font-normal text-muted-foreground flex items-center gap-2">
               <TrendingUp className="h-4 w-4" /> Receita Líquida Alpha
