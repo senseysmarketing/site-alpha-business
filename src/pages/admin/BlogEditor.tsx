@@ -14,6 +14,7 @@ import EditorToolbar from "@/components/admin/blog/EditorToolbar";
 import MediaSidebar from "@/components/admin/blog/MediaSidebar";
 import AICopilotSidebar from "@/components/admin/blog/AICopilotSidebar";
 import PostPreview from "@/components/admin/blog/PostPreview";
+import AIGenerateModal from "@/components/admin/blog/AIGenerateModal";
 import type { Database } from "@/integrations/supabase/types";
 
 type BlogCategory = Database["public"]["Enums"]["blog_category"];
