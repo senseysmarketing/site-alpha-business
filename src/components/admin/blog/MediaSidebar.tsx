@@ -171,7 +171,7 @@ const MediaSidebar = ({
           </div>
         </section>
       </div>
-    </aside>
+    </div>
   );
 };
 
