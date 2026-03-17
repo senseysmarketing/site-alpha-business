@@ -26,6 +26,9 @@ const ACTION_PROMPTS: Record<string, (content: string) => string> = {
 
   "expand-content": (content) =>
     `Expanda o rascunho abaixo em parágrafos completos e bem escritos para um blog de imóveis de luxo. Use Markdown para formatação (## para subtítulos). Retorne APENAS o conteúdo expandido.\n\nRascunho:\n${content}`,
+
+  "generate-full-article": (content) =>
+    `Com base na descrição/referência abaixo, gere um artigo completo e bem estruturado para um blog de imóveis de luxo em Alphaville, São Paulo. O artigo deve ter pelo menos 800 palavras, usar Markdown com subtítulos (##), e ser otimizado para SEO com termos hiperlocais.\n\nDescrição/Referência:\n${content}`,
 };
 
 serve(async (req) => {
@@ -54,19 +57,47 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
+    const isFullArticle = action === "generate-full-article";
+
+    const requestBody: any = {
+      model: "google/gemini-3-flash-preview",
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: promptFn(content) },
+      ],
+    };
+
+    if (isFullArticle) {
+      requestBody.tools = [
+        {
+          type: "function",
+          function: {
+            name: "create_article",
+            description: "Retorna um artigo completo estruturado para o blog.",
+            parameters: {
+              type: "object",
+              properties: {
+                title: { type: "string", description: "Título magnético e SEO-friendly" },
+                subtitle: { type: "string", description: "Subtítulo complementar" },
+                content: { type: "string", description: "Conteúdo completo em Markdown com subtítulos ##" },
+                excerpt: { type: "string", description: "Meta description SEO com no máximo 155 caracteres" },
+              },
+              required: ["title", "subtitle", "content", "excerpt"],
+              additionalProperties: false,
+            },
+          },
+        },
+      ];
+      requestBody.tool_choice = { type: "function", function: { name: "create_article" } };
+    }
+
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: promptFn(content) },
-        ],
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
@@ -91,8 +122,22 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    const result = data.choices?.[0]?.message?.content ?? "";
 
+    if (isFullArticle) {
+      const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+      if (toolCall?.function?.arguments) {
+        const article = JSON.parse(toolCall.function.arguments);
+        return new Response(JSON.stringify({ result: article }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      return new Response(JSON.stringify({ error: "IA não retornou o formato esperado" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const result = data.choices?.[0]?.message?.content ?? "";
     return new Response(JSON.stringify({ result }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

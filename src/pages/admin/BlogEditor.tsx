@@ -14,6 +14,7 @@ import EditorToolbar from "@/components/admin/blog/EditorToolbar";
 import MediaSidebar from "@/components/admin/blog/MediaSidebar";
 import AICopilotSidebar from "@/components/admin/blog/AICopilotSidebar";
 import PostPreview from "@/components/admin/blog/PostPreview";
+import AIGenerateModal from "@/components/admin/blog/AIGenerateModal";
 import type { Database } from "@/integrations/supabase/types";
 
 type BlogCategory = Database["public"]["Enums"]["blog_category"];
@@ -47,6 +48,7 @@ const BlogEditor = () => {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [slugManual, setSlugManual] = useState(false);
   const [sidebarTab, setSidebarTab] = useState("media");
+  const [generateModalOpen, setGenerateModalOpen] = useState(false);
 
   const { data: existingPost } = useQuery({
     queryKey: ["blog-post-edit", id],
@@ -142,7 +144,7 @@ const BlogEditor = () => {
             <ArrowLeft className="h-4 w-4" /> Voltar
           </button>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setSidebarTab("ai")} className="font-[Inter] text-xs gap-1.5 text-primary">
+            <Button variant="ghost" size="sm" onClick={() => setGenerateModalOpen(true)} className="font-[Inter] text-xs gap-1.5 text-primary">
               <Sparkles className="h-4 w-4" /> AI Assist
             </Button>
             <Button variant="ghost" size="sm" onClick={() => setPreviewOpen(true)} className="font-[Inter] text-xs gap-1.5">
@@ -228,6 +230,19 @@ Use ## para subtítulos e separe parágrafos com uma linha em branco."
 
       {/* Preview */}
       <PostPreview open={previewOpen} onOpenChange={setPreviewOpen} title={title} subtitle={subtitle} content={content} category={category} authorName="Alpha Business" readingTime={readingTime} />
+
+      {/* AI Generate Modal */}
+      <AIGenerateModal
+        open={generateModalOpen}
+        onOpenChange={setGenerateModalOpen}
+        onGenerated={({ title: t, subtitle: s, content: c, excerpt: e }) => {
+          setTitle(t);
+          setSubtitle(s);
+          setContent(c);
+          setExcerpt(e);
+          setSlugManual(false);
+        }}
+      />
     </div>
   );
 };
