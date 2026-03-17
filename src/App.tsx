@@ -19,6 +19,7 @@ import CRM from "./pages/admin/CRM.tsx";
 import Agenda from "./pages/admin/Agenda.tsx";
 import Reports from "./pages/admin/Reports.tsx";
 import Financial from "./pages/admin/Financial.tsx";
+import Marketing from "./pages/admin/Marketing.tsx";
 
 const queryClient = new QueryClient();
 
