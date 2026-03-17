@@ -48,6 +48,7 @@ const BlogEditor = () => {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [slugManual, setSlugManual] = useState(false);
   const [sidebarTab, setSidebarTab] = useState("media");
+  const [generateModalOpen, setGenerateModalOpen] = useState(false);
 
   const { data: existingPost } = useQuery({
     queryKey: ["blog-post-edit", id],
