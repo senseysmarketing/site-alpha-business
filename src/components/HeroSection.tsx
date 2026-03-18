@@ -1,16 +1,154 @@
 import { motion } from "framer-motion";
-import { Search, Mic } from "lucide-react";
-import React, { useState } from "react";
+import { Search, Mic, Loader2 } from "lucide-react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import SearchResultsPanel from "./SearchResultsPanel";
+
+interface SearchResult {
+  id: string;
+  code: string;
+  title: string;
+  condominium: string | null;
+  neighborhood: string | null;
+  city: string | null;
+  price: number | null;
+  rental_price: number | null;
+  transaction_type: string;
+  bedrooms: number | null;
+  bathrooms: number | null;
+  area_total: number | null;
+  photo: string | null;
+  relevance_reason: string;
+}
 
 const HeroSection = () => {
   const [query, setQuery] = useState("");
   const [listening, setListening] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const [results, setResults] = useState<SearchResult[]>([]);
+  const [showResults, setShowResults] = useState(false);
+  const recognitionRef = useRef<any>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  // Close results on click outside
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
+        setShowResults(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  // Close on Escape
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowResults(false);
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, []);
+
+  const handleSearch = useCallback(async (searchQuery?: string) => {
+    const q = (searchQuery || query).trim();
+    if (!q || q.length < 2) return;
+
+    setSearching(true);
+    setShowResults(true);
+    setResults([]);
+
+    try {
+      const { data, error } = await supabase.functions.invoke("ai-property-search", {
+        body: { query: q },
+      });
+
+      if (error) throw error;
+
+      if (data?.error) {
+        toast.error(data.error);
+        return;
+      }
+
+      setResults(data?.results || []);
+    } catch (err: any) {
+      console.error("Search error:", err);
+      toast.error("Erro ao buscar imóveis. Tente novamente.");
+    } finally {
+      setSearching(false);
+    }
+  }, [query]);
+
+  const handleVoice = useCallback(() => {
+    if (listening && recognitionRef.current) {
+      recognitionRef.current.stop();
+      setListening(false);
+      return;
+    }
+
+    if (!("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) {
+      toast.error("Seu navegador não suporta reconhecimento de voz.");
+      return;
+    }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = "pt-BR";
+    recognition.interimResults = true;
+    recognition.continuous = false;
+    recognitionRef.current = recognition;
+
+    let finalTranscript = "";
+
+    recognition.onresult = (e: any) => {
+      let interim = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const transcript = e.results[i][0].transcript;
+        if (e.results[i].isFinal) {
+          finalTranscript += transcript;
+        } else {
+          interim += transcript;
+        }
+      }
+      // Show real-time transcription
+      setQuery(finalTranscript + interim);
+    };
+
+    recognition.onend = () => {
+      setListening(false);
+      recognitionRef.current = null;
+      if (finalTranscript.trim()) {
+        setQuery(finalTranscript.trim());
+        // Auto-search after voice input
+        handleSearch(finalTranscript.trim());
+      }
+    };
+
+    recognition.onerror = (e: any) => {
+      console.error("Speech error:", e.error);
+      setListening(false);
+      recognitionRef.current = null;
+      if (e.error !== "no-speech") {
+        toast.error("Erro no reconhecimento de voz.");
+      }
+    };
+
+    setListening(true);
+    recognition.start();
+  }, [listening, handleSearch]);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleSearch();
+    }
+  };
 
   return (
     <section className="relative h-screen flex items-end pb-24 md:items-center md:pb-0 justify-center overflow-hidden">
       {/* Background videos */}
       <div className="absolute inset-0">
-        {/* Desktop video */}
         <video
           src="/videos/hero-bg.mp4"
           autoPlay
@@ -19,7 +157,6 @@ const HeroSection = () => {
           playsInline
           className="hidden md:block w-full h-full object-cover object-center"
         />
-        {/* Mobile video */}
         <video
           src="/videos/hero-bg-mobile.mp4"
           autoPlay
@@ -28,9 +165,7 @@ const HeroSection = () => {
           playsInline
           className="md:hidden w-full h-full object-cover object-center"
         />
-        {/* Mobile overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-foreground/40 via-foreground/20 to-background md:hidden" />
-        {/* Desktop subtle bottom fade */}
         <div className="hidden md:block absolute inset-x-0 top-[85%] bottom-0 bg-gradient-to-b from-transparent to-background" />
       </div>
 
@@ -38,47 +173,69 @@ const HeroSection = () => {
       <div className="relative z-10 text-center w-full max-w-3xl mx-auto px-4 md:px-6">
         {/* AI Search bar */}
         <motion.div
-          className="glass-panel rounded-sm p-1.5 max-w-xl mx-auto relative"
+          ref={panelRef}
+          className="relative"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.8, duration: 0.8 }}
         >
-          {/* Input row */}
-          <div className="flex items-center gap-2 md:gap-3 md:pr-20">
-            {/* Mic button - moved to left */}
+          <div className="glass-panel rounded-sm p-1.5 max-w-xl mx-auto relative">
+            <div className="flex items-center gap-2 md:gap-3 md:pr-20">
+              {/* Mic button */}
+              <button
+                onClick={handleVoice}
+                className={`p-3 rounded-sm transition-all duration-300 flex-shrink-0 relative ml-2 md:ml-4 ${
+                  listening
+                    ? "bg-accent text-accent-foreground"
+                    : "hover:bg-muted text-muted-foreground"
+                }`}
+              >
+                <Mic size={18} />
+                {listening && (
+                  <motion.div
+                    className="absolute inset-0 rounded-sm border-2 border-accent"
+                    animate={{ scale: [1, 1.3, 1], opacity: [1, 0, 1] }}
+                    transition={{ repeat: Infinity, duration: 1.5 }}
+                  />
+                )}
+              </button>
+              <Search size={18} className="text-muted-foreground flex-shrink-0" />
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Busque por nome, código ou região..."
+                className="flex-1 bg-transparent text-body text-sm text-foreground placeholder:text-muted-foreground outline-none py-3 min-w-0"
+              />
+            </div>
+            {/* Buscar button - mobile */}
             <button
-              onClick={() => setListening(!listening)}
-              className={`p-3 rounded-sm transition-all duration-300 flex-shrink-0 relative ml-2 md:ml-4 ${
-                listening
-                  ? "bg-accent text-accent-foreground"
-                  : "hover:bg-muted text-muted-foreground"
-              }`}
+              onClick={() => handleSearch()}
+              disabled={searching}
+              className="w-full md:hidden bg-primary text-primary-foreground py-3 text-body text-xs tracking-[0.1em] uppercase hover-magnetic mt-1.5 disabled:opacity-70 flex items-center justify-center gap-2"
             >
-              <Mic size={18} />
-              {listening && (
-                <motion.div
-                  className="absolute inset-0 rounded-sm border-2 border-accent"
-                  animate={{ scale: [1, 1.3, 1], opacity: [1, 0, 1] }}
-                  transition={{ repeat: Infinity, duration: 1.5 }}
-                />
-              )}
+              {searching ? <Loader2 size={14} className="animate-spin" /> : null}
+              {searching ? "Buscando..." : "Buscar"}
             </button>
-            <Search size={18} className="text-muted-foreground flex-shrink-0" />
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Busque por nome, código ou região..."
-              className="flex-1 bg-transparent text-body text-sm text-foreground placeholder:text-muted-foreground outline-none py-3 min-w-0"
-            />
+            {/* Buscar button - desktop */}
+            <button
+              onClick={() => handleSearch()}
+              disabled={searching}
+              className="hidden md:flex bg-primary text-primary-foreground px-6 py-3 text-body text-xs tracking-[0.1em] uppercase hover-magnetic absolute right-1.5 top-1.5 bottom-1.5 items-center gap-2 disabled:opacity-70"
+            >
+              {searching ? <Loader2 size={14} className="animate-spin" /> : null}
+              {searching ? "Buscando..." : "Buscar"}
+            </button>
           </div>
-          {/* Buscar button - full width on mobile, inline on desktop */}
-          <button className="w-full md:hidden bg-primary text-primary-foreground py-3 text-body text-xs tracking-[0.1em] uppercase hover-magnetic mt-1.5">
-            Buscar
-          </button>
-          <button className="hidden md:block bg-primary text-primary-foreground px-6 py-3 text-body text-xs tracking-[0.1em] uppercase hover-magnetic absolute right-1.5 top-1.5 bottom-1.5">
-            Buscar
-          </button>
+
+          {/* Search results panel */}
+          <SearchResultsPanel
+            results={results}
+            loading={searching}
+            visible={showResults}
+            onClose={() => setShowResults(false)}
+          />
         </motion.div>
 
         {/* Quick links */}
