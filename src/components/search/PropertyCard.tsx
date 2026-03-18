@@ -90,7 +90,7 @@ const PropertyCard = ({ property, isWide = false, isSelected = false, onToggleCo
         </span>
 
         {/* Title */}
-        <h3 className="text-serif text-lg md:text-xl font-normal text-primary-foreground leading-tight mb-1">
+        <h3 className="text-display text-lg md:text-xl font-normal text-primary-foreground leading-tight mb-1">
           {property.title}
         </h3>
 
@@ -104,19 +104,19 @@ const PropertyCard = ({ property, isWide = false, isSelected = false, onToggleCo
           {property.area_total && (
             <span className="flex items-center gap-1.5 text-primary-foreground/80">
               <Maximize size={13} strokeWidth={1.5} />
-              <span className="font-mono text-xs">{property.area_total}m²</span>
+              <span className="text-body text-xs">{property.area_total}m²</span>
             </span>
           )}
           {property.bedrooms && (
             <span className="flex items-center gap-1.5 text-primary-foreground/80">
               <Bed size={13} strokeWidth={1.5} />
-              <span className="font-mono text-xs">{property.bedrooms}</span>
+              <span className="text-body text-xs">{property.bedrooms}</span>
             </span>
           )}
           {property.bathrooms && (
             <span className="flex items-center gap-1.5 text-primary-foreground/80">
               <Car size={13} strokeWidth={1.5} />
-              <span className="font-mono text-xs">{property.bathrooms}</span>
+              <span className="text-body text-xs">{property.bathrooms}</span>
             </span>
           )}
         </div>
