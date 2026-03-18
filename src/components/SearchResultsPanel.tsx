@@ -25,6 +25,7 @@ interface SearchResultsPanelProps {
   loading: boolean;
   visible: boolean;
   onClose: () => void;
+  query?: string;
 }
 
 const formatPrice = (value: number | null) => {
