@@ -38,7 +38,7 @@ const formatPrice = (value: number | null) => {
   }).format(value);
 };
 
-const SearchResultsPanel = ({ results, loading, visible, onClose }: SearchResultsPanelProps) => {
+const SearchResultsPanel = ({ results, loading, visible, onClose, query = "" }: SearchResultsPanelProps) => {
   const navigate = useNavigate();
 
   if (!visible) return null;
