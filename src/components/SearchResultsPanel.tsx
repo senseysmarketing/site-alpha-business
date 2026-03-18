@@ -25,6 +25,7 @@ interface SearchResultsPanelProps {
   loading: boolean;
   visible: boolean;
   onClose: () => void;
+  query?: string;
 }
 
 const formatPrice = (value: number | null) => {
@@ -37,7 +38,7 @@ const formatPrice = (value: number | null) => {
   }).format(value);
 };
 
-const SearchResultsPanel = ({ results, loading, visible, onClose }: SearchResultsPanelProps) => {
+const SearchResultsPanel = ({ results, loading, visible, onClose, query = "" }: SearchResultsPanelProps) => {
   const navigate = useNavigate();
 
   if (!visible) return null;
@@ -83,6 +84,16 @@ const SearchResultsPanel = ({ results, loading, visible, onClose }: SearchResult
             <p className="text-body text-[10px] tracking-[0.15em] uppercase text-muted-foreground px-2 pt-2 pb-3">
               {results.length} {results.length === 1 ? "resultado" : "resultados"} encontrados
             </p>
+            {/* Ver todos button */}
+            <button
+              onClick={() => {
+                onClose();
+                navigate(`/busca?q=${encodeURIComponent(query)}`);
+              }}
+              className="w-full text-body text-xs tracking-[0.1em] uppercase text-accent hover:text-foreground transition-colors py-2.5 mb-1 border-b border-border/30"
+            >
+              Ver todos os resultados →
+            </button>
             {results.map((result) => (
               <button
                 key={result.id}

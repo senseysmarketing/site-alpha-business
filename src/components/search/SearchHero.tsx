@@ -1,9 +1,9 @@
+import { useEffect, useRef, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Search, Mic, Loader2 } from "lucide-react";
-import React, { useState, useRef, useCallback, useEffect } from "react";
+import gsap from "gsap";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import SearchResultsPanel from "./SearchResultsPanel";
 
 interface SearchResult {
   id: string;
@@ -22,33 +22,42 @@ interface SearchResult {
   relevance_reason: string;
 }
 
-const HeroSection = () => {
-  const [query, setQuery] = useState("");
+interface SearchHeroProps {
+  initialQuery: string;
+  onResults: (results: SearchResult[]) => void;
+  onLoading: (loading: boolean) => void;
+}
+
+const LIFESTYLE_PILLS = [
+  { label: "Gourmet Assinado", query: "casa com espaço gourmet assinado por arquiteto" },
+  { label: "Automação", query: "casa com automação residencial completa" },
+  { label: "VGV Exclusivo", query: "mansão acima de 5 milhões exclusiva" },
+];
+
+const SearchHero = ({ initialQuery, onResults, onLoading }: SearchHeroProps) => {
+  const [query, setQuery] = useState(initialQuery);
   const [listening, setListening] = useState(false);
   const [searching, setSearching] = useState(false);
-  const [results, setResults] = useState<SearchResult[]>([]);
-  const [showResults, setShowResults] = useState(false);
+  const heroImageRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
 
-  // Close results on click outside
+  // GSAP zoom-out on load
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
-        setShowResults(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    if (heroImageRef.current) {
+      gsap.fromTo(
+        heroImageRef.current,
+        { scale: 1.15 },
+        { scale: 1, duration: 2.5, ease: "power2.out" }
+      );
+    }
   }, []);
 
-  // Close on Escape
+  // Auto-search on mount if query exists
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setShowResults(false);
-    };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
+    if (initialQuery.trim()) {
+      handleSearch(initialQuery);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSearch = useCallback(async (searchQuery?: string) => {
@@ -56,29 +65,26 @@ const HeroSection = () => {
     if (!q || q.length < 2) return;
 
     setSearching(true);
-    setShowResults(true);
-    setResults([]);
+    onLoading(true);
 
     try {
       const { data, error } = await supabase.functions.invoke("ai-property-search", {
         body: { query: q },
       });
-
       if (error) throw error;
-
       if (data?.error) {
         toast.error(data.error);
         return;
       }
-
-      setResults(data?.results || []);
+      onResults(data?.results || []);
     } catch (err: any) {
       console.error("Search error:", err);
       toast.error("Erro ao buscar imóveis. Tente novamente.");
     } finally {
       setSearching(false);
+      onLoading(false);
     }
-  }, [query]);
+  }, [query, onResults, onLoading]);
 
   const handleVoice = useCallback(() => {
     if (listening && recognitionRef.current) {
@@ -111,7 +117,6 @@ const HeroSection = () => {
           interim += transcript;
         }
       }
-      // Show real-time transcription
       setQuery(finalTranscript + interim);
     };
 
@@ -120,7 +125,6 @@ const HeroSection = () => {
       recognitionRef.current = null;
       if (finalTranscript.trim()) {
         setQuery(finalTranscript.trim());
-        // Auto-search after voice input
         handleSearch(finalTranscript.trim());
       }
     };
@@ -145,43 +149,52 @@ const HeroSection = () => {
     }
   };
 
+  const handlePillClick = (pillQuery: string) => {
+    setQuery(pillQuery);
+    handleSearch(pillQuery);
+  };
+
   return (
-    <section className="relative h-screen flex items-end pb-24 md:items-center md:pb-0 justify-center overflow-hidden">
-      {/* Background videos */}
-      <div className="absolute inset-0">
+    <section className="relative h-[40vh] min-h-[320px] flex items-center justify-center overflow-hidden">
+      {/* Background image with GSAP zoom-out */}
+      <div ref={heroImageRef} className="absolute inset-0 will-change-transform">
+        <img
+          src="/videos/hero-bg.mp4"
+          alt=""
+          className="hidden"
+        />
         <video
           src="/videos/hero-bg.mp4"
           autoPlay
           muted
           loop
           playsInline
-          className="hidden md:block w-full h-full object-cover object-center"
+          className="w-full h-full object-cover"
         />
-        <video
-          src="/videos/hero-bg-mobile.mp4"
-          autoPlay
-          muted
-          loop
-          playsInline
-          className="md:hidden w-full h-full object-cover object-center"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-foreground/40 via-foreground/20 to-background md:hidden" />
-        <div className="hidden md:block absolute inset-x-0 top-[85%] bottom-0 bg-gradient-to-b from-transparent to-background" />
       </div>
 
+      {/* Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-foreground/50 via-foreground/30 to-background" />
+
       {/* Content */}
-      <div className="relative z-10 text-center w-full max-w-3xl mx-auto px-4 md:px-6">
-        {/* AI Search bar */}
+      <div className="relative z-10 w-full max-w-2xl mx-auto px-4 md:px-6">
+        <motion.h1
+          className="text-display text-2xl md:text-3xl font-light text-primary-foreground text-center mb-6 tracking-wide"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+        >
+          Alpha Concierge
+        </motion.h1>
+
+        {/* Search bar */}
         <motion.div
-          ref={panelRef}
-          className="relative"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8, duration: 0.8 }}
+          transition={{ delay: 0.3, duration: 0.7 }}
         >
-          <div className="glass-panel rounded-sm p-1.5 max-w-xl mx-auto relative">
-            <div className="flex items-center gap-2 md:gap-3 md:pr-20">
-              {/* Mic button */}
+          <div className="glass-panel rounded-sm p-1.5 relative">
+            <div className="flex items-center gap-2 md:gap-3 md:pr-24">
               <button
                 onClick={handleVoice}
                 className={`p-3 rounded-sm transition-all duration-300 flex-shrink-0 relative ml-2 md:ml-4 ${
@@ -205,77 +218,51 @@ const HeroSection = () => {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Busque por nome, código ou região..."
+                placeholder="Descreva o imóvel dos seus sonhos..."
                 className="flex-1 bg-transparent text-body text-sm text-foreground placeholder:text-muted-foreground outline-none py-3 min-w-0"
               />
             </div>
-            {/* Buscar button - mobile */}
+            {/* Mobile button */}
             <button
               onClick={() => handleSearch()}
               disabled={searching}
               className="w-full md:hidden bg-primary text-primary-foreground py-3 text-body text-xs tracking-[0.1em] uppercase hover-magnetic mt-1.5 disabled:opacity-70 flex items-center justify-center gap-2"
             >
-              {searching ? <Loader2 size={14} className="animate-spin" /> : null}
+              {searching && <Loader2 size={14} className="animate-spin" />}
               {searching ? "Buscando..." : "Buscar"}
             </button>
-            {/* Buscar button - desktop */}
+            {/* Desktop button */}
             <button
               onClick={() => handleSearch()}
               disabled={searching}
               className="hidden md:flex bg-primary text-primary-foreground px-6 py-3 text-body text-xs tracking-[0.1em] uppercase hover-magnetic absolute right-1.5 top-1.5 bottom-1.5 items-center gap-2 disabled:opacity-70"
             >
-              {searching ? <Loader2 size={14} className="animate-spin" /> : null}
+              {searching && <Loader2 size={14} className="animate-spin" />}
               {searching ? "Buscando..." : "Buscar"}
             </button>
           </div>
-
-          {/* Search results panel */}
-          <SearchResultsPanel
-            results={results}
-            loading={searching}
-            visible={showResults}
-            onClose={() => setShowResults(false)}
-            query={query}
-          />
         </motion.div>
 
-        {/* Quick links */}
+        {/* Lifestyle pills */}
         <motion.div
-          className="flex items-center justify-center gap-2 md:gap-4 mt-4 flex-wrap"
+          className="flex items-center justify-center gap-2 mt-4 flex-wrap"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 1.1, duration: 0.8 }}
+          transition={{ delay: 0.6, duration: 0.8 }}
         >
-          {["Casas em Condomínio", "Mansões Exclusive", "Lançamentos"].map((label, i) => (
-            <React.Fragment key={label}>
-              {i > 0 && <span className="text-cashmere/40 text-xs hidden md:inline">·</span>}
-              <a
-                href="#"
-                className="text-body text-[10px] md:text-xs tracking-[0.12em] uppercase text-cashmere/70 hover:text-cashmere transition-colors duration-300"
-              >
-                {label}
-              </a>
-            </React.Fragment>
+          {LIFESTYLE_PILLS.map((pill, i) => (
+            <button
+              key={pill.label}
+              onClick={() => handlePillClick(pill.query)}
+              className="text-body text-[10px] md:text-xs tracking-[0.12em] uppercase text-primary-foreground/70 hover:text-primary-foreground transition-colors duration-300 px-3 py-1.5 rounded-full border border-primary-foreground/20 hover:border-primary-foreground/50 backdrop-blur-sm"
+            >
+              {pill.label}
+            </button>
           ))}
         </motion.div>
       </div>
-
-      {/* Scroll indicator */}
-      <motion.div
-        className="absolute bottom-8 left-1/2 -translate-x-1/2"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.5, duration: 1 }}
-      >
-        <motion.div
-          className="w-px h-12 bg-cashmere/40"
-          animate={{ scaleY: [0, 1, 0] }}
-          transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-          style={{ transformOrigin: "top" }}
-        />
-      </motion.div>
     </section>
   );
 };
 
-export default HeroSection;
+export default SearchHero;
