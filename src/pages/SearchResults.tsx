@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { SlidersHorizontal, GitCompareArrows } from "lucide-react";
-import Lenis from "lenis";
+
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SearchHero from "@/components/search/SearchHero";
@@ -50,16 +50,6 @@ const SearchResults = () => {
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [compareOpen, setCompareOpen] = useState(false);
 
-  // Lenis smooth scroll
-  useEffect(() => {
-    const lenis = new Lenis({ lerp: 0.08, smoothWheel: true });
-    const raf = (time: number) => {
-      lenis.raf(time);
-      requestAnimationFrame(raf);
-    };
-    requestAnimationFrame(raf);
-    return () => lenis.destroy();
-  }, []);
 
   // Filter results client-side
   const filteredResults = useMemo(() => {
