@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { SlidersHorizontal, GitCompareArrows } from "lucide-react";
-import Lenis from "lenis";
+
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SearchHero from "@/components/search/SearchHero";
