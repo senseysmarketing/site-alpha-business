@@ -90,7 +90,7 @@ const PropertyCard = ({ property, isWide = false, isSelected = false, onToggleCo
         </span>
 
         {/* Title */}
-        <h3 className="text-serif text-lg md:text-xl font-normal text-primary-foreground leading-tight mb-1">
+        <h3 className="text-display text-lg md:text-xl font-normal text-primary-foreground leading-tight mb-1">
           {property.title}
         </h3>
 
