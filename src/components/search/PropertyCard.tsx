@@ -104,7 +104,7 @@ const PropertyCard = ({ property, isWide = false, isSelected = false, onToggleCo
           {property.area_total && (
             <span className="flex items-center gap-1.5 text-primary-foreground/80">
               <Maximize size={13} strokeWidth={1.5} />
-              <span className="font-mono text-xs">{property.area_total}m²</span>
+              <span className="text-body text-xs">{property.area_total}m²</span>
             </span>
           )}
           {property.bedrooms && (
