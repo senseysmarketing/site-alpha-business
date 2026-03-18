@@ -12,7 +12,7 @@ import CompareModal from "@/components/search/CompareModal";
 import ConciergeSidebar from "@/components/search/ConciergeSidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-
+import { mockProperties, toSearchResult } from "@/data/mockProperties";
 interface SearchResult {
   id: string;
   code: string;
