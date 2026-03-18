@@ -22,6 +22,7 @@ import Financial from "./pages/admin/Financial.tsx";
 import Marketing from "./pages/admin/Marketing";
 import BlogPosts from "./pages/admin/BlogPosts";
 import BlogEditor from "./pages/admin/BlogEditor";
+import SearchResults from "./pages/SearchResults";
 
 const queryClient = new QueryClient();
 
