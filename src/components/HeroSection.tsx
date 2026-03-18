@@ -235,6 +235,7 @@ const HeroSection = () => {
             loading={searching}
             visible={showResults}
             onClose={() => setShowResults(false)}
+            query={query}
           />
         </motion.div>
 
