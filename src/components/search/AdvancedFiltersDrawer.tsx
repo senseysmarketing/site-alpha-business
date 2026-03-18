@@ -172,7 +172,7 @@ const AdvancedFiltersDrawer = ({
           <Button variant="outline" onClick={handleReset} className="flex-1 text-body text-xs tracking-wider uppercase">
             Limpar
           </Button>
-          <Button onClick={handleApply} className="flex-1 text-body text-xs tracking-wider uppercase">
+          <Button onClick={handleApply} className="flex-1 text-body text-xs tracking-wider uppercase text-primary-foreground">
             Aplicar
           </Button>
         </div>
