@@ -116,7 +116,7 @@ const PropertyCard = ({ property, isWide = false, isSelected = false, onToggleCo
           {property.bathrooms && (
             <span className="flex items-center gap-1.5 text-primary-foreground/80">
               <Car size={13} strokeWidth={1.5} />
-              <span className="font-mono text-xs">{property.bathrooms}</span>
+              <span className="text-body text-xs">{property.bathrooms}</span>
             </span>
           )}
         </div>

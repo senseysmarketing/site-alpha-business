@@ -75,7 +75,7 @@ const ConciergeSidebar = ({ suggestions, visible }: ConciergeSidebarProps) => {
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <h4 className="text-serif text-sm text-foreground truncate">{p.title}</h4>
+                <h4 className="text-display text-sm text-foreground truncate">{p.title}</h4>
                 {p.price && (
                   <span className="text-body text-[11px] text-muted-foreground">
                     {formatPrice(p.price)}
