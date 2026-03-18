@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
+import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { MessageCircle, Calendar, FileText, Building2, Wrench } from "lucide-react";
-import { Link } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import PropertyGallery from "@/components/property/PropertyGallery";
@@ -15,48 +15,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-
-import property1 from "@/assets/property-1.jpg";
-import property2 from "@/assets/property-2.jpg";
-import property3 from "@/assets/property-3.jpg";
-import property4 from "@/assets/property-4.jpg";
-import mansionModern from "@/assets/mansion-modern.jpg";
-import familyHome from "@/assets/family-home.jpg";
-
-const property = {
-  type: "Apartamento",
-  neighborhood: "Alphaville",
-  code: "AB1234",
-  price: "R$ 12.500.000",
-  area: "850",
-  bedrooms: "5",
-  suites: "4",
-  parking: "4",
-  title: "Residência Altos de Alphaville",
-  subtitle: "Arquitetura contemporânea com vista panorâmica",
-  description: `O living com pé-direito duplo de 120m² integra-se perfeitamente ao espaço gourmet, criando uma área social que flui naturalmente para a varanda equipada com churrasqueira, forno de pizza e adega climatizada. Amplos painéis de vidro dissolvem os limites entre interior e exterior, convidando a luz natural a protagonizar cada ambiente.
-
-A suíte master ocupa 65m² de pura sofisticação — closet planejado sob medida, banheiro revestido em mármore Carrara com cuba dupla e banheira de imersão freestanding posicionada diante de uma vista que se estende até a reserva verde.
-
-Cada detalhe foi pensado para quem não aceita o ordinário: piso em mármore Travertino, iluminação Lumini, automação Savant, sistema de som Bose integrado e ar-condicionado central VRF. A área externa abraça uma piscina com borda infinita de 15 metros, deck em madeira cumaru e paisagismo assinado por Gilberto Elkis.`,
-  images: [property1, property2, property3, property4, mansionModern, familyHome],
-  broker: {
-    name: "Carolina Mendes",
-    title: "Corretora especialista em Alphaville",
-  },
-  neighborhoodInfo: {
-    name: "Alphaville — Oásis Urbano",
-    description:
-      "Alphaville é referência em qualidade de vida, segurança e infraestrutura completa. A região combina a tranquilidade de condomínios fechados com acesso rápido aos principais centros empresariais e gastronômicos da Grande São Paulo.",
-  },
-};
-
-const similarProperties = [
-  { id: 2, image: property2, title: "Penthouse Sky Residence", location: "Barueri", price: "R$ 8.900.000" },
-  { id: 3, image: property3, title: "Villa Pedra & Vidro", location: "Alphaville 11", price: "R$ 9.200.000" },
-  { id: 4, image: property4, title: "Casa Contemporânea Light", location: "Tamboré", price: "R$ 7.800.000" },
-  { id: 5, image: mansionModern, title: "Mansão Jardim Europa", location: "Alphaville 0", price: "R$ 15.200.000" },
-];
+import { mockProperties, formatPrice } from "@/data/mockProperties";
 
 const fadeIn = {
   initial: { opacity: 0, y: 20 },
@@ -66,11 +25,15 @@ const fadeIn = {
 };
 
 const PropertyDetail = () => {
+  const { id } = useParams<{ id: string }>();
   const [scheduleOpen, setScheduleOpen] = useState(false);
+
+  const property = mockProperties.find((p) => p.id === id) || mockProperties[0];
+  const similarProperties = mockProperties.filter((p) => p.id !== property.id).slice(0, 4);
 
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, []);
+  }, [id]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -83,9 +46,8 @@ const PropertyDetail = () => {
 
       {/* Quick Info */}
       <motion.div {...fadeIn} className="px-6 md:px-12 lg:px-24 py-8 border-b border-border">
-        {/* Tags */}
         <div className="flex flex-wrap items-center gap-3 mb-4">
-          {[property.type, property.neighborhood, `Cód: ${property.code}`].map((tag) => (
+          {[property.property_type, property.neighborhood, `Cód: ${property.code}`].map((tag) => (
             <span
               key={tag}
               className="text-body text-[11px] tracking-[0.15em] uppercase text-muted-foreground border border-border px-3 py-1 rounded-sm"
@@ -95,7 +57,6 @@ const PropertyDetail = () => {
           ))}
         </div>
 
-        {/* Price + Title */}
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
           <div>
             <h1 className="text-display text-3xl md:text-4xl font-light tracking-wide text-foreground mb-1">
@@ -104,17 +65,16 @@ const PropertyDetail = () => {
             <p className="text-body text-sm text-muted-foreground">{property.subtitle}</p>
           </div>
           <p className="text-display text-3xl md:text-4xl font-semibold text-foreground whitespace-nowrap">
-            {property.price}
+            {formatPrice(property.price)}
           </p>
         </div>
 
-        {/* Specs bar */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           <PropertySpecs
-            area={property.area}
-            bedrooms={property.bedrooms}
-            suites={property.suites}
-            parking={property.parking}
+            area={String(property.area_total)}
+            bedrooms={String(property.bedrooms)}
+            suites={String(property.suites)}
+            parking={String(property.parking)}
           />
           <div className="flex gap-3">
             <a
@@ -139,15 +99,30 @@ const PropertyDetail = () => {
       {/* Two-column layout */}
       <div className="px-6 md:px-12 lg:px-24 py-12 md:py-20">
         <div className="flex flex-col lg:flex-row gap-12 lg:gap-16">
-          {/* Main content */}
           <div className="flex-1 lg:max-w-[65%] space-y-16">
-            {/* Sobre o Imóvel */}
             <motion.section {...fadeIn}>
               <h2 className="text-display text-2xl font-light tracking-wide text-foreground mb-6">
                 Sobre o Imóvel
               </h2>
               <div className="text-body text-sm text-muted-foreground leading-[1.9] whitespace-pre-line">
                 {property.description}
+              </div>
+            </motion.section>
+
+            {/* Amenities */}
+            <motion.section {...fadeIn}>
+              <h2 className="text-display text-2xl font-light tracking-wide text-foreground mb-6">
+                Diferenciais
+              </h2>
+              <div className="flex flex-wrap gap-2">
+                {property.amenities.map((item) => (
+                  <span
+                    key={item}
+                    className="text-body text-[10px] md:text-[11px] tracking-[0.1em] uppercase px-3 py-1.5 border border-border text-muted-foreground rounded-sm"
+                  >
+                    {item}
+                  </span>
+                ))}
               </div>
             </motion.section>
 
@@ -199,27 +174,24 @@ const PropertyDetail = () => {
                   </AccordionTrigger>
                   <AccordionContent className="text-body text-sm text-muted-foreground leading-relaxed pb-4">
                     <ul className="space-y-1.5">
-                      <li>• Automação residencial Savant (iluminação, cortinas, climatização)</li>
-                      <li>• Ar-condicionado central VRF com controle por zona</li>
-                      <li>• Sistema de som ambiente Bose integrado</li>
-                      <li>• Iluminação Lumini com cenas programáveis</li>
-                      <li>• Piso em mármore Travertino (áreas sociais)</li>
-                      <li>• Esquadrias em alumínio anodizado com vidro duplo</li>
-                      <li>• Aquecimento solar + boiler a gás de passagem</li>
+                      <li>• Automação residencial completa</li>
+                      <li>• Ar-condicionado central VRF</li>
+                      <li>• Sistema de som ambiente integrado</li>
+                      <li>• Iluminação cênica programável</li>
+                      <li>• Esquadrias em alumínio com vidro duplo</li>
+                      <li>• Aquecimento solar + boiler a gás</li>
                     </ul>
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>
             </motion.section>
 
-            {/* Localização */}
             <PropertyNeighborhood
               name={property.neighborhoodInfo.name}
               description={property.neighborhoodInfo.description}
             />
           </div>
 
-          {/* Sidebar */}
           <div className="lg:w-[35%]">
             <PropertySidebar
               brokerName={property.broker.name}
@@ -244,20 +216,20 @@ const PropertyDetail = () => {
             >
               <div className="relative overflow-hidden aspect-[4/3] rounded-sm mb-3">
                 <img
-                  src={prop.image}
+                  src={prop.photo || prop.images[0]}
                   alt={prop.title}
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                   loading="lazy"
                 />
               </div>
               <p className="text-body text-[11px] tracking-[0.15em] uppercase text-muted-foreground mb-1">
-                {prop.location}
+                {prop.neighborhood}
               </p>
               <h3 className="text-display text-lg font-light text-foreground mb-1">
                 {prop.title}
               </h3>
               <p className="font-mono text-sm font-medium text-foreground">
-                {prop.price}
+                {formatPrice(prop.price)}
               </p>
             </Link>
           ))}

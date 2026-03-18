@@ -1,14 +1,9 @@
 import { motion } from "framer-motion";
-import mansionModern from "@/assets/mansion-modern.jpg";
+import { Link } from "react-router-dom";
+import { mockProperties, formatPrice } from "@/data/mockProperties";
 
-const amenities = [
-  "Piscina aquecida",
-  "Adega climatizada",
-  "Home theater",
-  "Espaço gourmet",
-  "Jardim zen",
-  "Automação completa",
-];
+// Use the most expensive property as featured
+const featured = [...mockProperties].sort((a, b) => (b.price || 0) - (a.price || 0))[0];
 
 const FeaturedPropertySection = () => {
   return (
@@ -16,8 +11,8 @@ const FeaturedPropertySection = () => {
       <div className="max-w-7xl mx-auto">
         <div className="relative rounded-lg overflow-hidden min-h-[500px] md:min-h-[600px]">
           <img
-            src={mansionModern}
-            alt="Villa Serena"
+            src={featured.photo || featured.images[0]}
+            alt={featured.title}
             className="absolute inset-0 w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-foreground/90 via-foreground/60 to-transparent" />
@@ -40,7 +35,7 @@ const FeaturedPropertySection = () => {
               viewport={{ once: true }}
               transition={{ duration: 0.8, delay: 0.1 }}
             >
-              Refúgio de <em className="italic">sofisticação</em> em Alphaville
+              {featured.title}
             </motion.h2>
 
             <motion.p
@@ -50,7 +45,7 @@ const FeaturedPropertySection = () => {
               viewport={{ once: true }}
               transition={{ duration: 0.7, delay: 0.2 }}
             >
-              Uma residência única com arquitetura contemporânea e integração total com a natureza.
+              {featured.subtitle}
             </motion.p>
 
             <motion.p
@@ -60,7 +55,7 @@ const FeaturedPropertySection = () => {
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.3 }}
             >
-              1.200 m² de terreno · 650 m² construídos · 5 suítes · 4 vagas
+              {featured.area_total?.toLocaleString("pt-BR")} m² · {featured.suites} suítes · {featured.parking} vagas
             </motion.p>
 
             <motion.div
@@ -70,7 +65,7 @@ const FeaturedPropertySection = () => {
               viewport={{ once: true }}
               transition={{ duration: 0.7, delay: 0.4 }}
             >
-              {amenities.map((item) => (
+              {featured.amenities.map((item) => (
                 <span
                   key={item}
                   className="text-body text-[10px] md:text-[11px] tracking-[0.1em] uppercase px-3 py-1.5 border border-primary-foreground/30 text-primary-foreground/80 rounded-sm"
@@ -86,12 +81,12 @@ const FeaturedPropertySection = () => {
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.5 }}
             >
-              <a
-                href="#"
+              <Link
+                to={`/imovel/${featured.id}`}
                 className="inline-block text-body text-xs tracking-[0.2em] uppercase px-8 py-3.5 bg-primary-foreground text-foreground font-medium hover:bg-primary-foreground/90 transition-colors"
               >
                 Agendar visita
-              </a>
+              </Link>
             </motion.div>
           </div>
         </div>
