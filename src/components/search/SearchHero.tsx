@@ -77,10 +77,34 @@ const SearchHero = ({ initialQuery, onResults, onLoading }: SearchHeroProps) => 
         toast.error(data.error);
         return;
       }
-      onResults(data?.results || []);
+      const results = data?.results || [];
+      if (results.length > 0) {
+        onResults(results);
+      } else {
+        // Fallback: filter mock data by query
+        const lower = q.toLowerCase();
+        const filtered = mockProperties
+          .filter((p) =>
+            [p.title, p.condominium, p.neighborhood, p.city, p.description, p.property_type]
+              .filter(Boolean)
+              .some((field) => field!.toLowerCase().includes(lower))
+          )
+          .map(toSearchResult);
+        onResults(filtered.length > 0 ? filtered : mockProperties.map(toSearchResult));
+      }
     } catch (err: any) {
       console.error("Search error:", err);
-      toast.error("Erro ao buscar imóveis. Tente novamente.");
+      // Fallback to mock data on error
+      const lower = q.toLowerCase();
+      const filtered = mockProperties
+        .filter((p) =>
+          [p.title, p.condominium, p.neighborhood, p.city, p.description, p.property_type]
+            .filter(Boolean)
+            .some((field) => field!.toLowerCase().includes(lower))
+        )
+        .map(toSearchResult);
+      onResults(filtered.length > 0 ? filtered : mockProperties.map(toSearchResult));
+      toast.info("Exibindo resultados de demonstração.");
     } finally {
       setSearching(false);
       onLoading(false);

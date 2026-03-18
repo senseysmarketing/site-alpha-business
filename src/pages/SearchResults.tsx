@@ -41,7 +41,9 @@ const SearchResults = () => {
   const [searchParams] = useSearchParams();
   const initialQuery = searchParams.get("q") || "";
 
-  const [results, setResults] = useState<SearchResult[]>([]);
+  const [results, setResults] = useState<SearchResult[]>(
+    initialQuery ? [] : mockProperties.map(toSearchResult)
+  );
   const [loading, setLoading] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filters, setFilters] = useState<Filters>(defaultFilters);

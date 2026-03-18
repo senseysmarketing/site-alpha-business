@@ -1,14 +1,9 @@
 import { motion } from "framer-motion";
-import mansionModern from "@/assets/mansion-modern.jpg";
+import { Link } from "react-router-dom";
+import { mockProperties, formatPrice } from "@/data/mockProperties";
 
-const amenities = [
-  "Piscina aquecida",
-  "Adega climatizada",
-  "Home theater",
-  "Espaço gourmet",
-  "Jardim zen",
-  "Automação completa",
-];
+// Use the most expensive property as featured
+const featured = [...mockProperties].sort((a, b) => (b.price || 0) - (a.price || 0))[0];
 
 const FeaturedPropertySection = () => {
   return (

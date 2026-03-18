@@ -1,16 +1,17 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import property1 from "@/assets/property-1.jpg";
-import property2 from "@/assets/property-2.jpg";
-import property3 from "@/assets/property-3.jpg";
-import property4 from "@/assets/property-4.jpg";
+import { mockProperties, formatPrice } from "@/data/mockProperties";
 
-const properties = [
-  { id: 1, image: property1, title: "Residência Altos de Alphaville", location: "Alphaville 0", area: "850 m²", rooms: "5 suítes", price: "R$ 12.500.000", tag: "Nova" },
-  { id: 2, image: property2, title: "Penthouse Sky Residence", location: "Barueri", area: "420 m²", rooms: "4 suítes", price: "R$ 8.900.000", tag: "Exclusiva" },
-  { id: 3, image: property3, title: "Villa Pedra & Vidro", location: "Alphaville 11", area: "680 m²", rooms: "4 suítes", price: "R$ 9.200.000", tag: "Nova" },
-  { id: 4, image: property4, title: "Casa Contemporânea Light", location: "Tamboré", area: "520 m²", rooms: "5 suítes", price: "R$ 7.800.000", tag: null },
-];
+const properties = mockProperties.slice(0, 4).map((p) => ({
+  id: p.id,
+  image: p.photo || p.images[0],
+  title: p.title,
+  location: p.neighborhood || "",
+  area: `${p.area_total} m²`,
+  rooms: `${p.suites} suítes`,
+  price: formatPrice(p.price),
+  tag: p.tag,
+}));
 
 const NewArrivalsSection = () => {
   return (
