@@ -2,11 +2,18 @@ import { useState, useCallback, useEffect } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import mansionModern from "@/assets/mansion-modern.jpg";
 import familyHome from "@/assets/family-home.jpg";
 import sustainableHome from "@/assets/sustainable-home.jpg";
 
-const categories = [
+interface LifestyleCategory {
+  title: string;
+  subtitle: string;
+  image: string;
+}
+
+const defaultCategories = [
   {
     title: "Mansões Modernas",
     subtitle: "Arquitetura contemporânea e design autoral",
@@ -27,11 +34,26 @@ const categories = [
   },
 ];
 
+const fallbackImages = [mansionModern, familyHome, sustainableHome];
+
 const LifestyleSection = () => {
   const isMobile = useIsMobile();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [canScrollPrev, setCanScrollPrev] = useState(false);
   const [canScrollNext, setCanScrollNext] = useState(false);
+
+  const { data: lifestyleSettings } = useSiteSettings<{ categories: LifestyleCategory[] }>("lifestyle_categories");
+
+  // Merge DB settings with defaults
+  const categories = defaultCategories.map((def, i) => {
+    const dbCat = lifestyleSettings?.categories?.[i];
+    return {
+      title: dbCat?.title || def.title,
+      subtitle: dbCat?.subtitle || def.subtitle,
+      image: dbCat?.image || def.image,
+      count: def.count,
+    };
+  });
 
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: "start",
@@ -70,7 +92,6 @@ const LifestyleSection = () => {
       </div>
 
       <div className="relative">
-        {/* Carousel */}
         <div ref={emblaRef} className="overflow-hidden px-6 md:px-12 lg:px-24">
           <div className="flex gap-4 md:gap-6">
             {categories.map((cat) => (
@@ -107,7 +128,6 @@ const LifestyleSection = () => {
           </div>
         </div>
 
-        {/* Arrows — desktop only, visible on hover */}
         {!isMobile && (
           <>
             <button
@@ -130,7 +150,6 @@ const LifestyleSection = () => {
         )}
       </div>
 
-      {/* Dots */}
       <div className="flex justify-center gap-2 mt-4">
         {categories.map((_, i) => (
           <button

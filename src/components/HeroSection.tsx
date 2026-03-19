@@ -4,6 +4,7 @@ import React, { useState, useRef, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import SearchResultsPanel from "./SearchResultsPanel";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 interface SearchResult {
   id: string;
@@ -22,6 +23,13 @@ interface SearchResult {
   relevance_reason: string;
 }
 
+interface HeroSettings {
+  video_url: string;
+  fallback_image: string;
+  title: string;
+  subtitle: string;
+}
+
 const HeroSection = () => {
   const [query, setQuery] = useState("");
   const [listening, setListening] = useState(false);
@@ -30,6 +38,13 @@ const HeroSection = () => {
   const [showResults, setShowResults] = useState(false);
   const recognitionRef = useRef<any>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+
+  const { data: heroSettings } = useSiteSettings<HeroSettings>("hero");
+
+  const desktopVideo = heroSettings?.video_url || "/videos/hero-bg.mp4";
+  const fallbackImage = heroSettings?.fallback_image || "";
+  const heroTitle = heroSettings?.title || "";
+  const heroSubtitle = heroSettings?.subtitle || "";
 
   // Close results on click outside
   useEffect(() => {
@@ -111,7 +126,6 @@ const HeroSection = () => {
           interim += transcript;
         }
       }
-      // Show real-time transcription
       setQuery(finalTranscript + interim);
     };
 
@@ -120,7 +134,6 @@ const HeroSection = () => {
       recognitionRef.current = null;
       if (finalTranscript.trim()) {
         setQuery(finalTranscript.trim());
-        // Auto-search after voice input
         handleSearch(finalTranscript.trim());
       }
     };
@@ -150,11 +163,12 @@ const HeroSection = () => {
       {/* Background videos */}
       <div className="absolute inset-0">
         <video
-          src="/videos/hero-bg.mp4"
+          src={desktopVideo}
           autoPlay
           muted
           loop
           playsInline
+          poster={fallbackImage || undefined}
           className="hidden md:block w-full h-full object-cover object-center"
         />
         <video
@@ -163,6 +177,7 @@ const HeroSection = () => {
           muted
           loop
           playsInline
+          poster={fallbackImage || undefined}
           className="md:hidden w-full h-full object-cover object-center"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-foreground/40 via-foreground/20 to-background md:hidden" />
@@ -171,6 +186,27 @@ const HeroSection = () => {
 
       {/* Content */}
       <div className="relative z-10 text-center w-full max-w-3xl mx-auto px-4 md:px-6">
+        {/* Dynamic title/subtitle from settings */}
+        {(heroTitle || heroSubtitle) && (
+          <motion.div
+            className="mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, duration: 0.8 }}
+          >
+            {heroTitle && (
+              <h1 className="text-display text-4xl md:text-6xl lg:text-7xl font-light text-primary-foreground mb-3 leading-tight">
+                {heroTitle}
+              </h1>
+            )}
+            {heroSubtitle && (
+              <p className="text-body text-sm md:text-base text-primary-foreground/70">
+                {heroSubtitle}
+              </p>
+            )}
+          </motion.div>
+        )}
+
         {/* AI Search bar */}
         <motion.div
           ref={panelRef}
@@ -181,7 +217,6 @@ const HeroSection = () => {
         >
           <div className="glass-panel rounded-sm p-1.5 max-w-xl mx-auto relative">
             <div className="flex items-center gap-2 md:gap-3 md:pr-20">
-              {/* Mic button */}
               <button
                 onClick={handleVoice}
                 className={`p-3 rounded-sm transition-all duration-300 flex-shrink-0 relative ml-2 md:ml-4 ${
@@ -209,7 +244,6 @@ const HeroSection = () => {
                 className="flex-1 bg-transparent text-body text-sm text-foreground placeholder:text-muted-foreground outline-none py-3 min-w-0"
               />
             </div>
-            {/* Buscar button - mobile */}
             <button
               onClick={() => handleSearch()}
               disabled={searching}
@@ -218,7 +252,6 @@ const HeroSection = () => {
               {searching ? <Loader2 size={14} className="animate-spin" /> : null}
               {searching ? "Buscando..." : "Buscar"}
             </button>
-            {/* Buscar button - desktop */}
             <button
               onClick={() => handleSearch()}
               disabled={searching}
@@ -229,7 +262,6 @@ const HeroSection = () => {
             </button>
           </div>
 
-          {/* Search results panel */}
           <SearchResultsPanel
             results={results}
             loading={searching}

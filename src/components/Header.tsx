@@ -3,9 +3,22 @@ import { motion } from "framer-motion";
 import { Menu, X, Instagram, Youtube, Phone } from "lucide-react";
 import { Link } from "react-router-dom";
 import logoAlpha from "@/assets/logo-alpha.png";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
+
+interface ContactSettings {
+  phone: string;
+  email: string;
+  instagram: string;
+  address: string;
+}
 
 const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { data: contactData } = useSiteSettings<ContactSettings>("contact");
+
+  const phone = contactData?.phone || "(11) 9999-9999";
+  const instagram = contactData?.instagram || "alphaville.sp";
+  const whatsappNumber = phone.replace(/\D/g, "") || "5511999999999";
 
   const navItems = [
     { label: "Comprar", href: "#" },
@@ -22,13 +35,13 @@ const Header = () => {
         <div className="flex items-center justify-between px-6 md:px-12 lg:px-24 h-full">
           <div className="flex items-center gap-4">
             <a
-              href="https://instagram.com/alphaville.sp"
+              href={`https://instagram.com/${instagram.replace("@", "")}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors duration-300 text-[11px] tracking-[0.1em]"
             >
               <Instagram size={12} />
-              alphaville.sp
+              {instagram.replace("@", "")}
             </a>
             <span className="text-border">|</span>
             <a
@@ -42,11 +55,11 @@ const Header = () => {
             </a>
           </div>
           <a
-            href="tel:+5511999999999"
+            href={`tel:+55${phone.replace(/\D/g, "")}`}
             className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors duration-300 text-[11px] tracking-[0.1em]"
           >
             <Phone size={12} />
-            (11) 9999-9999
+            {phone}
           </a>
         </div>
       </div>
@@ -66,7 +79,6 @@ const Header = () => {
             />
           </a>
 
-          {/* Desktop nav */}
           <nav className="hidden md:flex items-center gap-12">
             {navItems.map((item) =>
               item.href.startsWith("/") ? (
@@ -91,7 +103,7 @@ const Header = () => {
 
           <div className="hidden md:flex items-center gap-6">
             <a
-              href="https://wa.me/5511999999999"
+              href={`https://wa.me/${whatsappNumber}`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-body text-xs tracking-[0.1em] uppercase px-6 py-2.5 bg-primary text-primary-foreground hover-magnetic"
@@ -100,7 +112,6 @@ const Header = () => {
             </a>
           </div>
 
-          {/* Mobile menu toggle */}
           <button
             onClick={() => setMenuOpen(!menuOpen)}
             className="md:hidden text-foreground"
@@ -109,7 +120,6 @@ const Header = () => {
           </button>
         </div>
 
-        {/* Mobile menu */}
         {menuOpen && (
           <motion.div
             className="md:hidden bg-background border-t border-border"
@@ -140,7 +150,7 @@ const Header = () => {
                 )
               )}
               <a
-                href="https://wa.me/5511999999999"
+                href={`https://wa.me/${whatsappNumber}`}
                 className="text-body text-xs tracking-[0.1em] uppercase px-6 py-3 bg-primary text-primary-foreground text-center mt-2"
               >
                 WhatsApp
