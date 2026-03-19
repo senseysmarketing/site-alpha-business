@@ -1,80 +1,67 @@
 
 
-## Modulo de Auditoria (Activity Log)
+## Modulo de Importacao em Massa (Data Engine)
 
-### Passo 1 — Banco de Dados
+### Visao Geral
 
-Criar tabela `system_audit_logs` via migration:
+Wizard de 5 etapas: Upload → Parse → Mapear Colunas → Preview/Validar → Enviar ao Supabase. Pagina nova em `/admin/importar`.
 
-```sql
-CREATE TABLE public.system_audit_logs (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
-  user_name text NOT NULL DEFAULT 'Sistema',
-  action text NOT NULL,          -- 'criou', 'editou', 'moveu', 'excluiu'
-  object_type text NOT NULL,     -- 'imovel', 'lead', 'visita', 'blog_post'
-  object_id text,
-  object_label text,             -- 'Imóvel AB123', 'Lead Maria Silva'
-  old_value text,
-  new_value text,
-  metadata jsonb DEFAULT '{}',
-  created_at timestamptz NOT NULL DEFAULT now()
-);
-
--- RLS: somente admins podem ler/inserir
-ALTER TABLE public.system_audit_logs ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Admins can read audit logs"
-  ON public.system_audit_logs FOR SELECT TO authenticated
-  USING (public.has_role(auth.uid(), 'admin'));
-
-CREATE POLICY "Admins can insert audit logs"
-  ON public.system_audit_logs FOR INSERT TO authenticated
-  WITH CHECK (public.has_role(auth.uid(), 'admin'));
-
--- Index para queries por data
-CREATE INDEX idx_audit_logs_created_at ON public.system_audit_logs(created_at DESC);
-CREATE INDEX idx_audit_logs_object_type ON public.system_audit_logs(object_type);
-```
-
-### Passo 2 — Pagina Admin + Rota
+### Passo 1 — Nova Pagina e Rota
 
 | Arquivo | Acao |
 |---|---|
-| `src/pages/admin/AuditLog.tsx` | **Criar** — Pagina completa com metricas, timeline e filtros |
-| `src/components/admin/AdminSidebar.tsx` | **Editar** — Adicionar item "Atividade" com icone `Activity` |
-| `src/App.tsx` | **Editar** — Adicionar rota `<Route path="atividade" element={<AuditLog />} />` |
+| `src/pages/admin/DataImport.tsx` | **Criar** — Pagina principal com wizard |
+| `src/components/admin/AdminSidebar.tsx` | **Editar** — Adicionar item "Importar" com icone `Upload` |
+| `src/App.tsx` | **Editar** — Adicionar rota `<Route path="importar" element={<DataImport />} />` |
 
-### Passo 3 — Conteudo da Pagina `AuditLog.tsx`
+### Passo 2 — Dependencias
 
-**Topo — Metricas Bento Grid (2 cards):**
-- "Acoes nas ultimas 24h" — count query com filtro `created_at > now() - 24h`
-- "Alteracoes de Preco Pendentes" — count query filtro `object_type = 'imovel'` e `action = 'editou'` e `metadata->>'field' = 'price'` ultimas 24h
+Adicionar `react-dropzone` e `papaparse` (+ `@types/papaparse`) ao projeto.
 
-Estilo: cards brancos `bg-white border-border/50 shadow-none`, fontes Raleway para valores, Inter para labels, cor Midnight Bordeaux `#2A070C` nos icones.
+### Passo 3 — Componente DataImport.tsx
 
-**Filtros de Cabecalho:**
-- Seletor de Corretor (Select com lista de users distintos dos logs)
-- DateRangePicker (Popover + Calendar mode="range", mesmo padrao do Reports.tsx)
-- Botao "Exportar CSV" que gera download das atividades filtradas
+**Wizard com 5 steps, controlado por estado `step` (0-4):**
 
-**Timeline vertical:**
-- Lista de cards minimalistas com Avatar (iniciais do usuario), descricao inline: `[Nome] [acao] [objeto] de [valor antigo] para [valor novo]`
-- Valores numericos e codigos de imoveis em `font-mono` para precisao
-- Badges coloridos por tipo:
-  - `💰 Preco` — bg `#2A070C/10` text `#2A070C` (Bordeaux)
-  - `👤 Lead` — bg `stone-100` text `stone-600` (Stone Gray)
-  - `📅 Visita` — bg `amber-50` text `amber-700` (Gold)
-  - `🏠 Imovel` — bg `blue-50` text `blue-700`
-  - `📝 Blog` — bg `purple-50` text `purple-700`
-- Timestamps com `formatDistanceToNow` em pt-BR
-- Paginacao: carregar 50 por vez com botao "Carregar mais"
+**Step 0 — Upload:**
+- Drag-and-drop zone (react-dropzone) aceitando `.csv` e `.xml`
+- Estilo Quiet Luxury: borda dashed 1px `border-border/50`, fundo `bg-white`, icone `Upload` centralizado
+- Botao "Baixar CSV Exemplo" que gera download de um template com as colunas da tabela properties (code, title, property_type, transaction_type, price, bedrooms, bathrooms, parking_spots, area_total, area_built, condominium, address, city, neighborhood, description)
+- Avatar do usuario logado indicando quem esta subindo
 
-**Exportacao CSV:**
-- Botao no cabecalho que pega os dados filtrados e gera download via `Blob` + `URL.createObjectURL`
-- Colunas: Data, Usuario, Acao, Objeto, Valor Antigo, Valor Novo
+**Step 1 — Parse:**
+- PapaParse processa o arquivo async com `worker: true`
+- Barra de progresso animada (componente Progress do shadcn)
+- Para XML: parser simples com DOMParser nativo
+- Exibe contagem de linhas encontradas
+
+**Step 2 — Mapeamento de Colunas:**
+- Tabela com 2 colunas: "Coluna do Arquivo" | "Campo do Sistema"
+- Cada linha tem um Select com os campos da tabela properties
+- Funcao Auto-map: compara nomes normalizados (lowercase, sem acentos/underscores) e pre-seleciona matches (ex: `val_imovel` → `price`, `quartos` → `bedrooms`, `titulo` → `title`)
+- Campos nao mapeados ficam como "Ignorar"
+
+**Step 3 — Preview e Validacao:**
+- Tabela preview com as primeiras 10 linhas ja mapeadas
+- Validacao: campos obrigatorios (code, title, property_type) highlighted em vermelho se vazios
+- Contagem de linhas validas vs invalidas
+- Botao para baixar linhas com erro como CSV
+
+**Step 4 — Envio:**
+- Upsert em batch (50 por vez) na tabela `properties` via Supabase SDK
+- Barra de progresso com contagem `X de Y inseridos`
+- Ao finalizar: insere registro no `system_audit_logs` com action "importou", object_type "imovel", metadata com contagem
+- Resumo final: total importados, erros, tempo
+
+### Estetica
+
+- Cards brancos `bg-white border-border/50 shadow-none rounded-sm`
+- Fontes: Raleway para titulos, Inter para corpo
+- Stepper horizontal no topo com circulos numerados, linha conectora, step ativo em `#2A070C`
+- Muito espaco negativo, padding generoso
+- Botoes "Proximo" e "Voltar" minimalistas no rodape de cada step
 
 ### Seguranca
-- Tabela protegida por RLS (somente admin)
-- Rota ja protegida pelo `ProtectedRoute` wrapper que verifica `isAdmin`
+
+- Rota protegida pelo `ProtectedRoute` (somente admin)
+- Upsert usa sessao autenticada do Supabase (RLS ja configurado para admin INSERT na tabela properties)
 
