@@ -1,67 +1,112 @@
 
 
-## Modulo de Importacao em Massa (Data Engine)
+## Modulo de Identidade e Marca (Identity Control)
 
-### Visao Geral
+### Passo 1 — Banco de Dados
 
-Wizard de 5 etapas: Upload → Parse → Mapear Colunas → Preview/Validar → Enviar ao Supabase. Pagina nova em `/admin/importar`.
+Criar tabela `site_settings` via migration:
 
-### Passo 1 — Nova Pagina e Rota
+```sql
+CREATE TABLE public.site_settings (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  key text UNIQUE NOT NULL,
+  value jsonb NOT NULL DEFAULT '{}',
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  updated_by uuid REFERENCES auth.users(id) ON DELETE SET NULL
+);
+
+ALTER TABLE public.site_settings ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone can read site_settings"
+  ON public.site_settings FOR SELECT TO public
+  USING (true);
+
+CREATE POLICY "Admins can update site_settings"
+  ON public.site_settings FOR ALL TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'))
+  WITH CHECK (public.has_role(auth.uid(), 'admin'));
+
+-- Seed initial settings
+INSERT INTO public.site_settings (key, value) VALUES
+  ('hero', '{"video_url": "", "fallback_image": "", "title": "Viver é uma arte.", "subtitle": "Encontre sua obra-prima em Alphaville."}'::jsonb),
+  ('design_tokens', '{"accent_color": "#2A070C", "background_color": "#F5F0EB", "secondary_color": "#8B7D6B"}'::jsonb),
+  ('featured_property', '{"property_id": "", "custom_label": "Destaque"}'::jsonb),
+  ('lifestyle_categories', '{"categories": [{"title": "Mansões Modernas", "subtitle": "Arquitetura contemporânea", "image": ""}, {"title": "Vida em Família", "subtitle": "Residenciais completos", "image": ""}, {"title": "Refúgios Sustentáveis", "subtitle": "Luxo e natureza", "image": ""}]}'::jsonb),
+  ('team', '{"members": [{"name": "Wilson Roberto", "role": "CEO & Fundador", "creci": "", "photo": ""}, {"name": "Rafael Albuquerque", "role": "Diretor Comercial", "creci": "", "photo": ""}]}'::jsonb),
+  ('contact', '{"phone": "", "email": "", "instagram": "", "address": ""}'::jsonb),
+  ('footer', '{"copyright_text": "Alpha Business © 2025", "tagline": ""}'::jsonb);
+```
+
+### Passo 2 — Rota e Navegacao
 
 | Arquivo | Acao |
 |---|---|
-| `src/pages/admin/DataImport.tsx` | **Criar** — Pagina principal com wizard |
-| `src/components/admin/AdminSidebar.tsx` | **Editar** — Adicionar item "Importar" com icone `Upload` |
-| `src/App.tsx` | **Editar** — Adicionar rota `<Route path="importar" element={<DataImport />} />` |
+| `src/pages/admin/SiteSettings.tsx` | **Criar** — Pagina principal com bento grid |
+| `src/App.tsx` | **Editar** — Adicionar rota `configuracoes` |
+| `src/components/admin/AdminSidebar.tsx` | Ja tem "Configuracoes" no menu, URL `/admin/configuracoes` |
 
-### Passo 2 — Dependencias
+### Passo 3 — Layout Bento Hub (7 Blocos)
 
-Adicionar `react-dropzone` e `papaparse` (+ `@types/papaparse`) ao projeto.
+A pagina `SiteSettings.tsx` sera organizada em blocos modulares:
 
-### Passo 3 — Componente DataImport.tsx
+**Bloco 1 — Homepage Hero**
+- Campo de texto para URL de video 4K
+- Upload de imagem fallback (drag-and-drop para bucket `property-photos`)
+- Campos de titulo e subtitulo editaveis
 
-**Wizard com 5 steps, controlado por estado `step` (0-4):**
+**Bloco 2 — Design System (Tokens)**
+- Color pickers para: Cor de Acento (--accent, default #2A070C), Cor de Fundo (--background), Cor Secundaria
+- Preview em tempo real: ao alterar cor, atualiza CSS custom properties no DOM instantaneamente
+- Botao "Resetar Padrao" para voltar aos valores originais
 
-**Step 0 — Upload:**
-- Drag-and-drop zone (react-dropzone) aceitando `.csv` e `.xml`
-- Estilo Quiet Luxury: borda dashed 1px `border-border/50`, fundo `bg-white`, icone `Upload` centralizado
-- Botao "Baixar CSV Exemplo" que gera download de um template com as colunas da tabela properties (code, title, property_type, transaction_type, price, bedrooms, bathrooms, parking_spots, area_total, area_built, condominium, address, city, neighborhood, description)
-- Avatar do usuario logado indicando quem esta subindo
+**Bloco 3 — Imovel de Destaque**
+- Select com lista de imoveis da tabela `properties` para escolher qual aparece na FeaturedPropertySection
+- Campo de label customizado ("Destaque", "Exclusivo", etc.)
 
-**Step 1 — Parse:**
-- PapaParse processa o arquivo async com `worker: true`
-- Barra de progresso animada (componente Progress do shadcn)
-- Para XML: parser simples com DOMParser nativo
-- Exibe contagem de linhas encontradas
+**Bloco 4 — Categorias de Lifestyle**
+- Grid editavel das 3 categorias ("Navegue pelo seu estilo de vida")
+- Campos: titulo, subtitulo, imagem (upload)
+- Possibilidade de reordenar
 
-**Step 2 — Mapeamento de Colunas:**
-- Tabela com 2 colunas: "Coluna do Arquivo" | "Campo do Sistema"
-- Cada linha tem um Select com os campos da tabela properties
-- Funcao Auto-map: compara nomes normalizados (lowercase, sem acentos/underscores) e pre-seleciona matches (ex: `val_imovel` → `price`, `quartos` → `bedrooms`, `titulo` → `title`)
-- Campos nao mapeados ficam como "Ignorar"
+**Bloco 5 — Equipe / Socios**
+- Grid com cards dos socios (Wilson Roberto, Rafael Albuquerque)
+- Campos: nome, cargo, CRECI, foto (drag-and-drop upload)
+- Botao para adicionar novo membro
 
-**Step 3 — Preview e Validacao:**
-- Tabela preview com as primeiras 10 linhas ja mapeadas
-- Validacao: campos obrigatorios (code, title, property_type) highlighted em vermelho se vazios
-- Contagem de linhas validas vs invalidas
-- Botao para baixar linhas com erro como CSV
+**Bloco 6 — Contato e Redes**
+- Campos: telefone, email, Instagram, endereco
 
-**Step 4 — Envio:**
-- Upsert em batch (50 por vez) na tabela `properties` via Supabase SDK
-- Barra de progresso com contagem `X de Y inseridos`
-- Ao finalizar: insere registro no `system_audit_logs` com action "importou", object_type "imovel", metadata com contagem
-- Resumo final: total importados, erros, tempo
+**Bloco 7 — Rodape**
+- Texto de copyright, tagline
+
+### Passo 4 — Mini Preview
+
+No lado direito da tela (layout 2/3 + 1/3 em desktop), um painel fixo "Mini Preview" com:
+- Iframe ou componente estilizado mostrando uma versao simplificada da homepage
+- Atualiza em tempo real conforme o admin edita cores, video e textos
+- Escala reduzida (transform: scale(0.4)) dentro de um card com borda fina
+
+### Passo 5 — Persistencia e Propagacao
+
+- Cada bloco tem botao "Salvar" que faz upsert na tabela `site_settings`
+- Ao salvar, insere registro no `system_audit_logs` com a mudanca
+- Hook `useSiteSettings(key)` para consumir as settings no frontend publico, substituindo valores hardcoded gradualmente
+- React Query com `staleTime: 0` para que mudancas sejam refletidas rapidamente
 
 ### Estetica
 
 - Cards brancos `bg-white border-border/50 shadow-none rounded-sm`
-- Fontes: Raleway para titulos, Inter para corpo
-- Stepper horizontal no topo com circulos numerados, linha conectora, step ativo em `#2A070C`
-- Muito espaco negativo, padding generoso
-- Botoes "Proximo" e "Voltar" minimalistas no rodape de cada step
+- Fontes: Raleway para titulos dos blocos, Inter para labels e campos
+- Color pickers usando `<input type="color">` estilizado com borda fina
+- Glassmorphism sutil nos modais de confirmacao (`bg-white/70 backdrop-blur-xl`)
+- Muito espaco negativo entre blocos
 
-### Seguranca
+### Arquivos a criar/editar
 
-- Rota protegida pelo `ProtectedRoute` (somente admin)
-- Upsert usa sessao autenticada do Supabase (RLS ja configurado para admin INSERT na tabela properties)
+| Arquivo | Acao |
+|---|---|
+| Migration SQL | Criar tabela `site_settings` + seed |
+| `src/pages/admin/SiteSettings.tsx` | Criar pagina completa |
+| `src/hooks/useSiteSettings.ts` | Criar hook reutilizavel |
+| `src/App.tsx` | Adicionar rota `configuracoes` |
 
