@@ -24,6 +24,7 @@ import BlogPosts from "./pages/admin/BlogPosts";
 import BlogEditor from "./pages/admin/BlogEditor";
 import AuditLog from "./pages/admin/AuditLog";
 import DataImport from "./pages/admin/DataImport";
+import SiteSettings from "./pages/admin/SiteSettings";
 import SearchResults from "./pages/SearchResults";
 
 const queryClient = new QueryClient();
@@ -51,6 +52,7 @@ const AnimatedRoutes = () => {
           <Route path="blog/novo" element={<BlogEditor />} />
           <Route path="blog/:id" element={<BlogEditor />} />
           <Route path="importar" element={<DataImport />} />
+          <Route path="configuracoes" element={<SiteSettings />} />
           <Route path="atividade" element={<AuditLog />} />
           <Route path="imoveis/novo" element={<PropertyForm />} />
           <Route path="imoveis/:id" element={<PropertyForm />} />
