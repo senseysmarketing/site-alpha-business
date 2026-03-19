@@ -337,6 +337,48 @@ export type Database = {
         }
         Relationships: []
       }
+      system_audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          new_value: string | null
+          object_id: string | null
+          object_label: string | null
+          object_type: string
+          old_value: string | null
+          user_id: string | null
+          user_name: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          new_value?: string | null
+          object_id?: string | null
+          object_label?: string | null
+          object_type: string
+          old_value?: string | null
+          user_id?: string | null
+          user_name?: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          new_value?: string | null
+          object_id?: string | null
+          object_label?: string | null
+          object_type?: string
+          old_value?: string | null
+          user_id?: string | null
+          user_name?: string
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           broker_payout: number

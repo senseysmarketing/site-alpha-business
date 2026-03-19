@@ -22,6 +22,7 @@ import Financial from "./pages/admin/Financial.tsx";
 import Marketing from "./pages/admin/Marketing";
 import BlogPosts from "./pages/admin/BlogPosts";
 import BlogEditor from "./pages/admin/BlogEditor";
+import AuditLog from "./pages/admin/AuditLog";
 import SearchResults from "./pages/SearchResults";
 
 const queryClient = new QueryClient();
@@ -48,6 +49,7 @@ const AnimatedRoutes = () => {
           <Route path="blog" element={<BlogPosts />} />
           <Route path="blog/novo" element={<BlogEditor />} />
           <Route path="blog/:id" element={<BlogEditor />} />
+          <Route path="atividade" element={<AuditLog />} />
           <Route path="imoveis/novo" element={<PropertyForm />} />
           <Route path="imoveis/:id" element={<PropertyForm />} />
         </Route>
