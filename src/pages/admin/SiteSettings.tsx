@@ -247,18 +247,20 @@ const SiteSettings = () => {
               />
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="font-[Inter] text-xs text-muted-foreground">Título</Label>
+                  <Label className="font-[Inter] text-xs text-muted-foreground">Título <span className="text-muted-foreground/50">(vazio = não exibir)</span></Label>
                   <Input
                     value={heroForm.title}
                     onChange={(e) => setHeroForm({ ...heroForm, title: e.target.value })}
+                    placeholder="Ex: Viver é uma arte."
                     className="mt-1 h-9 text-sm border-border/50"
                   />
                 </div>
                 <div>
-                  <Label className="font-[Inter] text-xs text-muted-foreground">Subtítulo</Label>
+                  <Label className="font-[Inter] text-xs text-muted-foreground">Subtítulo <span className="text-muted-foreground/50">(vazio = não exibir)</span></Label>
                   <Input
                     value={heroForm.subtitle}
                     onChange={(e) => setHeroForm({ ...heroForm, subtitle: e.target.value })}
+                    placeholder="Ex: Encontre sua obra-prima em Alphaville."
                     className="mt-1 h-9 text-sm border-border/50"
                   />
                 </div>
