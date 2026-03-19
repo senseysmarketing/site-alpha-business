@@ -36,6 +36,7 @@ const menuItems = [
   { title: "Financeiro", url: "/admin/financeiro", icon: Wallet },
   { title: "Marketing", url: "/admin/marketing", icon: Megaphone },
   { title: "Blog", url: "/admin/blog", icon: FileText },
+  { title: "Importar", url: "/admin/importar", icon: Upload },
   { title: "Atividade", url: "/admin/atividade", icon: Activity },
   { title: "Configurações", url: "/admin/configuracoes", icon: Settings },
 ];

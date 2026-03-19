@@ -50,6 +50,7 @@ const AnimatedRoutes = () => {
           <Route path="blog" element={<BlogPosts />} />
           <Route path="blog/novo" element={<BlogEditor />} />
           <Route path="blog/:id" element={<BlogEditor />} />
+          <Route path="importar" element={<DataImport />} />
           <Route path="atividade" element={<AuditLog />} />
           <Route path="imoveis/novo" element={<PropertyForm />} />
           <Route path="imoveis/:id" element={<PropertyForm />} />
