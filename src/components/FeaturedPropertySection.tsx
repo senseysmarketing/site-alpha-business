@@ -1,17 +1,64 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { mockProperties, formatPrice } from "@/data/mockProperties";
 
-// Use the most expensive property as featured
-const featured = [...mockProperties].sort((a, b) => (b.price || 0) - (a.price || 0))[0];
+interface FeaturedSettings {
+  property_id: string;
+  custom_label: string;
+}
+
+// Fallback: most expensive mock property
+const mockFeatured = [...mockProperties].sort((a, b) => (b.price || 0) - (a.price || 0))[0];
 
 const FeaturedPropertySection = () => {
+  const { data: featuredSettings } = useSiteSettings<FeaturedSettings>("featured_property");
+
+  const propertyId = featuredSettings?.property_id || "";
+  const customLabel = featuredSettings?.custom_label || "Destaque";
+
+  // Fetch from Supabase if property_id is set
+  const { data: dbProperty } = useQuery({
+    queryKey: ["featured-property", propertyId],
+    queryFn: async () => {
+      if (!propertyId) return null;
+      const { data, error } = await supabase
+        .from("properties")
+        .select("*")
+        .eq("id", propertyId)
+        .single();
+      if (error) return null;
+      return data;
+    },
+    enabled: !!propertyId,
+  });
+
+  // Use DB property or fallback to mock
+  const featured = dbProperty
+    ? {
+        id: dbProperty.id,
+        title: dbProperty.title,
+        subtitle: dbProperty.description || "",
+        photo: dbProperty.photos?.[0] || "",
+        images: dbProperty.photos || [],
+        area_total: dbProperty.area_total,
+        suites: dbProperty.bedrooms || 0,
+        parking: dbProperty.parking_spots || 0,
+        amenities: dbProperty.engineering_highlights || [],
+        price: dbProperty.price,
+      }
+    : mockFeatured;
+
+  const heroImage = featured.photo || featured.images?.[0] || "";
+
   return (
     <section className="px-6 md:px-12 lg:px-24 py-10">
       <div className="max-w-7xl mx-auto">
         <div className="relative rounded-lg overflow-hidden min-h-[500px] md:min-h-[600px]">
           <img
-            src={featured.photo || featured.images[0]}
+            src={heroImage}
             alt={featured.title}
             className="absolute inset-0 w-full h-full object-cover"
           />
@@ -25,7 +72,7 @@ const FeaturedPropertySection = () => {
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
             >
-              Destaque
+              {customLabel}
             </motion.p>
 
             <motion.h2
