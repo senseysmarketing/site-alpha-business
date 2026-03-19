@@ -19,7 +19,9 @@ import { useToast } from "@/hooks/use-toast";
 
 // ---------- constants ----------
 
-const SYSTEM_FIELDS = [
+type SystemField = { key: string; label: string; required?: boolean };
+
+const SYSTEM_FIELDS: SystemField[] = [
   { key: "code", label: "Código", required: true },
   { key: "title", label: "Título", required: true },
   { key: "property_type", label: "Tipo de Imóvel", required: true },
@@ -37,7 +39,7 @@ const SYSTEM_FIELDS = [
   { key: "neighborhood", label: "Bairro" },
   { key: "description", label: "Descrição" },
   { key: "status", label: "Status" },
-] as const;
+];
 
 const REQUIRED_KEYS = SYSTEM_FIELDS.filter((f) => f.required).map((f) => f.key);
 
