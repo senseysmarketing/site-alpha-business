@@ -24,6 +24,7 @@ import BlogPosts from "./pages/admin/BlogPosts";
 import BlogEditor from "./pages/admin/BlogEditor";
 import AuditLog from "./pages/admin/AuditLog";
 import DataImport from "./pages/admin/DataImport";
+import SiteSettings from "./pages/admin/SiteSettings";
 import SearchResults from "./pages/SearchResults";
 
 const queryClient = new QueryClient();
