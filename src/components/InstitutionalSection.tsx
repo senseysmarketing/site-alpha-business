@@ -3,6 +3,7 @@ import { Instagram, ArrowUpRight, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 const categoryLabels: Record<string, string> = {
   "inside-alphaville": "Inside Alphaville",
