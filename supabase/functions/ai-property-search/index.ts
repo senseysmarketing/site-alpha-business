@@ -15,7 +15,7 @@ serve(async (req) => {
   try {
     const { query } = await req.json();
     if (!query || typeof query !== "string" || query.trim().length < 2) {
-      return new Response(JSON.stringify({ results: [] }), {
+      return new Response(JSON.stringify({ results: [], parsed_filters: null }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -30,7 +30,6 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Fetch all active properties with rich data
     const { data: properties, error } = await supabase
       .from("properties")
       .select(
@@ -44,12 +43,11 @@ serve(async (req) => {
     }
 
     if (!properties || properties.length === 0) {
-      return new Response(JSON.stringify({ results: [] }), {
+      return new Response(JSON.stringify({ results: [], parsed_filters: null }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Build property context for AI
     const propertyContext = properties.map((p) => {
       const parts = [
         `ID: ${p.id}`,
@@ -77,18 +75,21 @@ serve(async (req) => {
       return parts.filter(Boolean).join(" | ");
     }).join("\n---\n");
 
-    const systemPrompt = `Você é um assistente imobiliário especializado em Alphaville e região. Você tem acesso a uma lista de imóveis disponíveis. Sua tarefa é analisar a busca do usuário e retornar os imóveis mais relevantes.
+    const systemPrompt = `Você é um concierge imobiliário de luxo especializado em Alphaville e região. Você tem acesso a uma lista de imóveis disponíveis. Sua tarefa é analisar a busca do usuário, extrair os filtros implícitos e retornar os imóveis mais relevantes.
 
 IMÓVEIS DISPONÍVEIS:
 ${propertyContext}
 
-REGRAS:
-- Retorne no máximo 6 imóveis mais relevantes
+REGRAS DE INTERPRETAÇÃO:
+- Valores monetários: interprete "até 12M" como max 12.000.000, "entre 8 e 10 milhões" como range, "mínimo 5M" como min 5.000.000, "abaixo de 3mi" como max 3.000.000
+- Atributos físicos: "4 quartos" ou "4 suítes" → bedrooms_min: 4, "mais de 400m²" → area_min: 400, "3 vagas" → parking_min: 3
+- Localização: reconheça variantes de condomínios como "Res. 1", "Residencial 1", "Residencial Um", "Tamboré", "Tambore" e normalize para o nome correto do banco
+- Qualitativos: termos como "moderna", "clássica", "reformada", "face norte", "piso aquecido", "adega", "automação" devem ser buscados na descrição e destaques de engenharia
+- Tipo de transação: "para alugar" ou "aluguel" → transaction_type: "aluguel", "comprar" ou "venda" → transaction_type: "venda"
 - Se a busca for por código (ex: "AB001"), busque exatamente esse código
-- Se for busca por região/condomínio, filtre por localização
-- Se for busca por características (quartos, preço, área), filtre adequadamente
-- Se for uma busca em linguagem natural, interprete a intenção e encontre os melhores matches
-- Sempre forneça uma razão curta de por que cada imóvel é relevante para a busca`;
+- Retorne no máximo 6 imóveis mais relevantes
+- Sempre forneça uma razão curta de por que cada imóvel é relevante
+- IMPORTANTE: extraia todos os filtros implícitos na busca do usuário e retorne no campo parsed_filters`;
 
     const response = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
@@ -110,7 +111,7 @@ REGRAS:
               function: {
                 name: "search_properties",
                 description:
-                  "Return the most relevant properties matching the user query.",
+                  "Return the most relevant properties and the parsed filters extracted from the user query.",
                 parameters: {
                   type: "object",
                   properties: {
@@ -133,8 +134,28 @@ REGRAS:
                         additionalProperties: false,
                       },
                     },
+                    parsed_filters: {
+                      type: "object",
+                      description: "Structured filters extracted from the user's natural language query",
+                      properties: {
+                        price_min: { type: "number", description: "Minimum price in BRL (null if not specified)" },
+                        price_max: { type: "number", description: "Maximum price in BRL (null if not specified)" },
+                        bedrooms_min: { type: "number", description: "Minimum number of bedrooms (null if not specified)" },
+                        bathrooms_min: { type: "number", description: "Minimum number of bathrooms (null if not specified)" },
+                        parking_min: { type: "number", description: "Minimum parking spots (null if not specified)" },
+                        area_min: { type: "number", description: "Minimum total area in m² (null if not specified)" },
+                        condominium: { type: "string", description: "Condominium name normalized (null if not specified)" },
+                        transaction_type: { type: "string", description: "'venda' or 'aluguel' (null if not specified)" },
+                        qualitative_terms: {
+                          type: "array",
+                          items: { type: "string" },
+                          description: "Qualitative terms found in the query like 'moderna', 'face norte', 'piso aquecido'",
+                        },
+                      },
+                      additionalProperties: false,
+                    },
                   },
-                  required: ["matches"],
+                  required: ["matches", "parsed_filters"],
                   additionalProperties: false,
                 },
               },
@@ -170,7 +191,7 @@ REGRAS:
     const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
 
     if (!toolCall?.function?.arguments) {
-      return new Response(JSON.stringify({ results: [] }), {
+      return new Response(JSON.stringify({ results: [], parsed_filters: null }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -178,8 +199,8 @@ REGRAS:
     const parsed = JSON.parse(toolCall.function.arguments);
     const matches: { property_id: string; relevance_reason: string }[] =
       parsed.matches || [];
+    const parsedFilters = parsed.parsed_filters || null;
 
-    // Enrich matches with property data
     const results = matches
       .map((m) => {
         const prop = properties.find((p) => p.id === m.property_id);
@@ -203,7 +224,7 @@ REGRAS:
       })
       .filter(Boolean);
 
-    return new Response(JSON.stringify({ results }), {
+    return new Response(JSON.stringify({ results, parsed_filters: parsedFilters }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
