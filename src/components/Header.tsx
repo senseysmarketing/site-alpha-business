@@ -4,6 +4,7 @@ import { Menu, X, Instagram, Youtube, Phone } from "lucide-react";
 import { Link } from "react-router-dom";
 import logoAlpha from "@/assets/logo-alpha.png";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { formatPhone } from "@/lib/utils";
 
 interface ContactSettings {
   phone: string;
