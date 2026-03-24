@@ -42,7 +42,7 @@ const Header = () => {
               className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors duration-300 text-[11px] tracking-[0.1em]"
             >
               <Instagram size={12} />
-              {instagram.replace("@", "")}
+              {instagram.startsWith("@") ? instagram : `@${instagram}`}
             </a>
             <span className="text-border">|</span>
             <a
