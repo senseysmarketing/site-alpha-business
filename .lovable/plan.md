@@ -1,42 +1,29 @@
 
 
-## Diagnostico e Correcao — Busca AI sem Resultados + Chips + VoiceWaves
+## Refinamento Visual do Painel de Resultados da Busca
 
-### Problema Raiz
+### Problema
+1. Chips duplicados — aparecem tanto no HeroSection (abaixo da barra) quanto dentro do SearchResultsPanel
+2. Todos os resultados exibidos sem limite
+3. Placeholder "Sem foto" texto simples, sem sofisticacao
+4. Painel sem glassmorphism intenso
+5. Cards sem animacao staggered nem hover refinado
 
-A tabela `properties` no Supabase esta **vazia** (0 registros). A edge function `ai-property-search` busca apenas imoveis com `status = 'ativo'`, encontra zero, e retorna `{ results: [], parsed_filters: null }`. Por isso:
+### Mudancas
 
-1. **Chips nao aparecem** — `parsed_filters` volta `null` porque a IA nao e chamada quando nao ha imoveis
-2. **Resultados vazios** — O fallback para mock data no `SearchHero.tsx` funciona, mas no `HeroSection.tsx` nao ha fallback (mostra "Nenhum imovel encontrado")
-3. **VoiceWaves** — O componente existe e funciona, mas so aparece quando `listening = true` (durante captura de voz). Visualmente esta correto.
+**`src/components/SearchResultsPanel.tsx`** — Reescrever
 
-### Plano de Correcao (3 mudancas)
+- **Remover chips duplicados**: Remover o bloco `FilterChips` de dentro do painel (ja aparece no HeroSection acima)
+- **Limitar a 4 resultados**: `results.slice(0, 4)` no render
+- **Glassmorphism intenso**: Trocar `glass-panel` por `bg-background/60 backdrop-blur-[20px] border border-border/30 shadow-2xl`
+- **Placeholder sem foto**: Substituir texto "Sem foto" por icone `Building2` do lucide (strokeWidth 1, cor muted) centralizado
+- **Hover nos cards**: `hover:bg-foreground/[0.03]` + icone `ArrowRight` em bordeaux `text-[#2A070C]` que aparece no hover (opacity 0 → 1)
+- **Staggered fade-in**: Cada card com `motion.button` e `initial/animate` com delay `i * 0.08`
+- **Contador**: `text-[9px] tracking-[0.2em] uppercase` mais elegante
+- **"Ver todos"**: Mover para o final (abaixo dos resultados), estilo mais proeminente com tracking largo e seta
 
-**1. Inserir os 5 imoveis mock na tabela `properties` do Supabase**
+**`src/components/HeroSection.tsx`** — Sem mudanca necessaria (chips ja estao fora do painel)
 
-Criar migration que insere os 5 imoveis do `mockProperties.ts` com `status = 'ativo'` para que a edge function tenha dados reais para buscar. Usar os mesmos IDs do mock data para manter consistencia.
-
-**2. `HeroSection.tsx` — Adicionar fallback para mock data**
-
-Atualmente, se a edge function falha ou retorna vazio, o HeroSection mostra "Nenhum imovel encontrado". Adicionar o mesmo fallback que ja existe no `SearchHero.tsx`: se a busca retorna vazio, filtrar `mockProperties` pelo texto e exibir resultados locais.
-
-Isso tambem garante que `parsed_filters` seja gerado mesmo offline — criando um parser local simples que extrai filtros basicos do texto (preco, quartos, condominio) para exibir chips mesmo sem IA.
-
-**3. Edge function — Garantir que `parsed_filters` e retornado mesmo com poucos resultados**
-
-Atualmente, se `properties` esta vazio, a funcao retorna antes de chamar a IA. Ajustar para que, mesmo sem imoveis, a IA ainda seja chamada para extrair os filtros da query (parsed_filters), permitindo que os chips aparecam.
-
-### Arquivos
-
-| Arquivo | Acao |
-|---|---|
-| Migration SQL | Criar — INSERT dos 5 imoveis mock na tabela `properties` |
-| `src/components/HeroSection.tsx` | Editar — Adicionar fallback mock + parser local de filtros |
-| `supabase/functions/ai-property-search/index.ts` | Editar — Chamar IA mesmo com lista vazia para extrair parsed_filters |
-
-### Resultado Esperado
-
-- Buscar "casa ate 15 milhoes" → IA retorna imoveis + chips `💰 Ate R$ 15M` aparecem
-- Busca sem conexao → fallback local com mock data + chips basicos
-- VoiceWaves ja funciona (so visivel durante captura de voz)
+### Resultado
+Painel com no maximo 4 imoveis, glassmorphism forte, icone arquitetonico no placeholder, hover com seta bordeaux, animacao staggered, sem chips duplicados.
 
