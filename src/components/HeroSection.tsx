@@ -7,6 +7,7 @@ import SearchResultsPanel from "./SearchResultsPanel";
 import FilterChips, { type ParsedFilters } from "./search/FilterChips";
 import VoiceWaves from "./search/VoiceWaves";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { mockProperties, toSearchResult } from "@/data/mockProperties";
 
 interface SearchResult {
   id: string;
@@ -88,11 +89,37 @@ const HeroSection = () => {
         return;
       }
 
-      setResults(data?.results || []);
-      setParsedFilters(data?.parsed_filters || null);
+      const aiResults = data?.results || [];
+      const aiFilters = data?.parsed_filters || null;
+      setParsedFilters(aiFilters);
+
+      if (aiResults.length > 0) {
+        setResults(aiResults);
+      } else {
+        // Fallback to mock data
+        const lower = q.toLowerCase();
+        const filtered = mockProperties
+          .filter((p) =>
+            [p.title, p.condominium, p.neighborhood, p.city, p.description, p.property_type]
+              .filter(Boolean)
+              .some((field) => field!.toLowerCase().includes(lower))
+          )
+          .map(toSearchResult);
+        setResults(filtered.length > 0 ? filtered : mockProperties.map(toSearchResult));
+      }
     } catch (err: any) {
       console.error("Search error:", err);
-      toast.error("Erro ao buscar imóveis. Tente novamente.");
+      // Fallback to mock data on error
+      const lower = q.toLowerCase();
+      const filtered = mockProperties
+        .filter((p) =>
+          [p.title, p.condominium, p.neighborhood, p.city, p.description, p.property_type]
+            .filter(Boolean)
+            .some((field) => field!.toLowerCase().includes(lower))
+        )
+        .map(toSearchResult);
+      setResults(filtered.length > 0 ? filtered : mockProperties.map(toSearchResult));
+      toast.info("Exibindo resultados de demonstração.");
     } finally {
       setSearching(false);
     }

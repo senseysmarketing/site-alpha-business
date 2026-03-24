@@ -42,13 +42,9 @@ serve(async (req) => {
       throw new Error("Failed to fetch properties");
     }
 
-    if (!properties || properties.length === 0) {
-      return new Response(JSON.stringify({ results: [], parsed_filters: null }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const safeProperties = properties || [];
 
-    const propertyContext = properties.map((p) => {
+    const propertyContext = safeProperties.map((p) => {
       const parts = [
         `ID: ${p.id}`,
         `Código: ${p.code}`,
@@ -78,7 +74,7 @@ serve(async (req) => {
     const systemPrompt = `Você é um concierge imobiliário de luxo especializado em Alphaville e região. Você tem acesso a uma lista de imóveis disponíveis. Sua tarefa é analisar a busca do usuário, extrair os filtros implícitos e retornar os imóveis mais relevantes.
 
 IMÓVEIS DISPONÍVEIS:
-${propertyContext}
+${propertyContext || "Nenhum imóvel cadastrado no momento."}
 
 REGRAS DE INTERPRETAÇÃO:
 - Valores monetários: interprete "até 12M" como max 12.000.000, "entre 8 e 10 milhões" como range, "mínimo 5M" como min 5.000.000, "abaixo de 3mi" como max 3.000.000
@@ -203,7 +199,7 @@ REGRAS DE INTERPRETAÇÃO:
 
     const results = matches
       .map((m) => {
-        const prop = properties.find((p) => p.id === m.property_id);
+        const prop = safeProperties.find((p) => p.id === m.property_id);
         if (!prop) return null;
         return {
           id: prop.id,
