@@ -1,9 +1,31 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Instagram, ArrowUpRight, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { InstagramEmbed } from "react-social-media-embed";
+import { Skeleton } from "@/components/ui/skeleton";
+
+function InstagramEmbedWithSkeleton({ url }: { url: string }) {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <div className="w-full h-full relative">
+      {!loaded && (
+        <Skeleton className="absolute inset-0 w-full h-full rounded-none" />
+      )}
+      <div className={`w-full h-full transition-opacity duration-500 ${loaded ? "opacity-100" : "opacity-0"}`}>
+        <InstagramEmbed
+          url={url}
+          width="100%"
+          captioned
+          onLoad={() => setLoaded(true)}
+        />
+      </div>
+    </div>
+  );
+}
 
 const categoryLabels: Record<string, string> = {
   "inside-alphaville": "Inside Alphaville",
@@ -21,9 +43,11 @@ interface ContactSettings {
 
 const InstitutionalSection = () => {
   const { data: contactData } = useSiteSettings<ContactSettings>("contact");
+  const { data: instaPostsData } = useSiteSettings<{ urls: string[] }>("instagram_posts");
   const instagramHandle = contactData?.instagram?.replace("@", "") || "alphabusiness";
   const instagramDisplay = `@${instagramHandle}`;
   const instagramUrl = `https://instagram.com/${instagramHandle}`;
+  const instaUrls = instaPostsData?.urls || [];
 
   const { data: posts } = useQuery({
     queryKey: ["blog-posts-preview"],
@@ -141,18 +165,27 @@ const InstitutionalSection = () => {
             </motion.div>
 
             <div className="grid grid-cols-2 gap-2">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <motion.div
-                  key={i}
-                  className="aspect-square bg-muted overflow-hidden group cursor-pointer"
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.05, duration: 0.5 }}
-                >
-                  <div className="w-full h-full bg-gradient-to-br from-cashmere to-greige group-hover:scale-105 transition-transform duration-500" />
-                </motion.div>
-              ))}
+              {[0, 1, 2, 3, 4, 5].map((i) => {
+                const url = instaUrls[i];
+                const hasUrl = url && url.trim().length > 0;
+
+                return (
+                  <motion.div
+                    key={i}
+                    className="aspect-square overflow-hidden group cursor-pointer relative"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.05, duration: 0.5 }}
+                  >
+                    {hasUrl ? (
+                      <InstagramEmbedWithSkeleton url={url} />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-cashmere to-greige group-hover:scale-105 transition-transform duration-500" />
+                    )}
+                  </motion.div>
+                );
+              })}
             </div>
 
             <motion.a
