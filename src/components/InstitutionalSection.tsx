@@ -182,8 +182,7 @@ const InstitutionalSection = () => {
                     {hasUrl ? (
                       <InstagramEmbedWithSkeleton url={url} />
                     ) : (
-                      <div className="w-full aspect-square rounded-xl border border-border/50 bg-gradient-to-br from-cashmere to-greige group hover:scale-105 transition-transform duration-500 relative">
-                        <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors duration-300 rounded-xl" />
+                      <div className="w-full aspect-square rounded-sm border border-border/40 bg-gradient-to-br from-cashmere to-greige hover:scale-[1.02] transition-transform duration-500 relative">
                       </div>
                     )}
                   </motion.div>
