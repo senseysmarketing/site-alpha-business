@@ -17,13 +17,14 @@ function InstagramEmbedWithSkeleton({ url }: { url: string }) {
   }, [url]);
 
   return (
-    <div className="w-full h-full relative overflow-hidden">
+    <div className="w-full h-full relative overflow-hidden aspect-square rounded-xl border border-border/50 bg-transparent group">
       {!loaded && (
-        <Skeleton className="absolute inset-0 w-full h-full rounded-none" />
+        <Skeleton className="absolute inset-0 w-full h-full rounded-xl bg-muted" />
       )}
-      <div className="w-full h-full">
-        <InstagramEmbed url={url} width="100%" captioned />
+      <div className="w-full h-full [&_iframe]:!max-w-none">
+        <InstagramEmbed url={url} width="100%" captioned={false} />
       </div>
+      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 z-10 pointer-events-none rounded-xl" />
     </div>
   );
 }
@@ -173,7 +174,7 @@ const InstitutionalSection = () => {
                 return (
                   <motion.div
                     key={i}
-                    className="aspect-square overflow-hidden group cursor-pointer relative"
+                    className="overflow-hidden cursor-pointer relative"
                     initial={{ opacity: 0, scale: 0.95 }}
                     whileInView={{ opacity: 1, scale: 1 }}
                     viewport={{ once: true }}
@@ -182,7 +183,9 @@ const InstitutionalSection = () => {
                     {hasUrl ? (
                       <InstagramEmbedWithSkeleton url={url} />
                     ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-cashmere to-greige group-hover:scale-105 transition-transform duration-500" />
+                      <div className="w-full aspect-square rounded-xl border border-border/50 bg-gradient-to-br from-cashmere to-greige group hover:scale-105 transition-transform duration-500 relative">
+                        <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors duration-300 rounded-xl" />
+                      </div>
                     )}
                   </motion.div>
                 );
