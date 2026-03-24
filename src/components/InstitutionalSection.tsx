@@ -12,7 +12,19 @@ const categoryLabels: Record<string, string> = {
   "guia-condominios": "Guia de Condomínios",
 };
 
+interface ContactSettings {
+  phone: string;
+  email: string;
+  instagram: string;
+  address: string;
+}
+
 const InstitutionalSection = () => {
+  const { data: contactData } = useSiteSettings<ContactSettings>("contact");
+  const instagramHandle = contactData?.instagram?.replace("@", "") || "alphabusiness";
+  const instagramDisplay = `@${instagramHandle}`;
+  const instagramUrl = `https://instagram.com/${instagramHandle}`;
+
   const { data: posts } = useQuery({
     queryKey: ["blog-posts-preview"],
     queryFn: async () => {
