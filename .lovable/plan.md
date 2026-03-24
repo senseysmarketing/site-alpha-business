@@ -1,36 +1,43 @@
 
 
-## Ajustes Visuais — Instagram Embeds (Galeria Limpa)
+## Ajuste Visual dos Embeds do Instagram — Bordas Retas + Crop Centralizado
 
 ### Mudancas no `src/components/InstitutionalSection.tsx`
 
-**1. InstagramEmbedWithSkeleton — Refinar**
+**1. InstagramEmbedWithSkeleton — Refatorar**
 
-- Remover `captioned` (usar `captioned={false}`) para esconder legendas e cabecalho
-- Container pai: `aspect-square overflow-hidden rounded-xl border border-border/50 bg-transparent relative group`
-- Embed interno: remover restricoes de max-width, garantir `width="100%"`
-- Skeleton com `bg-muted` (cor do site) em vez de branco
+- Bordas: trocar `rounded-xl` por `rounded-sm` (2px) em todos os elementos (container, skeleton, overlay)
+- Fundo: `bg-[#F8F8F8]` (off-white do site) no container e skeleton
+- Crop centralizado do iframe: usar posicionamento absoluto no container do embed para simular `object-fit: cover` — iframe com `absolute inset-[-20%] w-[140%] h-[140%]` dentro de container `relative overflow-hidden`, forçando crop central e eliminando barras pretas/cabeçalhos brancos
+- Manter `captioned={false}`
+- Hover: remover overlay escuro, adicionar `hover:scale-[1.02] transition-transform duration-500` no container
 
-**2. Hover overlay**
+**2. Placeholders vazios**
 
-Adicionar div overlay absoluto sobre cada embed:
+- Trocar `rounded-xl` por `rounded-sm` nos placeholders gradient
+- Mesmo hover `scale-[1.02]`
+
+**3. Estrutura do embed com crop**
+
 ```
-<div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 z-10 pointer-events-none rounded-xl" />
+<div className="aspect-square overflow-hidden rounded-sm border border-border/40 bg-[#F8F8F8] relative group hover:scale-[1.02] transition-transform duration-500">
+  {!loaded && <Skeleton className="absolute inset-0 bg-[#F8F8F8] rounded-sm" />}
+  <div className="absolute inset-[-30%] w-[160%] h-[160%] [&_iframe]:!max-w-none [&_iframe]:!border-none">
+    <InstagramEmbed url={url} width="100%" captioned={false} />
+  </div>
+</div>
 ```
 
-**3. Grid container**
+A tecnica de `inset-[-30%]` + `w-[160%] h-[160%]` faz o iframe "sangrar" para fora do container, e o `overflow-hidden` do pai corta tudo que excede o quadrado — eliminando cabeçalho do perfil, barras pretas e rodape.
 
-Atualizar as `motion.div` do grid para incluir `rounded-xl border border-border/50 bg-transparent` e mover `group` para esse nivel.
-
-### Resumo das mudancas
+### Resumo
 
 | Antes | Depois |
 |---|---|
-| `captioned` (legendas visiveis) | `captioned={false}` (galeria limpa) |
-| Sem rounded corners | `rounded-xl border border-border/50` |
-| Fundo branco do iframe | `bg-transparent` no container |
-| Sem hover | Overlay `bg-black/10` no hover |
-| Skeleton padrao | Skeleton com `bg-muted` para harmonia |
+| `rounded-xl` (12px) | `rounded-sm` (2px) |
+| Overlay escuro no hover | `scale-[1.02]` sutil no hover |
+| Iframe tamanho natural (barras pretas) | Iframe expandido + crop central |
+| Skeleton `bg-muted` | Skeleton `bg-[#F8F8F8]` (off-white) |
 
 ### Arquivo unico
 
