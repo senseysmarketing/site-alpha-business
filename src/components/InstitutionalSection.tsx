@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Instagram, ArrowUpRight, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -10,18 +10,19 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 function InstagramEmbedWithSkeleton({ url }: { url: string }) {
   const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setLoaded(true), 4000);
+    return () => clearTimeout(timer);
+  }, [url]);
+
   return (
-    <div className="w-full h-full relative">
+    <div className="w-full h-full relative overflow-hidden">
       {!loaded && (
         <Skeleton className="absolute inset-0 w-full h-full rounded-none" />
       )}
-      <div className={`w-full h-full transition-opacity duration-500 ${loaded ? "opacity-100" : "opacity-0"}`}>
-        <InstagramEmbed
-          url={url}
-          width="100%"
-          captioned
-          onLoad={() => setLoaded(true)}
-        />
+      <div className="w-full h-full">
+        <InstagramEmbed url={url} width="100%" captioned />
       </div>
     </div>
   );
