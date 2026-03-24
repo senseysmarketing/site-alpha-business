@@ -7,6 +7,7 @@ import SearchResultsPanel from "./SearchResultsPanel";
 import FilterChips, { type ParsedFilters } from "./search/FilterChips";
 import VoiceWaves from "./search/VoiceWaves";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { mockProperties, toSearchResult } from "@/data/mockProperties";
 
 interface SearchResult {
   id: string;
