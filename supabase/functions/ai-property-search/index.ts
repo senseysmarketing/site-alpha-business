@@ -42,11 +42,7 @@ serve(async (req) => {
       throw new Error("Failed to fetch properties");
     }
 
-    if (!properties || properties.length === 0) {
-      return new Response(JSON.stringify({ results: [], parsed_filters: null }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const safeProperties = properties || [];
 
     const propertyContext = properties.map((p) => {
       const parts = [
