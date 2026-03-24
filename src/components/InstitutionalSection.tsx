@@ -156,7 +156,7 @@ const InstitutionalSection = () => {
             </div>
 
             <motion.a
-              href="https://instagram.com/alphabusiness"
+              href={instagramUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 mt-auto pt-4 text-body text-xs tracking-[0.15em] uppercase text-foreground line-reveal pb-1"

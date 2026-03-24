@@ -60,7 +60,7 @@ const Header = () => {
             className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors duration-300 text-[11px] tracking-[0.1em]"
           >
             <Phone size={12} />
-            {phone}
+            {formatPhone(phone)}
           </a>
         </div>
       </div>
