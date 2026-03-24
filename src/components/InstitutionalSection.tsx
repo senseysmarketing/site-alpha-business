@@ -3,6 +3,7 @@ import { Instagram, ArrowUpRight, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 const categoryLabels: Record<string, string> = {
   "inside-alphaville": "Inside Alphaville",
@@ -11,7 +12,19 @@ const categoryLabels: Record<string, string> = {
   "guia-condominios": "Guia de Condomínios",
 };
 
+interface ContactSettings {
+  phone: string;
+  email: string;
+  instagram: string;
+  address: string;
+}
+
 const InstitutionalSection = () => {
+  const { data: contactData } = useSiteSettings<ContactSettings>("contact");
+  const instagramHandle = contactData?.instagram?.replace("@", "") || "alphabusiness";
+  const instagramDisplay = `@${instagramHandle}`;
+  const instagramUrl = `https://instagram.com/${instagramHandle}`;
+
   const { data: posts } = useQuery({
     queryKey: ["blog-posts-preview"],
     queryFn: async () => {
@@ -124,7 +137,7 @@ const InstitutionalSection = () => {
               viewport={{ once: true }}
             >
               <Instagram size={18} className="text-muted-foreground" />
-              <span className="text-body text-xs text-muted-foreground">@alphabusiness</span>
+              <span className="text-body text-xs text-muted-foreground">{instagramDisplay}</span>
             </motion.div>
 
             <div className="grid grid-cols-2 gap-2">
@@ -143,7 +156,7 @@ const InstitutionalSection = () => {
             </div>
 
             <motion.a
-              href="https://instagram.com/alphabusiness"
+              href={instagramUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 mt-auto pt-4 text-body text-xs tracking-[0.15em] uppercase text-foreground line-reveal pb-1"

@@ -1,5 +1,6 @@
 import logoAlpha from "@/assets/logo-alpha.png";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { formatPhone } from "@/lib/utils";
 
 interface ContactSettings {
   phone: string;
@@ -57,7 +58,7 @@ const Footer = () => {
               Contato
             </p>
             <div className="flex flex-col gap-3 text-body text-sm text-foreground/70">
-              <p>{phone}</p>
+              <p>{formatPhone(phone)}</p>
               <p>{email}</p>
               <p>{address}</p>
             </div>

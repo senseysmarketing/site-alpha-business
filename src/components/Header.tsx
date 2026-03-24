@@ -4,6 +4,7 @@ import { Menu, X, Instagram, Youtube, Phone } from "lucide-react";
 import { Link } from "react-router-dom";
 import logoAlpha from "@/assets/logo-alpha.png";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { formatPhone } from "@/lib/utils";
 
 interface ContactSettings {
   phone: string;
@@ -41,7 +42,7 @@ const Header = () => {
               className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors duration-300 text-[11px] tracking-[0.1em]"
             >
               <Instagram size={12} />
-              {instagram.replace("@", "")}
+              {instagram.startsWith("@") ? instagram : `@${instagram}`}
             </a>
             <span className="text-border">|</span>
             <a
@@ -59,7 +60,7 @@ const Header = () => {
             className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors duration-300 text-[11px] tracking-[0.1em]"
           >
             <Phone size={12} />
-            {phone}
+            {formatPhone(phone)}
           </a>
         </div>
       </div>
