@@ -1,52 +1,56 @@
 
 
-## Feed Instagram Manual — Admin + Frontend
+## Fix: Instagram Embeds Loading Infinitely
 
-### Passo 1 — Novo setting no Supabase
+### Root Cause
 
-Criar migration inserindo nova chave `instagram_posts` na tabela `site_settings`:
+The `InstagramEmbedWithSkeleton` component sets `opacity-0` until `onLoad` fires on `<InstagramEmbed>`. However, `react-social-media-embed`'s `InstagramEmbed` component does **not reliably fire** the `onLoad` callback — it renders an iframe internally and the load event doesn't propagate to the React prop.
 
-```sql
-INSERT INTO public.site_settings (key, value) VALUES
-  ('instagram_posts', '{"urls": ["", "", "", "", "", ""]}'::jsonb)
-ON CONFLICT (key) DO NOTHING;
-```
+Result: skeleton shows forever, embed is rendered but invisible (`opacity-0`).
 
-### Passo 2 — Admin: Campos de URL no SiteSettings
-
-**`src/pages/admin/SiteSettings.tsx`**
-
-Adicionar novo bloco "Destaques Social" abaixo do bloco "Contato e Redes" (bloco 6):
-- Novo hook `useSiteSettings<{urls: string[]}>('instagram_posts')`
-- 6 campos de Input para URLs de posts do Instagram
-- Layout: grid 2 colunas, labels "Post 1" a "Post 6"
-- Placeholder: `https://www.instagram.com/p/...`
-- Botao "Salvar" padrao do SettingsBlock
-
-Adicionar interface e estado correspondentes.
-
-### Passo 3 — Dependencia
-
-Instalar `react-social-media-embed`.
-
-### Passo 4 — Frontend: InstitutionalSection
+### Fix
 
 **`src/components/InstitutionalSection.tsx`**
 
-- Importar `useSiteSettings` com key `instagram_posts`
-- Importar `InstagramEmbed` de `react-social-media-embed`
-- Importar `Skeleton` de `@/components/ui/skeleton`
-- Substituir o grid de 6 blocos cinza placeholder por:
-  - Se URL preenchida: `<InstagramEmbed url={url} width="100%" captioned />` envolvido em container `aspect-square overflow-hidden`
-  - Se URL vazia: manter o gradient placeholder atual
-  - Skeleton de loading enquanto o embed carrega (state `loaded` por post)
-- Manter grid `grid-cols-2 gap-2` e animacoes existentes
+Replace the `onLoad`-based approach with a **timer-based fallback**:
+- Keep the skeleton initially
+- Use a `setTimeout` (e.g., 3 seconds) to force `loaded = true` as a fallback
+- Additionally, use an `IntersectionObserver` or simply always render the embed visible (remove the opacity toggle entirely)
 
-### Arquivos
+Simplest reliable fix: **remove the opacity toggle entirely** and just show the skeleton underneath the embed. As the iframe loads naturally, it will cover the skeleton. No need for `onLoad`.
+
+```typescript
+function InstagramEmbedWithSkeleton({ url }: { url: string }) {
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    // Fallback: assume loaded after 4 seconds
+    const timer = setTimeout(() => setLoaded(true), 4000);
+    return () => clearTimeout(timer);
+  }, [url]);
+
+  return (
+    <div className="w-full h-full relative overflow-hidden">
+      {!loaded && (
+        <Skeleton className="absolute inset-0 w-full h-full rounded-none" />
+      )}
+      <div className="w-full h-full">
+        <InstagramEmbed url={url} width="100%" captioned />
+      </div>
+    </div>
+  );
+}
+```
+
+Key changes:
+- Remove `onLoad` prop (unreliable)
+- Remove `opacity-0/opacity-100` toggle (was hiding the loaded content)
+- Add `useEffect` timer as fallback to dismiss skeleton after 4s
+- Embed is always visible, skeleton sits behind it and disappears after timeout
+
+### Files
 
 | Arquivo | Acao |
 |---|---|
-| Migration SQL | Inserir key `instagram_posts` |
-| `src/pages/admin/SiteSettings.tsx` | Adicionar bloco "Destaques Social" com 6 inputs |
-| `src/components/InstitutionalSection.tsx` | Substituir placeholders por `InstagramEmbed` |
+| `src/components/InstitutionalSection.tsx` | Fix `InstagramEmbedWithSkeleton` — remove opacity toggle, add timer fallback |
 
