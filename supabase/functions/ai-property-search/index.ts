@@ -199,7 +199,7 @@ REGRAS DE INTERPRETAÇÃO:
 
     const results = matches
       .map((m) => {
-        const prop = properties.find((p) => p.id === m.property_id);
+        const prop = safeProperties.find((p) => p.id === m.property_id);
         if (!prop) return null;
         return {
           id: prop.id,
