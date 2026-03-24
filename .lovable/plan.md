@@ -1,41 +1,52 @@
 
 
-## Correcoes: Instagram + Mascara de Telefone — Todos os Componentes
+## Feed Instagram Manual — Admin + Frontend
 
-### Problema
-1. **Instagram hardcoded** em `InstitutionalSection.tsx` (linha 127: `@alphabusiness`, linha 146: `instagram.com/alphabusiness`) — nao usa `useSiteSettings`
-2. **Instagram sem "@"** no `Header.tsx` (linha 44: `instagram.replace("@", "")` remove o @)
-3. **Telefone sem formatacao** no Header (linha exibicao) e Footer
+### Passo 1 — Novo setting no Supabase
 
-### Mudancas
+Criar migration inserindo nova chave `instagram_posts` na tabela `site_settings`:
 
-**1. `src/lib/utils.ts`** — Adicionar helper `formatPhone`
-- Recebe string de digitos, retorna `(XX) XXXXX-XXXX` ou `(XX) XXXX-XXXX`
+```sql
+INSERT INTO public.site_settings (key, value) VALUES
+  ('instagram_posts', '{"urls": ["", "", "", "", "", ""]}'::jsonb)
+ON CONFLICT (key) DO NOTHING;
+```
 
-**2. `src/components/Header.tsx`**
-- Exibir instagram COM "@": `{instagram.startsWith("@") ? instagram : "@" + instagram}`
-- URL do link: remover "@" apenas na href
-- Aplicar `formatPhone` no telefone exibido
+### Passo 2 — Admin: Campos de URL no SiteSettings
 
-**3. `src/components/Footer.tsx`**
-- Aplicar `formatPhone` no telefone
+**`src/pages/admin/SiteSettings.tsx`**
 
-**4. `src/components/InstitutionalSection.tsx`**
-- Importar `useSiteSettings` com key `contact`
-- Substituir `@alphabusiness` hardcoded (linha 127) pelo valor do DB
-- Substituir `instagram.com/alphabusiness` hardcoded (linha 146) pela URL dinamica
-- Fallback para "alphabusiness" se DB vazio
+Adicionar novo bloco "Destaques Social" abaixo do bloco "Contato e Redes" (bloco 6):
+- Novo hook `useSiteSettings<{urls: string[]}>('instagram_posts')`
+- 6 campos de Input para URLs de posts do Instagram
+- Layout: grid 2 colunas, labels "Post 1" a "Post 6"
+- Placeholder: `https://www.instagram.com/p/...`
+- Botao "Salvar" padrao do SettingsBlock
 
-**5. `src/pages/admin/SiteSettings.tsx`**
-- Aplicar mascara de telefone no onChange do campo phone (formatar enquanto digita)
+Adicionar interface e estado correspondentes.
+
+### Passo 3 — Dependencia
+
+Instalar `react-social-media-embed`.
+
+### Passo 4 — Frontend: InstitutionalSection
+
+**`src/components/InstitutionalSection.tsx`**
+
+- Importar `useSiteSettings` com key `instagram_posts`
+- Importar `InstagramEmbed` de `react-social-media-embed`
+- Importar `Skeleton` de `@/components/ui/skeleton`
+- Substituir o grid de 6 blocos cinza placeholder por:
+  - Se URL preenchida: `<InstagramEmbed url={url} width="100%" captioned />` envolvido em container `aspect-square overflow-hidden`
+  - Se URL vazia: manter o gradient placeholder atual
+  - Skeleton de loading enquanto o embed carrega (state `loaded` por post)
+- Manter grid `grid-cols-2 gap-2` e animacoes existentes
 
 ### Arquivos
 
 | Arquivo | Acao |
 |---|---|
-| `src/lib/utils.ts` | Adicionar `formatPhone` |
-| `src/components/Header.tsx` | Fix "@" + formatPhone |
-| `src/components/Footer.tsx` | formatPhone |
-| `src/components/InstitutionalSection.tsx` | Integrar `useSiteSettings("contact")` para instagram |
-| `src/pages/admin/SiteSettings.tsx` | Mascara no input telefone |
+| Migration SQL | Inserir key `instagram_posts` |
+| `src/pages/admin/SiteSettings.tsx` | Adicionar bloco "Destaques Social" com 6 inputs |
+| `src/components/InstitutionalSection.tsx` | Substituir placeholders por `InstagramEmbed` |
 
