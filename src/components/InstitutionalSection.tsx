@@ -1,9 +1,12 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Instagram, ArrowUpRight, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { InstagramEmbed } from "react-social-media-embed";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const categoryLabels: Record<string, string> = {
   "inside-alphaville": "Inside Alphaville",
