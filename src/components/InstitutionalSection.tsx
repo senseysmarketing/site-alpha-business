@@ -146,18 +146,27 @@ const InstitutionalSection = () => {
             </motion.div>
 
             <div className="grid grid-cols-2 gap-2">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <motion.div
-                  key={i}
-                  className="aspect-square bg-muted overflow-hidden group cursor-pointer"
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.05, duration: 0.5 }}
-                >
-                  <div className="w-full h-full bg-gradient-to-br from-cashmere to-greige group-hover:scale-105 transition-transform duration-500" />
-                </motion.div>
-              ))}
+              {[0, 1, 2, 3, 4, 5].map((i) => {
+                const url = instaUrls[i];
+                const hasUrl = url && url.trim().length > 0;
+
+                return (
+                  <motion.div
+                    key={i}
+                    className="aspect-square overflow-hidden group cursor-pointer relative"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.05, duration: 0.5 }}
+                  >
+                    {hasUrl ? (
+                      <InstagramEmbedWithSkeleton url={url} />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-cashmere to-greige group-hover:scale-105 transition-transform duration-500" />
+                    )}
+                  </motion.div>
+                );
+              })}
             </div>
 
             <motion.a
