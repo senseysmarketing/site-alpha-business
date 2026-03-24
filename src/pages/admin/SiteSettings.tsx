@@ -428,7 +428,27 @@ const SiteSettings = () => {
             </div>
           </SettingsBlock>
 
-          {/* Block 7: Footer */}
+          {/* Block 7: Instagram Posts */}
+          <SettingsBlock title="Destaques Social" onSave={() => instaPosts.save({ urls: instaForm })} isSaving={instaPosts.isSaving}>
+            <p className="font-[Inter] text-xs text-muted-foreground -mt-2 mb-3">
+              Insira as URLs de até 6 postagens do Instagram para exibir na seção "Alpha em Movimento".
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              {instaForm.map((url, i) => (
+                <div key={i}>
+                  <Label className="font-[Inter] text-xs text-muted-foreground">Post {i + 1}</Label>
+                  <Input
+                    value={url}
+                    onChange={(e) => updateInstaUrl(i, e.target.value)}
+                    placeholder="https://www.instagram.com/p/..."
+                    className="mt-1 h-9 text-sm border-border/50"
+                  />
+                </div>
+              ))}
+            </div>
+          </SettingsBlock>
+
+          {/* Block 8: Footer */}
           <SettingsBlock title="Rodapé" onSave={() => footer.save(footerForm)} isSaving={footer.isSaving}>
             <div className="grid grid-cols-2 gap-3">
               <div>
