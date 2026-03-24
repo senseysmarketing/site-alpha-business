@@ -1,5 +1,6 @@
 import logoAlpha from "@/assets/logo-alpha.png";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { formatPhone } from "@/lib/utils";
 
 interface ContactSettings {
   phone: string;
