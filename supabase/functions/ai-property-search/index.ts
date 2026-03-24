@@ -44,7 +44,7 @@ serve(async (req) => {
 
     const safeProperties = properties || [];
 
-    const propertyContext = properties.map((p) => {
+    const propertyContext = safeProperties.map((p) => {
       const parts = [
         `ID: ${p.id}`,
         `Código: ${p.code}`,
