@@ -205,6 +205,15 @@ const SiteSettings = () => {
   const [contactForm, setContactForm] = useState<ContactSettings>({ phone: "", email: "", instagram: "", address: "" });
   useEffect(() => { if (contact.data) setContactForm(contact.data); }, [contact.data]);
 
+  // ── Instagram Posts ──
+  const instaPosts = useSiteSettings<{ urls: string[] }>("instagram_posts");
+  const [instaForm, setInstaForm] = useState<string[]>(["", "", "", "", "", ""]);
+  useEffect(() => { if (instaPosts.data?.urls) setInstaForm(instaPosts.data.urls); }, [instaPosts.data]);
+
+  const updateInstaUrl = (i: number, val: string) => {
+    setInstaForm((prev) => prev.map((u, idx) => (idx === i ? val : u)));
+  };
+
   // ── Footer ──
   const footer = useSiteSettings<FooterSettings>("footer");
   const [footerForm, setFooterForm] = useState<FooterSettings>({ copyright_text: "", tagline: "" });
