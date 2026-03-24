@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Bed, Bath, Maximize, X } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import FilterChips, { type ParsedFilters } from "@/components/search/FilterChips";
 
 interface SearchResult {
   id: string;
@@ -26,6 +27,7 @@ interface SearchResultsPanelProps {
   visible: boolean;
   onClose: () => void;
   query?: string;
+  parsedFilters?: ParsedFilters | null;
 }
 
 const formatPrice = (value: number | null) => {
@@ -38,7 +40,7 @@ const formatPrice = (value: number | null) => {
   }).format(value);
 };
 
-const SearchResultsPanel = ({ results, loading, visible, onClose, query = "" }: SearchResultsPanelProps) => {
+const SearchResultsPanel = ({ results, loading, visible, onClose, query = "", parsedFilters }: SearchResultsPanelProps) => {
   const navigate = useNavigate();
 
   if (!visible) return null;
@@ -52,7 +54,6 @@ const SearchResultsPanel = ({ results, loading, visible, onClose, query = "" }: 
         exit={{ opacity: 0, y: -8 }}
         transition={{ duration: 0.3 }}
       >
-        {/* Close button */}
         <button
           onClick={onClose}
           className="absolute top-3 right-3 p-1.5 rounded-sm hover:bg-muted text-muted-foreground transition-colors z-10"
@@ -81,10 +82,16 @@ const SearchResultsPanel = ({ results, loading, visible, onClose, query = "" }: 
           </div>
         ) : (
           <div className="p-2">
-            <p className="text-body text-[10px] tracking-[0.15em] uppercase text-muted-foreground px-2 pt-2 pb-3">
+            {/* Parsed filter chips */}
+            {parsedFilters && (
+              <div className="px-2 pt-2 pb-2">
+                <FilterChips filters={parsedFilters} />
+              </div>
+            )}
+
+            <p className="text-body text-[10px] tracking-[0.15em] uppercase text-muted-foreground px-2 pt-1 pb-3">
               {results.length} {results.length === 1 ? "resultado" : "resultados"} encontrados
             </p>
-            {/* Ver todos button */}
             <button
               onClick={() => {
                 onClose();
@@ -103,7 +110,6 @@ const SearchResultsPanel = ({ results, loading, visible, onClose, query = "" }: 
                 }}
                 className="w-full flex gap-3 p-2 rounded-sm hover:bg-muted/50 transition-colors text-left group"
               >
-                {/* Photo */}
                 <div className="w-20 h-16 rounded-sm overflow-hidden flex-shrink-0 bg-muted">
                   {result.photo ? (
                     <img
@@ -118,7 +124,6 @@ const SearchResultsPanel = ({ results, loading, visible, onClose, query = "" }: 
                   )}
                 </div>
 
-                {/* Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline gap-2">
                     <h4 className="text-body text-sm font-medium text-foreground truncate">
@@ -172,7 +177,6 @@ const SearchResultsPanel = ({ results, loading, visible, onClose, query = "" }: 
                     ) : null}
                   </div>
 
-                  {/* AI relevance reason */}
                   <p className="text-body text-[11px] text-accent-foreground/70 mt-1 line-clamp-1 italic">
                     {result.relevance_reason}
                   </p>

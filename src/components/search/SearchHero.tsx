@@ -5,6 +5,8 @@ import gsap from "gsap";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { mockProperties, toSearchResult } from "@/data/mockProperties";
+import FilterChips, { type ParsedFilters } from "@/components/search/FilterChips";
+import VoiceWaves from "@/components/search/VoiceWaves";
 
 interface SearchResult {
   id: string;
@@ -27,6 +29,7 @@ interface SearchHeroProps {
   initialQuery: string;
   onResults: (results: SearchResult[]) => void;
   onLoading: (loading: boolean) => void;
+  onParsedFilters?: (filters: ParsedFilters | null) => void;
 }
 
 const LIFESTYLE_PILLS = [
@@ -35,14 +38,14 @@ const LIFESTYLE_PILLS = [
   { label: "VGV Exclusivo", query: "mansão acima de 5 milhões exclusiva" },
 ];
 
-const SearchHero = ({ initialQuery, onResults, onLoading }: SearchHeroProps) => {
+const SearchHero = ({ initialQuery, onResults, onLoading, onParsedFilters }: SearchHeroProps) => {
   const [query, setQuery] = useState(initialQuery);
   const [listening, setListening] = useState(false);
   const [searching, setSearching] = useState(false);
+  const [parsedFilters, setParsedFilters] = useState<ParsedFilters | null>(null);
   const heroImageRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
 
-  // GSAP zoom-out on load
   useEffect(() => {
     if (heroImageRef.current) {
       gsap.fromTo(
@@ -53,7 +56,6 @@ const SearchHero = ({ initialQuery, onResults, onLoading }: SearchHeroProps) => 
     }
   }, []);
 
-  // Auto-search on mount if query exists
   useEffect(() => {
     if (initialQuery.trim()) {
       handleSearch(initialQuery);
@@ -67,6 +69,8 @@ const SearchHero = ({ initialQuery, onResults, onLoading }: SearchHeroProps) => 
 
     setSearching(true);
     onLoading(true);
+    setParsedFilters(null);
+    onParsedFilters?.(null);
 
     try {
       const { data, error } = await supabase.functions.invoke("ai-property-search", {
@@ -78,10 +82,13 @@ const SearchHero = ({ initialQuery, onResults, onLoading }: SearchHeroProps) => 
         return;
       }
       const results = data?.results || [];
+      const filters = data?.parsed_filters || null;
+      setParsedFilters(filters);
+      onParsedFilters?.(filters);
+
       if (results.length > 0) {
         onResults(results);
       } else {
-        // Fallback: filter mock data by query
         const lower = q.toLowerCase();
         const filtered = mockProperties
           .filter((p) =>
@@ -94,7 +101,6 @@ const SearchHero = ({ initialQuery, onResults, onLoading }: SearchHeroProps) => 
       }
     } catch (err: any) {
       console.error("Search error:", err);
-      // Fallback to mock data on error
       const lower = q.toLowerCase();
       const filtered = mockProperties
         .filter((p) =>
@@ -109,7 +115,7 @@ const SearchHero = ({ initialQuery, onResults, onLoading }: SearchHeroProps) => 
       setSearching(false);
       onLoading(false);
     }
-  }, [query, onResults, onLoading]);
+  }, [query, onResults, onLoading, onParsedFilters]);
 
   const handleVoice = useCallback(() => {
     if (listening && recognitionRef.current) {
@@ -181,13 +187,7 @@ const SearchHero = ({ initialQuery, onResults, onLoading }: SearchHeroProps) => 
 
   return (
     <section className="relative h-[40vh] min-h-[320px] flex items-center justify-center overflow-hidden">
-      {/* Background image with GSAP zoom-out */}
       <div ref={heroImageRef} className="absolute inset-0 will-change-transform">
-        <img
-          src="/videos/hero-bg.mp4"
-          alt=""
-          className="hidden"
-        />
         <video
           src="/videos/hero-bg.mp4"
           autoPlay
@@ -198,10 +198,8 @@ const SearchHero = ({ initialQuery, onResults, onLoading }: SearchHeroProps) => 
         />
       </div>
 
-      {/* Overlay */}
       <div className="absolute inset-0 bg-gradient-to-b from-foreground/50 via-foreground/30 to-background" />
 
-      {/* Content */}
       <div className="relative z-10 w-full max-w-2xl mx-auto px-4 md:px-6">
         <motion.h1
           className="text-display text-2xl md:text-3xl font-light text-primary-foreground text-center mb-6 tracking-wide"
@@ -212,7 +210,6 @@ const SearchHero = ({ initialQuery, onResults, onLoading }: SearchHeroProps) => 
           Alpha Concierge
         </motion.h1>
 
-        {/* Search bar */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -228,14 +225,7 @@ const SearchHero = ({ initialQuery, onResults, onLoading }: SearchHeroProps) => 
                     : "hover:bg-muted text-muted-foreground"
                 }`}
               >
-                <Mic size={18} />
-                {listening && (
-                  <motion.div
-                    className="absolute inset-0 rounded-sm border-2 border-accent"
-                    animate={{ scale: [1, 1.3, 1], opacity: [1, 0, 1] }}
-                    transition={{ repeat: Infinity, duration: 1.5 }}
-                  />
-                )}
+                {listening ? <VoiceWaves /> : <Mic size={18} />}
               </button>
               <Search size={18} className="text-muted-foreground flex-shrink-0" />
               <input
@@ -247,7 +237,9 @@ const SearchHero = ({ initialQuery, onResults, onLoading }: SearchHeroProps) => 
                 className="flex-1 bg-transparent text-body text-sm text-foreground placeholder:text-muted-foreground outline-none py-3 min-w-0"
               />
             </div>
-            {/* Mobile button */}
+            {listening && (
+              <p className="text-body text-xs text-muted-foreground text-center py-1">Ouvindo...</p>
+            )}
             <button
               onClick={() => handleSearch()}
               disabled={searching}
@@ -256,7 +248,6 @@ const SearchHero = ({ initialQuery, onResults, onLoading }: SearchHeroProps) => 
               {searching && <Loader2 size={14} className="animate-spin" />}
               {searching ? "Buscando..." : "Buscar"}
             </button>
-            {/* Desktop button */}
             <button
               onClick={() => handleSearch()}
               disabled={searching}
@@ -266,16 +257,22 @@ const SearchHero = ({ initialQuery, onResults, onLoading }: SearchHeroProps) => 
               {searching ? "Buscando..." : "Buscar"}
             </button>
           </div>
+
+          {/* Filter chips below search */}
+          {parsedFilters && !searching && (
+            <div className="mt-3">
+              <FilterChips filters={parsedFilters} />
+            </div>
+          )}
         </motion.div>
 
-        {/* Lifestyle pills */}
         <motion.div
           className="flex items-center justify-center gap-2 mt-4 flex-wrap"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6, duration: 0.8 }}
         >
-          {LIFESTYLE_PILLS.map((pill, i) => (
+          {LIFESTYLE_PILLS.map((pill) => (
             <button
               key={pill.label}
               onClick={() => handlePillClick(pill.query)}

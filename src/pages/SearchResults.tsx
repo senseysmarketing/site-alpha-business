@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { SlidersHorizontal, GitCompareArrows } from "lucide-react";
@@ -10,9 +10,11 @@ import BentoGrid from "@/components/search/BentoGrid";
 import AdvancedFiltersDrawer, { type Filters } from "@/components/search/AdvancedFiltersDrawer";
 import CompareModal from "@/components/search/CompareModal";
 import ConciergeSidebar from "@/components/search/ConciergeSidebar";
+import FilterChips, { type ParsedFilters } from "@/components/search/FilterChips";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { mockProperties, toSearchResult } from "@/data/mockProperties";
+
 interface SearchResult {
   id: string;
   code: string;
@@ -49,9 +51,8 @@ const SearchResults = () => {
   const [filters, setFilters] = useState<Filters>(defaultFilters);
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [compareOpen, setCompareOpen] = useState(false);
+  const [parsedFilters, setParsedFilters] = useState<ParsedFilters | null>(null);
 
-
-  // Filter results client-side
   const filteredResults = useMemo(() => {
     return results.filter((r) => {
       const price = r.transaction_type === "aluguel" ? r.rental_price : r.price;
@@ -70,7 +71,7 @@ const SearchResults = () => {
   const handleToggleCompare = useCallback((id: string) => {
     setCompareIds((prev) => {
       if (prev.includes(id)) return prev.filter((x) => x !== id);
-      if (prev.length >= 2) return [prev[1], id]; // rotate
+      if (prev.length >= 2) return [prev[1], id];
       return [...prev, id];
     });
   }, []);
@@ -79,7 +80,6 @@ const SearchResults = () => {
     return compareIds.map((id) => results.find((r) => r.id === id)).filter(Boolean) as SearchResult[];
   }, [compareIds, results]);
 
-  // Concierge suggestions: last 3 results
   const conciergeSuggestions = useMemo(() => {
     return results.slice(-3).map((r) => ({
       id: r.id,
@@ -104,19 +104,22 @@ const SearchResults = () => {
         initialQuery={initialQuery}
         onResults={setResults}
         onLoading={setLoading}
+        onParsedFilters={setParsedFilters}
       />
 
-      {/* Results section */}
       <section className="section-padding">
         <div className="max-w-7xl mx-auto">
           {/* Toolbar */}
           <div className="flex items-center justify-between mb-8">
-            <div>
+            <div className="flex items-center gap-4 flex-wrap">
               {!loading && results.length > 0 && (
                 <p className="text-body text-xs tracking-[0.15em] uppercase text-muted-foreground">
                   {filteredResults.length}{" "}
                   {filteredResults.length === 1 ? "resultado" : "resultados"}
                 </p>
+              )}
+              {parsedFilters && !loading && (
+                <FilterChips filters={parsedFilters} />
               )}
             </div>
             <div className="flex items-center gap-3">
@@ -143,7 +146,6 @@ const SearchResults = () => {
             </div>
           </div>
 
-          {/* Loading state */}
           {loading && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -155,7 +157,6 @@ const SearchResults = () => {
             </div>
           )}
 
-          {/* Results grid */}
           {!loading && (
             <BentoGrid
               results={filteredResults}
@@ -164,7 +165,6 @@ const SearchResults = () => {
             />
           )}
 
-          {/* Empty state */}
           {!loading && results.length > 0 && filteredResults.length === 0 && (
             <div className="text-center py-20">
               <p className="text-body text-sm text-muted-foreground">
@@ -180,7 +180,6 @@ const SearchResults = () => {
             </div>
           )}
 
-          {/* No results at all */}
           {!loading && results.length === 0 && initialQuery && (
             <div className="text-center py-20">
               <p className="text-display text-lg text-muted-foreground">
@@ -193,13 +192,11 @@ const SearchResults = () => {
 
       <Footer />
 
-      {/* Concierge sidebar */}
       <ConciergeSidebar
         suggestions={conciergeSuggestions}
         visible={!loading && results.length > 3}
       />
 
-      {/* Advanced filters */}
       <AdvancedFiltersDrawer
         open={filtersOpen}
         onOpenChange={setFiltersOpen}
@@ -208,7 +205,6 @@ const SearchResults = () => {
         condominiums={condominiums}
       />
 
-      {/* Compare modal */}
       <CompareModal
         open={compareOpen}
         onOpenChange={setCompareOpen}

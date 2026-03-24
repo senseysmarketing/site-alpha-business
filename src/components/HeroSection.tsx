@@ -4,6 +4,8 @@ import React, { useState, useRef, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import SearchResultsPanel from "./SearchResultsPanel";
+import FilterChips, { type ParsedFilters } from "./search/FilterChips";
+import VoiceWaves from "./search/VoiceWaves";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 interface SearchResult {
@@ -36,6 +38,7 @@ const HeroSection = () => {
   const [searching, setSearching] = useState(false);
   const [results, setResults] = useState<SearchResult[]>([]);
   const [showResults, setShowResults] = useState(false);
+  const [parsedFilters, setParsedFilters] = useState<ParsedFilters | null>(null);
   const recognitionRef = useRef<any>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -46,7 +49,6 @@ const HeroSection = () => {
   const heroTitle = heroSettings?.title || "";
   const heroSubtitle = heroSettings?.subtitle || "";
 
-  // Close results on click outside
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
@@ -57,7 +59,6 @@ const HeroSection = () => {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // Close on Escape
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") setShowResults(false);
@@ -73,6 +74,7 @@ const HeroSection = () => {
     setSearching(true);
     setShowResults(true);
     setResults([]);
+    setParsedFilters(null);
 
     try {
       const { data, error } = await supabase.functions.invoke("ai-property-search", {
@@ -87,6 +89,7 @@ const HeroSection = () => {
       }
 
       setResults(data?.results || []);
+      setParsedFilters(data?.parsed_filters || null);
     } catch (err: any) {
       console.error("Search error:", err);
       toast.error("Erro ao buscar imóveis. Tente novamente.");
@@ -186,7 +189,6 @@ const HeroSection = () => {
 
       {/* Content */}
       <div className="relative z-10 text-center w-full max-w-3xl mx-auto px-4 md:px-6">
-        {/* Dynamic title/subtitle from settings */}
         {(heroTitle || heroSubtitle) && (
           <motion.div
             className="mb-8"
@@ -225,14 +227,7 @@ const HeroSection = () => {
                     : "hover:bg-muted text-muted-foreground"
                 }`}
               >
-                <Mic size={18} />
-                {listening && (
-                  <motion.div
-                    className="absolute inset-0 rounded-sm border-2 border-accent"
-                    animate={{ scale: [1, 1.3, 1], opacity: [1, 0, 1] }}
-                    transition={{ repeat: Infinity, duration: 1.5 }}
-                  />
-                )}
+                {listening ? <VoiceWaves /> : <Mic size={18} />}
               </button>
               <Search size={18} className="text-muted-foreground flex-shrink-0" />
               <input
@@ -244,6 +239,9 @@ const HeroSection = () => {
                 className="flex-1 bg-transparent text-body text-sm text-foreground placeholder:text-muted-foreground outline-none py-3 min-w-0"
               />
             </div>
+            {listening && (
+              <p className="text-body text-xs text-muted-foreground text-center py-1">Ouvindo...</p>
+            )}
             <button
               onClick={() => handleSearch()}
               disabled={searching}
@@ -262,12 +260,20 @@ const HeroSection = () => {
             </button>
           </div>
 
+          {/* Filter chips */}
+          {parsedFilters && !searching && (
+            <div className="max-w-xl mx-auto mt-3">
+              <FilterChips filters={parsedFilters} />
+            </div>
+          )}
+
           <SearchResultsPanel
             results={results}
             loading={searching}
             visible={showResults}
             onClose={() => setShowResults(false)}
             query={query}
+            parsedFilters={parsedFilters}
           />
         </motion.div>
 
