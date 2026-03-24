@@ -1,61 +1,91 @@
 
 
-## Tornar as Configuracoes Funcionais — Conectar site_settings aos Componentes Publicos
+## AI Concierge de Luxo — Refinamento do Motor de Busca
 
-### Diagnostico
+### Escopo
 
-A pagina admin `/admin/configuracoes` salva corretamente no Supabase, mas **nenhum componente publico consome esses dados**. Todos usam valores hardcoded:
+Transformar a busca atual em um concierge inteligente que extrai filtros estruturados da linguagem natural, exibe chips de confirmacao em tempo real, e melhora o feedback visual de voz.
 
-| Componente | Status | Problema |
-|---|---|---|
-| `HeroSection.tsx` | Hardcoded | Video URLs fixas, sem titulo/subtitulo do DB |
-| `LifestyleSection.tsx` | Hardcoded | Categorias importadas de assets locais |
-| `FeaturedPropertySection.tsx` | Hardcoded | Usa `mockProperties` em vez do DB |
-| `Footer.tsx` | Hardcoded | Telefone, email, copyright fixos |
-| `Header.tsx` | Hardcoded | Instagram, telefone, WhatsApp fixos |
-| `ContactSection.tsx` | Hardcoded | Nenhuma integracao |
+### Arquitetura
 
-### Plano de Implementacao
+A IA ja recebe todos os imoveis e faz matching via tool calling. O refinamento principal e no **prompt do sistema** (edge function) e na **interface do frontend** (chips + feedback de voz).
 
-**1. HeroSection.tsx** — Consumir setting `hero`
-- Importar `useSiteSettings`
-- Usar `video_url` do DB (se preenchido) em vez de `/videos/hero-bg.mp4`
-- Usar `fallback_image` como poster/fallback
-- Exibir `title` e `subtitle` sobre o video (se preenchidos)
-- Se campos vazios, manter comportamento atual (sem texto)
+**Nao sera implementado pgvector/semantic search** neste momento — o sistema ja envia toda a base para a IA, que faz busca semantica "in-context". pgvector seria prematura otimizacao com poucos imoveis.
 
-**2. LifestyleSection.tsx** — Consumir setting `lifestyle_categories`
-- Carregar categorias do DB via `useSiteSettings`
-- Manter as imagens locais como fallback se `image` estiver vazio
-- Atualizar titulos e subtitulos conforme DB
+---
 
-**3. FeaturedPropertySection.tsx** — Consumir settings `featured_property`
-- Buscar o imovel selecionado no DB (`property_id`) em vez de usar mockProperties
-- Usar `custom_label` em vez de "Destaque" hardcoded
-- Fallback: se nenhum imovel configurado, manter comportamento atual (mock)
+### Passo 1 — Edge Function: Prompt Refinado + Filtros Estruturados
 
-**4. Footer.tsx** — Consumir settings `contact` e `footer`
-- Telefone, email, endereco do DB
-- Copyright e tagline do DB
-- Fallback para valores atuais se vazio
+**`supabase/functions/ai-property-search/index.ts`** — Editar
 
-**5. Header.tsx** — Consumir setting `contact`
-- Instagram, telefone, WhatsApp do DB
-- Fallback para valores atuais
+Atualizar o system prompt para instruir a IA a:
+- Interpretar ranges de preco ("ate 12M", "entre 8 e 10 milhoes", "minimo 5M")
+- Extrair atributos fisicos (quartos, suites, vagas, metragem)
+- Reconhecer condominios por variantes ("Res. 1", "Residencial Um", "Tambore")
+- Buscar qualitativos na descricao ("moderna", "face norte", "piso aquecido")
 
-**6. SiteSettings.tsx** — Fix titulo/subtitulo do Hero
-- O formulario ja funciona, mas os campos `title` e `subtitle` inicializam como string vazia antes do DB carregar. Adicionar placeholder visual para indicar que "vazio = nao exibir".
+Adicionar novo campo `parsed_filters` no tool schema para retornar os filtros extraidos:
 
-### Arquivos a editar
+```
+parsed_filters: {
+  price_min, price_max, bedrooms_min, bathrooms_min, parking_min,
+  area_min, condominium, qualitative_terms[], transaction_type
+}
+```
+
+A resposta da edge function passa a retornar `{ results, parsed_filters }`.
+
+### Passo 2 — Chips de Filtro Dinamicos (Frontend)
+
+**`src/components/HeroSection.tsx`** e **`src/components/search/SearchHero.tsx`** — Editar
+
+Apos receber a resposta da busca com `parsed_filters`:
+- Renderizar chips abaixo da barra de busca mostrando o que a IA entendeu
+- Chips com icones: `💰 Max R$ 15M`, `📍 Residencial 1`, `🛏 4+ quartos`, `📐 400m²+`
+- Estilo: bg translucido, borda 1px, font-mono para valores numericos
+- Animacao de entrada com `framer-motion` stagger
+- Chip removivel (X) que re-executa busca sem aquele filtro
+
+### Passo 3 — Feedback Visual de Voz Aprimorado
+
+**`src/components/HeroSection.tsx`** e **`src/components/search/SearchHero.tsx`** — Editar
+
+Melhorar o indicador de escuta:
+- Substituir a animacao de borda pulsante por barras de onda sonora minimalistas (3 barras animadas com alturas alternadas via framer-motion)
+- Texto "Ouvindo..." em `text-body text-xs` abaixo do input enquanto escuta
+- Transicao suave ao finalizar voz: chips aparecem progressivamente
+
+### Passo 4 — SearchResultsPanel com Chips
+
+**`src/components/SearchResultsPanel.tsx`** — Editar
+
+Adicionar prop `parsedFilters` e renderizar os chips no topo do painel de resultados, antes da contagem.
+
+### Passo 5 — Pagina de Busca (/busca) com Chips
+
+**`src/pages/SearchResults.tsx`** — Editar
+
+- Armazenar `parsedFilters` no estado
+- Exibir chips no toolbar acima dos resultados
+- `SearchHero` passa `parsedFilters` via callback
+
+---
+
+### Estetica
+
+- Chips: `bg-background/80 border border-border/50 rounded-full px-3 py-1`
+- Valores em `font-mono` para precisao
+- Icones emoji inline (💰 📍 🛏 📐 🏷)
+- Transicoes suaves 300ms
+- Barras de voz: 3 divs de 2px width, alturas [12px, 20px, 16px] animadas
+
+### Arquivos
 
 | Arquivo | Acao |
 |---|---|
-| `src/components/HeroSection.tsx` | Integrar `useSiteSettings("hero")` |
-| `src/components/LifestyleSection.tsx` | Integrar `useSiteSettings("lifestyle_categories")` |
-| `src/components/FeaturedPropertySection.tsx` | Integrar `useSiteSettings("featured_property")` + query Supabase |
-| `src/components/Footer.tsx` | Integrar `useSiteSettings("contact")` + `useSiteSettings("footer")` |
-| `src/components/Header.tsx` | Integrar `useSiteSettings("contact")` |
-
-### Sem mudancas no banco de dados
-Tabela `site_settings` ja existe com os seeds corretos. Nenhuma migration necessaria.
+| `supabase/functions/ai-property-search/index.ts` | Editar prompt + schema |
+| `src/components/HeroSection.tsx` | Editar — chips + voz |
+| `src/components/search/SearchHero.tsx` | Editar — chips + voz |
+| `src/components/SearchResultsPanel.tsx` | Editar — prop parsedFilters |
+| `src/pages/SearchResults.tsx` | Editar — estado parsedFilters |
 
