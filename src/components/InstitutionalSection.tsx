@@ -17,14 +17,13 @@ function InstagramEmbedWithSkeleton({ url }: { url: string }) {
   }, [url]);
 
   return (
-    <div className="w-full h-full relative overflow-hidden aspect-square rounded-xl border border-border/50 bg-transparent group">
+    <div className="aspect-square overflow-hidden rounded-sm border border-border/40 bg-[#F8F8F8] relative group hover:scale-[1.02] transition-transform duration-500">
       {!loaded && (
-        <Skeleton className="absolute inset-0 w-full h-full rounded-xl bg-muted" />
+        <Skeleton className="absolute inset-0 w-full h-full rounded-sm bg-[#F8F8F8]" />
       )}
-      <div className="w-full h-full [&_iframe]:!max-w-none">
+      <div className="absolute inset-[-30%] w-[160%] h-[160%] [&_iframe]:!max-w-none [&_iframe]:!border-none">
         <InstagramEmbed url={url} width="100%" captioned={false} />
       </div>
-      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 z-10 pointer-events-none rounded-xl" />
     </div>
   );
 }
@@ -183,8 +182,7 @@ const InstitutionalSection = () => {
                     {hasUrl ? (
                       <InstagramEmbedWithSkeleton url={url} />
                     ) : (
-                      <div className="w-full aspect-square rounded-xl border border-border/50 bg-gradient-to-br from-cashmere to-greige group hover:scale-105 transition-transform duration-500 relative">
-                        <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors duration-300 rounded-xl" />
+                      <div className="w-full aspect-square rounded-sm border border-border/40 bg-gradient-to-br from-cashmere to-greige hover:scale-[1.02] transition-transform duration-500 relative">
                       </div>
                     )}
                   </motion.div>
