@@ -137,7 +137,7 @@ const InstitutionalSection = () => {
               viewport={{ once: true }}
             >
               <Instagram size={18} className="text-muted-foreground" />
-              <span className="text-body text-xs text-muted-foreground">@alphabusiness</span>
+              <span className="text-body text-xs text-muted-foreground">{instagramDisplay}</span>
             </motion.div>
 
             <div className="grid grid-cols-2 gap-2">
