@@ -1,45 +1,42 @@
 
 
-## Ajuste Visual dos Embeds do Instagram — Bordas Retas + Crop Centralizado
+## Ajuste Fino — Centralização e Preenchimento dos Embeds do Instagram
 
-### Mudancas no `src/components/InstitutionalSection.tsx`
+### Problema
 
-**1. InstagramEmbedWithSkeleton — Refatorar**
+O iframe interno do Instagram está deslocado para cima dentro do container `aspect-square`, cortando o ícone de play na parte inferior. A técnica atual de `inset-[-30%] w-[160%] h-[160%]` expande o iframe mas não o centraliza perfeitamente — o conteúdo fica "empurrado" pelo cabeçalho invisível do widget.
 
-- Bordas: trocar `rounded-xl` por `rounded-sm` (2px) em todos os elementos (container, skeleton, overlay)
-- Fundo: `bg-[#F8F8F8]` (off-white do site) no container e skeleton
-- Crop centralizado do iframe: usar posicionamento absoluto no container do embed para simular `object-fit: cover` — iframe com `absolute inset-[-20%] w-[140%] h-[140%]` dentro de container `relative overflow-hidden`, forçando crop central e eliminando barras pretas/cabeçalhos brancos
-- Manter `captioned={false}`
-- Hover: remover overlay escuro, adicionar `hover:scale-[1.02] transition-transform duration-500` no container
+### Mudança única
 
-**2. Placeholders vazios**
+**`src/components/InstitutionalSection.tsx`** — Ajustar o wrapper interno do embed (linha 24):
 
-- Trocar `rounded-xl` por `rounded-sm` nos placeholders gradient
-- Mesmo hover `scale-[1.02]`
+- Adicionar `flex items-center justify-center` no container pai do embed para centralização
+- Ajustar o posicionamento absoluto interno: usar `inset-[-25%]` com `w-[150%] h-[150%]` (menos agressivo, melhor centralização)
+- Forçar iframe a ocupar 100% de altura e largura: adicionar `[&_iframe]:!h-full [&_iframe]:!w-full` ao seletor CSS
+- Remover padding interno do widget: `[&_div]:!p-0` para eliminar espaçamento que empurra conteúdo
 
-**3. Estrutura do embed com crop**
-
+Estrutura resultante:
 ```
 <div className="aspect-square overflow-hidden rounded-sm border border-border/40 bg-[#F8F8F8] relative group hover:scale-[1.02] transition-transform duration-500">
-  {!loaded && <Skeleton className="absolute inset-0 bg-[#F8F8F8] rounded-sm" />}
-  <div className="absolute inset-[-30%] w-[160%] h-[160%] [&_iframe]:!max-w-none [&_iframe]:!border-none">
-    <InstagramEmbed url={url} width="100%" captioned={false} />
+  {!loaded && <Skeleton ... />}
+  <div className="absolute inset-0 w-full h-full flex items-center justify-center">
+    <div className="w-[160%] h-[160%] [&_iframe]:!max-w-none [&_iframe]:!border-none [&_iframe]:!h-full [&_iframe]:!w-full">
+      <InstagramEmbed url={url} width="100%" captioned={false} />
+    </div>
   </div>
 </div>
 ```
 
-A tecnica de `inset-[-30%]` + `w-[160%] h-[160%]` faz o iframe "sangrar" para fora do container, e o `overflow-hidden` do pai corta tudo que excede o quadrado — eliminando cabeçalho do perfil, barras pretas e rodape.
+A camada intermediária com `flex items-center justify-center` centraliza o bloco expandido, garantindo que o crop seja simétrico (corta igualmente topo/base e laterais). O ícone de play ficará visível no centro.
 
-### Resumo
+### Preservação
 
-| Antes | Depois |
-|---|---|
-| `rounded-xl` (12px) | `rounded-sm` (2px) |
-| Overlay escuro no hover | `scale-[1.02]` sutil no hover |
-| Iframe tamanho natural (barras pretas) | Iframe expandido + crop central |
-| Skeleton `bg-muted` | Skeleton `bg-[#F8F8F8]` (off-white) |
+- Handle `@alphaville.sp` no topo: sem alteração
+- Link "SEGUIR NO INSTAGRAM" na base: sem alteração
+- Grid `grid-cols-2 gap-2`: sem alteração
+- Placeholders vazios: sem alteração
 
-### Arquivo unico
+### Arquivo
 
-`src/components/InstitutionalSection.tsx`
+`src/components/InstitutionalSection.tsx` — apenas linhas 19-28
 
