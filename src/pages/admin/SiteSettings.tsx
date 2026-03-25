@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
-import { Save, RotateCcw, Plus, Trash2, Upload, User } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Save, RotateCcw, Plus, Trash2, Upload, User, RefreshCw, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 
 // ── Types ──────────────────────────────────────────
@@ -206,12 +207,68 @@ const SiteSettings = () => {
   useEffect(() => { if (contact.data) setContactForm(contact.data); }, [contact.data]);
 
   // ── Instagram Posts ──
-  const instaPosts = useSiteSettings<{ urls: string[] }>("instagram_posts");
-  const [instaForm, setInstaForm] = useState<string[]>(["", "", "", "", "", ""]);
-  useEffect(() => { if (instaPosts.data?.urls) setInstaForm(instaPosts.data.urls); }, [instaPosts.data]);
+  interface InstaPostForm { url: string; thumbnail: string; status: 'pending' | 'success' | 'failed' }
+  const instaPosts = useSiteSettings<{ posts: InstaPostForm[] }>("instagram_posts");
+  const emptyInstaSlots: InstaPostForm[] = Array.from({ length: 6 }, () => ({ url: "", thumbnail: "", status: "pending" as const }));
+  const [instaForm, setInstaForm] = useState<InstaPostForm[]>(emptyInstaSlots);
+  const [scrapingInsta, setScrapingInsta] = useState(false);
 
-  const updateInstaUrl = (i: number, val: string) => {
-    setInstaForm((prev) => prev.map((u, idx) => (idx === i ? val : u)));
+  useEffect(() => {
+    if (instaPosts.data?.posts) {
+      const loaded = instaPosts.data.posts;
+      setInstaForm(Array.from({ length: 6 }, (_, i) => loaded[i] || { url: "", thumbnail: "", status: "pending" }));
+    }
+  }, [instaPosts.data]);
+
+  const updateInstaField = (i: number, field: keyof InstaPostForm, val: string) => {
+    setInstaForm((prev) => prev.map((p, idx) => {
+      if (idx !== i) return p;
+      if (field === "url") return { ...p, url: val, thumbnail: "", status: "pending" as const };
+      return { ...p, [field]: val };
+    }));
+  };
+
+  const scrapeInstaThumbnails = async (posts: InstaPostForm[]): Promise<InstaPostForm[]> => {
+    const urlsToScrape = posts.filter(p => p.url.trim() && !p.thumbnail.trim()).map(p => p.url);
+    if (urlsToScrape.length === 0) return posts;
+
+    setScrapingInsta(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("scrape-instagram-thumbnail", {
+        body: { urls: urlsToScrape },
+      });
+      if (error) throw error;
+
+      const resultMap = new Map<string, string | null>();
+      (data.results || []).forEach((r: { url: string; thumbnail: string | null }) => {
+        resultMap.set(r.url, r.thumbnail);
+      });
+
+      return posts.map(p => {
+        if (!p.url.trim()) return p;
+        if (p.thumbnail.trim()) return { ...p, status: "success" as const };
+        const thumb = resultMap.get(p.url);
+        return thumb
+          ? { ...p, thumbnail: thumb, status: "success" as const }
+          : { ...p, status: "failed" as const };
+      });
+    } catch {
+      return posts.map(p => p.url.trim() && !p.thumbnail.trim() ? { ...p, status: "failed" as const } : p);
+    } finally {
+      setScrapingInsta(false);
+    }
+  };
+
+  const handleSaveInsta = async () => {
+    const scraped = await scrapeInstaThumbnails(instaForm);
+    setInstaForm(scraped);
+    instaPosts.save({ posts: scraped });
+  };
+
+  const handleReloadThumbnails = async () => {
+    const reset = instaForm.map(p => ({ ...p, thumbnail: "", status: "pending" as const }));
+    const scraped = await scrapeInstaThumbnails(reset);
+    setInstaForm(scraped);
   };
 
   // ── Footer ──
@@ -429,20 +486,57 @@ const SiteSettings = () => {
           </SettingsBlock>
 
           {/* Block 7: Instagram Posts */}
-          <SettingsBlock title="Destaques Social" onSave={() => instaPosts.save({ urls: instaForm })} isSaving={instaPosts.isSaving}>
-            <p className="font-[Inter] text-xs text-muted-foreground -mt-2 mb-3">
-              Insira as URLs de até 6 postagens do Instagram para exibir na seção "Alpha em Movimento".
+          <SettingsBlock title="Destaques Social" onSave={handleSaveInsta} isSaving={instaPosts.isSaving || scrapingInsta}>
+            <p className="font-[Inter] text-xs text-muted-foreground -mt-2 mb-1">
+              Insira as URLs de até 6 postagens do Instagram. A thumbnail será capturada automaticamente.
             </p>
-            <div className="grid grid-cols-2 gap-3">
-              {instaForm.map((url, i) => (
-                <div key={i}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs text-muted-foreground gap-1.5 mb-3"
+              onClick={handleReloadThumbnails}
+              disabled={scrapingInsta}
+            >
+              {scrapingInsta ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+              Recarregar Thumbnails
+            </Button>
+            <div className="grid grid-cols-2 gap-4">
+              {instaForm.map((post, i) => (
+                <div key={i} className="border border-border/30 rounded-sm p-3 space-y-2">
                   <Label className="font-[Inter] text-xs text-muted-foreground">Post {i + 1}</Label>
                   <Input
-                    value={url}
-                    onChange={(e) => updateInstaUrl(i, e.target.value)}
+                    value={post.url}
+                    onChange={(e) => updateInstaField(i, "url", e.target.value)}
                     placeholder="https://www.instagram.com/p/..."
-                    className="mt-1 h-9 text-sm border-border/50"
+                    className="h-9 text-sm border-border/50"
                   />
+                  {/* Status + Preview */}
+                  <div className="flex items-center gap-2">
+                    {post.thumbnail ? (
+                      <>
+                        <img src={post.thumbnail} alt="" className="w-12 h-12 object-cover rounded-sm border border-border/30" />
+                        <Badge variant="outline" className="text-[10px] gap-1 border-emerald-200 text-emerald-700 bg-emerald-50">
+                          <CheckCircle2 className="h-3 w-3" /> Capturado
+                        </Badge>
+                      </>
+                    ) : post.url.trim() && post.status === "failed" ? (
+                      <Badge variant="outline" className="text-[10px] gap-1 border-red-200 text-red-700 bg-red-50">
+                        <AlertCircle className="h-3 w-3" /> Falhou — envie manualmente
+                      </Badge>
+                    ) : post.url.trim() ? (
+                      <Badge variant="outline" className="text-[10px] gap-1 border-amber-200 text-amber-700 bg-amber-50">
+                        <Loader2 className="h-3 w-3" /> Pendente
+                      </Badge>
+                    ) : null}
+                  </div>
+                  {/* Manual upload fallback when failed */}
+                  {post.url.trim() && post.status === "failed" && !post.thumbnail && (
+                    <PhotoDrop
+                      label="Subir Imagem Manualmente"
+                      value={post.thumbnail}
+                      onUpload={(url) => updateInstaField(i, "thumbnail", url)}
+                    />
+                  )}
                 </div>
               ))}
             </div>
