@@ -70,7 +70,7 @@ const Footer = () => {
             {copyright}
           </p>
           <div className="flex gap-6">
-            {["Privacidade", "Termos", "CRECI: 00000-J"].map((item) => (
+            {["Privacidade", "Termos", "CRECI: 035836-J"].map((item) => (
               <span key={item} className="text-body text-xs text-muted-foreground">
                 {item}
               </span>
