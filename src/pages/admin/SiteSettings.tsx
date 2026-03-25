@@ -269,6 +269,8 @@ const SiteSettings = () => {
     const reset = instaForm.map(p => ({ ...p, thumbnail: "", status: "pending" as const }));
     const scraped = await scrapeInstaThumbnails(reset);
     setInstaForm(scraped);
+    // Auto-save to persist in database
+    instaPosts.save({ posts: scraped });
   };
 
   // ── Footer ──
