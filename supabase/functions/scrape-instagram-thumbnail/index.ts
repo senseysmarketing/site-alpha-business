@@ -52,19 +52,19 @@ serve(async (req) => {
           const ogMatch = html.match(
             /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i
           );
-          if (ogMatch?.[1]) return { url, thumbnail: ogMatch[1] };
+          if (ogMatch?.[1]) return { url, thumbnail: decodeHtmlEntities(ogMatch[1]) };
 
           // Try twitter:image
           const twMatch = html.match(
             /<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i
           );
-          if (twMatch?.[1]) return { url, thumbnail: twMatch[1] };
+          if (twMatch?.[1]) return { url, thumbnail: decodeHtmlEntities(twMatch[1]) };
 
           // Try reversed attribute order (content before property)
           const ogRev = html.match(
             /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i
           );
-          if (ogRev?.[1]) return { url, thumbnail: ogRev[1] };
+          if (ogRev?.[1]) return { url, thumbnail: decodeHtmlEntities(ogRev[1]) };
 
           return { url, thumbnail: null };
         } catch {
