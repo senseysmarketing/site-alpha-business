@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
-import { Save, RotateCcw, Plus, Trash2, Upload, User } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Save, RotateCcw, Plus, Trash2, Upload, User, RefreshCw, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 
 // ── Types ──────────────────────────────────────────

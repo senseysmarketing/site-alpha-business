@@ -1,33 +1,20 @@
-import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Instagram, ArrowUpRight, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
-import { InstagramEmbed } from "react-social-media-embed";
-import { Skeleton } from "@/components/ui/skeleton";
 
-function InstagramEmbedWithSkeleton({ url }: { url: string }) {
-  const [loaded, setLoaded] = useState(false);
+interface InstaPost {
+  url: string;
+  thumbnail: string;
+}
 
-  useEffect(() => {
-    const timer = setTimeout(() => setLoaded(true), 4000);
-    return () => clearTimeout(timer);
-  }, [url]);
-
-  return (
-    <div className="aspect-square overflow-hidden rounded-sm border border-border/40 bg-[#F8F8F8] relative group hover:scale-[1.02] transition-transform duration-500">
-      {!loaded && (
-        <Skeleton className="absolute inset-0 w-full h-full rounded-sm bg-[#F8F8F8]" />
-      )}
-      <div className="absolute inset-0 w-full h-full flex items-center justify-center overflow-hidden">
-        <div className="w-[160%] h-[160%] flex items-center justify-center [&_iframe]:!max-w-none [&_iframe]:!border-none [&_iframe]:!h-full [&_iframe]:!w-full [&>div]:!flex [&>div]:!items-center [&>div]:!justify-center">
-          <InstagramEmbed url={url} width="100%" captioned={false} />
-        </div>
-      </div>
-    </div>
-  );
+interface ContactSettings {
+  phone: string;
+  email: string;
+  instagram: string;
+  address: string;
 }
 
 const categoryLabels: Record<string, string> = {
@@ -37,20 +24,13 @@ const categoryLabels: Record<string, string> = {
   "guia-condominios": "Guia de Condomínios",
 };
 
-interface ContactSettings {
-  phone: string;
-  email: string;
-  instagram: string;
-  address: string;
-}
-
 const InstitutionalSection = () => {
   const { data: contactData } = useSiteSettings<ContactSettings>("contact");
-  const { data: instaPostsData } = useSiteSettings<{ urls: string[] }>("instagram_posts");
+  const { data: instaPostsData } = useSiteSettings<{ posts: InstaPost[] }>("instagram_posts");
   const instagramHandle = contactData?.instagram?.replace("@", "") || "alphabusiness";
   const instagramDisplay = `@${instagramHandle}`;
   const instagramUrl = `https://instagram.com/${instagramHandle}`;
-  const instaUrls = instaPostsData?.urls || [];
+  const instaPosts = instaPostsData?.posts || [];
 
   const { data: posts } = useQuery({
     queryKey: ["blog-posts-preview"],
@@ -167,25 +147,39 @@ const InstitutionalSection = () => {
               <span className="text-body text-xs text-muted-foreground">{instagramDisplay}</span>
             </motion.div>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-[0.5px] bg-border/40">
               {[0, 1, 2, 3, 4, 5].map((i) => {
-                const url = instaUrls[i];
-                const hasUrl = url && url.trim().length > 0;
+                const post = instaPosts[i];
+                const hasThumbnail = post?.thumbnail && post.thumbnail.trim().length > 0;
+                const hasUrl = post?.url && post.url.trim().length > 0;
 
                 return (
                   <motion.div
                     key={i}
-                    className="overflow-hidden cursor-pointer relative"
                     initial={{ opacity: 0, scale: 0.95 }}
                     whileInView={{ opacity: 1, scale: 1 }}
                     viewport={{ once: true }}
                     transition={{ delay: i * 0.05, duration: 0.5 }}
                   >
-                    {hasUrl ? (
-                      <InstagramEmbedWithSkeleton url={url} />
+                    {hasThumbnail && hasUrl ? (
+                      <a
+                        href={post.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group relative block overflow-hidden aspect-square"
+                      >
+                        <img
+                          src={post.thumbnail}
+                          alt=""
+                          loading="lazy"
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                        />
+                        <div className="absolute inset-0 bg-bordeaux/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                          <Instagram size={20} className="text-white" strokeWidth={1.5} />
+                        </div>
+                      </a>
                     ) : (
-                      <div className="w-full aspect-square rounded-sm border border-border/40 bg-gradient-to-br from-cashmere to-greige hover:scale-[1.02] transition-transform duration-500 relative">
-                      </div>
+                      <div className="w-full aspect-square bg-gradient-to-br from-cashmere to-greige" />
                     )}
                   </motion.div>
                 );
