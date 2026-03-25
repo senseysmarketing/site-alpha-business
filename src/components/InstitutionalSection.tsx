@@ -148,7 +148,7 @@ const InstitutionalSection = () => {
               <span className="text-body text-xs text-muted-foreground">{instagramDisplay}</span>
             </motion.div>
 
-            <div className="grid grid-cols-2 gap-[0.5px] bg-border/40">
+            <div className="grid grid-cols-2 gap-2">
               {[0, 1, 2, 3, 4, 5].map((i) => {
                 const post = instaPosts[i];
                 const hasThumbnail = post?.thumbnail && post.thumbnail.trim().length > 0;
