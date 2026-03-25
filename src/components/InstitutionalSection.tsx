@@ -21,8 +21,8 @@ function InstagramEmbedWithSkeleton({ url }: { url: string }) {
       {!loaded && (
         <Skeleton className="absolute inset-0 w-full h-full rounded-sm bg-[#F8F8F8]" />
       )}
-      <div className="absolute inset-0 w-full h-full flex items-center justify-center">
-        <div className="w-[160%] h-[160%] [&_iframe]:!max-w-none [&_iframe]:!border-none [&_iframe]:!h-full [&_iframe]:!w-full">
+      <div className="absolute inset-0 w-full h-full flex items-center justify-center overflow-hidden">
+        <div className="w-[160%] h-[160%] flex items-center justify-center [&_iframe]:!max-w-none [&_iframe]:!border-none [&_iframe]:!h-full [&_iframe]:!w-full [&>div]:!flex [&>div]:!items-center [&>div]:!justify-center">
           <InstagramEmbed url={url} width="100%" captioned={false} />
         </div>
       </div>
