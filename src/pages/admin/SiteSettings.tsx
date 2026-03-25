@@ -207,12 +207,68 @@ const SiteSettings = () => {
   useEffect(() => { if (contact.data) setContactForm(contact.data); }, [contact.data]);
 
   // ── Instagram Posts ──
-  const instaPosts = useSiteSettings<{ urls: string[] }>("instagram_posts");
-  const [instaForm, setInstaForm] = useState<string[]>(["", "", "", "", "", ""]);
-  useEffect(() => { if (instaPosts.data?.urls) setInstaForm(instaPosts.data.urls); }, [instaPosts.data]);
+  interface InstaPostForm { url: string; thumbnail: string; status: 'pending' | 'success' | 'failed' }
+  const instaPosts = useSiteSettings<{ posts: InstaPostForm[] }>("instagram_posts");
+  const emptyInstaSlots: InstaPostForm[] = Array.from({ length: 6 }, () => ({ url: "", thumbnail: "", status: "pending" as const }));
+  const [instaForm, setInstaForm] = useState<InstaPostForm[]>(emptyInstaSlots);
+  const [scrapingInsta, setScrapingInsta] = useState(false);
 
-  const updateInstaUrl = (i: number, val: string) => {
-    setInstaForm((prev) => prev.map((u, idx) => (idx === i ? val : u)));
+  useEffect(() => {
+    if (instaPosts.data?.posts) {
+      const loaded = instaPosts.data.posts;
+      setInstaForm(Array.from({ length: 6 }, (_, i) => loaded[i] || { url: "", thumbnail: "", status: "pending" }));
+    }
+  }, [instaPosts.data]);
+
+  const updateInstaField = (i: number, field: keyof InstaPostForm, val: string) => {
+    setInstaForm((prev) => prev.map((p, idx) => {
+      if (idx !== i) return p;
+      if (field === "url") return { ...p, url: val, thumbnail: "", status: "pending" as const };
+      return { ...p, [field]: val };
+    }));
+  };
+
+  const scrapeInstaThumbnails = async (posts: InstaPostForm[]): Promise<InstaPostForm[]> => {
+    const urlsToScrape = posts.filter(p => p.url.trim() && !p.thumbnail.trim()).map(p => p.url);
+    if (urlsToScrape.length === 0) return posts;
+
+    setScrapingInsta(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("scrape-instagram-thumbnail", {
+        body: { urls: urlsToScrape },
+      });
+      if (error) throw error;
+
+      const resultMap = new Map<string, string | null>();
+      (data.results || []).forEach((r: { url: string; thumbnail: string | null }) => {
+        resultMap.set(r.url, r.thumbnail);
+      });
+
+      return posts.map(p => {
+        if (!p.url.trim()) return p;
+        if (p.thumbnail.trim()) return { ...p, status: "success" as const };
+        const thumb = resultMap.get(p.url);
+        return thumb
+          ? { ...p, thumbnail: thumb, status: "success" as const }
+          : { ...p, status: "failed" as const };
+      });
+    } catch {
+      return posts.map(p => p.url.trim() && !p.thumbnail.trim() ? { ...p, status: "failed" as const } : p);
+    } finally {
+      setScrapingInsta(false);
+    }
+  };
+
+  const handleSaveInsta = async () => {
+    const scraped = await scrapeInstaThumbnails(instaForm);
+    setInstaForm(scraped);
+    instaPosts.save({ posts: scraped });
+  };
+
+  const handleReloadThumbnails = async () => {
+    const reset = instaForm.map(p => ({ ...p, thumbnail: "", status: "pending" as const }));
+    const scraped = await scrapeInstaThumbnails(reset);
+    setInstaForm(scraped);
   };
 
   // ── Footer ──
