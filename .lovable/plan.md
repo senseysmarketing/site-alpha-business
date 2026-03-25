@@ -1,42 +1,28 @@
 
 
-## Ajuste Fino — Centralização e Preenchimento dos Embeds do Instagram
+## Ajuste de Centralização Horizontal dos Embeds do Instagram
 
 ### Problema
 
-O iframe interno do Instagram está deslocado para cima dentro do container `aspect-square`, cortando o ícone de play na parte inferior. A técnica atual de `inset-[-30%] w-[160%] h-[160%]` expande o iframe mas não o centraliza perfeitamente — o conteúdo fica "empurrado" pelo cabeçalho invisível do widget.
+O conteúdo interno do iframe (ícone de play, imagem) não está centralizado horizontalmente. O wrapper de 160% está sendo alinhado pelo flex, mas o próprio conteúdo do iframe dentro dele não se centraliza porque o embed do Instagram tem largura fixa interna.
 
-### Mudança única
+### Solução
 
-**`src/components/InstitutionalSection.tsx`** — Ajustar o wrapper interno do embed (linha 24):
+**`src/components/InstitutionalSection.tsx`** — linha 25: adicionar centralização no wrapper interno do embed e forçar o conteúdo do iframe a se centralizar via CSS overrides:
 
-- Adicionar `flex items-center justify-center` no container pai do embed para centralização
-- Ajustar o posicionamento absoluto interno: usar `inset-[-25%]` com `w-[150%] h-[150%]` (menos agressivo, melhor centralização)
-- Forçar iframe a ocupar 100% de altura e largura: adicionar `[&_iframe]:!h-full [&_iframe]:!w-full` ao seletor CSS
-- Remover padding interno do widget: `[&_div]:!p-0` para eliminar espaçamento que empurra conteúdo
-
-Estrutura resultante:
-```
-<div className="aspect-square overflow-hidden rounded-sm border border-border/40 bg-[#F8F8F8] relative group hover:scale-[1.02] transition-transform duration-500">
-  {!loaded && <Skeleton ... />}
-  <div className="absolute inset-0 w-full h-full flex items-center justify-center">
-    <div className="w-[160%] h-[160%] [&_iframe]:!max-w-none [&_iframe]:!border-none [&_iframe]:!h-full [&_iframe]:!w-full">
-      <InstagramEmbed url={url} width="100%" captioned={false} />
-    </div>
+```tsx
+<div className="absolute inset-0 w-full h-full flex items-center justify-center overflow-hidden">
+  <div className="w-[160%] h-[160%] flex items-center justify-center [&_iframe]:!max-w-none [&_iframe]:!border-none [&_iframe]:!h-full [&_iframe]:!w-full [&>div]:!flex [&>div]:!items-center [&>div]:!justify-center">
+    <InstagramEmbed url={url} width="100%" captioned={false} />
   </div>
 </div>
 ```
 
-A camada intermediária com `flex items-center justify-center` centraliza o bloco expandido, garantindo que o crop seja simétrico (corta igualmente topo/base e laterais). O ícone de play ficará visível no centro.
+Mudanças:
+- Adicionar `flex items-center justify-center` também no div de 160% (não só no pai)
+- Forçar o div filho direto do embed (`[&>div]`) a usar flex centering
+- Isso garante que o iframe e seu conteúdo (play icon, imagem) fiquem centrados em ambos os eixos
 
-### Preservação
-
-- Handle `@alphaville.sp` no topo: sem alteração
-- Link "SEGUIR NO INSTAGRAM" na base: sem alteração
-- Grid `grid-cols-2 gap-2`: sem alteração
-- Placeholders vazios: sem alteração
-
-### Arquivo
-
-`src/components/InstitutionalSection.tsx` — apenas linhas 19-28
+### Arquivo único
+`src/components/InstitutionalSection.tsx` — linhas 24-27
 
