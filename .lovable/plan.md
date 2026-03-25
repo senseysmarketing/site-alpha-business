@@ -1,40 +1,34 @@
 
+Diagnóstico provável:
+- O botão “Recarregar Thumbnails” hoje só atualiza o estado local do admin (`setInstaForm(scraped)`), mas não salva em `site_settings`.
+- Ao sair da página, o formulário recarrega do banco com os dados antigos, então as thumbnails “somem”.
+- A homepage lê `instagram_posts` direto do banco, por isso também continua exibindo URLs antigas/quebradas.
+- Há evidência adicional de dados antigos persistidos com `&amp;` no `thumbnail`, então mesmo quando a Edge Function já corrige isso, o frontend ainda pode estar lendo registros legados.
 
-## Problema: URLs com Entidades HTML (`&amp;`)
+Plano de correção:
 
-As thumbnails estão com imagem quebrada porque as URLs extraídas do HTML do Instagram contêm `&amp;` em vez de `&`. Por exemplo:
+1. Ajustar persistência no admin
+- Em `src/pages/admin/SiteSettings.tsx`, fazer o fluxo de “Recarregar Thumbnails” persistir o resultado no `site_settings` automaticamente.
+- Manter feedback visual durante o processamento/salvamento para deixar claro que a atualização foi concluída.
+- Ao upload manual, marcar o item como `success` para evitar voltar como pendente/falho.
 
-```
-...s640x640_tt6&amp;_nc_cat=106&amp;ccb=7-5...
-```
+2. Blindar contra dados antigos no banco
+- Normalizar thumbnails carregadas do banco no admin e na homepage, decodificando entidades HTML (`&amp;` → `&`) antes de renderizar.
+- Isso corrige imediatamente registros legados sem depender de nova raspagem.
 
-O browser não consegue carregar a imagem porque a URL está malformada. Isso acontece porque o `og:image` no HTML do Instagram usa entidades HTML nos atributos, e o regex extrai o texto cru sem decodificar.
+3. Garantir consistência entre Admin e homepage
+- Em `src/components/InstitutionalSection.tsx`, usar a URL normalizada ao renderizar `<img>`.
+- Continuar exibindo placeholder apenas quando realmente não houver thumbnail válida.
 
-Também há um segundo problema: as URLs do CDN do Instagram expiram após algumas horas, então mesmo corrigindo a decodificação, as imagens podem parar de funcionar depois. A solução robusta seria fazer download da imagem e salvar no Supabase Storage, mas por ora vamos corrigir o problema imediato.
+4. Melhorar UX do bloco social
+- Deixar explícito no admin que “Recarregar Thumbnails” atualiza e salva.
+- Se a captura falhar, manter o estado visual de erro e o botão “Subir Imagem Manualmente” como fallback definitivo.
 
-### Correção
+Arquivos a ajustar:
+- `src/pages/admin/SiteSettings.tsx`
+- `src/components/InstitutionalSection.tsx`
 
-**`supabase/functions/scrape-instagram-thumbnail/index.ts`** — Adicionar função `decodeHtmlEntities` que converte `&amp;` → `&`, `&lt;` → `<`, `&gt;` → `>`, `&quot;` → `"`, `&#39;` → `'`. Aplicar essa função em cada thumbnail extraída antes de retornar.
-
-```typescript
-function decodeHtmlEntities(str: string): string {
-  return str
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'");
-}
-```
-
-Aplicar nos 3 pontos de retorno (ogMatch, twMatch, ogRev): `return { url, thumbnail: decodeHtmlEntities(ogMatch[1]) }`.
-
-Após editar, fazer re-deploy da edge function.
-
-### Nota sobre expiração
-
-As URLs do CDN do Instagram expiram (geralmente em horas/dias). Se no futuro as imagens pararem de carregar novamente, será necessário implementar download + upload para Supabase Storage. Por agora, o admin pode clicar "Recarregar Thumbnails" para obter URLs frescas.
-
-### Arquivo
-`supabase/functions/scrape-instagram-thumbnail/index.ts` — edição única + re-deploy
-
+Resultado esperado:
+- Após clicar em “Recarregar Thumbnails”, as imagens continuam corretas mesmo depois de sair e voltar.
+- A seção de Instagram na página inicial passa a refletir exatamente o que foi atualizado no admin.
+- Registros antigos com URLs HTML-encoded deixam de quebrar a renderização.
