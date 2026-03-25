@@ -269,6 +269,8 @@ const SiteSettings = () => {
     const reset = instaForm.map(p => ({ ...p, thumbnail: "", status: "pending" as const }));
     const scraped = await scrapeInstaThumbnails(reset);
     setInstaForm(scraped);
+    // Auto-save to persist in database
+    instaPosts.save({ posts: scraped });
   };
 
   // ── Footer ──
@@ -531,10 +533,12 @@ const SiteSettings = () => {
                   </div>
                   {/* Manual upload fallback when failed */}
                   {post.url.trim() && post.status === "failed" && !post.thumbnail && (
-                    <PhotoDrop
+                     <PhotoDrop
                       label="Subir Imagem Manualmente"
                       value={post.thumbnail}
-                      onUpload={(url) => updateInstaField(i, "thumbnail", url)}
+                      onUpload={(url) => {
+                        setInstaForm((prev) => prev.map((p, idx) => idx === i ? { ...p, thumbnail: url, status: "success" as const } : p));
+                      }}
                     />
                   )}
                 </div>

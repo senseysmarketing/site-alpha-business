@@ -30,7 +30,8 @@ const InstitutionalSection = () => {
   const instagramHandle = contactData?.instagram?.replace("@", "") || "alphabusiness";
   const instagramDisplay = `@${instagramHandle}`;
   const instagramUrl = `https://instagram.com/${instagramHandle}`;
-  const instaPosts = instaPostsData?.posts || [];
+  const decodeHtmlEntities = (str: string) => str?.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'") || "";
+  const instaPosts = (instaPostsData?.posts || []).map(p => ({ ...p, thumbnail: decodeHtmlEntities(p.thumbnail) }));
 
   const { data: posts } = useQuery({
     queryKey: ["blog-posts-preview"],
