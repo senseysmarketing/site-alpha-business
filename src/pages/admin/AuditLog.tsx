@@ -18,7 +18,6 @@ import {
   Activity,
   CalendarIcon,
   Download,
-  TrendingUp,
   DollarSign,
 } from "lucide-react";
 import { format, formatDistanceToNow, subHours, isWithinInterval } from "date-fns";
