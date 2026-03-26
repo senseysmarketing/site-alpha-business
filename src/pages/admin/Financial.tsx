@@ -81,6 +81,18 @@ const CATEGORY_LABELS: Record<string, string> = {
 const formatCurrency = (v: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
 
+const applyCurrencyMask = (value: string): string => {
+  const digits = value.replace(/\D/g, "");
+  if (!digits) return "";
+  const num = Number(digits) / 100;
+  return num.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
+const parseCurrencyToFloat = (masked: string): number => {
+  if (!masked) return 0;
+  return parseFloat(masked.replace(/\./g, "").replace(",", ".")) || 0;
+};
+
 const Financial = () => {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [expenses, setExpenses] = useState<any[]>([]);
@@ -190,7 +202,7 @@ const Financial = () => {
       property_id: expenseForm.property_id,
       category: expenseForm.category as any,
       description: expenseForm.description,
-      amount: parseFloat(expenseForm.amount),
+      amount: parseCurrencyToFloat(expenseForm.amount),
     });
     if (error) {
       toast.error("Erro ao salvar despesa.");
@@ -219,9 +231,9 @@ const Financial = () => {
     }
     const { error } = await supabase.from("transactions").insert({
       property_id: txForm.property_id,
-      sale_value: parseFloat(txForm.sale_value),
+      sale_value: parseCurrencyToFloat(txForm.sale_value),
       commission_pct: parseFloat(txForm.commission_pct || "0"),
-      broker_payout: parseFloat(txForm.broker_payout || "0"),
+      broker_payout: parseCurrencyToFloat(txForm.broker_payout),
       status: txForm.status as any,
     });
     if (error) {
@@ -285,10 +297,10 @@ const Financial = () => {
                 <div>
                   <Label className="font-[Inter] text-xs">Valor da Venda (R$)</Label>
                   <Input
-                    type="number"
+                    type="text"
                     placeholder="0,00"
                     value={txForm.sale_value}
-                    onChange={(e) => setTxForm((p) => ({ ...p, sale_value: e.target.value }))}
+                    onChange={(e) => setTxForm((p) => ({ ...p, sale_value: applyCurrencyMask(e.target.value) }))}
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -304,10 +316,10 @@ const Financial = () => {
                   <div>
                     <Label className="font-[Inter] text-xs">Repasse Corretor (R$)</Label>
                     <Input
-                      type="number"
+                      type="text"
                       placeholder="0,00"
                       value={txForm.broker_payout}
-                      onChange={(e) => setTxForm((p) => ({ ...p, broker_payout: e.target.value }))}
+                      onChange={(e) => setTxForm((p) => ({ ...p, broker_payout: applyCurrencyMask(e.target.value) }))}
                     />
                   </div>
                 </div>
@@ -365,10 +377,10 @@ const Financial = () => {
                 <div>
                   <Label className="font-[Inter] text-xs">Valor (R$)</Label>
                   <Input
-                    type="number"
+                    type="text"
                     placeholder="0,00"
                     value={expenseForm.amount}
-                    onChange={(e) => setExpenseForm((p) => ({ ...p, amount: e.target.value }))}
+                    onChange={(e) => setExpenseForm((p) => ({ ...p, amount: applyCurrencyMask(e.target.value) }))}
                   />
                 </div>
                 <div>
