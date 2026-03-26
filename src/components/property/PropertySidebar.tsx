@@ -7,6 +7,7 @@ interface PropertySidebarProps {
   brokerTitle: string;
   whatsappNumber?: string;
   propertyCode: string;
+  propertyId?: string;
 }
 
 const PropertySidebar = ({
