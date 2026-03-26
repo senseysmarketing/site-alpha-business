@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { subDays, startOfMonth, startOfYear } from "date-fns";
+import { subDays, startOfMonth, startOfYear, differenceInDays, startOfWeek, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   Users,
@@ -26,6 +26,8 @@ import {
   YAxis,
   Tooltip,
   CartesianGrid,
+  LineChart,
+  Line,
 } from "recharts";
 import type { DateRange } from "react-day-picker";
 
@@ -34,6 +36,7 @@ const COLORS = ["#2A070C", "#6B2D3E", "#A85D6F", "#D4919E", "#E8BDC5"];
 const STAGE_LABELS: Record<string, string> = {
   novos: "Novos",
   contato: "Contato",
+  visita_agendada: "Visita Agendada",
   visita: "Visita",
   proposta: "Proposta",
   fechados: "Fechados",
@@ -41,6 +44,7 @@ const STAGE_LABELS: Record<string, string> = {
 
 const Reports = () => {
   const [leads, setLeads] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<any[]>([]);
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: subDays(new Date(), 30),
     to: new Date(),
@@ -49,11 +53,17 @@ const Reports = () => {
 
   useEffect(() => {
     fetchLeads();
+    fetchTransactions();
   }, []);
 
   const fetchLeads = async () => {
     const { data } = await supabase.from("leads").select("*");
     if (data) setLeads(data);
+  };
+
+  const fetchTransactions = async () => {
+    const { data } = await supabase.from("transactions").select("*");
+    if (data) setTransactions(data);
   };
 
   const handleQuickFilter = (filter: string) => {
@@ -80,10 +90,68 @@ const Reports = () => {
     });
   }, [leads, dateRange]);
 
+  const filteredTransactions = useMemo(() => {
+    if (!dateRange?.from) return transactions;
+    return transactions.filter((t) => {
+      const created = new Date(t.created_at);
+      return created >= dateRange.from! && (!dateRange.to || created <= dateRange.to);
+    });
+  }, [transactions, dateRange]);
+
   const totalLeads = filteredLeads.length;
-  const closedLeads = filteredLeads.filter((l) => l.pipeline_stage === "fechados").length;
-  const conversionRate = totalLeads > 0 ? ((closedLeads / totalLeads) * 100).toFixed(1) : "0";
+  const closedLeads = filteredLeads.filter((l) => l.pipeline_stage === "fechados");
+  const conversionRate = totalLeads > 0 ? ((closedLeads.length / totalLeads) * 100).toFixed(1) : "0";
   const pipelineValue = filteredLeads.reduce((sum, l) => sum + (l.deal_value || 0), 0);
+
+  // Average sales cycle
+  const avgSalesCycle = useMemo(() => {
+    if (closedLeads.length === 0) return null;
+    const totalDays = closedLeads.reduce((acc: number, lead: any) => {
+      return acc + differenceInDays(new Date(lead.updated_at), new Date(lead.created_at));
+    }, 0);
+    return Math.round(totalDays / closedLeads.length);
+  }, [closedLeads]);
+
+  // Net revenue from paid transactions
+  const netRevenue = useMemo(() => {
+    return filteredTransactions
+      .filter((t) => t.status === "pago")
+      .reduce((sum, t) => {
+        const commission = (t.sale_value * t.commission_pct) / 100;
+        return sum + (commission - t.broker_payout);
+      }, 0);
+  }, [filteredTransactions]);
+
+  // Dynamic Alpha Insight
+  const alphaInsight = useMemo(() => {
+    if (filteredLeads.length === 0) return "Sem dados suficientes no período selecionado para gerar insights.";
+
+    const originCounts: Record<string, number> = {};
+    const stageCounts: Record<string, number> = {};
+    filteredLeads.forEach((l) => {
+      originCounts[l.origin] = (originCounts[l.origin] || 0) + 1;
+      stageCounts[l.pipeline_stage] = (stageCounts[l.pipeline_stage] || 0) + 1;
+    });
+
+    const topOrigin = Object.entries(originCounts).sort((a, b) => b[1] - a[1])[0];
+    const topStage = Object.entries(stageCounts).sort((a, b) => b[1] - a[1])[0];
+
+    const parts: string[] = [];
+    if (topOrigin) {
+      parts.push(`A principal origem de leads é "${topOrigin[0]}" com ${topOrigin[1]} lead(s) no período.`);
+    }
+    if (topStage) {
+      const label = STAGE_LABELS[topStage[0]] || topStage[0];
+      parts.push(`O estágio com maior concentração é "${label}" (${topStage[1]}).`);
+    }
+    if (pipelineValue > 0) {
+      parts.push(`O valor total em pipeline é R$ ${(pipelineValue / 1000000).toFixed(1)}M.`);
+    }
+    if (avgSalesCycle !== null) {
+      parts.push(`O ciclo médio de vendas está em ${avgSalesCycle} dias.`);
+    }
+    return parts.join(" ");
+  }, [filteredLeads, pipelineValue, avgSalesCycle]);
 
   const originData = useMemo(() => {
     const groups: Record<string, number> = {};
@@ -94,22 +162,54 @@ const Reports = () => {
   }, [filteredLeads]);
 
   const funnelData = useMemo(() => {
-    const stages = ["novos", "contato", "visita", "proposta", "fechados"];
+    const stages = ["novos", "contato", "visita_agendada", "visita", "proposta", "fechados"];
     return stages.map((stage) => ({
       stage: STAGE_LABELS[stage] || stage,
       count: filteredLeads.filter((l) => l.pipeline_stage === stage).length,
     }));
   }, [filteredLeads]);
 
+  // Leads by week
+  const leadsPerWeek = useMemo(() => {
+    const groups: Record<string, number> = {};
+    filteredLeads.forEach((l) => {
+      const week = format(startOfWeek(new Date(l.created_at), { locale: ptBR }), "dd/MM", { locale: ptBR });
+      groups[week] = (groups[week] || 0) + 1;
+    });
+    return Object.entries(groups)
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([week, count]) => ({ week, count }));
+  }, [filteredLeads]);
+
+  // Revenue by month
+  const revenuePerMonth = useMemo(() => {
+    const groups: Record<string, number> = {};
+    filteredTransactions
+      .filter((t) => t.status === "pago")
+      .forEach((t) => {
+        const month = format(new Date(t.created_at), "MMM/yy", { locale: ptBR });
+        const commission = (t.sale_value * t.commission_pct) / 100;
+        groups[month] = (groups[month] || 0) + (commission - t.broker_payout);
+      });
+    return Object.entries(groups).map(([month, value]) => ({ month, value: Math.round(value) }));
+  }, [filteredTransactions]);
+
   const kpis = [
     { title: "Total de Leads", value: totalLeads, icon: Users },
-    { title: "Ciclo Médio de Vendas", value: "— dias", icon: Clock, subtitle: "Em breve" },
+    {
+      title: "Ciclo Médio de Vendas",
+      value: avgSalesCycle !== null ? `${avgSalesCycle} dias` : "—",
+      icon: Clock,
+      subtitle: avgSalesCycle === null ? "Sem leads fechados" : undefined,
+    },
     { title: "Taxa de Conversão", value: `${conversionRate}%`, icon: TrendingUp },
     {
-      title: "Valor em Pipeline",
-      value: pipelineValue > 0
-        ? `R$ ${(pipelineValue / 1000000).toFixed(1)}M`
-        : "R$ 0",
+      title: "Receita Líquida",
+      value: netRevenue > 0
+        ? `R$ ${(netRevenue / 1000).toFixed(0)}K`
+        : pipelineValue > 0
+          ? `R$ ${(pipelineValue / 1000000).toFixed(1)}M (pipeline)`
+          : "R$ 0",
       icon: DollarSign,
     },
   ];
@@ -181,9 +281,7 @@ const Reports = () => {
               Alpha Insight (IA)
             </p>
             <p className="font-[Inter] text-sm text-[#2A070C]/70 leading-relaxed">
-              A procura por mansões no Tamboré 3 subiu 15% esta semana. Recomendamos focar
-              anúncios nesta região. O ciclo médio de vendas para imóveis acima de R$ 5M reduziu
-              de 45 para 38 dias no último trimestre.
+              {alphaInsight}
             </p>
           </div>
         </CardContent>
@@ -213,8 +311,8 @@ const Reports = () => {
         ))}
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Charts - Row 1 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* Lead Origin Donut */}
         <Card className="bg-white border-border/50 shadow-none">
           <CardHeader>
@@ -293,13 +391,13 @@ const Reports = () => {
             ) : (
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={funnelData} layout="vertical" margin={{ left: 20 }}>
+                  <BarChart data={funnelData} layout="vertical" margin={{ left: 30 }}>
                     <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border))" />
                     <XAxis type="number" tick={{ fontFamily: "Inter", fontSize: 11 }} />
                     <YAxis
                       dataKey="stage"
                       type="category"
-                      width={80}
+                      width={100}
                       tick={{ fontFamily: "Inter", fontSize: 11 }}
                     />
                     <Tooltip
@@ -314,7 +412,95 @@ const Reports = () => {
                       dataKey="count"
                       fill="#2A070C"
                       radius={[0, 4, 4, 0]}
-                      barSize={24}
+                      barSize={20}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Charts - Row 2 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Leads per Week */}
+        <Card className="bg-white border-border/50 shadow-none">
+          <CardHeader>
+            <CardTitle className="font-[Inter] text-xs font-medium uppercase tracking-widest text-muted-foreground">
+              Leads por Semana
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {leadsPerWeek.length === 0 ? (
+              <p className="font-[Inter] text-sm text-muted-foreground/60 text-center py-8">
+                Sem dados no período selecionado.
+              </p>
+            ) : (
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={leadsPerWeek}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="week" tick={{ fontFamily: "Inter", fontSize: 11 }} />
+                    <YAxis allowDecimals={false} tick={{ fontFamily: "Inter", fontSize: 11 }} />
+                    <Tooltip
+                      contentStyle={{
+                        fontFamily: "Inter",
+                        fontSize: "12px",
+                        borderRadius: "8px",
+                        border: "1px solid hsl(var(--border))",
+                      }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="count"
+                      stroke="#2A070C"
+                      strokeWidth={2}
+                      dot={{ fill: "#2A070C", r: 4 }}
+                      activeDot={{ r: 6 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Revenue per Month */}
+        <Card className="bg-white border-border/50 shadow-none">
+          <CardHeader>
+            <CardTitle className="font-[Inter] text-xs font-medium uppercase tracking-widest text-muted-foreground">
+              Receita por Mês
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {revenuePerMonth.length === 0 ? (
+              <p className="font-[Inter] text-sm text-muted-foreground/60 text-center py-8">
+                Sem transações pagas no período.
+              </p>
+            ) : (
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={revenuePerMonth}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="month" tick={{ fontFamily: "Inter", fontSize: 11 }} />
+                    <YAxis tick={{ fontFamily: "Inter", fontSize: 11 }} />
+                    <Tooltip
+                      contentStyle={{
+                        fontFamily: "Inter",
+                        fontSize: "12px",
+                        borderRadius: "8px",
+                        border: "1px solid hsl(var(--border))",
+                      }}
+                      formatter={(value: number) =>
+                        `R$ ${value.toLocaleString("pt-BR")}`
+                      }
+                    />
+                    <Bar
+                      dataKey="value"
+                      fill="#6B2D3E"
+                      radius={[4, 4, 0, 0]}
+                      barSize={32}
                     />
                   </BarChart>
                 </ResponsiveContainer>
