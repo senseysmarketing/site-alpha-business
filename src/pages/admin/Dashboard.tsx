@@ -29,17 +29,26 @@ const Dashboard = () => {
   const [totalLeads, setTotalLeads] = useState(0);
   const [activeProperties, setActiveProperties] = useState(0);
   const [visitsToday, setVisitsToday] = useState(0);
+  const [netRevenue, setNetRevenue] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
-      const [leadsRes, propsRes, visitsRes] = await Promise.all([
+      const [leadsRes, propsRes, visitsRes, txRes] = await Promise.all([
         supabase.from("visits_scheduling").select("id", { count: "exact", head: true }),
         supabase.from("properties").select("id", { count: "exact", head: true }).eq("status", "ativo"),
         supabase.from("visits_scheduling").select("id", { count: "exact", head: true }).eq("visit_date", new Date().toISOString().split("T")[0]),
+        supabase.from("transactions").select("sale_value, commission_pct, broker_payout"),
       ]);
       setTotalLeads(leadsRes.count ?? 0);
       setActiveProperties(propsRes.count ?? 0);
       setVisitsToday(visitsRes.count ?? 0);
+      if (txRes.data) {
+        const rev = txRes.data.reduce(
+          (s, t) => s + Number(t.sale_value || 0) * (Number(t.commission_pct || 0) / 100) - Number(t.broker_payout || 0),
+          0
+        );
+        setNetRevenue(rev);
+      }
     };
     fetchData();
   }, []);
