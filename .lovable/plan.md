@@ -1,33 +1,45 @@
 
 
-## Adicionar máscara de moeda nos campos financeiros
+## Tornar Relatórios 100% Funcional e Automático
 
-### O que será feito
-Criar uma função helper `formatCurrencyInput` que aplica a máscara brasileira de moeda (R$ 1.234,56) nos campos de valor, atualizando em tempo real conforme o usuário digita. A máscara trabalha apenas com dígitos internamente e exibe o valor formatado.
+### 1. Calcular Ciclo Médio de Vendas
+**Arquivo:** `src/pages/admin/Reports.tsx`
+- Para leads com `pipeline_stage = 'fechados'`, calcular diferença em dias entre `created_at` e `updated_at`
+- Exibir a média arredondada no KPI (ex: "32 dias")
+- Se não houver leads fechados, mostrar "—"
 
-### Campos afetados
+### 2. Adicionar estágio "Visita Agendada" ao funil
+- Incluir `visita_agendada` entre "contato" e "visita" no array de stages do gráfico de barras
+- Adicionar label no `STAGE_LABELS`
 
-**Dialog "Nova Transação":**
-- Valor da Venda (R$) — linha 287-292
-- Repasse Corretor (R$) — linha 306-311
+### 3. Alpha Insight dinâmico (baseado em dados reais)
+- Gerar texto automático analisando os dados filtrados:
+  - Origem com mais leads no período
+  - Estágio com maior concentração
+  - Valor total em pipeline
+  - Ciclo médio calculado
+- Montar a string de insight programaticamente (sem IA externa, apenas lógica local)
 
-**Dialog "Nova Despesa":**
-- Valor (R$) — linha 367-372
+### 4. Adicionar KPI de Receita (transactions)
+- Buscar `transactions` do Supabase
+- Adicionar KPI "Receita Líquida" calculando `(sale_value × commission_pct / 100) - broker_payout` das transações com status "pago"
+- Filtrar por período selecionado usando `created_at`
 
-### Abordagem técnica
+### 5. Adicionar gráfico de Leads por Semana (LineChart)
+- Agrupar `filteredLeads` por semana (usando `startOfWeek` do date-fns)
+- Novo card com `LineChart` do Recharts mostrando evolução temporal
+- Eixo X = semanas, Eixo Y = quantidade de leads
 
-**Arquivo:** `src/pages/admin/Financial.tsx`
+### 6. Adicionar gráfico de Receita por Mês (BarChart)
+- Agrupar transações pagas por mês
+- Novo card com BarChart vertical mostrando comissão líquida mensal
 
-1. Adicionar helper `applyCurrencyMask(value: string): string` que:
-   - Remove tudo que não é dígito
-   - Converte para centavos e formata como `1.234,56`
-   
-2. Adicionar helper `parseCurrencyToFloat(masked: string): number` que:
-   - Remove pontos e troca vírgula por ponto para obter o float na hora de salvar
+### Arquivos a editar
+- `src/pages/admin/Reports.tsx` — todas as alterações acima
 
-3. Trocar os 3 inputs de `type="number"` para `type="text"` e aplicar a máscara no `onChange`
-
-4. Ajustar `handleAddExpense` e `handleAddTransaction` para usar `parseCurrencyToFloat` ao inserir no Supabase
-
-5. O campo de Comissão (%) permanece sem máscara de moeda (é percentual)
+### Layout final (6 cards de gráfico em grid 2×3)
+```text
+Row 1: [Origem dos Leads (Donut)]  [Conversão do Funil (Bar H)]
+Row 2: [Leads por Semana (Line)]   [Receita por Mês (Bar V)]
+```
 
