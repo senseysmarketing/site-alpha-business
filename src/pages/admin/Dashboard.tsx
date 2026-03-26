@@ -1,12 +1,29 @@
 import { useEffect, useState } from "react";
-import { Building2, Users, CalendarCheck, TrendingUp } from "lucide-react";
+import { Building2, Users, CalendarCheck, TrendingUp, Mail, Calendar, Globe, Phone, UserPlus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 import { Area, AreaChart, ResponsiveContainer } from "recharts";
+import { formatDistanceToNow } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 const sparkData = [
   { v: 3 }, { v: 5 }, { v: 4 }, { v: 7 }, { v: 6 }, { v: 8 }, { v: 9 }, { v: 7 }, { v: 10 },
 ];
+
+const ORIGIN_MAP: Record<string, { icon: React.ElementType; label: string }> = {
+  fale_conosco: { icon: Mail, label: "Fale Conosco" },
+  agendamento_visita: { icon: Calendar, label: "Agendamento" },
+  web: { icon: Globe, label: "Website" },
+  indicacao: { icon: UserPlus, label: "Indicação" },
+  telefone: { icon: Phone, label: "Telefone" },
+};
+
+function getInitials(name: string) {
+  return name.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase();
+}
 
 const Dashboard = () => {
   const [totalLeads, setTotalLeads] = useState(0);
@@ -27,63 +44,58 @@ const Dashboard = () => {
     fetchData();
   }, []);
 
+  const { data: recentLeads = [] } = useQuery({
+    queryKey: ["dashboard-recent-leads"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("leads")
+        .select("id, name, origin, pipeline_stage, created_at")
+        .order("created_at", { ascending: false })
+        .limit(5);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const { data: recentActivity = [] } = useQuery({
+    queryKey: ["dashboard-recent-activity"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("system_audit_logs")
+        .select("id, user_name, action, object_label, object_type, created_at")
+        .order("created_at", { ascending: false })
+        .limit(5);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
   const cards = [
-    {
-      title: "Total de Leads",
-      value: totalLeads,
-      icon: Users,
-      hasChart: true,
-    },
-    {
-      title: "Imóveis Ativos",
-      value: activeProperties,
-      icon: Building2,
-      hasChart: false,
-    },
-    {
-      title: "Visitas Hoje",
-      value: visitsToday,
-      icon: CalendarCheck,
-      hasChart: false,
-    },
-    {
-      title: "Receita Estimada",
-      value: "—",
-      icon: TrendingUp,
-      hasChart: false,
-      subtitle: "Em breve",
-    },
+    { title: "Total de Leads", value: totalLeads, icon: Users, hasChart: true },
+    { title: "Imóveis Ativos", value: activeProperties, icon: Building2, hasChart: false },
+    { title: "Visitas Hoje", value: visitsToday, icon: CalendarCheck, hasChart: false },
+    { title: "Receita Estimada", value: "—", icon: TrendingUp, hasChart: false, subtitle: "Em breve" },
   ];
 
   return (
     <div>
       <div className="mb-6">
-        <h1 className="font-[Raleway] text-2xl font-semibold text-foreground tracking-tight">
-          Dashboard
-        </h1>
-        <p className="font-[Inter] text-sm text-muted-foreground mt-1">
-          Visão geral do seu negócio
-        </p>
+        <h1 className="font-[Raleway] text-2xl font-semibold text-foreground tracking-tight">Dashboard</h1>
+        <p className="font-[Inter] text-sm text-muted-foreground mt-1">Visão geral do seu negócio</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         {cards.map((card) => (
           <Card key={card.title} className="bg-white border-border/50 shadow-none hover:shadow-sm transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="font-[Inter] text-xs font-medium uppercase tracking-widest text-muted-foreground">
-                {card.title}
-              </CardTitle>
+              <CardTitle className="font-[Inter] text-xs font-medium uppercase tracking-widest text-muted-foreground">{card.title}</CardTitle>
               <card.icon className="h-4 w-4 text-[#2A070C]/40" />
             </CardHeader>
             <CardContent>
               <div className="flex items-end justify-between">
                 <div>
-                  <p className="font-[Raleway] text-3xl font-semibold text-foreground">
-                    {card.value}
-                  </p>
-                  {card.subtitle && (
-                    <p className="font-[Inter] text-[10px] text-muted-foreground mt-1">{card.subtitle}</p>
-                  )}
+                  <p className="font-[Raleway] text-3xl font-semibold text-foreground">{card.value}</p>
+                  {card.subtitle && <p className="font-[Inter] text-[10px] text-muted-foreground mt-1">{card.subtitle}</p>}
                 </div>
                 {card.hasChart && (
                   <div className="w-20 h-10">
@@ -95,14 +107,7 @@ const Dashboard = () => {
                             <stop offset="100%" stopColor="#2A070C" stopOpacity={0} />
                           </linearGradient>
                         </defs>
-                        <Area
-                          type="monotone"
-                          dataKey="v"
-                          stroke="#2A070C"
-                          strokeWidth={1.5}
-                          fill="url(#sparkGrad)"
-                          dot={false}
-                        />
+                        <Area type="monotone" dataKey="v" stroke="#2A070C" strokeWidth={1.5} fill="url(#sparkGrad)" dot={false} />
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
@@ -113,31 +118,74 @@ const Dashboard = () => {
         ))}
       </div>
 
-      {/* Placeholder sections for future content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-6">
+        {/* Últimos Leads */}
         <Card className="lg:col-span-2 bg-white border-border/50 shadow-none">
           <CardHeader>
-            <CardTitle className="font-[Inter] text-xs font-medium uppercase tracking-widest text-muted-foreground">
-              Últimos Leads
-            </CardTitle>
+            <CardTitle className="font-[Inter] text-xs font-medium uppercase tracking-widest text-muted-foreground">Últimos Leads</CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="font-[Inter] text-sm text-muted-foreground/60">
-              Dados serão exibidos aqui em breve.
-            </p>
+          <CardContent className="space-y-3">
+            {recentLeads.length === 0 ? (
+              <p className="font-[Inter] text-sm text-muted-foreground/60">Nenhum lead encontrado.</p>
+            ) : (
+              recentLeads.map((lead) => {
+                const originInfo = ORIGIN_MAP[lead.origin] ?? { icon: Globe, label: lead.origin };
+                const OriginIcon = originInfo.icon;
+                return (
+                  <div key={lead.id} className="flex items-center gap-3 py-1.5">
+                    <Avatar className="h-8 w-8 rounded-sm shrink-0">
+                      <AvatarFallback className="rounded-sm bg-[#2A070C]/5 text-[#2A070C] font-[Inter] text-[10px] font-medium">
+                        {getInitials(lead.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-[Inter] text-sm font-medium text-foreground truncate">{lead.name}</p>
+                      <p className="font-[Inter] text-[11px] text-muted-foreground/60">
+                        {formatDistanceToNow(new Date(lead.created_at), { addSuffix: true, locale: ptBR })}
+                      </p>
+                    </div>
+                    <Badge variant="outline" className="shrink-0 text-[10px] font-[Inter] font-medium rounded-sm px-2 py-0.5 gap-1">
+                      <OriginIcon className="h-3 w-3" />
+                      {originInfo.label}
+                    </Badge>
+                  </div>
+                );
+              })
+            )}
           </CardContent>
         </Card>
 
+        {/* Atividade Recente */}
         <Card className="bg-white border-border/50 shadow-none">
           <CardHeader>
-            <CardTitle className="font-[Inter] text-xs font-medium uppercase tracking-widest text-muted-foreground">
-              Atividade Recente
-            </CardTitle>
+            <CardTitle className="font-[Inter] text-xs font-medium uppercase tracking-widest text-muted-foreground">Atividade Recente</CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="font-[Inter] text-sm text-muted-foreground/60">
-              Sem atividades recentes.
-            </p>
+          <CardContent className="space-y-3">
+            {recentActivity.length === 0 ? (
+              <p className="font-[Inter] text-sm text-muted-foreground/60">Sem atividades recentes.</p>
+            ) : (
+              recentActivity.map((log) => (
+                <div key={log.id} className="flex items-start gap-3 py-1">
+                  <Avatar className="h-7 w-7 rounded-sm shrink-0 mt-0.5">
+                    <AvatarFallback className="rounded-sm bg-[#2A070C]/5 text-[#2A070C] font-[Inter] text-[9px] font-medium">
+                      {getInitials(log.user_name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-[Inter] text-xs text-foreground leading-relaxed">
+                      <span className="font-medium">{log.user_name}</span>{" "}
+                      <span className="text-muted-foreground">{log.action}</span>{" "}
+                      {log.object_label && (
+                        <span className="font-mono text-[10px] bg-muted/50 px-1 py-0.5 rounded">{log.object_label}</span>
+                      )}
+                    </p>
+                    <p className="font-[Inter] text-[10px] text-muted-foreground/50 mt-0.5">
+                      {formatDistanceToNow(new Date(log.created_at), { addSuffix: true, locale: ptBR })}
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
           </CardContent>
         </Card>
       </div>

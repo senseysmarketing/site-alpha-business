@@ -18,7 +18,6 @@ import {
   Activity,
   CalendarIcon,
   Download,
-  TrendingUp,
   DollarSign,
 } from "lucide-react";
 import { format, formatDistanceToNow, subHours, isWithinInterval } from "date-fns";
@@ -63,12 +62,12 @@ function getInitials(name: string) {
     .toUpperCase();
 }
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 15;
 
 const AuditLog = () => {
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [selectedUser, setSelectedUser] = useState<string>("all");
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Fetch all logs (up to 1000)
   const { data: logs = [], isLoading } = useQuery({
@@ -95,6 +94,7 @@ const AuditLog = () => {
 
   // Filtered logs
   const filtered = useMemo(() => {
+    setCurrentPage(1);
     return logs.filter((l) => {
       if (selectedUser !== "all" && l.user_id !== selectedUser) return false;
       if (dateRange?.from) {
@@ -121,7 +121,8 @@ const AuditLog = () => {
       (l.metadata as Record<string, string>)?.field === "price"
   ).length;
 
-  const visibleLogs = filtered.slice(0, visibleCount);
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const visibleLogs = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   // CSV export
   const exportCSV = () => {
@@ -346,15 +347,28 @@ const AuditLog = () => {
               );
             })}
 
-            {visibleCount < filtered.length && (
-              <div className="pt-4 text-center">
+            {totalPages > 1 && (
+              <div className="pt-4 flex items-center justify-center gap-3">
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
-                  className="font-[Inter] text-sm text-muted-foreground"
-                  onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+                  className="font-[Inter] text-sm rounded-sm"
+                  disabled={currentPage <= 1}
+                  onClick={() => setCurrentPage((p) => p - 1)}
                 >
-                  Carregar mais ({filtered.length - visibleCount} restantes)
+                  Anterior
+                </Button>
+                <span className="font-[Inter] text-sm text-muted-foreground">
+                  Página {currentPage} de {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="font-[Inter] text-sm rounded-sm"
+                  disabled={currentPage >= totalPages}
+                  onClick={() => setCurrentPage((p) => p + 1)}
+                >
+                  Próximo
                 </Button>
               </div>
             )}
