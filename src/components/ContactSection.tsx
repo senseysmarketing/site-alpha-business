@@ -17,8 +17,39 @@ const ContactSection = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+
+    const assuntoMap: Record<string, string> = {
+      visita: "Agendar Visita",
+      imovel: "Enviar Imóvel para Avaliação",
+    };
+
+    const insights = [
+      assuntoMap[formData.type] ? `Assunto: ${assuntoMap[formData.type]}` : "",
+      formData.message ? `Mensagem: ${formData.message}` : "",
+    ].filter(Boolean).join(" | ");
+
+    const { error } = await supabase.from("leads").insert({
+      name: formData.name,
+      phone: formData.phone || null,
+      email: formData.email || null,
+      origin: "fale_conosco",
+      pipeline_stage: "novos",
+      score: "morno",
+      ai_insights: insights || null,
+    });
+
+    setLoading(false);
+
+    if (error) {
+      toast({ title: "Erro ao enviar", description: "Tente novamente.", variant: "destructive" });
+      return;
+    }
+
     toast({ title: "Mensagem enviada!", description: "Entraremos em contato em breve." });
     setFormData({ name: "", phone: "", email: "", type: "", message: "" });
   };
