@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -94,7 +94,6 @@ const AuditLog = () => {
 
   // Filtered logs
   const filtered = useMemo(() => {
-    setCurrentPage(1);
     return logs.filter((l) => {
       if (selectedUser !== "all" && l.user_id !== selectedUser) return false;
       if (dateRange?.from) {
@@ -108,6 +107,11 @@ const AuditLog = () => {
       return true;
     });
   }, [logs, selectedUser, dateRange]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedUser, dateRange]);
 
   // Metrics
   const now = new Date();
