@@ -377,10 +377,10 @@ const Financial = () => {
                 <div>
                   <Label className="font-[Inter] text-xs">Valor (R$)</Label>
                   <Input
-                    type="number"
+                    type="text"
                     placeholder="0,00"
                     value={expenseForm.amount}
-                    onChange={(e) => setExpenseForm((p) => ({ ...p, amount: e.target.value }))}
+                    onChange={(e) => setExpenseForm((p) => ({ ...p, amount: applyCurrencyMask(e.target.value) }))}
                   />
                 </div>
                 <div>
