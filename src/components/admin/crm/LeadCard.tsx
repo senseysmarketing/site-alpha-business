@@ -1,6 +1,6 @@
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Flame, Instagram, Globe, MessageCircle, Users } from "lucide-react";
+import { Flame, Instagram, Globe, MessageCircle, Users, Mail, CalendarCheck } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 
