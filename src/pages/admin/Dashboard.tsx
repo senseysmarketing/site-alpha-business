@@ -104,7 +104,7 @@ const Dashboard = () => {
               <div className="flex items-end justify-between">
                 <div>
                   <p className="font-[Raleway] text-3xl font-semibold text-foreground">{card.value}</p>
-                  {card.subtitle && <p className="font-[Inter] text-[10px] text-muted-foreground mt-1">{card.subtitle}</p>}
+                  {"subtitle" in card && card.subtitle && <p className="font-[Inter] text-[10px] text-muted-foreground mt-1">{card.subtitle}</p>}
                 </div>
                 {card.hasChart && (
                   <div className="w-20 h-10">
