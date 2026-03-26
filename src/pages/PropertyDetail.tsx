@@ -197,6 +197,7 @@ const PropertyDetail = () => {
               brokerName={property.broker.name}
               brokerTitle={property.broker.title}
               propertyCode={property.code}
+              propertyId={id}
             />
           </div>
         </div>
