@@ -347,15 +347,28 @@ const AuditLog = () => {
               );
             })}
 
-            {visibleCount < filtered.length && (
-              <div className="pt-4 text-center">
+            {totalPages > 1 && (
+              <div className="pt-4 flex items-center justify-center gap-3">
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
-                  className="font-[Inter] text-sm text-muted-foreground"
-                  onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+                  className="font-[Inter] text-sm rounded-sm"
+                  disabled={currentPage <= 1}
+                  onClick={() => setCurrentPage((p) => p - 1)}
                 >
-                  Carregar mais ({filtered.length - visibleCount} restantes)
+                  Anterior
+                </Button>
+                <span className="font-[Inter] text-sm text-muted-foreground">
+                  Página {currentPage} de {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="font-[Inter] text-sm rounded-sm"
+                  disabled={currentPage >= totalPages}
+                  onClick={() => setCurrentPage((p) => p + 1)}
+                >
+                  Próximo
                 </Button>
               </div>
             )}
