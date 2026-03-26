@@ -83,7 +83,7 @@ const Dashboard = () => {
     { title: "Total de Leads", value: totalLeads, icon: Users, hasChart: true },
     { title: "Imóveis Ativos", value: activeProperties, icon: Building2, hasChart: false },
     { title: "Visitas Hoje", value: visitsToday, icon: CalendarCheck, hasChart: false },
-    { title: "Receita Estimada", value: "—", icon: TrendingUp, hasChart: false, subtitle: "Em breve" },
+    { title: "Receita Líquida", value: netRevenue !== null ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(netRevenue) : "—", icon: TrendingUp, hasChart: false },
   ];
 
   return (
