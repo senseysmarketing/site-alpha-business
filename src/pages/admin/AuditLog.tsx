@@ -63,12 +63,12 @@ function getInitials(name: string) {
     .toUpperCase();
 }
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 15;
 
 const AuditLog = () => {
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [selectedUser, setSelectedUser] = useState<string>("all");
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Fetch all logs (up to 1000)
   const { data: logs = [], isLoading } = useQuery({
