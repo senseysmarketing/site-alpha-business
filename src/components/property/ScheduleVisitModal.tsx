@@ -76,6 +76,7 @@ interface ScheduleVisitModalProps {
   onOpenChange: (open: boolean) => void;
   propertyCode: string;
   brokerName: string;
+  propertyId?: string;
 }
 
 const ScheduleVisitModal = ({
