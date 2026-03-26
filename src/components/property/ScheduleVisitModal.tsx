@@ -84,6 +84,7 @@ const ScheduleVisitModal = ({
   onOpenChange,
   propertyCode,
   brokerName,
+  propertyId,
 }: ScheduleVisitModalProps) => {
   const [step, setStep] = useState(1);
   const [selectedDate, setSelectedDate] = useState<Date>();
