@@ -297,10 +297,10 @@ const Financial = () => {
                 <div>
                   <Label className="font-[Inter] text-xs">Valor da Venda (R$)</Label>
                   <Input
-                    type="number"
+                    type="text"
                     placeholder="0,00"
                     value={txForm.sale_value}
-                    onChange={(e) => setTxForm((p) => ({ ...p, sale_value: e.target.value }))}
+                    onChange={(e) => setTxForm((p) => ({ ...p, sale_value: applyCurrencyMask(e.target.value) }))}
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
