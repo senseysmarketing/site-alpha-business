@@ -121,7 +121,8 @@ const AuditLog = () => {
       (l.metadata as Record<string, string>)?.field === "price"
   ).length;
 
-  const visibleLogs = filtered.slice(0, visibleCount);
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const visibleLogs = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   // CSV export
   const exportCSV = () => {
