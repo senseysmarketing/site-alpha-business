@@ -81,6 +81,18 @@ const CATEGORY_LABELS: Record<string, string> = {
 const formatCurrency = (v: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
 
+const applyCurrencyMask = (value: string): string => {
+  const digits = value.replace(/\D/g, "");
+  if (!digits) return "";
+  const num = Number(digits) / 100;
+  return num.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
+const parseCurrencyToFloat = (masked: string): number => {
+  if (!masked) return 0;
+  return parseFloat(masked.replace(/\./g, "").replace(",", ".")) || 0;
+};
+
 const Financial = () => {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [expenses, setExpenses] = useState<any[]>([]);
