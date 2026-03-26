@@ -316,10 +316,10 @@ const Financial = () => {
                   <div>
                     <Label className="font-[Inter] text-xs">Repasse Corretor (R$)</Label>
                     <Input
-                      type="number"
+                      type="text"
                       placeholder="0,00"
                       value={txForm.broker_payout}
-                      onChange={(e) => setTxForm((p) => ({ ...p, broker_payout: e.target.value }))}
+                      onChange={(e) => setTxForm((p) => ({ ...p, broker_payout: applyCurrencyMask(e.target.value) }))}
                     />
                   </div>
                 </div>
