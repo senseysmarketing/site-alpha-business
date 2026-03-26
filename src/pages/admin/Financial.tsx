@@ -231,9 +231,9 @@ const Financial = () => {
     }
     const { error } = await supabase.from("transactions").insert({
       property_id: txForm.property_id,
-      sale_value: parseFloat(txForm.sale_value),
+      sale_value: parseCurrencyToFloat(txForm.sale_value),
       commission_pct: parseFloat(txForm.commission_pct || "0"),
-      broker_payout: parseFloat(txForm.broker_payout || "0"),
+      broker_payout: parseCurrencyToFloat(txForm.broker_payout),
       status: txForm.status as any,
     });
     if (error) {
