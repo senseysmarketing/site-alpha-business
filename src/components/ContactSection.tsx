@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import privateImg from "@/assets/private-collection.jpg";
 
 const ContactSection = () => {
@@ -16,8 +17,39 @@ const ContactSection = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+
+    const assuntoMap: Record<string, string> = {
+      visita: "Agendar Visita",
+      imovel: "Enviar Imóvel para Avaliação",
+    };
+
+    const insights = [
+      assuntoMap[formData.type] ? `Assunto: ${assuntoMap[formData.type]}` : "",
+      formData.message ? `Mensagem: ${formData.message}` : "",
+    ].filter(Boolean).join(" | ");
+
+    const { error } = await supabase.from("leads").insert({
+      name: formData.name,
+      phone: formData.phone || null,
+      email: formData.email || null,
+      origin: "fale_conosco",
+      pipeline_stage: "novos",
+      score: "morno",
+      ai_insights: insights || null,
+    });
+
+    setLoading(false);
+
+    if (error) {
+      toast({ title: "Erro ao enviar", description: "Tente novamente.", variant: "destructive" });
+      return;
+    }
+
     toast({ title: "Mensagem enviada!", description: "Entraremos em contato em breve." });
     setFormData({ name: "", phone: "", email: "", type: "", message: "" });
   };
@@ -128,9 +160,10 @@ const ContactSection = () => {
             />
             <button
               type="submit"
-              className="text-body text-xs tracking-[0.15em] uppercase px-8 py-3 border border-cashmere/30 text-cashmere hover:bg-cashmere/10 transition-colors duration-300"
+              disabled={loading}
+              className="text-body text-xs tracking-[0.15em] uppercase px-8 py-3 border border-cashmere/30 text-cashmere hover:bg-cashmere/10 transition-colors duration-300 disabled:opacity-50"
             >
-              Enviar mensagem
+              {loading ? "Enviando..." : "Enviar mensagem"}
             </button>
           </motion.form>
         </div>

@@ -7,6 +7,7 @@ interface PropertySidebarProps {
   brokerTitle: string;
   whatsappNumber?: string;
   propertyCode: string;
+  propertyId?: string;
 }
 
 const PropertySidebar = ({
@@ -14,6 +15,7 @@ const PropertySidebar = ({
   brokerTitle,
   whatsappNumber = "5511999999999",
   propertyCode,
+  propertyId,
 }: PropertySidebarProps) => {
   const [scheduleOpen, setScheduleOpen] = useState(false);
 
@@ -66,6 +68,7 @@ const PropertySidebar = ({
         onOpenChange={setScheduleOpen}
         propertyCode={propertyCode}
         brokerName={brokerName}
+        propertyId={propertyId}
       />
     </div>
   );
