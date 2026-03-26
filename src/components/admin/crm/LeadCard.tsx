@@ -37,6 +37,8 @@ const originIcons: Record<string, React.ReactNode> = {
   whatsapp: <MessageCircle className="h-3.5 w-3.5 text-muted-foreground" />,
   web: <Globe className="h-3.5 w-3.5 text-muted-foreground" />,
   indicacao: <Users className="h-3.5 w-3.5 text-muted-foreground" />,
+  fale_conosco: <Mail className="h-3.5 w-3.5 text-muted-foreground" />,
+  agendamento_visita: <CalendarCheck className="h-3.5 w-3.5 text-muted-foreground" />,
 };
 
 const getInitials = (name: string) =>

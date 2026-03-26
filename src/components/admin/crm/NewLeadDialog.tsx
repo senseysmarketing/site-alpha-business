@@ -84,6 +84,8 @@ export function NewLeadDialog({ open, onOpenChange, defaultStage, properties }: 
                   <SelectItem value="whatsapp">WhatsApp</SelectItem>
                   <SelectItem value="instagram">Instagram</SelectItem>
                   <SelectItem value="indicacao">Indicação</SelectItem>
+                  <SelectItem value="fale_conosco">Fale Conosco</SelectItem>
+                  <SelectItem value="agendamento_visita">Agendamento de Visita</SelectItem>
                 </SelectContent>
               </Select>
             </div>

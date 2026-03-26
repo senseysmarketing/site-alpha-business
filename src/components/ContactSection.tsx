@@ -160,9 +160,10 @@ const ContactSection = () => {
             />
             <button
               type="submit"
-              className="text-body text-xs tracking-[0.15em] uppercase px-8 py-3 border border-cashmere/30 text-cashmere hover:bg-cashmere/10 transition-colors duration-300"
+              disabled={loading}
+              className="text-body text-xs tracking-[0.15em] uppercase px-8 py-3 border border-cashmere/30 text-cashmere hover:bg-cashmere/10 transition-colors duration-300 disabled:opacity-50"
             >
-              Enviar mensagem
+              {loading ? "Enviando..." : "Enviar mensagem"}
             </button>
           </motion.form>
         </div>

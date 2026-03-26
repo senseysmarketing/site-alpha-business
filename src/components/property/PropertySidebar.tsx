@@ -68,6 +68,7 @@ const PropertySidebar = ({
         onOpenChange={setScheduleOpen}
         propertyCode={propertyCode}
         brokerName={brokerName}
+        propertyId={propertyId}
       />
     </div>
   );

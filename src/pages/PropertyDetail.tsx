@@ -264,6 +264,7 @@ const PropertyDetail = () => {
         onOpenChange={setScheduleOpen}
         propertyCode={property.code}
         brokerName={property.broker.name}
+        propertyId={id}
       />
     </div>
   );

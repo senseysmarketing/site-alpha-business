@@ -125,13 +125,25 @@ const ScheduleVisitModal = ({
       lead_email: data.email,
     });
 
-    setIsSubmitting(false);
-
     if (error) {
+      setIsSubmitting(false);
       toast.error("Erro ao agendar visita. Tente novamente.");
       return;
     }
 
+    // Create lead in CRM pipeline
+    await supabase.from("leads").insert({
+      name: data.name,
+      phone: data.phone,
+      email: data.email,
+      origin: "agendamento_visita",
+      pipeline_stage: "visita_agendada",
+      score: "quente",
+      property_id: propertyId || null,
+      ai_insights: `Visita agendada para ${format(selectedDate!, "dd/MM/yyyy")} às ${selectedTime} — Imóvel ${propertyCode}`,
+    });
+
+    setIsSubmitting(false);
     setStep(4);
   };
 
