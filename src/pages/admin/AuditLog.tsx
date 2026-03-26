@@ -95,6 +95,7 @@ const AuditLog = () => {
 
   // Filtered logs
   const filtered = useMemo(() => {
+    setCurrentPage(1);
     return logs.filter((l) => {
       if (selectedUser !== "all" && l.user_id !== selectedUser) return false;
       if (dateRange?.from) {
