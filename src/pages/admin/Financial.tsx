@@ -202,7 +202,7 @@ const Financial = () => {
       property_id: expenseForm.property_id,
       category: expenseForm.category as any,
       description: expenseForm.description,
-      amount: parseFloat(expenseForm.amount),
+      amount: parseCurrencyToFloat(expenseForm.amount),
     });
     if (error) {
       toast.error("Erro ao salvar despesa.");
