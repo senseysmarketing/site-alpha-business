@@ -1,47 +1,33 @@
 
 
-## Tornar a Gestão Financeira totalmente funcional
+## Adicionar máscara de moeda nos campos financeiros
 
-### Problemas atuais
-1. **Despesas não aparecem** — são buscadas do banco mas não há tabela no UI para exibi-las
-2. **Query de despesas sem join** — `expenses.select("*")` não traz o nome do imóvel vinculado
-3. **Sem criar transações** — não há botão/dialog para registrar novas transações (vendas/comissões)
-4. **Sem editar status** — não é possível marcar transação como "pago" ou "cancelado"
-5. **Sem excluir despesas** — não há ação de remoção
-6. **Dashboard desconectado** — não mostra KPI financeiro
+### O que será feito
+Criar uma função helper `formatCurrencyInput` que aplica a máscara brasileira de moeda (R$ 1.234,56) nos campos de valor, atualizando em tempo real conforme o usuário digita. A máscara trabalha apenas com dígitos internamente e exibe o valor formatado.
 
-### Plano
+### Campos afetados
 
-#### 1. Corrigir query de despesas com join
+**Dialog "Nova Transação":**
+- Valor da Venda (R$) — linha 287-292
+- Repasse Corretor (R$) — linha 306-311
+
+**Dialog "Nova Despesa":**
+- Valor (R$) — linha 367-372
+
+### Abordagem técnica
+
 **Arquivo:** `src/pages/admin/Financial.tsx`
-- Alterar `supabase.from("expenses").select("*")` para `select("*, properties(title, code, photos)")` para trazer dados do imóvel
 
-#### 2. Adicionar tabela de Despesas no UI
-**Arquivo:** `src/pages/admin/Financial.tsx`
-- Adicionar um card com `<Table>` abaixo da tabela de Transações
-- Colunas: Imóvel (thumb + título), Categoria (badge com label), Valor, Descrição, Data, Ações (excluir)
-- Botão de excluir despesa com confirmação
+1. Adicionar helper `applyCurrencyMask(value: string): string` que:
+   - Remove tudo que não é dígito
+   - Converte para centavos e formata como `1.234,56`
+   
+2. Adicionar helper `parseCurrencyToFloat(masked: string): number` que:
+   - Remove pontos e troca vírgula por ponto para obter o float na hora de salvar
 
-#### 3. Criar dialog para adicionar Transações
-**Arquivo:** `src/pages/admin/Financial.tsx`
-- Novo botão "Registrar Transação" ao lado de "Adicionar Despesa"
-- Dialog com campos: Imóvel (select), Valor da Venda, Comissão (%), Repasse Corretor, Status
-- Insert na tabela `transactions` ao salvar
+3. Trocar os 3 inputs de `type="number"` para `type="text"` e aplicar a máscara no `onChange`
 
-#### 4. Permitir editar status de transações inline
-**Arquivo:** `src/pages/admin/Financial.tsx`
-- Tornar a coluna Status clicável com `<Select>` inline para alterar entre pendente/pago/cancelado
-- Update no Supabase ao trocar
+4. Ajustar `handleAddExpense` e `handleAddTransaction` para usar `parseCurrencyToFloat` ao inserir no Supabase
 
-#### 5. Gráfico de despesas por categoria (substituir donut vazio)
-**Arquivo:** `src/pages/admin/Financial.tsx`
-- Adicionar gráfico Donut de despesas agrupadas por categoria ao lado do gráfico de origem de receita (ou substituir quando não há transações)
-
-#### 6. Sincronizar KPI financeiro no Dashboard
-**Arquivo:** `src/pages/admin/Dashboard.tsx`
-- Adicionar um KPI card com receita líquida total (query simples em `transactions`)
-
-### Arquivos a editar
-- `src/pages/admin/Financial.tsx` — tabela de despesas, dialog de transações, edição de status, gráfico de despesas
-- `src/pages/admin/Dashboard.tsx` — KPI financeiro
+5. O campo de Comissão (%) permanece sem máscara de moeda (é percentual)
 
