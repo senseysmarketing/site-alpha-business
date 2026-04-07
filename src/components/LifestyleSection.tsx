@@ -9,28 +9,21 @@ import sustainableHome from "@/assets/sustainable-home.jpg";
 
 interface LifestyleCategory {
   title: string;
-  subtitle: string;
   image: string;
 }
 
 const defaultCategories = [
   {
-    title: "Imóveis para relaxar",
-    subtitle: "Espaços que proporcionam paz e tranquilidade",
+    title: "Refúgios para relaxar",
     image: mansionModern,
-    count: "24 imóveis",
   },
   {
     title: "Imóveis Assinados",
-    subtitle: "Projetos de arquitetos renomados",
     image: familyHome,
-    count: "38 imóveis",
   },
   {
     title: "Mais espaço para a família",
-    subtitle: "Residenciais amplos com infraestrutura completa",
     image: sustainableHome,
-    count: "12 imóveis",
   },
 ];
 
@@ -49,9 +42,7 @@ const LifestyleSection = () => {
     const dbCat = lifestyleSettings?.categories?.[i];
     return {
       title: dbCat?.title || def.title,
-      subtitle: dbCat?.subtitle || def.subtitle,
       image: dbCat?.image || def.image,
-      count: def.count,
     };
   });
 
@@ -82,12 +73,9 @@ const LifestyleSection = () => {
   return (
     <section className="bg-background py-8 md:py-12 group">
       <div className="px-6 md:px-12 lg:px-24 mb-4 md:mb-6">
-        <p className="text-body text-xs tracking-[0.3em] uppercase text-foreground/50 mb-3">
-          Lifestyle
-        </p>
         <h2 className="text-display text-3xl md:text-5xl font-light text-foreground">
           Encontre propriedades que representam seu{" "}
-           <em className="italic">estilo de vida</em>
+          <span className="font-bold">estilo de vida</span>
         </h2>
       </div>
 
@@ -97,32 +85,22 @@ const LifestyleSection = () => {
             {categories.map((cat) => (
               <div
                 key={cat.title}
-                className={`relative flex-shrink-0 rounded-lg overflow-hidden cursor-grab active:cursor-grabbing ${
+                className={`flex-shrink-0 cursor-grab active:cursor-grabbing ${
                   isMobile
-                    ? "basis-[85%] h-[350px]"
-                    : "basis-[calc(33.33%-22px)] h-[450px]"
+                    ? "basis-[85%]"
+                    : "basis-[calc(33.33%-22px)]"
                 }`}
               >
-                <img
-                  src={cat.image}
-                  alt={cat.title}
-                  className="absolute inset-0 w-full h-full object-cover transition-all duration-500 ease-out hover:scale-[1.02] hover:brightness-110"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-                <div className="relative z-10 h-full flex flex-col justify-end p-6 md:p-8">
-                  <p className="text-body text-xs tracking-[0.2em] uppercase text-white/50 mb-1">
-                    {cat.count}
-                  </p>
-                  <h3 className="text-display text-2xl md:text-3xl font-light text-white mb-2">
-                    {cat.title}
-                  </h3>
-                  <p className="text-body text-sm text-white/60 mb-5">
-                    {cat.subtitle}
-                  </p>
-                  <button className="self-start bg-bordeaux text-white text-body text-xs tracking-[0.15em] uppercase px-6 py-3 rounded-sm hover:bg-bordeaux-light transition-colors">
-                    Explorar
-                  </button>
+                <div className="rounded-sm overflow-hidden aspect-[4/3]">
+                  <img
+                    src={cat.image}
+                    alt={cat.title}
+                    className="w-full h-full object-cover transition-all duration-500 ease-out hover:scale-[1.02] hover:brightness-110"
+                  />
                 </div>
+                <h3 className="text-display text-lg md:text-xl font-light text-foreground mt-3">
+                  {cat.title}
+                </h3>
               </div>
             ))}
           </div>
