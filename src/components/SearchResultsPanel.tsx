@@ -51,7 +51,7 @@ const SearchResultsPanel = ({ results, loading, visible, onClose, query = "" }: 
   return (
     <AnimatePresence>
       <motion.div
-        className="absolute left-0 right-0 top-full mt-3 bg-background/60 backdrop-blur-[20px] border border-border/30 shadow-2xl rounded-sm max-h-[60vh] overflow-y-auto z-50"
+        className="relative mt-4 border-t border-border/30 max-h-[50vh] overflow-y-auto"
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -8 }}

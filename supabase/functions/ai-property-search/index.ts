@@ -85,6 +85,9 @@ REGRAS DE INTERPRETAÇÃO:
 - Se a busca for por código (ex: "AB001"), busque exatamente esse código
 - Retorne no máximo 6 imóveis mais relevantes
 - Sempre forneça uma razão curta de por que cada imóvel é relevante
+- CRÍTICO: Se nenhum imóvel corresponder à busca do usuário, retorne matches como array VAZIO []. NÃO force resultados irrelevantes.
+- Só retorne imóveis que realmente atendam pelo menos um critério explícito da busca do usuário.
+- Se a busca for vaga ou genérica (ex: apenas "casa"), priorize imóveis em destaque (is_featured).
 - IMPORTANTE: extraia todos os filtros implícitos na busca do usuário e retorne no campo parsed_filters`;
 
     const response = await fetch(
