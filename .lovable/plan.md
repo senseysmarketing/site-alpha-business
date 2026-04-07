@@ -1,16 +1,31 @@
 
 
-## Ajustes Visuais na LifestyleSection
+## Ajustes no LifestyleSection — Título e Botões
 
-### Problemas
-1. **Título grande demais** — usa `text-3xl md:text-5xl`, enquanto NewArrivals usa `text-2xl md:text-4xl`
-2. **Botões com cor diferente** — usa `Button variant="outline"` (que tem bg-background e hover:bg-accent), enquanto NewArrivals usa `<button>` nativo com classes `border border-border text-foreground hover:bg-muted`
-3. **Largura não bate** — usa `py-8 md:py-12` e `px-4 md:px-6`, enquanto NewArrivals usa `section-padding` (que inclui `px-6 md:px-12 lg:px-24 py-20 md:py-32`)
+### Diferenças identificadas comparando com NewArrivalsSection
+
+1. **Título**: NewArrivals usa `flex items-end justify-between` (não `items-center`), e o destaque usa `<em className="italic">` (itálico, sem negrito). Lifestyle usa `items-center` e `<span className="font-bold">`.
+
+2. **Botões**: NewArrivals usa `ChevronLeft size={18}` (não `h-5 w-5`), `hidden md:flex items-center gap-2` (não `!isMobile`), e não tem `disabled` nem `flex-shrink-0 ml-8`.
 
 ### Mudanças em `src/components/LifestyleSection.tsx`
 
-1. **Container**: trocar `py-8 md:py-12` + `px-4 md:px-6` por `section-padding` (igual NewArrivals)
-2. **Título**: trocar `text-3xl md:text-5xl` por `text-2xl md:text-4xl` e adicionar `max-w-lg`
-3. **Botões de navegação**: trocar `<Button variant="outline">` por `<button>` nativo com as mesmas classes da NewArrivals: `w-10 h-10 border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors rounded-md`
-4. **Margem do header**: trocar `mb-4 md:mb-6` por `mb-12` (igual NewArrivals)
+**Título (linhas 66-70):**
+- Trocar `items-center` por `items-end`
+- Trocar `<span className="font-bold">estilo de vida</span>` por `<em className="italic">estilo de vida</em>`
+
+**Botões (linhas 72-91):**
+- Trocar `{!isMobile && (<div className="flex gap-2 flex-shrink-0 ml-8">...)}` por exatamente o mesmo bloco do NewArrivals:
+```tsx
+<div className="hidden md:flex items-center gap-2">
+  <button onClick={() => emblaApi?.scrollPrev()} className="w-10 h-10 border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors rounded-md">
+    <ChevronLeft size={18} />
+  </button>
+  <button onClick={() => emblaApi?.scrollNext()} className="w-10 h-10 border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors rounded-md">
+    <ChevronRight size={18} />
+  </button>
+</div>
+```
+- Remove `disabled` props e `disabled:opacity-40` (NewArrivals não tem)
+- Remove states `canScrollPrev`/`canScrollNext` (ficam sem uso)
 
