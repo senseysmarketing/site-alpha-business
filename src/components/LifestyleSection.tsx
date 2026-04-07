@@ -42,9 +42,7 @@ const LifestyleSection = () => {
     const dbCat = lifestyleSettings?.categories?.[i];
     return {
       title: dbCat?.title || def.title,
-      subtitle: dbCat?.subtitle || def.subtitle,
       image: dbCat?.image || def.image,
-      count: def.count,
     };
   });
 
