@@ -1,80 +1,38 @@
-import logoAlpha from "@/assets/logo-alpha.png";
-import { useSiteSettings } from "@/hooks/useSiteSettings";
-import { formatPhone } from "@/lib/utils";
-
-interface ContactSettings {
-  phone: string;
-  email: string;
-  instagram: string;
-  address: string;
-}
-
-interface FooterSettings {
-  copyright_text: string;
-  tagline: string;
-}
+import { Instagram } from "lucide-react";
 
 const Footer = () => {
-  const { data: contactData } = useSiteSettings<ContactSettings>("contact");
-  const { data: footerData } = useSiteSettings<FooterSettings>("footer");
-
-  const phone = contactData?.phone || "+55 (11) 99999-9999";
-  const email = contactData?.email || "contato@alphabusiness.com.br";
-  const address = contactData?.address || "Alphaville, Barueri - SP";
-  const copyright = footerData?.copyright_text || "© 2026 Alpha Business. Todos os direitos reservados.";
-
   return (
-    <footer id="contact" className="section-padding border-t border-border">
-      <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
-          <div className="md:col-span-2">
-            <img
-              src={logoAlpha}
-              alt="Alpha Business Imobiliária"
-              className="h-10 w-auto brightness-0 mb-4"
-            />
-            <p className="text-body text-sm text-muted-foreground leading-relaxed max-w-sm">
-              {footerData?.tagline || "Especialistas no mercado imobiliário de altíssimo padrão em Alphaville. Experiência, curadoria e exclusividade há mais de 15 anos."}
-            </p>
-          </div>
-          <div>
-            <p className="text-body text-xs tracking-[0.2em] uppercase text-muted-foreground mb-4">
-              Navegação
-            </p>
-            <nav className="flex flex-col gap-3">
-              {["Comprar", "Alugar", "Private Collection", "Blog", "Sobre nós"].map((item) => (
-                <a
-                  key={item}
-                  href="#"
-                  className="text-body text-sm text-foreground/70 hover:text-foreground transition-colors"
-                >
-                  {item}
-                </a>
-              ))}
-            </nav>
-          </div>
-          <div>
-            <p className="text-body text-xs tracking-[0.2em] uppercase text-muted-foreground mb-4">
-              Contato
-            </p>
-            <div className="flex flex-col gap-3 text-body text-sm text-foreground/70">
-              <p>{formatPhone(phone)}</p>
-              <p>{email}</p>
-              <p>{address}</p>
-            </div>
+    <footer className="bg-[#2A070C] text-white/80 py-12 px-6 md:px-12">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-10">
+        {/* Coluna Esquerda */}
+        <div className="space-y-1 text-sm leading-relaxed">
+          <p className="font-semibold text-white">Alpha Business - Imobiliária Alphaville</p>
+          <p>Centro Empresarial Alphaville</p>
+          <p>Al. Rio Negro, 967 – 2º and. – Cj: 212</p>
+          <p>Alphaville – Barueri – SP – 06455-000</p>
+          <div className="pt-4 space-y-1">
+            <p className="font-semibold text-white">Rafael Albuquerque</p>
+            <p>WHATSAPP: 11 99311-6849</p>
+            <p>WHATSAPP: 11 94001-0287</p>
           </div>
         </div>
 
-        <div className="border-t border-border pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-body text-xs text-muted-foreground">
-            {copyright}
-          </p>
-          <div className="flex gap-6">
-            {["Privacidade", "Termos", "CRECI: 035836-J"].map((item) => (
-              <span key={item} className="text-body text-xs text-muted-foreground">
-                {item}
-              </span>
-            ))}
+        {/* Coluna Direita */}
+        <div className="space-y-4 text-sm leading-relaxed">
+          <p>Nos siga nas redes sociais e acompanhe nossas novidades.</p>
+          <div className="flex items-center gap-3">
+            <Instagram size={18} className="text-white" />
+            <span>@AlphavilleSP</span>
+            <span>@AlphavilleAB</span>
+          </div>
+          <div className="pt-4 space-y-2">
+            <p className="text-white/60 text-xs">
+              ©2026 Rafael Albuquerque | Alpha Business
+            </p>
+            <p className="text-white/50 text-xs leading-relaxed">
+              AlphaBusiness: Negócios Imobiliários em Alphaville São Paulo – Todos os direitos reservados. Imobiliária especializada em mansões e casas em Alphaville, Tamboré e Santana de Parnaíba. Casas e apartamentos a venda em Alphaville.
+            </p>
+            <p className="text-white/60 text-xs">CRECI-PJ: 035836</p>
           </div>
         </div>
       </div>
