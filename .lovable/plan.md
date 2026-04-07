@@ -1,27 +1,34 @@
 
 
-## Ajuste de Tipografia e Organização do Rodapé
+## Redesign da LifestyleSection — Layout de Cards Limpos
 
-### Mudanças no `src/components/Footer.tsx`
+Conforme o print de referência, os cards de lifestyle devem seguir um estilo clean: imagem em cima, título embaixo fora da imagem, sem overlay escuro, sem botão "Explorar", sem contagem de imóveis.
 
-**Tipografia e hierarquia visual:**
-- Título "Alpha Business - Imobiliária Alphaville" → `uppercase tracking-wider text-xs font-bold text-white`
-- Endereço e contatos → `text-xs text-white/70` com espaçamento consistente
-- "Rafael Albuquerque" → `font-bold text-white uppercase tracking-wider text-xs`
-- "WHATSAPP:" já está em maiúsculo, manter `text-xs text-white/70`
-- Texto redes sociais → `text-xs text-white/70`
-- Instagram handles → `text-xs text-white`
-- Copyright e disclaimer → `text-[11px] text-white/50`
-- CRECI → `text-xs text-white/60`
+### Mudanças no `src/components/LifestyleSection.tsx`
 
-**Layout mobile (390px):**
-- No mobile, o grid de 2 colunas vira 1 coluna (já funciona com `grid-cols-1 md:grid-cols-2`)
-- A coluna direita (redes + legal) fica abaixo da coluna esquerda (endereço)
-- Garantir que o conteúdo todo fique alinhado à esquerda no mobile, sem centralização
+**Layout do card:**
+- Imagem no topo com aspect ratio ~4:3, `rounded-sm`, sem overlay gradiente
+- Título abaixo da imagem em texto escuro (`text-foreground`), fora do card de imagem
+- Remover: gradient overlay, botão "Explorar", contagem de imóveis, subtitle
 
-**Layout desktop:**
-- Manter as 2 colunas lado a lado
-- Nav bar superior centralizada
+**Títulos atualizados conforme print:**
+- "Refúgios para relaxar" (era "Imóveis para relaxar")
+- "Imóveis Assinados" (mantém)
+- "Mais espaço para a família" (mantém)
 
-**Arquivo:** `src/components/Footer.tsx`
+**Remover label "Lifestyle"** acima do título principal
+
+**Título principal:** manter "Encontre propriedades que representam seu **estilo de vida**" com "estilo de vida" em bold (não italic), conforme print
+
+**Estrutura do card:**
+```text
+┌─────────────────────┐
+│                     │
+│      [IMAGEM]       │
+│                     │
+└─────────────────────┘
+  Refúgios para relaxar
+```
+
+**Manter:** carrossel Embla, dots de navegação, setas desktop, responsividade mobile
 
