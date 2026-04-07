@@ -122,6 +122,7 @@ const Header = () => {
           </nav>
         </motion.div>
       )}
+      <AdvertisePropertyModal open={advertiseOpen} onOpenChange={setAdvertiseOpen} />
     </motion.header>
   );
 };
