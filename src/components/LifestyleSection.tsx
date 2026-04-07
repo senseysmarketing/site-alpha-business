@@ -60,37 +60,33 @@ const LifestyleSection = () => {
   }, [emblaApi, onSelect]);
 
   return (
-    <section className="bg-background py-8 md:py-12">
-      <div className="max-w-7xl mx-auto px-4 md:px-6">
+    <section className="section-padding bg-background">
+      <div className="max-w-7xl mx-auto">
         {/* Header with title and nav buttons */}
-        <div className="flex items-end justify-between mb-4 md:mb-6">
-          <h2 className="text-display text-3xl md:text-5xl font-light text-foreground">
+        <div className="flex items-center justify-between mb-12">
+          <h2 className="text-display text-2xl md:text-4xl font-light text-foreground max-w-lg">
             Encontre propriedades que representam seu{" "}
             <span className="font-bold">estilo de vida</span>
           </h2>
 
           {!isMobile && (
             <div className="flex gap-2 flex-shrink-0 ml-8">
-              <Button
-                variant="outline"
-                size="icon"
-                className="w-10 h-10 rounded-md border-border"
+              <button
+                className="w-10 h-10 border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors rounded-md disabled:opacity-40"
                 onClick={() => emblaApi?.scrollPrev()}
                 disabled={!canScrollPrev}
                 aria-label="Previous"
               >
                 <ChevronLeft className="h-5 w-5" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                className="w-10 h-10 rounded-md border-border"
+              </button>
+              <button
+                className="w-10 h-10 border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors rounded-md disabled:opacity-40"
                 onClick={() => emblaApi?.scrollNext()}
                 disabled={!canScrollNext}
                 aria-label="Next"
               >
                 <ChevronRight className="h-5 w-5" />
-              </Button>
+              </button>
             </div>
           )}
         </div>
