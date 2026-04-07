@@ -9,7 +9,6 @@ import sustainableHome from "@/assets/sustainable-home.jpg";
 
 interface LifestyleCategory {
   title: string;
-  subtitle: string;
   image: string;
 }
 
