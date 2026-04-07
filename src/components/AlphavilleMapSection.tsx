@@ -28,11 +28,11 @@ const AlphavilleMapSection = () => {
   const selectedNeighborhood = neighborhoods.find((n) => n.id === selected);
 
   return (
-    <section id="mapa" className="px-6 md:px-12 lg:px-24 py-20 md:py-32 bg-[hsl(350,60%,5%)]">
+    <section id="mapa" className="px-6 md:px-12 lg:px-24 py-20 md:py-32 bg-[#F8F8F8]">
       <div className="max-w-7xl mx-auto">
         <div className="mb-12 md:mb-16">
           <motion.p
-            className="text-body text-xs tracking-[0.3em] uppercase text-white/40 mb-3"
+            className="text-body text-xs tracking-[0.3em] uppercase text-[#2A070C]/40 mb-3"
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
@@ -40,7 +40,7 @@ const AlphavilleMapSection = () => {
             Explore por região
           </motion.p>
           <motion.h2
-            className="text-display text-3xl md:text-5xl font-light text-white"
+            className="text-display text-3xl md:text-5xl font-light text-[#2A070C]"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -55,7 +55,7 @@ const AlphavilleMapSection = () => {
             {neighborhoods.map((n, i) => (
               <motion.div
                 key={n.id}
-                className="border border-white/15 p-6 cursor-pointer hover:bg-white/5 transition-colors duration-300 rounded-md"
+                className="border border-[#2A070C]/10 p-6 cursor-pointer hover:bg-[#2A070C]/5 transition-colors duration-300 rounded-md bg-white"
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -63,13 +63,13 @@ const AlphavilleMapSection = () => {
               >
                 <div className="flex items-start justify-between mb-3">
                   <div>
-                    <h3 className="text-display text-lg font-light text-white">{n.name}</h3>
-                    <p className="text-body text-xs text-white/50 mt-1">{n.available} imóveis disponíveis</p>
+                    <h3 className="text-display text-lg font-light text-[#2A070C]">{n.name}</h3>
+                    <p className="text-body text-xs text-[#2A070C]/50 mt-1">{n.available} imóveis disponíveis</p>
                   </div>
-                  <span className="text-body text-sm font-medium text-white/80">{n.priceRange}</span>
+                  <span className="text-body text-sm font-medium text-[#2A070C]/80">{n.priceRange}</span>
                 </div>
-                <p className="text-body text-sm text-white/50 leading-relaxed mb-4">{n.description}</p>
-                <a href="#" className="inline-flex items-center gap-2 text-body text-xs tracking-[0.15em] uppercase text-white/70 hover:text-white transition-colors">
+                <p className="text-body text-sm text-[#2A070C]/50 leading-relaxed mb-4">{n.description}</p>
+                <a href="#" className="inline-flex items-center gap-2 text-body text-xs tracking-[0.15em] uppercase text-[#2A070C]/70 hover:text-[#2A070C] transition-colors">
                   Explorar <ArrowRight className="w-3 h-3" />
                 </a>
               </motion.div>
@@ -83,17 +83,17 @@ const AlphavilleMapSection = () => {
             viewport={{ once: true }}
             transition={{ duration: 1 }}
           >
-            <div className="relative w-full aspect-[16/9] border border-white/10 overflow-hidden bg-white/5 rounded-md">
+            <div className="relative w-full aspect-[16/9] border border-[#2A070C]/10 overflow-hidden bg-white rounded-md">
               <svg viewBox="0 0 100 100" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
-                <path d="M 10 50 Q 30 30, 50 45 T 90 40" stroke="rgba(255,255,255,0.1)" strokeWidth="0.3" fill="none" />
-                <path d="M 20 20 Q 40 60, 60 50 T 85 70" stroke="rgba(255,255,255,0.1)" strokeWidth="0.3" fill="none" />
-                <path d="M 15 70 Q 35 55, 55 65 T 80 45" stroke="rgba(255,255,255,0.08)" strokeWidth="0.2" fill="none" />
-                <path d="M 30 15 L 30 85" stroke="rgba(255,255,255,0.06)" strokeWidth="0.15" fill="none" strokeDasharray="1 1" />
-                <path d="M 60 10 L 60 90" stroke="rgba(255,255,255,0.06)" strokeWidth="0.15" fill="none" strokeDasharray="1 1" />
-                <ellipse cx="20" cy="35" rx="8" ry="6" fill="rgba(255,255,255,0.05)" />
-                <ellipse cx="75" cy="55" rx="10" ry="7" fill="rgba(255,255,255,0.04)" />
-                <ellipse cx="45" cy="80" rx="12" ry="5" fill="rgba(255,255,255,0.03)" />
-                <text x="50" y="12" textAnchor="middle" fill="rgba(255,255,255,0.25)" fontSize="2" letterSpacing="0.3">
+                <path d="M 10 50 Q 30 30, 50 45 T 90 40" stroke="rgba(42,7,12,0.1)" strokeWidth="0.3" fill="none" />
+                <path d="M 20 20 Q 40 60, 60 50 T 85 70" stroke="rgba(42,7,12,0.1)" strokeWidth="0.3" fill="none" />
+                <path d="M 15 70 Q 35 55, 55 65 T 80 45" stroke="rgba(42,7,12,0.08)" strokeWidth="0.2" fill="none" />
+                <path d="M 30 15 L 30 85" stroke="rgba(42,7,12,0.06)" strokeWidth="0.15" fill="none" strokeDasharray="1 1" />
+                <path d="M 60 10 L 60 90" stroke="rgba(42,7,12,0.06)" strokeWidth="0.15" fill="none" strokeDasharray="1 1" />
+                <ellipse cx="20" cy="35" rx="8" ry="6" fill="rgba(42,7,12,0.05)" />
+                <ellipse cx="75" cy="55" rx="10" ry="7" fill="rgba(42,7,12,0.04)" />
+                <ellipse cx="45" cy="80" rx="12" ry="5" fill="rgba(42,7,12,0.03)" />
+                <text x="50" y="12" textAnchor="middle" fill="rgba(42,7,12,0.25)" fontSize="2" letterSpacing="0.3">
                   REGIÃO ALPHAVILLE
                 </text>
               </svg>
@@ -110,20 +110,20 @@ const AlphavilleMapSection = () => {
                   transition={{ delay: 0.3 + i * 0.1, duration: 0.5 }}
                 >
                   <motion.div
-                    className="absolute -inset-3 rounded-full bg-white/10"
+                    className="absolute -inset-3 rounded-full bg-[#2A070C]/10"
                     animate={{ scale: [1, 1.5, 1], opacity: [0.3, 0, 0.3] }}
                     transition={{ duration: 2.5, repeat: Infinity, delay: i * 0.4 }}
                   />
                   <div
                     className={`relative z-10 flex items-center justify-center w-8 h-8 rounded-full transition-all duration-300 ${
-                      selected === n.id ? "bg-white scale-125" : "bg-white/70 hover:bg-white hover:scale-110"
+                      selected === n.id ? "bg-[#2A070C] scale-125" : "bg-[#2A070C] hover:scale-110"
                     }`}
                   >
-                    <MapPin className={`w-4 h-4 ${selected === n.id ? "text-[hsl(350,60%,5%)]" : "text-[hsl(350,60%,5%)]"}`} />
+                    <MapPin className="w-4 h-4 text-white" />
                   </div>
                   <span
                     className={`absolute top-full left-1/2 -translate-x-1/2 mt-2 whitespace-nowrap text-body text-[10px] tracking-[0.15em] uppercase transition-opacity duration-300 ${
-                      selected === n.id ? "text-white opacity-100" : "text-white/50 opacity-70 group-hover:opacity-100"
+                      selected === n.id ? "text-[#2A070C] opacity-100" : "text-[#2A070C]/50 opacity-70 group-hover:opacity-100"
                     }`}
                   >
                     {n.name}
@@ -134,7 +134,7 @@ const AlphavilleMapSection = () => {
               <AnimatePresence>
                 {selectedNeighborhood && (
                   <motion.div
-                    className="absolute z-20 bg-[hsl(350,60%,8%)] border border-white/15 backdrop-blur-sm p-6 w-72 rounded-md"
+                    className="absolute z-20 bg-white border border-[#2A070C]/10 shadow-lg backdrop-blur-sm p-6 w-72 rounded-md"
                     style={{
                       left: selectedNeighborhood.x > 60 ? `${selectedNeighborhood.x - 22}%` : `${selectedNeighborhood.x + 5}%`,
                       top: `${Math.max(5, selectedNeighborhood.y - 15)}%`,
@@ -145,21 +145,21 @@ const AlphavilleMapSection = () => {
                     transition={{ duration: 0.3 }}
                   >
                     <div className="flex items-start justify-between mb-3">
-                      <h3 className="text-display text-lg font-light text-white">{selectedNeighborhood.name}</h3>
-                      <button onClick={() => setSelected(null)} className="text-white/50 hover:text-white transition-colors text-xs">✕</button>
+                      <h3 className="text-display text-lg font-light text-[#2A070C]">{selectedNeighborhood.name}</h3>
+                      <button onClick={() => setSelected(null)} className="text-[#2A070C]/50 hover:text-[#2A070C] transition-colors text-xs">✕</button>
                     </div>
-                    <p className="text-body text-sm text-white/60 leading-relaxed mb-4">{selectedNeighborhood.description}</p>
-                    <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/10">
+                    <p className="text-body text-sm text-[#2A070C]/60 leading-relaxed mb-4">{selectedNeighborhood.description}</p>
+                    <div className="flex items-center justify-between mb-4 pb-4 border-b border-[#2A070C]/10">
                       <div>
-                        <p className="text-body text-[10px] tracking-[0.15em] uppercase text-white/40">Faixa de preço</p>
-                        <p className="text-body text-sm font-medium text-white">{selectedNeighborhood.priceRange}</p>
+                        <p className="text-body text-[10px] tracking-[0.15em] uppercase text-[#2A070C]/40">Faixa de preço</p>
+                        <p className="text-body text-sm font-medium text-[#2A070C]">{selectedNeighborhood.priceRange}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-body text-[10px] tracking-[0.15em] uppercase text-white/40">Disponíveis</p>
-                        <p className="text-body text-sm font-medium text-white">{selectedNeighborhood.available} imóveis</p>
+                        <p className="text-body text-[10px] tracking-[0.15em] uppercase text-[#2A070C]/40">Disponíveis</p>
+                        <p className="text-body text-sm font-medium text-[#2A070C]">{selectedNeighborhood.available} imóveis</p>
                       </div>
                     </div>
-                    <a href="#" className="inline-flex items-center gap-2 text-body text-xs tracking-[0.15em] uppercase text-white/70 hover:text-white transition-colors">
+                    <a href="#" className="inline-flex items-center gap-2 text-body text-xs tracking-[0.15em] uppercase text-[#2A070C]/70 hover:text-[#2A070C] transition-colors">
                       Explorar região <ArrowRight className="w-3 h-3" />
                     </a>
                   </motion.div>
