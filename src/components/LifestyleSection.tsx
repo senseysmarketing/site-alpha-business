@@ -20,11 +20,7 @@ const defaultCategories = [
 ];
 
 const LifestyleSection = () => {
-  const isMobile = useIsMobile();
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [canScrollPrev, setCanScrollPrev] = useState(false);
-  const [canScrollNext, setCanScrollNext] = useState(false);
-
   const { data: lifestyleSettings } = useSiteSettings<{ categories: LifestyleCategory[] }>("lifestyle_categories");
 
   const categories = defaultCategories.map((def, i) => {
