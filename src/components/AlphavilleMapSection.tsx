@@ -1,173 +1,89 @@
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { MapPin, ArrowRight } from "lucide-react";
+import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
-interface Neighborhood {
-  id: string;
-  name: string;
-  description: string;
-  priceRange: string;
-  available: number;
-  x: number;
-  y: number;
-}
-
-const neighborhoods: Neighborhood[] = [
-  { id: "alpha0", name: "Alphaville 0", description: "O residencial mais exclusivo, com lotes amplos e vista privilegiada.", priceRange: "R$ 10M – 18M", available: 4, x: 38, y: 28 },
-  { id: "alpha11", name: "Alphaville 11", description: "Tradição e sofisticação em um dos endereços mais desejados.", priceRange: "R$ 7M – 14M", available: 6, x: 55, y: 42 },
-  { id: "tambore", name: "Tamboré", description: "Infraestrutura completa com acesso a comércio e serviços premium.", priceRange: "R$ 5M – 12M", available: 8, x: 72, y: 32 },
-  { id: "aldeia", name: "Aldeia da Serra", description: "Natureza exuberante com privacidade e tranquilidade absolutas.", priceRange: "R$ 4M – 9M", available: 5, x: 25, y: 58 },
-  { id: "genesis", name: "Genesis", description: "Projeto arquitetônico contemporâneo com sustentabilidade integrada.", priceRange: "R$ 8M – 15M", available: 3, x: 48, y: 68 },
-  { id: "burle", name: "Burle Marx", description: "Inspirado no paisagismo brasileiro, com jardins e áreas verdes únicas.", priceRange: "R$ 6M – 11M", available: 7, x: 68, y: 62 },
+const condominiums = [
+  "Alphaville Residencial 1",
+  "Alphaville Residencial 2",
+  "Alphaville Residencial Zero",
+  "Alphaville Residencial 3",
+  "Alphaville Residencial 4",
+  "Alphaville Residencial 5",
+  "Alphaville Residencial 8",
+  "Alphaville Residencial 9",
+  "Alphaville Residencial 10",
+  "Alphaville Residencial 11",
+  "Tamboré 1",
+  "Tamboré 2",
+  "Tamboré 3",
+  "Tamboré 5",
+  "Tamboré 10",
+  "Tamboré 11",
+  "Aldeia da Serra",
+  "Burle Marx",
+  "Genesis",
+  "Melville",
 ];
 
 const AlphavilleMapSection = () => {
-  const [selected, setSelected] = useState<string | null>(null);
-  const isMobile = useIsMobile();
-  const selectedNeighborhood = neighborhoods.find((n) => n.id === selected);
+  const navigate = useNavigate();
+
+  const handleClick = (condo: string, type: "venda" | "aluguel") => {
+    const params = new URLSearchParams({ condo, transactionType: type });
+    navigate(`/imoveis?${params.toString()}`);
+  };
 
   return (
-    <section id="mapa" className="px-6 md:px-12 lg:px-24 py-20 md:py-32 bg-[#F8F8F8]">
+    <section id="mapa" className="px-6 md:px-12 lg:px-24 py-20 md:py-32 bg-muted/50">
       <div className="max-w-7xl mx-auto">
         <div className="mb-12 md:mb-16">
           <motion.p
-            className="text-body text-xs tracking-[0.3em] uppercase text-[#2A070C]/40 mb-3"
+            className="text-body text-xs tracking-[0.3em] uppercase text-foreground/40 mb-3"
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
           >
-            Explore por região
+            Regiões
           </motion.p>
           <motion.h2
-            className="text-display text-3xl md:text-5xl font-light text-[#2A070C]"
+            className="text-display text-3xl md:text-5xl font-light text-foreground"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
           >
-            Mapa de <em className="italic">Alphaville</em>
+            Conheça o seu futuro imóvel em{" "}
+            <em className="italic">Alphaville</em>
           </motion.h2>
         </div>
 
-        {isMobile ? (
-          <div className="space-y-4">
-            {neighborhoods.map((n, i) => (
-              <motion.div
-                key={n.id}
-                className="border border-[#2A070C]/10 p-6 cursor-pointer hover:bg-[#2A070C]/5 transition-colors duration-300 rounded-md bg-white"
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.08, duration: 0.5 }}
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <h3 className="text-display text-lg font-light text-[#2A070C]">{n.name}</h3>
-                    <p className="text-body text-xs text-[#2A070C]/50 mt-1">{n.available} imóveis disponíveis</p>
-                  </div>
-                  <span className="text-body text-sm font-medium text-[#2A070C]/80">{n.priceRange}</span>
-                </div>
-                <p className="text-body text-sm text-[#2A070C]/50 leading-relaxed mb-4">{n.description}</p>
-                <a href="#" className="inline-flex items-center gap-2 text-body text-xs tracking-[0.15em] uppercase text-[#2A070C]/70 hover:text-[#2A070C] transition-colors">
-                  Explorar <ArrowRight className="w-3 h-3" />
-                </a>
-              </motion.div>
-            ))}
-          </div>
-        ) : (
-          <motion.div
-            className="relative"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 1 }}
-          >
-            <div className="relative w-full aspect-[16/9] border border-[#2A070C]/10 overflow-hidden bg-white rounded-md">
-              <svg viewBox="0 0 100 100" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
-                <path d="M 10 50 Q 30 30, 50 45 T 90 40" stroke="rgba(42,7,12,0.1)" strokeWidth="0.3" fill="none" />
-                <path d="M 20 20 Q 40 60, 60 50 T 85 70" stroke="rgba(42,7,12,0.1)" strokeWidth="0.3" fill="none" />
-                <path d="M 15 70 Q 35 55, 55 65 T 80 45" stroke="rgba(42,7,12,0.08)" strokeWidth="0.2" fill="none" />
-                <path d="M 30 15 L 30 85" stroke="rgba(42,7,12,0.06)" strokeWidth="0.15" fill="none" strokeDasharray="1 1" />
-                <path d="M 60 10 L 60 90" stroke="rgba(42,7,12,0.06)" strokeWidth="0.15" fill="none" strokeDasharray="1 1" />
-                <ellipse cx="20" cy="35" rx="8" ry="6" fill="rgba(42,7,12,0.05)" />
-                <ellipse cx="75" cy="55" rx="10" ry="7" fill="rgba(42,7,12,0.04)" />
-                <ellipse cx="45" cy="80" rx="12" ry="5" fill="rgba(42,7,12,0.03)" />
-                <text x="50" y="12" textAnchor="middle" fill="rgba(42,7,12,0.25)" fontSize="2" letterSpacing="0.3">
-                  REGIÃO ALPHAVILLE
-                </text>
-              </svg>
-
-              {neighborhoods.map((n, i) => (
-                <motion.button
-                  key={n.id}
-                  className="absolute group"
-                  style={{ left: `${n.x}%`, top: `${n.y}%`, transform: "translate(-50%, -100%)" }}
-                  onClick={() => setSelected(selected === n.id ? null : n.id)}
-                  initial={{ opacity: 0, y: 10 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.3 + i * 0.1, duration: 0.5 }}
+        <motion.div
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-6"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
+          {condominiums.map((condo) => (
+            <div key={condo} className="flex items-center justify-between border-b border-border pb-3">
+              <span className="text-body text-sm text-foreground font-medium">{condo}</span>
+              <div className="flex items-center gap-2 text-body text-xs">
+                <button
+                  onClick={() => handleClick(condo, "venda")}
+                  className="text-primary hover:text-primary/80 transition-colors uppercase tracking-wider"
                 >
-                  <motion.div
-                    className="absolute -inset-3 rounded-full bg-[#2A070C]/10"
-                    animate={{ scale: [1, 1.5, 1], opacity: [0.3, 0, 0.3] }}
-                    transition={{ duration: 2.5, repeat: Infinity, delay: i * 0.4 }}
-                  />
-                  <div
-                    className={`relative z-10 flex items-center justify-center w-8 h-8 rounded-full transition-all duration-300 ${
-                      selected === n.id ? "bg-[#2A070C] scale-125" : "bg-[#2A070C] hover:scale-110"
-                    }`}
-                  >
-                    <MapPin className="w-4 h-4 text-white" />
-                  </div>
-                  <span
-                    className={`absolute top-full left-1/2 -translate-x-1/2 mt-2 whitespace-nowrap text-body text-[10px] tracking-[0.15em] uppercase transition-opacity duration-300 ${
-                      selected === n.id ? "text-[#2A070C] opacity-100" : "text-[#2A070C]/50 opacity-70 group-hover:opacity-100"
-                    }`}
-                  >
-                    {n.name}
-                  </span>
-                </motion.button>
-              ))}
-
-              <AnimatePresence>
-                {selectedNeighborhood && (
-                  <motion.div
-                    className="absolute z-20 bg-white border border-[#2A070C]/10 shadow-lg backdrop-blur-sm p-6 w-72 rounded-md"
-                    style={{
-                      left: selectedNeighborhood.x > 60 ? `${selectedNeighborhood.x - 22}%` : `${selectedNeighborhood.x + 5}%`,
-                      top: `${Math.max(5, selectedNeighborhood.y - 15)}%`,
-                    }}
-                    initial={{ opacity: 0, scale: 0.9, y: 10 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.9, y: 10 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <div className="flex items-start justify-between mb-3">
-                      <h3 className="text-display text-lg font-light text-[#2A070C]">{selectedNeighborhood.name}</h3>
-                      <button onClick={() => setSelected(null)} className="text-[#2A070C]/50 hover:text-[#2A070C] transition-colors text-xs">✕</button>
-                    </div>
-                    <p className="text-body text-sm text-[#2A070C]/60 leading-relaxed mb-4">{selectedNeighborhood.description}</p>
-                    <div className="flex items-center justify-between mb-4 pb-4 border-b border-[#2A070C]/10">
-                      <div>
-                        <p className="text-body text-[10px] tracking-[0.15em] uppercase text-[#2A070C]/40">Faixa de preço</p>
-                        <p className="text-body text-sm font-medium text-[#2A070C]">{selectedNeighborhood.priceRange}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-body text-[10px] tracking-[0.15em] uppercase text-[#2A070C]/40">Disponíveis</p>
-                        <p className="text-body text-sm font-medium text-[#2A070C]">{selectedNeighborhood.available} imóveis</p>
-                      </div>
-                    </div>
-                    <a href="#" className="inline-flex items-center gap-2 text-body text-xs tracking-[0.15em] uppercase text-[#2A070C]/70 hover:text-[#2A070C] transition-colors">
-                      Explorar região <ArrowRight className="w-3 h-3" />
-                    </a>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                  Comprar
+                </button>
+                <span className="text-muted-foreground">|</span>
+                <button
+                  onClick={() => handleClick(condo, "aluguel")}
+                  className="text-primary hover:text-primary/80 transition-colors uppercase tracking-wider"
+                >
+                  Alugar
+                </button>
+              </div>
             </div>
-          </motion.div>
-        )}
+          ))}
+        </motion.div>
       </div>
     </section>
   );

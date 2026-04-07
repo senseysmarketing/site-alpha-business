@@ -15,20 +15,20 @@ interface LifestyleCategory {
 
 const defaultCategories = [
   {
-    title: "Mansões Modernas",
-    subtitle: "Arquitetura contemporânea e design autoral",
+    title: "Imóveis para relaxar",
+    subtitle: "Espaços que proporcionam paz e tranquilidade",
     image: mansionModern,
     count: "24 imóveis",
   },
   {
-    title: "Vida em Família",
-    subtitle: "Residenciais com infraestrutura completa",
+    title: "Imóveis Assinados",
+    subtitle: "Projetos de arquitetos renomados",
     image: familyHome,
     count: "38 imóveis",
   },
   {
-    title: "Refúgios Sustentáveis",
-    subtitle: "Harmonia entre luxo e natureza",
+    title: "Mais espaço para a família",
+    subtitle: "Residenciais amplos com infraestrutura completa",
     image: sustainableHome,
     count: "12 imóveis",
   },
@@ -86,7 +86,7 @@ const LifestyleSection = () => {
           Lifestyle
         </p>
         <h2 className="text-display text-3xl md:text-5xl font-light text-foreground">
-          Navegue pelo seu{" "}
+          Encontre propriedades que representam seu{" "}
            <em className="italic">estilo de vida</em>
         </h2>
       </div>

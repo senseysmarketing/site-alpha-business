@@ -7,6 +7,7 @@ import SearchResultsPanel from "./SearchResultsPanel";
 import FilterChips, { type ParsedFilters } from "./search/FilterChips";
 import VoiceWaves from "./search/VoiceWaves";
 import { mockProperties, toSearchResult } from "@/data/mockProperties";
+import { useNavigate } from "react-router-dom";
 
 interface SearchResult {
   id: string;
@@ -25,6 +26,18 @@ interface SearchResult {
   relevance_reason: string;
 }
 
+const priceOptions = [
+  { value: "", label: "Qualquer" },
+  { value: "500000", label: "R$ 500 mil" },
+  { value: "1000000", label: "R$ 1 milhão" },
+  { value: "2000000", label: "R$ 2 milhões" },
+  { value: "3000000", label: "R$ 3 milhões" },
+  { value: "5000000", label: "R$ 5 milhões" },
+  { value: "8000000", label: "R$ 8 milhões" },
+  { value: "10000000", label: "R$ 10 milhões" },
+  { value: "15000000", label: "R$ 15 milhões" },
+];
+
 const SearchBarSection = () => {
   const [query, setQuery] = useState("");
   const [listening, setListening] = useState(false);
@@ -35,6 +48,14 @@ const SearchBarSection = () => {
   const [mode, setMode] = useState<"cognitive" | "traditional">("cognitive");
   const recognitionRef = useRef<any>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+
+  // Traditional filters state
+  const [filterType, setFilterType] = useState("");
+  const [filterMinPrice, setFilterMinPrice] = useState("");
+  const [filterMaxPrice, setFilterMaxPrice] = useState("");
+  const [filterCondo, setFilterCondo] = useState("");
+  const [filterBedrooms, setFilterBedrooms] = useState("");
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -104,6 +125,16 @@ const SearchBarSection = () => {
     }
   }, [query]);
 
+  const handleTraditionalSearch = useCallback(() => {
+    const params = new URLSearchParams();
+    if (filterType) params.set("type", filterType);
+    if (filterMinPrice) params.set("minPrice", filterMinPrice);
+    if (filterMaxPrice) params.set("maxPrice", filterMaxPrice);
+    if (filterCondo) params.set("condo", filterCondo);
+    if (filterBedrooms) params.set("bedrooms", filterBedrooms);
+    navigate(`/imoveis?${params.toString()}`);
+  }, [filterType, filterMinPrice, filterMaxPrice, filterCondo, filterBedrooms, navigate]);
+
   const handleVoice = useCallback(() => {
     if (listening && recognitionRef.current) {
       recognitionRef.current.stop();
@@ -158,6 +189,8 @@ const SearchBarSection = () => {
     if (e.key === "Enter") { e.preventDefault(); handleSearch(); }
   };
 
+  const selectClass = "bg-background border border-border rounded-md px-3 py-2.5 text-body text-sm text-foreground outline-none focus:ring-1 focus:ring-primary appearance-none cursor-pointer";
+
   return (
     <section className="relative z-20 px-6 md:px-12 lg:px-24 -mt-10 mb-8">
       <div className="max-w-4xl mx-auto" ref={panelRef}>
@@ -187,49 +220,118 @@ const SearchBarSection = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 md:gap-3 border border-border rounded-md px-3 md:px-4 py-2.5 md:py-3">
-            <button
-              onClick={handleVoice}
-              className={`p-2 rounded-full transition-all flex-shrink-0 ${listening ? "bg-accent text-accent-foreground" : "hover:bg-muted text-muted-foreground"}`}
-            >
-              {listening ? <VoiceWaves /> : <Mic size={18} />}
-            </button>
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Descreva seu imóvel ideal..."
-              className="flex-1 bg-transparent text-body text-sm text-foreground placeholder:text-muted-foreground outline-none min-w-0"
-            />
-            <button
-              onClick={() => handleSearch()}
-              disabled={searching}
-              className="bg-primary text-primary-foreground px-4 md:px-6 py-2.5 text-body text-xs tracking-[0.1em] uppercase hover-magnetic disabled:opacity-70 flex items-center gap-2 rounded-md"
-            >
-              {searching ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
-              {searching ? "Buscando..." : "Buscar"}
-            </button>
-          </div>
+          {mode === "cognitive" ? (
+            <>
+              <div className="flex items-center gap-2 md:gap-3 border border-border rounded-md px-3 md:px-4 py-2.5 md:py-3">
+                <button
+                  onClick={handleVoice}
+                  className={`p-2 rounded-full transition-all flex-shrink-0 ${listening ? "bg-accent text-accent-foreground" : "hover:bg-muted text-muted-foreground"}`}
+                >
+                  {listening ? <VoiceWaves /> : <Mic size={18} />}
+                </button>
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Descreva seu imóvel ideal..."
+                  className="flex-1 bg-transparent text-body text-sm text-foreground placeholder:text-muted-foreground outline-none min-w-0"
+                />
+                <button
+                  onClick={() => handleSearch()}
+                  disabled={searching}
+                  className="bg-primary text-primary-foreground px-4 md:px-6 py-2.5 text-body text-xs tracking-[0.1em] uppercase hover-magnetic disabled:opacity-70 flex items-center gap-2 rounded-md"
+                >
+                  {searching ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
+                  {searching ? "Buscando..." : "Buscar"}
+                </button>
+              </div>
 
-          {listening && (
-            <p className="text-body text-xs text-muted-foreground text-center mt-2">Ouvindo...</p>
-          )}
+              {listening && (
+                <p className="text-body text-xs text-muted-foreground text-center mt-2">Ouvindo...</p>
+              )}
 
-          {parsedFilters && !searching && (
-            <div className="mt-3">
-              <FilterChips filters={parsedFilters} />
+              {parsedFilters && !searching && (
+                <div className="mt-3">
+                  <FilterChips filters={parsedFilters} />
+                </div>
+              )}
+
+              <SearchResultsPanel
+                results={results}
+                loading={searching}
+                visible={showResults}
+                onClose={() => setShowResults(false)}
+                query={query}
+                parsedFilters={parsedFilters}
+              />
+            </>
+          ) : (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                <select
+                  value={filterType}
+                  onChange={(e) => setFilterType(e.target.value)}
+                  className={selectClass}
+                >
+                  <option value="">Tipo</option>
+                  <option value="casa">Casa</option>
+                  <option value="apartamento">Apartamento</option>
+                  <option value="terreno">Terreno</option>
+                </select>
+
+                <select
+                  value={filterMinPrice}
+                  onChange={(e) => setFilterMinPrice(e.target.value)}
+                  className={selectClass}
+                >
+                  <option value="">Preço mínimo</option>
+                  {priceOptions.filter(o => o.value).map(o => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+
+                <select
+                  value={filterMaxPrice}
+                  onChange={(e) => setFilterMaxPrice(e.target.value)}
+                  className={selectClass}
+                >
+                  <option value="">Até</option>
+                  {priceOptions.filter(o => o.value).map(o => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+
+                <input
+                  type="text"
+                  value={filterCondo}
+                  onChange={(e) => setFilterCondo(e.target.value)}
+                  placeholder="Condomínio"
+                  className={`${selectClass} w-full`}
+                />
+
+                <select
+                  value={filterBedrooms}
+                  onChange={(e) => setFilterBedrooms(e.target.value)}
+                  className={selectClass}
+                >
+                  <option value="">Nº Quartos</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4+</option>
+                </select>
+              </div>
+
+              <button
+                onClick={handleTraditionalSearch}
+                className="w-full bg-primary text-primary-foreground py-3 text-body text-xs tracking-[0.15em] uppercase hover-magnetic flex items-center justify-center gap-2 rounded-md"
+              >
+                <Search size={14} />
+                Buscar imóveis
+              </button>
             </div>
           )}
-
-          <SearchResultsPanel
-            results={results}
-            loading={searching}
-            visible={showResults}
-            onClose={() => setShowResults(false)}
-            query={query}
-            parsedFilters={parsedFilters}
-          />
         </motion.div>
       </div>
     </section>
