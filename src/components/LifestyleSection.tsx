@@ -87,8 +87,6 @@ const LifestyleSection = () => {
                 key={cat.title}
                 className="flex-shrink-0 cursor-grab active:cursor-grabbing basis-[85%] md:basis-[calc(33.33%-16px)]"
               >
-                }`}
-              >
                 <div className="rounded-sm overflow-hidden aspect-[4/3]">
                   <img
                     src={cat.image}
