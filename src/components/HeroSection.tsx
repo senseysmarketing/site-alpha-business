@@ -1,344 +1,133 @@
 import { motion } from "framer-motion";
-import { Search, Mic, Loader2 } from "lucide-react";
-import React, { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import useEmblaCarousel from "embla-carousel-react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import SearchResultsPanel from "./SearchResultsPanel";
-import FilterChips, { type ParsedFilters } from "./search/FilterChips";
-import VoiceWaves from "./search/VoiceWaves";
-import { useSiteSettings } from "@/hooks/useSiteSettings";
-import { mockProperties, toSearchResult } from "@/data/mockProperties";
-
-interface SearchResult {
-  id: string;
-  code: string;
-  title: string;
-  condominium: string | null;
-  neighborhood: string | null;
-  city: string | null;
-  price: number | null;
-  rental_price: number | null;
-  transaction_type: string;
-  bedrooms: number | null;
-  bathrooms: number | null;
-  area_total: number | null;
-  photo: string | null;
-  relevance_reason: string;
-}
-
-interface HeroSettings {
-  video_url: string;
-  fallback_image: string;
-  title: string;
-  subtitle: string;
-}
+import { mockProperties } from "@/data/mockProperties";
 
 const HeroSection = () => {
-  const [query, setQuery] = useState("");
-  const [listening, setListening] = useState(false);
-  const [searching, setSearching] = useState(false);
-  const [results, setResults] = useState<SearchResult[]>([]);
-  const [showResults, setShowResults] = useState(false);
-  const [parsedFilters, setParsedFilters] = useState<ParsedFilters | null>(null);
-  const recognitionRef = useRef<any>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
+  const [selectedIndex, setSelectedIndex] = useState(0);
 
-  const { data: heroSettings } = useSiteSettings<HeroSettings>("hero");
+  // Fetch properties for carousel
+  const { data: properties } = useQuery({
+    queryKey: ["hero-carousel-properties"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("properties")
+        .select("id, title, condominium, neighborhood, city, photos")
+        .eq("status", "available")
+        .limit(5);
+      if (error || !data?.length) return null;
+      return data;
+    },
+  });
 
-  const desktopVideo = heroSettings?.video_url || "/videos/hero-bg.mp4";
-  const fallbackImage = heroSettings?.fallback_image || "";
-  const heroTitle = heroSettings?.title || "";
-  const heroSubtitle = heroSettings?.subtitle || "";
+  const slides = properties?.length
+    ? properties.map((p) => ({
+        image: p.photos?.[0] || "",
+        title: p.title,
+        location: [p.condominium, p.neighborhood, p.city].filter(Boolean).join(" · "),
+      }))
+    : mockProperties.slice(0, 4).map((p) => ({
+        image: p.photo || p.images[0],
+        title: p.title,
+        location: [p.condominium, p.neighborhood].filter(Boolean).join(" · "),
+      }));
+
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
+
+  const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
+  const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
 
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
-        setShowResults(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
+    if (!emblaApi) return;
+    const onSelect = () => setSelectedIndex(emblaApi.selectedScrollSnap());
+    emblaApi.on("select", onSelect);
+    onSelect();
+    return () => { emblaApi.off("select", onSelect); };
+  }, [emblaApi]);
 
+  // Auto-advance
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setShowResults(false);
-    };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, []);
-
-  const handleSearch = useCallback(async (searchQuery?: string) => {
-    const q = (searchQuery || query).trim();
-    if (!q || q.length < 2) return;
-
-    setSearching(true);
-    setShowResults(true);
-    setResults([]);
-    setParsedFilters(null);
-
-    try {
-      const { data, error } = await supabase.functions.invoke("ai-property-search", {
-        body: { query: q },
-      });
-
-      if (error) throw error;
-
-      if (data?.error) {
-        toast.error(data.error);
-        return;
-      }
-
-      const aiResults = data?.results || [];
-      const aiFilters = data?.parsed_filters || null;
-      setParsedFilters(aiFilters);
-
-      if (aiResults.length > 0) {
-        setResults(aiResults);
-      } else {
-        // Fallback to mock data
-        const lower = q.toLowerCase();
-        const filtered = mockProperties
-          .filter((p) =>
-            [p.title, p.condominium, p.neighborhood, p.city, p.description, p.property_type]
-              .filter(Boolean)
-              .some((field) => field!.toLowerCase().includes(lower))
-          )
-          .map(toSearchResult);
-        setResults(filtered.length > 0 ? filtered : mockProperties.map(toSearchResult));
-      }
-    } catch (err: any) {
-      console.error("Search error:", err);
-      // Fallback to mock data on error
-      const lower = q.toLowerCase();
-      const filtered = mockProperties
-        .filter((p) =>
-          [p.title, p.condominium, p.neighborhood, p.city, p.description, p.property_type]
-            .filter(Boolean)
-            .some((field) => field!.toLowerCase().includes(lower))
-        )
-        .map(toSearchResult);
-      setResults(filtered.length > 0 ? filtered : mockProperties.map(toSearchResult));
-      toast.info("Exibindo resultados de demonstração.");
-    } finally {
-      setSearching(false);
-    }
-  }, [query]);
-
-  const handleVoice = useCallback(() => {
-    if (listening && recognitionRef.current) {
-      recognitionRef.current.stop();
-      setListening(false);
-      return;
-    }
-
-    if (!("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) {
-      toast.error("Seu navegador não suporta reconhecimento de voz.");
-      return;
-    }
-
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
-    recognition.lang = "pt-BR";
-    recognition.interimResults = true;
-    recognition.continuous = false;
-    recognitionRef.current = recognition;
-
-    let finalTranscript = "";
-
-    recognition.onresult = (e: any) => {
-      let interim = "";
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        const transcript = e.results[i][0].transcript;
-        if (e.results[i].isFinal) {
-          finalTranscript += transcript;
-        } else {
-          interim += transcript;
-        }
-      }
-      setQuery(finalTranscript + interim);
-    };
-
-    recognition.onend = () => {
-      setListening(false);
-      recognitionRef.current = null;
-      if (finalTranscript.trim()) {
-        setQuery(finalTranscript.trim());
-        handleSearch(finalTranscript.trim());
-      }
-    };
-
-    recognition.onerror = (e: any) => {
-      console.error("Speech error:", e.error);
-      setListening(false);
-      recognitionRef.current = null;
-      if (e.error !== "no-speech") {
-        toast.error("Erro no reconhecimento de voz.");
-      }
-    };
-
-    setListening(true);
-    recognition.start();
-  }, [listening, handleSearch]);
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      handleSearch();
-    }
-  };
+    if (!emblaApi) return;
+    const interval = setInterval(() => emblaApi.scrollNext(), 6000);
+    return () => clearInterval(interval);
+  }, [emblaApi]);
 
   return (
-    <section className="relative h-screen flex items-end pb-24 md:items-center md:pb-0 justify-center overflow-hidden">
-      {/* Background videos */}
-      <div className="absolute inset-0">
-        <video
-          src={desktopVideo}
-          autoPlay
-          muted
-          loop
-          playsInline
-          poster={fallbackImage || undefined}
-          className="hidden md:block w-full h-full object-cover object-center"
-        />
-        <video
-          src="/videos/hero-bg-mobile.mp4"
-          autoPlay
-          muted
-          loop
-          playsInline
-          poster={fallbackImage || undefined}
-          className="md:hidden w-full h-full object-cover object-center"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-foreground/40 via-foreground/20 to-background md:hidden" />
-        <div className="hidden md:block absolute inset-x-0 top-[85%] bottom-0 bg-gradient-to-b from-transparent to-background" />
+    <section className="relative h-[65vh] md:h-[70vh] overflow-hidden pt-[60px]">
+      <div className="absolute inset-0" ref={emblaRef}>
+        <div className="flex h-full">
+          {slides.map((slide, i) => (
+            <div key={i} className="flex-[0_0_100%] min-w-0 relative h-full">
+              <img
+                src={slide.image}
+                alt={slide.title}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Content */}
-      <div className="relative z-10 text-center w-full max-w-3xl mx-auto px-4 md:px-6">
-        {(heroTitle || heroSubtitle) && (
-          <motion.div
-            className="mb-8"
+      {/* Overlay content */}
+      <div className="relative z-10 h-full flex flex-col justify-end pb-24 md:pb-32 px-6 md:px-12 lg:px-24">
+        <div className="max-w-3xl">
+          <motion.p
+            className="text-body text-xs tracking-[0.3em] uppercase text-white/60 mb-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+          >
+            Prepare-se para sonhar alto
+          </motion.p>
+          <motion.h1
+            className="text-display text-3xl md:text-5xl lg:text-6xl font-light text-white leading-tight mb-4"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.8 }}
+            transition={{ delay: 0.6, duration: 0.8 }}
           >
-            {heroTitle && (
-              <h1 className="text-display text-4xl md:text-6xl lg:text-7xl font-light text-primary-foreground mb-3 leading-tight">
-                {heroTitle}
-              </h1>
-            )}
-            {heroSubtitle && (
-              <p className="text-body text-sm md:text-base text-primary-foreground/70">
-                {heroSubtitle}
-              </p>
-            )}
-          </motion.div>
-        )}
+            Se você está buscando{" "}
+            <em className="italic">imóveis de luxo</em>,<br />
+            aqui é o seu lugar
+          </motion.h1>
 
-        {/* AI Search bar */}
-        <motion.div
-          ref={panelRef}
-          className="relative"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8, duration: 0.8 }}
-        >
-          <div className="glass-panel rounded-sm p-1.5 max-w-xl mx-auto relative">
-            <div className="flex items-center gap-2 md:gap-3 md:pr-20">
-              <button
-                onClick={handleVoice}
-                className={`p-3 rounded-sm transition-all duration-300 flex-shrink-0 relative ml-2 md:ml-4 ${
-                  listening
-                    ? "bg-accent text-accent-foreground"
-                    : "hover:bg-muted text-muted-foreground"
-                }`}
-              >
-                {listening ? <VoiceWaves /> : <Mic size={18} />}
-              </button>
-              <Search size={18} className="text-muted-foreground flex-shrink-0" />
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Busque por nome, código ou região..."
-                className="flex-1 bg-transparent text-body text-sm text-foreground placeholder:text-muted-foreground outline-none py-3 min-w-0"
-              />
-            </div>
-            {listening && (
-              <p className="text-body text-xs text-muted-foreground text-center py-1">Ouvindo...</p>
-            )}
-            <button
-              onClick={() => handleSearch()}
-              disabled={searching}
-              className="w-full md:hidden bg-primary text-primary-foreground py-3 text-body text-xs tracking-[0.1em] uppercase hover-magnetic mt-1.5 disabled:opacity-70 flex items-center justify-center gap-2"
+          {/* Property info */}
+          {slides[selectedIndex] && (
+            <motion.div
+              key={selectedIndex}
+              className="mt-4"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
             >
-              {searching ? <Loader2 size={14} className="animate-spin" /> : null}
-              {searching ? "Buscando..." : "Buscar"}
-            </button>
-            <button
-              onClick={() => handleSearch()}
-              disabled={searching}
-              className="hidden md:flex bg-primary text-primary-foreground px-6 py-3 text-body text-xs tracking-[0.1em] uppercase hover-magnetic absolute right-1.5 top-1.5 bottom-1.5 items-center gap-2 disabled:opacity-70"
-            >
-              {searching ? <Loader2 size={14} className="animate-spin" /> : null}
-              {searching ? "Buscando..." : "Buscar"}
-            </button>
-          </div>
-
-          {/* Filter chips */}
-          {parsedFilters && !searching && (
-            <div className="max-w-xl mx-auto mt-3">
-              <FilterChips filters={parsedFilters} />
-            </div>
+              <p className="text-body text-sm text-white/80">{slides[selectedIndex].title}</p>
+              <p className="text-body text-xs text-white/50 mt-1">{slides[selectedIndex].location}</p>
+            </motion.div>
           )}
+        </div>
 
-          <SearchResultsPanel
-            results={results}
-            loading={searching}
-            visible={showResults}
-            onClose={() => setShowResults(false)}
-            query={query}
-            parsedFilters={parsedFilters}
-          />
-        </motion.div>
-
-        {/* Quick links */}
-        <motion.div
-          className="flex items-center justify-center gap-2 md:gap-4 mt-4 flex-wrap"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.1, duration: 0.8 }}
-        >
-          {["Casas em Condomínio", "Mansões Exclusive", "Lançamentos"].map((label, i) => (
-            <React.Fragment key={label}>
-              {i > 0 && <span className="text-cashmere/40 text-xs hidden md:inline">·</span>}
-              <a
-                href="#"
-                className="text-body text-[10px] md:text-xs tracking-[0.12em] uppercase text-cashmere/70 hover:text-cashmere transition-colors duration-300"
-              >
-                {label}
-              </a>
-            </React.Fragment>
-          ))}
-        </motion.div>
+        {/* Navigation */}
+        <div className="flex items-center gap-4 mt-8">
+          <button onClick={scrollPrev} className="w-10 h-10 border border-white/30 flex items-center justify-center text-white hover:bg-white/10 transition-colors">
+            <ChevronLeft size={18} />
+          </button>
+          <div className="flex gap-2">
+            {slides.map((_, i) => (
+              <button
+                key={i}
+                className={`w-2 h-2 rounded-full transition-all duration-300 ${i === selectedIndex ? "bg-white w-6" : "bg-white/40"}`}
+                onClick={() => emblaApi?.scrollTo(i)}
+              />
+            ))}
+          </div>
+          <button onClick={scrollNext} className="w-10 h-10 border border-white/30 flex items-center justify-center text-white hover:bg-white/10 transition-colors">
+            <ChevronRight size={18} />
+          </button>
+        </div>
       </div>
-
-      {/* Scroll indicator */}
-      <motion.div
-        className="absolute bottom-8 left-1/2 -translate-x-1/2"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.5, duration: 1 }}
-      >
-        <motion.div
-          className="w-px h-12 bg-cashmere/40"
-          animate={{ scaleY: [0, 1, 0] }}
-          transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-          style={{ transformOrigin: "top" }}
-        />
-      </motion.div>
     </section>
   );
 };

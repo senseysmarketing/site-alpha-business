@@ -2,12 +2,13 @@ import { useState, useCallback } from "react";
 import Preloader from "@/components/Preloader";
 import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
-import LifestyleSection from "@/components/LifestyleSection";
-import FeaturedPropertySection from "@/components/FeaturedPropertySection";
+import SearchBarSection from "@/components/SearchBarSection";
 import NewArrivalsSection from "@/components/NewArrivalsSection";
+import FeaturedPropertySection from "@/components/FeaturedPropertySection";
+import InstitutionalSection from "@/components/InstitutionalSection";
+import TeamSection from "@/components/TeamSection";
 import ContactSection from "@/components/ContactSection";
 import AlphavilleMapSection from "@/components/AlphavilleMapSection";
-import InstitutionalSection from "@/components/InstitutionalSection";
 import Footer from "@/components/Footer";
 
 const Index = () => {
@@ -24,12 +25,13 @@ const Index = () => {
         <Header />
         <main>
           <HeroSection />
-          <LifestyleSection />
-          <FeaturedPropertySection />
+          <SearchBarSection />
           <NewArrivalsSection />
-          <AlphavilleMapSection />
-          <ContactSection />
+          <FeaturedPropertySection />
           <InstitutionalSection />
+          <TeamSection />
+          <ContactSection />
+          <AlphavilleMapSection />
         </main>
         <Footer />
       </div>

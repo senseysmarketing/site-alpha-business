@@ -1,139 +1,73 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useSiteSettings } from "@/hooks/useSiteSettings";
-import { mockProperties, formatPrice } from "@/data/mockProperties";
+import mansionModern from "@/assets/mansion-modern.jpg";
 
-interface FeaturedSettings {
-  property_id: string;
-  custom_label: string;
-}
-
-// Fallback: most expensive mock property
-const mockFeatured = [...mockProperties].sort((a, b) => (b.price || 0) - (a.price || 0))[0];
+const condominiums = [
+  { label: "Tamboré I", href: "/busca?condominio=tambore-1" },
+  { label: "Tamboré II", href: "/busca?condominio=tambore-2" },
+  { label: "Tamboré III", href: "/busca?condominio=tambore-3" },
+];
 
 const FeaturedPropertySection = () => {
-  const { data: featuredSettings } = useSiteSettings<FeaturedSettings>("featured_property");
-
-  const propertyId = featuredSettings?.property_id || "";
-  const customLabel = featuredSettings?.custom_label || "Destaque";
-
-  // Fetch from Supabase if property_id is set
-  const { data: dbProperty } = useQuery({
-    queryKey: ["featured-property", propertyId],
-    queryFn: async () => {
-      if (!propertyId) return null;
-      const { data, error } = await supabase
-        .from("properties")
-        .select("*")
-        .eq("id", propertyId)
-        .single();
-      if (error) return null;
-      return data;
-    },
-    enabled: !!propertyId,
-  });
-
-  // Use DB property or fallback to mock
-  const featured = dbProperty
-    ? {
-        id: dbProperty.id,
-        title: dbProperty.title,
-        subtitle: dbProperty.description || "",
-        photo: dbProperty.photos?.[0] || "",
-        images: dbProperty.photos || [],
-        area_total: dbProperty.area_total,
-        suites: dbProperty.bedrooms || 0,
-        parking: dbProperty.parking_spots || 0,
-        amenities: dbProperty.engineering_highlights || [],
-        price: dbProperty.price,
-      }
-    : mockFeatured;
-
-  const heroImage = featured.photo || featured.images?.[0] || "";
-
   return (
     <section className="px-6 md:px-12 lg:px-24 py-10">
       <div className="max-w-7xl mx-auto">
-        <div className="relative rounded-lg overflow-hidden min-h-[500px] md:min-h-[600px]">
+        <div className="relative rounded-lg overflow-hidden min-h-[400px] md:min-h-[450px]">
           <img
-            src={heroImage}
-            alt={featured.title}
+            src={mansionModern}
+            alt="Alphaville"
             className="absolute inset-0 w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-foreground/90 via-foreground/60 to-transparent" />
+          <div className="absolute inset-0 bg-[hsl(350,60%,5%)]/80" />
 
-          <div className="relative z-10 flex flex-col justify-end h-full min-h-[500px] md:min-h-[600px] p-8 md:p-14 lg:p-20 max-w-2xl">
+          <div className="relative z-10 flex flex-col items-center justify-center text-center h-full min-h-[400px] md:min-h-[450px] p-8 md:p-16">
             <motion.p
-              className="text-body text-[10px] tracking-[0.35em] uppercase text-primary-foreground/70 mb-4"
+              className="text-body text-xs tracking-[0.3em] uppercase text-white/50 mb-4"
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
             >
-              {customLabel}
+              Conheça os condomínios
             </motion.p>
 
             <motion.h2
-              className="text-display text-3xl md:text-5xl lg:text-6xl font-light text-primary-foreground mb-4 leading-tight"
+              className="text-display text-3xl md:text-5xl font-light text-white mb-4 max-w-2xl leading-tight"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.8, delay: 0.1 }}
+              transition={{ duration: 0.8 }}
             >
-              {featured.title}
+              As propriedades mais que especiais em{" "}
+              <em className="italic">Alphaville</em>
             </motion.h2>
 
             <motion.p
-              className="text-body text-sm md:text-base text-primary-foreground/80 mb-3"
-              initial={{ opacity: 0, y: 15 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.7, delay: 0.2 }}
-            >
-              {featured.subtitle}
-            </motion.p>
-
-            <motion.p
-              className="text-body text-xs tracking-wide text-primary-foreground/60 mb-6"
+              className="text-body text-sm text-white/60 mb-10 max-w-lg"
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.3 }}
+              transition={{ delay: 0.2 }}
             >
-              {featured.area_total?.toLocaleString("pt-BR")} m² · {featured.suites} suítes · {featured.parking} vagas
+              Descubra os melhores condomínios da região e encontre o imóvel
+              perfeito para o seu estilo de vida.
             </motion.p>
 
             <motion.div
-              className="flex flex-wrap gap-2 mb-8"
+              className="flex flex-wrap gap-4 justify-center"
               initial={{ opacity: 0, y: 10 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.7, delay: 0.4 }}
+              transition={{ delay: 0.4 }}
             >
-              {featured.amenities.map((item) => (
-                <span
-                  key={item}
-                  className="text-body text-[10px] md:text-[11px] tracking-[0.1em] uppercase px-3 py-1.5 border border-primary-foreground/30 text-primary-foreground/80 rounded-sm"
+              {condominiums.map((c) => (
+                <Link
+                  key={c.label}
+                  to={c.href}
+                  className="text-body text-xs tracking-[0.15em] uppercase px-8 py-3.5 border border-white/30 text-white hover:bg-white/10 transition-colors duration-300 rounded-sm"
                 >
-                  {item}
-                </span>
+                  {c.label}
+                </Link>
               ))}
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.5 }}
-            >
-              <Link
-                to={`/imovel/${featured.id}`}
-                className="inline-block text-body text-xs tracking-[0.2em] uppercase px-8 py-3.5 bg-primary-foreground text-foreground font-medium hover:bg-primary-foreground/90 transition-colors"
-              >
-                Agendar visita
-              </Link>
             </motion.div>
           </div>
         </div>

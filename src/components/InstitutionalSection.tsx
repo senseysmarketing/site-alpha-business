@@ -1,8 +1,5 @@
 import { motion } from "framer-motion";
-import { Instagram, ArrowUpRight, Clock } from "lucide-react";
-import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { Instagram, ArrowUpRight } from "lucide-react";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 interface InstaPost {
@@ -17,188 +14,116 @@ interface ContactSettings {
   address: string;
 }
 
-const categoryLabels: Record<string, string> = {
-  "inside-alphaville": "Inside Alphaville",
-  "arquitetura-design": "Arquitetura & Design",
-  "investimento": "Investimento",
-  "guia-condominios": "Guia de Condomínios",
-};
-
 const InstitutionalSection = () => {
   const { data: contactData } = useSiteSettings<ContactSettings>("contact");
   const { data: instaPostsData } = useSiteSettings<{ posts: InstaPost[] }>("instagram_posts");
   const instagramHandle = contactData?.instagram?.replace("@", "") || "alphabusiness";
   const instagramDisplay = `@${instagramHandle}`;
   const instagramUrl = `https://instagram.com/${instagramHandle}`;
-  const decodeHtmlEntities = (str: string) => str?.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'") || "";
-  const instaPosts = (instaPostsData?.posts || []).map(p => ({ ...p, thumbnail: decodeHtmlEntities(p.thumbnail) }));
+  const decodeHtmlEntities = (str: string) =>
+    str?.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'") || "";
+  const instaPosts = (instaPostsData?.posts || []).map((p) => ({
+    ...p,
+    thumbnail: decodeHtmlEntities(p.thumbnail),
+  }));
 
-  const { data: posts } = useQuery({
-    queryKey: ["blog-posts-preview"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("blog_posts")
-        .select("*")
-        .order("published_at", { ascending: false })
-        .limit(3);
-      if (error) throw error;
-      return data;
-    },
-  });
+  const displayPosts = instaPosts.slice(0, 3);
 
   return (
     <section id="about" className="section-padding">
       <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-16 md:gap-12">
-          {/* Left — Blog Editorial (2/3) */}
-          <div className="lg:col-span-2 flex flex-col">
+        <div className="flex items-end justify-between mb-12">
+          <div>
             <motion.p
               className="text-body text-xs tracking-[0.3em] uppercase text-muted-foreground mb-3"
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
             >
-              Alpha em Movimento
+              Redes Sociais
             </motion.p>
             <motion.h2
-              className="text-display text-3xl md:text-4xl font-light mb-4"
+              className="text-display text-3xl md:text-4xl font-light"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
             >
-              Inspiração para
-              <br />
-              <em className="italic">viver bem</em>
+              Siga-nos no <em className="italic">Instagram</em>
             </motion.h2>
+          </div>
+          <motion.a
+            href={instagramUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hidden md:flex items-center gap-2 text-body text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+          >
+            <Instagram size={16} />
+            {instagramDisplay}
+          </motion.a>
+        </div>
 
-            <motion.p
-              className="text-body text-sm text-muted-foreground leading-relaxed mb-8 max-w-md"
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.2 }}
-            >
-              Acompanhe as últimas tendências em arquitetura, design de interiores
-              e o mercado imobiliário de altíssimo padrão em Alphaville.
-            </motion.p>
-
-            {/* Blog post cards */}
-            <div className="space-y-4 mb-8">
-              {posts?.map((post, i) => (
-                <motion.div
-                  key={post.id}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {displayPosts.length > 0
+            ? displayPosts.map((post, i) => (
+                <motion.a
+                  key={i}
+                  href={post.url || instagramUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group relative block overflow-hidden rounded-lg aspect-[4/5]"
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ delay: i * 0.1 }}
+                  transition={{ delay: i * 0.1, duration: 0.5 }}
                 >
-                  <Link
-                    to={`/blog/${post.slug}`}
-                    className="group flex gap-5 border border-border hover:border-muted-foreground/30 transition-colors duration-300 p-4"
-                  >
-                    <div className="flex-shrink-0 w-24 h-24 overflow-hidden">
-                      <div className="w-full h-full bg-gradient-to-br from-cashmere to-greige group-hover:scale-105 transition-transform duration-500" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <span className="text-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
-                          {categoryLabels[post.category] ?? post.category}
-                        </span>
-                        <span className="text-muted-foreground/30">•</span>
-                        <div className="flex items-center gap-1 text-muted-foreground">
-                          <Clock size={10} />
-                          <span className="text-body text-[10px]">{post.reading_time_min} min</span>
-                        </div>
-                      </div>
-                      <h4 className="text-display text-base font-light text-foreground group-hover:text-bordeaux transition-colors line-clamp-2">
-                        {post.title}
-                      </h4>
-                    </div>
-                  </Link>
-                </motion.div>
+                  {post.thumbnail ? (
+                    <img
+                      src={post.thumbnail}
+                      alt=""
+                      loading="lazy"
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-muted to-card" />
+                  )}
+                  <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/20 transition-colors duration-300 flex items-center justify-center">
+                    <Instagram className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" size={32} />
+                  </div>
+                </motion.a>
+              ))
+            : [0, 1, 2].map((i) => (
+                <motion.div
+                  key={i}
+                  className="aspect-[4/5] bg-gradient-to-br from-muted to-card rounded-lg"
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1, duration: 0.5 }}
+                />
               ))}
-            </div>
-
-            <motion.div
-              className="mt-auto"
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.3 }}
-            >
-              <Link
-                to="/blog"
-                className="inline-flex items-center gap-2 text-body text-xs tracking-[0.15em] uppercase text-foreground line-reveal pb-1"
-              >
-                Ver todas as matérias
-                <ArrowUpRight size={14} />
-              </Link>
-            </motion.div>
-          </div>
-
-          {/* Right — Instagram (1/3) */}
-          <div className="flex flex-col">
-            <motion.div
-              className="flex items-center gap-3 mb-6"
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-            >
-              <Instagram size={18} className="text-muted-foreground" />
-              <span className="text-body text-xs text-muted-foreground">{instagramDisplay}</span>
-            </motion.div>
-
-            <div className="grid grid-cols-2 gap-2">
-              {[0, 1, 2, 3, 4, 5].map((i) => {
-                const post = instaPosts[i];
-                const hasThumbnail = post?.thumbnail && post.thumbnail.trim().length > 0;
-                const hasUrl = post?.url && post.url.trim().length > 0;
-
-                return (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: i * 0.05, duration: 0.5 }}
-                  >
-                    {hasThumbnail && hasUrl ? (
-                      <a
-                        href={post.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="group relative block overflow-hidden aspect-square"
-                      >
-                        <img
-                          src={post.thumbnail}
-                          alt=""
-                          loading="lazy"
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-                        />
-                        <div className="absolute inset-0 bg-bordeaux/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      </a>
-                    ) : (
-                      <div className="w-full aspect-square bg-gradient-to-br from-cashmere to-greige" />
-                    )}
-                  </motion.div>
-                );
-              })}
-            </div>
-
-            <motion.a
-              href={instagramUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 mt-auto pt-4 text-body text-xs tracking-[0.15em] uppercase text-foreground line-reveal pb-1"
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-            >
-              Seguir no Instagram
-              <ArrowUpRight size={14} />
-            </motion.a>
-          </div>
         </div>
+
+        <motion.div
+          className="flex justify-center mt-8"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.3 }}
+        >
+          <a
+            href={instagramUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-body text-xs tracking-[0.15em] uppercase text-foreground line-reveal pb-1"
+          >
+            Seguir no Instagram
+            <ArrowUpRight size={14} />
+          </a>
+        </motion.div>
       </div>
     </section>
   );
