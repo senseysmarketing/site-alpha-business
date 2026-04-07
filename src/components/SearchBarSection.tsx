@@ -162,13 +162,13 @@ const SearchBarSection = () => {
     <section className="relative z-20 px-6 md:px-12 lg:px-24 -mt-10 mb-8">
       <div className="max-w-4xl mx-auto" ref={panelRef}>
         <motion.div
-          className="bg-background rounded-lg shadow-xl p-6 md:p-8"
+          className="bg-background rounded-lg shadow-xl p-4 md:p-8"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.9, duration: 0.7 }}
         >
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-display text-lg md:text-xl font-light text-foreground">
+            <h3 className="text-display text-base md:text-xl font-light text-foreground whitespace-nowrap">
               Encontre seu imóvel com o <strong>Rafa IA</strong>
             </h3>
             <div className="hidden md:flex items-center gap-1 bg-muted rounded-full p-1">
@@ -187,7 +187,7 @@ const SearchBarSection = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 border border-border rounded-md px-4 py-3">
+          <div className="flex items-center gap-2 md:gap-3 border border-border rounded-md px-3 md:px-4 py-2.5 md:py-3">
             <button
               onClick={handleVoice}
               className={`p-2 rounded-full transition-all flex-shrink-0 ${listening ? "bg-accent text-accent-foreground" : "hover:bg-muted text-muted-foreground"}`}
@@ -199,13 +199,13 @@ const SearchBarSection = () => {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Descreva o imóvel dos seus sonhos..."
+              placeholder="Descreva seu imóvel ideal..."
               className="flex-1 bg-transparent text-body text-sm text-foreground placeholder:text-muted-foreground outline-none min-w-0"
             />
             <button
               onClick={() => handleSearch()}
               disabled={searching}
-              className="bg-primary text-primary-foreground px-6 py-2.5 text-body text-xs tracking-[0.1em] uppercase hover-magnetic disabled:opacity-70 flex items-center gap-2 rounded-md"
+              className="bg-primary text-primary-foreground px-4 md:px-6 py-2.5 text-body text-xs tracking-[0.1em] uppercase hover-magnetic disabled:opacity-70 flex items-center gap-2 rounded-md"
             >
               {searching ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
               {searching ? "Buscando..." : "Buscar"}
