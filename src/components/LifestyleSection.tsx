@@ -73,12 +73,9 @@ const LifestyleSection = () => {
   return (
     <section className="bg-background py-8 md:py-12 group">
       <div className="px-6 md:px-12 lg:px-24 mb-4 md:mb-6">
-        <p className="text-body text-xs tracking-[0.3em] uppercase text-foreground/50 mb-3">
-          Lifestyle
-        </p>
         <h2 className="text-display text-3xl md:text-5xl font-light text-foreground">
           Encontre propriedades que representam seu{" "}
-           <em className="italic">estilo de vida</em>
+          <span className="font-bold">estilo de vida</span>
         </h2>
       </div>
 
