@@ -187,7 +187,7 @@ const SearchBarSection = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 border border-border rounded-md px-4 py-3">
+          <div className="flex items-center gap-2 md:gap-3 border border-border rounded-md px-3 md:px-4 py-2.5 md:py-3">
             <button
               onClick={handleVoice}
               className={`p-2 rounded-full transition-all flex-shrink-0 ${listening ? "bg-accent text-accent-foreground" : "hover:bg-muted text-muted-foreground"}`}
