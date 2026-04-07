@@ -1,29 +1,27 @@
 
 
-## Ajuste do Rodapé — Adicionar Logo e Links de Navegação
-
-Conforme o print de referência, o footer precisa de uma barra superior com a logo e os links de navegação antes do conteúdo informativo em 2 colunas.
+## Ajuste de Tipografia e Organização do Rodapé
 
 ### Mudanças no `src/components/Footer.tsx`
 
-Adicionar uma **linha superior** acima do grid atual contendo:
+**Tipografia e hierarquia visual:**
+- Título "Alpha Business - Imobiliária Alphaville" → `uppercase tracking-wider text-xs font-bold text-white`
+- Endereço e contatos → `text-xs text-white/70` com espaçamento consistente
+- "Rafael Albuquerque" → `font-bold text-white uppercase tracking-wider text-xs`
+- "WHATSAPP:" já está em maiúsculo, manter `text-xs text-white/70`
+- Texto redes sociais → `text-xs text-white/70`
+- Instagram handles → `text-xs text-white`
+- Copyright e disclaimer → `text-[11px] text-white/50`
+- CRECI → `text-xs text-white/60`
 
-1. **Logo** (mesma `logo-alpha.png` usada no Header) — à esquerda, com `brightness-0 invert` para ficar branca
-2. **Links de navegação** — "Sobre", "Venda", "Locação", "Serviços", "Fale Conosco" — ao centro/direita, estilo uppercase discreto
-3. **Botão "Anuncie seu imóvel"** — à direita, similar ao Header
+**Layout mobile (390px):**
+- No mobile, o grid de 2 colunas vira 1 coluna (já funciona com `grid-cols-1 md:grid-cols-2`)
+- A coluna direita (redes + legal) fica abaixo da coluna esquerda (endereço)
+- Garantir que o conteúdo todo fique alinhado à esquerda no mobile, sem centralização
 
-Separador sutil (`border-b border-white/10`) entre a barra de navegação e o conteúdo informativo existente.
+**Layout desktop:**
+- Manter as 2 colunas lado a lado
+- Nav bar superior centralizada
 
-**Estrutura:**
-```text
-┌──────────────────────────────────────────────────┐
-│ [LOGO]   Sobre  Venda  Locação  Serviços  Fale   │  Anuncie seu imóvel
-├──────────────────────────────────────────────────┤
-│ Endereço + Contatos    │  Redes sociais + Legal  │
-└──────────────────────────────────────────────────┘
-```
-
-**Imports adicionais:** `Link` de react-router-dom, `logoAlpha` de `@/assets/logo-alpha.png`
-
-Os links usarão os mesmos itens do Header (Sobre, Venda, Locação, Serviços, Fale Conosco). O botão "Anuncie seu imóvel" abrirá o `AdvertisePropertyModal`.
+**Arquivo:** `src/components/Footer.tsx`
 
