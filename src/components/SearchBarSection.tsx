@@ -205,7 +205,7 @@ const SearchBarSection = () => {
             <button
               onClick={() => handleSearch()}
               disabled={searching}
-              className="bg-primary text-primary-foreground px-6 py-2.5 text-body text-xs tracking-[0.1em] uppercase hover-magnetic disabled:opacity-70 flex items-center gap-2 rounded-md"
+              className="bg-primary text-primary-foreground px-4 md:px-6 py-2.5 text-body text-xs tracking-[0.1em] uppercase hover-magnetic disabled:opacity-70 flex items-center gap-2 rounded-md"
             >
               {searching ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
               {searching ? "Buscando..." : "Buscar"}
