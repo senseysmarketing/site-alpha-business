@@ -1,34 +1,22 @@
 
 
-## Alterar AlphavilleMapSection para fundo claro
+## Ajustes: Header Transparente + Fundo Clean
 
-### Arquivo: `src/components/AlphavilleMapSection.tsx`
+O header atual usa `bg-[hsl(350,60%,5%)]` fixo (sempre escuro). Conforme o print de referência, ele deve ser **transparente** sobre o hero e ficar escuro apenas ao scrollar.
 
-Inverter todo o esquema de cores de escuro para claro, mantendo a mesma estrutura e lógica.
+### 1. Header com transparência e scroll detection
+**Arquivo:** `src/components/Header.tsx`
+- Adicionar `useState` + `useEffect` para detectar scroll (`window.scrollY > 50`)
+- Estado padrão: `bg-transparent` (sem fundo, sobrepõe o hero)
+- Após scroll: `bg-[#2A070C]/95 backdrop-blur-md` com transição suave (`transition-all duration-300`)
+- Menu mobile mantém fundo escuro quando aberto
 
-#### Mudanças de cor
+### 2. Remover padding-top do Hero
+**Arquivo:** `src/components/HeroSection.tsx`
+- Verificar e remover qualquer `pt-` ou `mt-` que compense o header opaco
+- O hero deve começar do topo absoluto da página, com o header transparente sobreposto
 
-| Elemento | Atual (escuro) | Novo (claro) |
-|----------|---------------|--------------|
-| Section bg | `bg-[hsl(350,60%,5%)]` | `bg-[#F8F8F8]` |
-| Subtítulo | `text-white/40` | `text-[#2A070C]/40` |
-| Título | `text-white` | `text-[#2A070C]` |
-| Mobile cards border | `border-white/15` | `border-[#2A070C]/10` |
-| Mobile cards hover | `hover:bg-white/5` | `hover:bg-[#2A070C]/5` |
-| Mobile card title | `text-white` | `text-[#2A070C]` |
-| Mobile card texts | `text-white/50`, `text-white/80` | `text-[#2A070C]/50`, `text-[#2A070C]/80` |
-| Mobile card link | `text-white/70 hover:text-white` | `text-[#2A070C]/70 hover:text-[#2A070C]` |
-| SVG map container bg | `bg-white/5` border `border-white/10` | `bg-white` border `border-[#2A070C]/10` |
-| SVG strokes | `rgba(255,255,255,0.1)` | `rgba(42,7,12,0.1)` |
-| SVG ellipses | `rgba(255,255,255,0.05)` | `rgba(42,7,12,0.05)` |
-| SVG text | `rgba(255,255,255,0.25)` | `rgba(42,7,12,0.25)` |
-| Pin pulse | `bg-white/10` | `bg-[#2A070C]/10` |
-| Pin circle | `bg-white/70`, `bg-white` | `bg-[#2A070C]`, `bg-[#2A070C]` (icon white) |
-| Pin icon | `text-[hsl(350,60%,5%)]` | `text-white` |
-| Pin label | `text-white/50` | `text-[#2A070C]/50` |
-| Tooltip card | `bg-[hsl(350,60%,8%)]` border `border-white/15` | `bg-white` border `border-[#2A070C]/10` shadow-lg |
-| Tooltip texts | `text-white`, `text-white/60`, `text-white/40` | `text-[#2A070C]`, `text-[#2A070C]/60`, `text-[#2A070C]/40` |
-| Tooltip border-b | `border-white/10` | `border-[#2A070C]/10` |
-| Tooltip link | `text-white/70 hover:text-white` | `text-[#2A070C]/70 hover:text-[#2A070C]` |
-| Close button | `text-white/50 hover:text-white` | `text-[#2A070C]/50 hover:text-[#2A070C]` |
+### Arquivos a editar
+- `src/components/Header.tsx`
+- `src/components/HeroSection.tsx`
 
