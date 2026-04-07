@@ -1,34 +1,22 @@
 
 
-## Redesign da LifestyleSection — Layout de Cards Limpos
+## Adicionar LifestyleSection à Página Inicial
 
-Conforme o print de referência, os cards de lifestyle devem seguir um estilo clean: imagem em cima, título embaixo fora da imagem, sem overlay escuro, sem botão "Explorar", sem contagem de imóveis.
+O componente `LifestyleSection` já existe em `src/components/LifestyleSection.tsx` mas não está sendo renderizado porque falta o import e a inclusão no `Index.tsx`.
 
-### Mudanças no `src/components/LifestyleSection.tsx`
+### Mudança em `src/pages/Index.tsx`
 
-**Layout do card:**
-- Imagem no topo com aspect ratio ~4:3, `rounded-sm`, sem overlay gradiente
-- Título abaixo da imagem em texto escuro (`text-foreground`), fora do card de imagem
-- Remover: gradient overlay, botão "Explorar", contagem de imóveis, subtitle
+1. Adicionar import: `import LifestyleSection from "@/components/LifestyleSection";`
+2. Inserir `<LifestyleSection />` logo após `<FeaturedPropertySection />` (seção "Seleção especial")
 
-**Títulos atualizados conforme print:**
-- "Refúgios para relaxar" (era "Imóveis para relaxar")
-- "Imóveis Assinados" (mantém)
-- "Mais espaço para a família" (mantém)
-
-**Remover label "Lifestyle"** acima do título principal
-
-**Título principal:** manter "Encontre propriedades que representam seu **estilo de vida**" com "estilo de vida" em bold (não italic), conforme print
-
-**Estrutura do card:**
-```text
-┌─────────────────────┐
-│                     │
-│      [IMAGEM]       │
-│                     │
-└─────────────────────┘
-  Refúgios para relaxar
-```
-
-**Manter:** carrossel Embla, dots de navegação, setas desktop, responsividade mobile
+Ordem final das seções:
+- HeroSection
+- SearchBarSection
+- NewArrivalsSection
+- FeaturedPropertySection (Seleção especial)
+- **LifestyleSection** ← aqui
+- InstitutionalSection
+- TeamSection
+- ContactSection
+- AlphavilleMapSection
 
