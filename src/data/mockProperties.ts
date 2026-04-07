@@ -1,9 +1,9 @@
-import property1 from "@/assets/property-1.jpg";
-import property2 from "@/assets/property-2.jpg";
-import property3 from "@/assets/property-3.jpg";
-import property4 from "@/assets/property-4.jpg";
-import mansionModern from "@/assets/mansion-modern.jpg";
-import familyHome from "@/assets/family-home.jpg";
+const property1 = "/images/property-1.jpg";
+const property2 = "/images/property-2.jpg";
+const property3 = "/images/property-3.jpg";
+const property4 = "/images/property-4.jpg";
+const mansionModern = "/images/mansion-modern.jpg";
+const familyHome = "/images/family-home.jpg";
 
 export interface MockProperty {
   id: string;
