@@ -43,7 +43,7 @@ const Footer = () => {
 
           <Button
             size="sm"
-            className="bg-white text-[#2A070C] hover:bg-white/90 text-xs uppercase tracking-wider font-semibold"
+            className="bg-white text-[#2A070C] hover:bg-white/90 text-xs uppercase tracking-wider font-semibold rounded-none"
             onClick={() => setAdvertiseOpen(true)}
           >
             Anuncie seu imóvel
