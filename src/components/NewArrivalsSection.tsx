@@ -28,10 +28,12 @@ const NewArrivalsSection = () => {
     },
   });
 
+  const mockByCode = Object.fromEntries(mockProperties.map((m) => [m.code, m.photo]));
+
   const properties = dbProperties?.length
     ? dbProperties.map((p) => ({
         id: p.id,
-        image: p.photos?.[0] || "",
+        image: p.photos?.[0] || mockByCode[p.code] || "/images/property-1.jpg",
         title: p.title,
         code: p.code,
         type: p.property_type || "Casa",
