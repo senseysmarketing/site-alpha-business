@@ -199,7 +199,7 @@ const SearchBarSection = () => {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Descreva o imóvel dos seus sonhos..."
+              placeholder="Descreva seu imóvel ideal..."
               className="flex-1 bg-transparent text-body text-sm text-foreground placeholder:text-muted-foreground outline-none min-w-0"
             />
             <button
