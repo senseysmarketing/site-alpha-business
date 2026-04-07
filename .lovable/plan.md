@@ -1,21 +1,16 @@
 
 
-## Ajuste da LifestyleSection — Posição e Padrão Visual
+## Ajustes Visuais na LifestyleSection
 
-### Problemas identificados
-1. **Posição errada**: Está após o banner "Conheça os Condomínios" (FeaturedPropertySection). Deve ficar entre os cards de imóveis (NewArrivalsSection) e o banner
-2. **Largura inconsistente**: Usa `px-6 md:px-12 lg:px-24` enquanto o restante do site usa `max-w-7xl mx-auto` com `section-padding`
-3. **Botões de navegação**: Usa chevrons flutuantes com hover-reveal; deveria usar os botões quadrados com borda igual à seção de imóveis
+### Problemas
+1. **Título grande demais** — usa `text-3xl md:text-5xl`, enquanto NewArrivals usa `text-2xl md:text-4xl`
+2. **Botões com cor diferente** — usa `Button variant="outline"` (que tem bg-background e hover:bg-accent), enquanto NewArrivals usa `<button>` nativo com classes `border border-border text-foreground hover:bg-muted`
+3. **Largura não bate** — usa `py-8 md:py-12` e `px-4 md:px-6`, enquanto NewArrivals usa `section-padding` (que inclui `px-6 md:px-12 lg:px-24 py-20 md:py-32`)
 
-### Mudanças
+### Mudanças em `src/components/LifestyleSection.tsx`
 
-**`src/pages/Index.tsx`** — Trocar a ordem:
-- Mover `<LifestyleSection />` para **antes** de `<FeaturedPropertySection />`
-
-**`src/components/LifestyleSection.tsx`** — Alinhar ao padrão visual:
-- Envolver conteúdo em `section-padding` + `max-w-7xl mx-auto` (igual NewArrivalsSection)
-- Trocar botões de navegação flutuantes por botões quadrados com borda (`w-10 h-10 border border-border rounded-md`) posicionados ao lado do título, igual à seção de imóveis
-- Remover dots de navegação no desktop (manter apenas no mobile)
-- Remover `group` da section e o hover-reveal dos botões
-- Ajustar carousel para usar `overflow-hidden` sem padding lateral extra
+1. **Container**: trocar `py-8 md:py-12` + `px-4 md:px-6` por `section-padding` (igual NewArrivals)
+2. **Título**: trocar `text-3xl md:text-5xl` por `text-2xl md:text-4xl` e adicionar `max-w-lg`
+3. **Botões de navegação**: trocar `<Button variant="outline">` por `<button>` nativo com as mesmas classes da NewArrivals: `w-10 h-10 border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors rounded-md`
+4. **Margem do header**: trocar `mb-4 md:mb-6` por `mb-12` (igual NewArrivals)
 
