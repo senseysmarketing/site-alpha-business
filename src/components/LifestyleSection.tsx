@@ -3,6 +3,7 @@ import useEmblaCarousel from "embla-carousel-react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { Button } from "@/components/ui/button";
 import mansionModern from "@/assets/mansion-modern.jpg";
 import familyHome from "@/assets/family-home.jpg";
 import sustainableHome from "@/assets/sustainable-home.jpg";
@@ -13,21 +14,10 @@ interface LifestyleCategory {
 }
 
 const defaultCategories = [
-  {
-    title: "Refúgios para relaxar",
-    image: mansionModern,
-  },
-  {
-    title: "Imóveis Assinados",
-    image: familyHome,
-  },
-  {
-    title: "Mais espaço para a família",
-    image: sustainableHome,
-  },
+  { title: "Refúgios para relaxar", image: mansionModern },
+  { title: "Imóveis Assinados", image: familyHome },
+  { title: "Mais espaço para a família", image: sustainableHome },
 ];
-
-const fallbackImages = [mansionModern, familyHome, sustainableHome];
 
 const LifestyleSection = () => {
   const isMobile = useIsMobile();
@@ -37,7 +27,6 @@ const LifestyleSection = () => {
 
   const { data: lifestyleSettings } = useSiteSettings<{ categories: LifestyleCategory[] }>("lifestyle_categories");
 
-  // Merge DB settings with defaults
   const categories = defaultCategories.map((def, i) => {
     const dbCat = lifestyleSettings?.categories?.[i];
     return {
@@ -71,24 +60,49 @@ const LifestyleSection = () => {
   }, [emblaApi, onSelect]);
 
   return (
-    <section className="bg-background py-8 md:py-12 group">
-      <div className="px-6 md:px-12 lg:px-24 mb-4 md:mb-6">
-        <h2 className="text-display text-3xl md:text-5xl font-light text-foreground">
-          Encontre propriedades que representam seu{" "}
-          <span className="font-bold">estilo de vida</span>
-        </h2>
-      </div>
+    <section className="bg-background py-8 md:py-12">
+      <div className="max-w-7xl mx-auto px-4 md:px-6">
+        {/* Header with title and nav buttons */}
+        <div className="flex items-end justify-between mb-4 md:mb-6">
+          <h2 className="text-display text-3xl md:text-5xl font-light text-foreground">
+            Encontre propriedades que representam seu{" "}
+            <span className="font-bold">estilo de vida</span>
+          </h2>
 
-      <div className="relative">
-        <div ref={emblaRef} className="overflow-hidden px-6 md:px-12 lg:px-24">
+          {!isMobile && (
+            <div className="flex gap-2 flex-shrink-0 ml-8">
+              <Button
+                variant="outline"
+                size="icon"
+                className="w-10 h-10 rounded-md border-border"
+                onClick={() => emblaApi?.scrollPrev()}
+                disabled={!canScrollPrev}
+                aria-label="Previous"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="w-10 h-10 rounded-md border-border"
+                onClick={() => emblaApi?.scrollNext()}
+                disabled={!canScrollNext}
+                aria-label="Next"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Carousel */}
+        <div ref={emblaRef} className="overflow-hidden">
           <div className="flex gap-4 md:gap-6">
             {categories.map((cat) => (
               <div
                 key={cat.title}
                 className={`flex-shrink-0 cursor-grab active:cursor-grabbing ${
-                  isMobile
-                    ? "basis-[85%]"
-                    : "basis-[calc(33.33%-22px)]"
+                  isMobile ? "basis-[85%]" : "basis-[calc(33.33%-16px)]"
                 }`}
               >
                 <div className="rounded-sm overflow-hidden aspect-[4/3]">
@@ -106,39 +120,21 @@ const LifestyleSection = () => {
           </div>
         </div>
 
-        {!isMobile && (
-          <>
-            <button
-              onClick={() => emblaApi?.scrollPrev()}
-              disabled={!canScrollPrev}
-              className="absolute left-4 top-1/2 -translate-y-1/2 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 disabled:opacity-0 text-foreground/50 hover:text-foreground"
-              aria-label="Previous"
-            >
-              <ChevronLeft size={32} strokeWidth={1} />
-            </button>
-            <button
-              onClick={() => emblaApi?.scrollNext()}
-              disabled={!canScrollNext}
-              className="absolute right-4 top-1/2 -translate-y-1/2 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 disabled:opacity-0 text-foreground/50 hover:text-foreground"
-              aria-label="Next"
-            >
-              <ChevronRight size={32} strokeWidth={1} />
-            </button>
-          </>
+        {/* Mobile dots */}
+        {isMobile && (
+          <div className="flex justify-center gap-2 mt-4">
+            {categories.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => emblaApi?.scrollTo(i)}
+                className={`w-2 h-2 rounded-full transition-colors duration-300 ${
+                  i === selectedIndex ? "bg-bordeaux" : "bg-foreground/20"
+                }`}
+                aria-label={`Go to slide ${i + 1}`}
+              />
+            ))}
+          </div>
         )}
-      </div>
-
-      <div className="flex justify-center gap-2 mt-4">
-        {categories.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => emblaApi?.scrollTo(i)}
-            className={`w-2 h-2 rounded-full transition-colors duration-300 ${
-              i === selectedIndex ? "bg-bordeaux" : "bg-foreground/20"
-            }`}
-            aria-label={`Go to slide ${i + 1}`}
-          />
-        ))}
       </div>
     </section>
   );
