@@ -29,6 +29,7 @@ const Index = () => {
           <SearchBarSection />
           <NewArrivalsSection />
           <FeaturedPropertySection />
+          <LifestyleSection />
           <InstitutionalSection />
           <TeamSection />
           <ContactSection />
