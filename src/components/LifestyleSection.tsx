@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useIsMobile } from "@/hooks/use-mobile";
+
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 import mansionModern from "@/assets/mansion-modern.jpg";
@@ -20,11 +20,7 @@ const defaultCategories = [
 ];
 
 const LifestyleSection = () => {
-  const isMobile = useIsMobile();
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [canScrollPrev, setCanScrollPrev] = useState(false);
-  const [canScrollNext, setCanScrollNext] = useState(false);
-
   const { data: lifestyleSettings } = useSiteSettings<{ categories: LifestyleCategory[] }>("lifestyle_categories");
 
   const categories = defaultCategories.map((def, i) => {
@@ -45,8 +41,6 @@ const LifestyleSection = () => {
   const onSelect = useCallback(() => {
     if (!emblaApi) return;
     setSelectedIndex(emblaApi.selectedScrollSnap());
-    setCanScrollPrev(emblaApi.canScrollPrev());
-    setCanScrollNext(emblaApi.canScrollNext());
   }, [emblaApi]);
 
   useEffect(() => {
@@ -63,32 +57,26 @@ const LifestyleSection = () => {
     <section className="section-padding bg-background">
       <div className="max-w-7xl mx-auto">
         {/* Header with title and nav buttons */}
-        <div className="flex items-center justify-between mb-12">
+        <div className="flex items-end justify-between mb-12">
           <h2 className="text-display text-2xl md:text-4xl font-light text-foreground max-w-lg">
             Encontre propriedades que representam seu{" "}
-            <span className="font-bold">estilo de vida</span>
+            <em className="italic">estilo de vida</em>
           </h2>
 
-          {!isMobile && (
-            <div className="flex gap-2 flex-shrink-0 ml-8">
-              <button
-                className="w-10 h-10 border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors rounded-md disabled:opacity-40"
-                onClick={() => emblaApi?.scrollPrev()}
-                disabled={!canScrollPrev}
-                aria-label="Previous"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </button>
-              <button
-                className="w-10 h-10 border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors rounded-md disabled:opacity-40"
-                onClick={() => emblaApi?.scrollNext()}
-                disabled={!canScrollNext}
-                aria-label="Next"
-              >
-                <ChevronRight className="h-5 w-5" />
-              </button>
-            </div>
-          )}
+          <div className="hidden md:flex items-center gap-2">
+            <button
+              className="w-10 h-10 border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors rounded-md"
+              onClick={() => emblaApi?.scrollPrev()}
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <button
+              className="w-10 h-10 border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors rounded-md"
+              onClick={() => emblaApi?.scrollNext()}
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
         </div>
 
         {/* Carousel */}
@@ -97,9 +85,7 @@ const LifestyleSection = () => {
             {categories.map((cat) => (
               <div
                 key={cat.title}
-                className={`flex-shrink-0 cursor-grab active:cursor-grabbing ${
-                  isMobile ? "basis-[85%]" : "basis-[calc(33.33%-16px)]"
-                }`}
+                className="flex-shrink-0 cursor-grab active:cursor-grabbing basis-[85%] md:basis-[calc(33.33%-16px)]"
               >
                 <div className="rounded-sm overflow-hidden aspect-[4/3]">
                   <img
@@ -117,20 +103,17 @@ const LifestyleSection = () => {
         </div>
 
         {/* Mobile dots */}
-        {isMobile && (
-          <div className="flex justify-center gap-2 mt-4">
-            {categories.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => emblaApi?.scrollTo(i)}
-                className={`w-2 h-2 rounded-full transition-colors duration-300 ${
-                  i === selectedIndex ? "bg-bordeaux" : "bg-foreground/20"
-                }`}
-                aria-label={`Go to slide ${i + 1}`}
-              />
-            ))}
-          </div>
-        )}
+        <div className="flex justify-center gap-2 mt-8 md:hidden">
+          {categories.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => emblaApi?.scrollTo(i)}
+              className={`w-2 h-2 rounded-full transition-all ${
+                i === selectedIndex ? "bg-primary w-6" : "bg-muted-foreground/30"
+              }`}
+            />
+          ))}
+        </div>
       </div>
     </section>
   );
