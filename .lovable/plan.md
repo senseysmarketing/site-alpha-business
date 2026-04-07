@@ -1,37 +1,29 @@
 
 
-## Redesign do Rodapé — Conforme Layout de Referência
+## Ajuste do Rodapé — Adicionar Logo e Links de Navegação
 
-### Estrutura do novo footer (2 colunas sobre fundo bordô)
+Conforme o print de referência, o footer precisa de uma barra superior com a logo e os links de navegação antes do conteúdo informativo em 2 colunas.
 
-**Coluna esquerda:**
-- "Alpha Business - Imobiliária Alphaville"
-- "Centro Empresarial Alphaville"
-- "Al. Rio Negro, 967 – 2º and. – Cj: 212"
-- "Alphaville – Barueri – SP – 06455-000"
-- Espaço
-- "Rafael Albuquerque"
-- "WHATSAPP: 11 99311-6849"
-- "WHATSAPP: 11 94001-0287"
+### Mudanças no `src/components/Footer.tsx`
 
-**Coluna direita:**
-- "Nos siga nas redes sociais e acompanhe nossas novidades."
-- Ícone Instagram + "@AlphavilleSP" + "@AlphavilleAB"
-- Espaço
-- "©2026 Rafael Albuquerque | Alpha Buoiness"
-- Texto descritivo: "AlphaBusiness: Negócios Imobiliários em Alphaville São Paulo – Todos os direitos reservados. Imobiliária especializada em mansões e casas em Alphaville, Tamboré e Santana de Parnaíba. Casas e apartamentos a venda em Alphaville"
-- "CRECI-PJ: 035836"
+Adicionar uma **linha superior** acima do grid atual contendo:
 
-### Mudanças técnicas
+1. **Logo** (mesma `logo-alpha.png` usada no Header) — à esquerda, com `brightness-0 invert` para ficar branca
+2. **Links de navegação** — "Sobre", "Venda", "Locação", "Serviços", "Fale Conosco" — ao centro/direita, estilo uppercase discreto
+3. **Botão "Anuncie seu imóvel"** — à direita, similar ao Header
 
-**Arquivo: `src/components/Footer.tsx`**
+Separador sutil (`border-b border-white/10`) entre a barra de navegação e o conteúdo informativo existente.
 
-- Fundo: `bg-[#2A070C]` (Midnight Bordeaux) com textos em branco/cinza claro
-- Layout: grid 2 colunas (`md:grid-cols-2`) sem a estrutura atual de 4 colunas
-- Remover logo (manter placeholder para futura atualização), remover nav "Navegação", remover rodapé inferior com "Privacidade/Termos"
-- Todos os textos conforme o print — hardcoded por enquanto (dados que não vêm do settings como endereço completo, WhatsApp duplo, etc.)
-- Manter `useSiteSettings` para dados dinâmicos onde aplicável (instagram handles)
-- Ícone Instagram via `lucide-react` (`Instagram`)
+**Estrutura:**
+```text
+┌──────────────────────────────────────────────────┐
+│ [LOGO]   Sobre  Venda  Locação  Serviços  Fale   │  Anuncie seu imóvel
+├──────────────────────────────────────────────────┤
+│ Endereço + Contatos    │  Redes sociais + Legal  │
+└──────────────────────────────────────────────────┘
+```
 
-Remover header com logo e nav do footer (esses ficam apenas no Header). O footer agora é puramente informativo.
+**Imports adicionais:** `Link` de react-router-dom, `logoAlpha` de `@/assets/logo-alpha.png`
+
+Os links usarão os mesmos itens do Header (Sobre, Venda, Locação, Serviços, Fale Conosco). O botão "Anuncie seu imóvel" abrirá o `AdvertisePropertyModal`.
 
