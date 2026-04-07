@@ -90,9 +90,8 @@ const InstitutionalSection = () => {
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-muted to-card" />
                   )}
-                  <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/20 transition-colors duration-300 flex items-center justify-center">
-                    <Instagram className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" size={32} />
-                  </div>
+                  <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/20 transition-colors duration-300" />
+
                 </motion.a>
               ))
             : [0, 1, 2].map((i) => (
