@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -6,7 +6,14 @@ import logoAlpha from "@/assets/logo-alpha.png";
 
 const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 50);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
   const navItems = [
     { label: "Buscar", href: "/busca" },
     { label: "Venda", href: "#" },
@@ -18,7 +25,11 @@ const Header = () => {
 
   return (
     <motion.header
-      className="fixed left-0 right-0 z-50 bg-[hsl(350,60%,5%)]"
+      className={`fixed left-0 right-0 z-50 transition-all duration-300 ${
+        scrolled || menuOpen
+          ? "bg-[#2A070C]/95 backdrop-blur-md"
+          : "bg-transparent"
+      }`}
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ delay: 0.3, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}

@@ -56,7 +56,7 @@ const HeroSection = () => {
   }, [emblaApi]);
 
   return (
-    <section className="relative h-[65vh] md:h-[70vh] overflow-hidden pt-[60px]">
+    <section className="relative h-[75vh] md:h-[85vh] overflow-hidden">
       <div className="absolute inset-0" ref={emblaRef}>
         <div className="flex h-full">
           {slides.map((slide, i) => (
