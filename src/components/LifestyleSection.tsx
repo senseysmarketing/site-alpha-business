@@ -57,32 +57,26 @@ const LifestyleSection = () => {
     <section className="section-padding bg-background">
       <div className="max-w-7xl mx-auto">
         {/* Header with title and nav buttons */}
-        <div className="flex items-center justify-between mb-12">
+        <div className="flex items-end justify-between mb-12">
           <h2 className="text-display text-2xl md:text-4xl font-light text-foreground max-w-lg">
             Encontre propriedades que representam seu{" "}
-            <span className="font-bold">estilo de vida</span>
+            <em className="italic">estilo de vida</em>
           </h2>
 
-          {!isMobile && (
-            <div className="flex gap-2 flex-shrink-0 ml-8">
-              <button
-                className="w-10 h-10 border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors rounded-md disabled:opacity-40"
-                onClick={() => emblaApi?.scrollPrev()}
-                disabled={!canScrollPrev}
-                aria-label="Previous"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </button>
-              <button
-                className="w-10 h-10 border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors rounded-md disabled:opacity-40"
-                onClick={() => emblaApi?.scrollNext()}
-                disabled={!canScrollNext}
-                aria-label="Next"
-              >
-                <ChevronRight className="h-5 w-5" />
-              </button>
-            </div>
-          )}
+          <div className="hidden md:flex items-center gap-2">
+            <button
+              className="w-10 h-10 border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors rounded-md"
+              onClick={() => emblaApi?.scrollPrev()}
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <button
+              className="w-10 h-10 border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors rounded-md"
+              onClick={() => emblaApi?.scrollNext()}
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
         </div>
 
         {/* Carousel */}
