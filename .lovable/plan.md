@@ -1,75 +1,31 @@
 
 
-## Atualização da Página Principal — Conforme Layout de Referência
+## Ajuste da Seção de Regiões — Layout e Lógica Dinâmica
 
-Comparando o print de referência com o site atual, identifiquei 4 mudanças principais:
+### Mudanças
 
----
+#### 1. Layout: Botões na linha debaixo
+Cada item do grid passa de uma row horizontal (`flex items-center justify-between`) para um layout vertical:
+- Linha 1: Nome do condomínio
+- Linha 2: Botões "COMPRAR | ALUGAR" abaixo do título
 
-### 1. Busca Tradicional com Filtros (SearchBarSection)
+#### 2. Lógica dinâmica com dados do Supabase
+- Ao montar o componente, fazer query na tabela `properties` agrupando por `condominium` e `transaction_type` onde `status = 'ativo'`
+- Construir um Map com a estrutura: `{ condominium → { hasVenda: bool, hasAluguel: bool } }`
+- Filtrar a lista para exibir **apenas condomínios que possuem pelo menos 1 imóvel ativo**
+- Mostrar botão "COMPRAR" somente se `hasVenda`, "ALUGAR" somente se `hasAluguel`
+- Mostrar skeleton/loading enquanto carrega
 
-**Atual:** O toggle "Cognitivo / Busca tradicional" existe, mas ambos os modos mostram apenas o input de texto IA.
+### Arquivo: `src/components/AlphavilleMapSection.tsx`
 
-**Referência:** No modo "Busca tradicional", exibe uma linha de selects/filtros: Tipo, Preço mínimo, Até (preço máximo), Condomínio, Nº Quartos, e um botão "Buscar".
+**Query Supabase:**
+```ts
+const { data } = await supabase
+  .from("properties")
+  .select("condominium, transaction_type")
+  .eq("status", "ativo")
+  .not("condominium", "is", null);
+```
 
-**Mudança:** Implementar o modo tradicional com uma row de filtros usando `<Select>`:
-- Tipo (Casa, Apartamento, Terreno)
-- Preço mínimo (faixas)
-- Preço máximo (faixas)
-- Condomínio (input ou select com opções de Alphaville)
-- Nº Quartos (1, 2, 3, 4+)
-- Botão "Buscar" que filtra por query na tabela `properties`
-
-O modo "Cognitivo" continua como está (input IA + voz).
-
-**Arquivo:** `src/components/SearchBarSection.tsx`
-
----
-
-### 2. Lifestyle Section — Textos Atualizados
-
-**Atual:** Título "Navegue pelo seu estilo de vida" com cards "Mansões Modernas", "Vida em Família", "Refúgios Sustentáveis".
-
-**Referência:** Título "Encontre propriedades que representam seu estilo de vida" com cards "Imóveis para relaxar", "Imóveis Assinados", "Mais espaço para a família".
-
-**Mudança:** Atualizar título e textos dos cards default para coincidir com o layout de referência.
-
-**Arquivo:** `src/components/LifestyleSection.tsx`
-
----
-
-### 3. AlphavilleMapSection — Grid de Condomínios
-
-**Atual:** Mapa interativo com pins SVG e popups.
-
-**Referência:** Título "Conheça o seu futuro imóvel em Alphaville" com grid simples de nomes de condomínios (Tamboré 1, Tamboré 2, Alphaville 1, etc.) cada um com links "Comprar | Alugar".
-
-**Mudança:** Substituir o mapa interativo por um grid de texto com ~20 condomínios organizados em colunas, cada item mostrando nome + "Comprar | Alugar" como links.
-
-**Arquivo:** `src/components/AlphavilleMapSection.tsx`
-
----
-
-### 4. Seção de Contato — "Seu imóvel ainda não está na Alpha Business?"
-
-**Atual:** Seção "Fale conosco" com fundo bordeaux escuro, imagem lateral, e campos Nome/WhatsApp/E-mail/Assunto/Mensagem.
-
-**Referência:** Seção com fundo claro (cinza/branco), centrada, título "Seu imóvel ainda não está na Alpha Business?" com campos: Nome completo, E-mail, Telefone, Endereço completo do imóvel (textarea), e botão "Enviar".
-
-**Mudança:** Redesenhar a ContactSection para fundo claro, layout centralizado, novos campos conforme referência. A submissão continua inserindo na tabela `leads` com `origin: 'anuncio_proprio'`.
-
-**Arquivo:** `src/components/ContactSection.tsx`
-
----
-
-### Resumo de arquivos
-
-| Arquivo | Ação |
-|---|---|
-| `src/components/SearchBarSection.tsx` | Adicionar modo tradicional com filtros |
-| `src/components/LifestyleSection.tsx` | Atualizar textos |
-| `src/components/AlphavilleMapSection.tsx` | Substituir mapa por grid de condomínios |
-| `src/components/ContactSection.tsx` | Redesenhar com fundo claro e novos campos |
-
-Nenhuma migração de banco necessária — todos os campos já existem na tabela `leads`.
+Processar `data` para gerar o Map de disponibilidade e renderizar apenas os condomínios presentes.
 
