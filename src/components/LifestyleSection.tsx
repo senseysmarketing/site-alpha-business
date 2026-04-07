@@ -105,20 +105,17 @@ const LifestyleSection = () => {
         </div>
 
         {/* Mobile dots */}
-        {isMobile && (
-          <div className="flex justify-center gap-2 mt-4">
-            {categories.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => emblaApi?.scrollTo(i)}
-                className={`w-2 h-2 rounded-full transition-colors duration-300 ${
-                  i === selectedIndex ? "bg-bordeaux" : "bg-foreground/20"
-                }`}
-                aria-label={`Go to slide ${i + 1}`}
-              />
-            ))}
-          </div>
-        )}
+        <div className="flex justify-center gap-2 mt-8 md:hidden">
+          {categories.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => emblaApi?.scrollTo(i)}
+              className={`w-2 h-2 rounded-full transition-all ${
+                i === selectedIndex ? "bg-primary w-6" : "bg-muted-foreground/30"
+              }`}
+            />
+          ))}
+        </div>
       </div>
     </section>
   );
