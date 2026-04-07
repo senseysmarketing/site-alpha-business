@@ -162,7 +162,7 @@ const SearchBarSection = () => {
     <section className="relative z-20 px-6 md:px-12 lg:px-24 -mt-10 mb-8">
       <div className="max-w-4xl mx-auto" ref={panelRef}>
         <motion.div
-          className="bg-background rounded-lg shadow-xl p-6 md:p-8"
+          className="bg-background rounded-lg shadow-xl p-4 md:p-8"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.9, duration: 0.7 }}
