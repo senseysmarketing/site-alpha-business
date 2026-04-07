@@ -3,10 +3,12 @@ import { motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import logoAlpha from "@/assets/logo-alpha.png";
+import AdvertisePropertyModal from "@/components/AdvertisePropertyModal";
 
 const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [advertiseOpen, setAdvertiseOpen] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50);
@@ -66,12 +68,12 @@ const Header = () => {
         </nav>
 
         <div className="hidden md:flex items-center">
-          <a
-            href="#"
+          <button
+            onClick={() => setAdvertiseOpen(true)}
             className="text-body text-xs tracking-[0.1em] uppercase px-6 py-2.5 border border-white/30 text-white hover:bg-white/10 transition-colors duration-300"
           >
-            Acessar meu imóvel
-          </a>
+            Anuncie seu imóvel
+          </button>
         </div>
 
         <button
@@ -111,15 +113,16 @@ const Header = () => {
                 </a>
               )
             )}
-            <a
-              href="#"
+            <button
+              onClick={() => { setAdvertiseOpen(true); setMenuOpen(false); }}
               className="text-body text-xs tracking-[0.1em] uppercase px-6 py-3 border border-white/30 text-white text-center mt-2"
             >
-              Acessar meu imóvel
-            </a>
+              Anuncie seu imóvel
+            </button>
           </nav>
         </motion.div>
       )}
+      <AdvertisePropertyModal open={advertiseOpen} onOpenChange={setAdvertiseOpen} />
     </motion.header>
   );
 };
