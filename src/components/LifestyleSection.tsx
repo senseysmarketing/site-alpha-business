@@ -86,7 +86,7 @@ const LifestyleSection = () => {
           Lifestyle
         </p>
         <h2 className="text-display text-3xl md:text-5xl font-light text-foreground">
-          Navegue pelo seu{" "}
+          Encontre propriedades que representam seu{" "}
            <em className="italic">estilo de vida</em>
         </h2>
       </div>

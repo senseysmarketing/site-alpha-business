@@ -2,45 +2,47 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import privateImg from "@/assets/private-collection.jpg";
+import { CheckCircle } from "lucide-react";
 
 const ContactSection = () => {
   const [formData, setFormData] = useState({
     name: "",
-    phone: "",
     email: "",
-    type: "",
-    message: "",
+    phone: "",
+    address: "",
   });
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const [loading, setLoading] = useState(false);
+  const formatPhone = (value: string) => {
+    const digits = value.replace(/\D/g, "").slice(0, 11);
+    if (digits.length <= 2) return `(${digits}`;
+    if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, phone: formatPhone(e.target.value) });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    const assuntoMap: Record<string, string> = {
-      visita: "Agendar Visita",
-      imovel: "Enviar Imóvel para Avaliação",
-    };
-
-    const insights = [
-      assuntoMap[formData.type] ? `Assunto: ${assuntoMap[formData.type]}` : "",
-      formData.message ? `Mensagem: ${formData.message}` : "",
-    ].filter(Boolean).join(" | ");
+    const insights = formData.address ? `Endereço do imóvel: ${formData.address}` : null;
 
     const { error } = await supabase.from("leads").insert({
       name: formData.name,
-      phone: formData.phone || null,
       email: formData.email || null,
-      origin: "fale_conosco",
+      phone: formData.phone.replace(/\D/g, "") || null,
+      origin: "anuncio_proprio",
       pipeline_stage: "novos",
       score: "morno",
-      ai_insights: insights || null,
+      ai_insights: insights,
     });
 
     setLoading(false);
@@ -50,123 +52,116 @@ const ContactSection = () => {
       return;
     }
 
-    toast({ title: "Mensagem enviada!", description: "Entraremos em contato em breve." });
-    setFormData({ name: "", phone: "", email: "", type: "", message: "" });
+    setSuccess(true);
   };
 
   const inputClass =
-    "w-full bg-transparent border border-cashmere/15 text-cashmere placeholder:text-cashmere/40 px-4 py-3 text-sm text-body focus:outline-none focus:border-cashmere/40 transition-colors";
+    "w-full bg-background border border-border text-foreground placeholder:text-muted-foreground px-4 py-3 text-sm text-body rounded-md focus:outline-none focus:ring-1 focus:ring-primary transition-colors";
+
+  if (success) {
+    return (
+      <section id="contato" className="bg-muted/30 py-20 md:py-32">
+        <div className="max-w-xl mx-auto text-center px-6">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+            className="flex flex-col items-center gap-4"
+          >
+            <CheckCircle className="w-16 h-16 text-primary" strokeWidth={1} />
+            <h3 className="text-display text-2xl md:text-3xl font-light text-foreground">
+              Recebemos seu contato
+            </h3>
+            <p className="text-body text-sm text-muted-foreground leading-relaxed max-w-md">
+              Nossa curadoria técnica analisará as informações e retornaremos em breve via WhatsApp.
+            </p>
+          </motion.div>
+        </div>
+      </section>
+    );
+  }
 
   return (
-    <section id="contato" className="bg-bordeaux">
-      <div className="grid grid-cols-1 lg:grid-cols-2 min-h-[700px]">
-        {/* Image */}
-        <div className="relative h-[350px] lg:h-auto overflow-hidden">
-          <img
-            src={privateImg}
-            alt="Fale conosco"
-            className="w-full h-full object-cover"
+    <section id="contato" className="bg-muted/30 py-20 md:py-32">
+      <div className="max-w-2xl mx-auto px-6">
+        <motion.p
+          className="text-body text-xs tracking-[0.3em] uppercase text-muted-foreground mb-3 text-center"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+        >
+          Anuncie
+        </motion.p>
+        <motion.h2
+          className="text-display text-3xl md:text-5xl font-light text-foreground mb-4 text-center"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+        >
+          Seu imóvel ainda não está na{" "}
+          <em className="italic">Alpha Business</em>?
+        </motion.h2>
+        <motion.p
+          className="text-body text-sm text-muted-foreground leading-relaxed mb-10 max-w-lg mx-auto text-center"
+          initial={{ opacity: 0, y: 15 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.1 }}
+        >
+          Envie suas informações e nossa equipe entrará em contato para uma avaliação exclusiva.
+        </motion.p>
+
+        <motion.form
+          onSubmit={handleSubmit}
+          className="space-y-4"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.2, duration: 0.7 }}
+        >
+          <input
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            placeholder="Nome completo"
+            required
+            className={inputClass}
           />
-          <div className="absolute inset-0 bg-bordeaux/30" />
-        </div>
-
-        {/* Form */}
-        <div className="flex flex-col justify-center px-6 md:px-12 lg:px-20 py-16 lg:py-0">
-          <motion.p
-            className="text-body text-xs tracking-[0.4em] uppercase text-cashmere/50 mb-4"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-          >
-            Contato
-          </motion.p>
-          <motion.h2
-            className="text-display text-3xl md:text-5xl font-light text-cashmere mb-4"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
-            Fale <em className="italic">conosco</em>
-          </motion.h2>
-          <motion.p
-            className="text-body text-sm text-cashmere/60 leading-relaxed mb-10 max-w-md"
-            initial={{ opacity: 0, y: 15 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-          >
-            Agende uma visita exclusiva ou envie seu imóvel para avaliação. Nossa equipe está pronta para atendê-lo.
-          </motion.p>
-
-          <motion.form
-            onSubmit={handleSubmit}
-            className="space-y-5 max-w-lg"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2, duration: 0.7 }}
-          >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <input
-              name="name"
-              value={formData.name}
+              name="email"
+              type="email"
+              value={formData.email}
               onChange={handleChange}
-              placeholder="Nome completo"
+              placeholder="E-mail"
               required
               className={inputClass}
             />
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              <input
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                placeholder="WhatsApp"
-                required
-                className={inputClass}
-              />
-              <input
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="E-mail"
-                required
-                className={inputClass}
-              />
-            </div>
-            <select
-              name="type"
-              value={formData.type}
-              onChange={handleChange}
+            <input
+              name="phone"
+              value={formData.phone}
+              onChange={handlePhoneChange}
+              placeholder="Telefone"
               required
-              className={`${inputClass} appearance-none bg-bordeaux`}
-            >
-              <option value="" disabled className="text-cashmere bg-bordeaux">
-                Selecione o assunto
-              </option>
-              <option value="visita" className="text-cashmere bg-bordeaux">
-                Agendar Visita
-              </option>
-              <option value="imovel" className="text-cashmere bg-bordeaux">
-                Enviar Imóvel para Avaliação
-              </option>
-            </select>
-            <textarea
-              name="message"
-              value={formData.message}
-              onChange={handleChange}
-              placeholder="Sua mensagem"
-              rows={4}
-              className={`${inputClass} resize-none`}
+              className={inputClass}
             />
-            <button
-              type="submit"
-              disabled={loading}
-              className="text-body text-xs tracking-[0.15em] uppercase px-8 py-3 border border-cashmere/30 text-cashmere hover:bg-cashmere/10 transition-colors duration-300 disabled:opacity-50"
-            >
-              {loading ? "Enviando..." : "Enviar mensagem"}
-            </button>
-          </motion.form>
-        </div>
+          </div>
+          <textarea
+            name="address"
+            value={formData.address}
+            onChange={handleChange}
+            placeholder="Endereço completo do imóvel"
+            rows={3}
+            className={`${inputClass} resize-none`}
+          />
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-primary text-primary-foreground text-body text-xs tracking-[0.15em] uppercase py-3 rounded-md hover:opacity-90 transition-opacity disabled:opacity-50"
+          >
+            {loading ? "Enviando..." : "Enviar"}
+          </button>
+        </motion.form>
       </div>
     </section>
   );
