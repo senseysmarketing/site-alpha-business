@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useIsMobile } from "@/hooks/use-mobile";
+
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 import mansionModern from "@/assets/mansion-modern.jpg";
