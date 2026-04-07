@@ -113,12 +113,12 @@ const Header = () => {
                 </a>
               )
             )}
-            <a
-              href="#"
+            <button
+              onClick={() => { setAdvertiseOpen(true); setMenuOpen(false); }}
               className="text-body text-xs tracking-[0.1em] uppercase px-6 py-3 border border-white/30 text-white text-center mt-2"
             >
-              Acessar meu imóvel
-            </a>
+              Anuncie seu imóvel
+            </button>
           </nav>
         </motion.div>
       )}
