@@ -8,6 +8,7 @@ import AdvertisePropertyModal from "@/components/AdvertisePropertyModal";
 const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [advertiseOpen, setAdvertiseOpen] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50);
