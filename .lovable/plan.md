@@ -1,111 +1,34 @@
 
 
-## Refatorar Layout da Página Inicial (com Mapa SVG mantido)
+## Alterar AlphavilleMapSection para fundo claro
 
-Baseado no print de referência, reorganizando toda a homepage.
+### Arquivo: `src/components/AlphavilleMapSection.tsx`
 
-### Estrutura final da página
+Inverter todo o esquema de cores de escuro para claro, mantendo a mesma estrutura e lógica.
 
-```text
-┌─────────────────────────────────────────────┐
-│ Header (escuro, opaco, sólido)              │
-├─────────────────────────────────────────────┤
-│ Hero (carrossel imagens + overlay texto)    │
-├─────────────────────────────────────────────┤
-│ Barra de Busca IA (card branco flutuante)  │
-├─────────────────────────────────────────────┤
-│ Propriedades Especiais (carrossel 3 cards) │
-├─────────────────────────────────────────────┤
-│ Banner Alphaville (card escuro + CTAs)     │
-├─────────────────────────────────────────────┤
-│ Redes Sociais (3 cards grandes)            │
-├─────────────────────────────────────────────┤
-│ Nossa Equipe (avatares + carrossel)        │
-├─────────────────────────────────────────────┤
-│ Contato                                     │
-├─────────────────────────────────────────────┤
-│ Mapa Interativo Alphaville (visual novo)   │
-├─────────────────────────────────────────────┤
-│ Footer                                      │
-└─────────────────────────────────────────────┘
-```
+#### Mudanças de cor
 
----
-
-### 1. Refatorar Header
-**Arquivo:** `src/components/Header.tsx`
-- Remover utility bar superior (Instagram/YouTube/telefone)
-- Fundo sólido escuro (`bg-[#2a0a0a]` / bordeaux escuro) em vez de glass panel
-- Nav items: "Buscar", "Venda", "Locação", "Serviços", "Fale Conosco"
-- Botão CTA "Acessar meu imóvel" no lugar do botão WhatsApp
-- Logo e links em branco
-
-### 2. Refatorar HeroSection
-**Arquivo:** `src/components/HeroSection.tsx`
-- Trocar vídeo por carrossel de imagens (Embla) com dots de navegação
-- Reduzir altura para ~65vh
-- Overlay com texto: "Prepare-se para sonhar alto..." + itálico
-- Info do imóvel no canto inferior (condomínio, localização)
-- **Remover** barra de busca daqui (vai para componente separado)
-
-### 3. Criar SearchBarSection (novo)
-**Arquivo:** `src/components/SearchBarSection.tsx`
-- Card branco com sombra, margin-top negativo para flutuar sobre o hero
-- Título "Encontre seu imóvel com o Rafa IA"
-- Toggle "Cognitivo / Busca tradicional"
-- Input com mic + botão buscar
-- Reutilizar lógica de busca IA existente do HeroSection
-
-### 4. Refatorar Propriedades
-**Arquivo:** `src/components/NewArrivalsSection.tsx`
-- Título: "Nossas propriedades especiais em Alphaville, Tamboré e Santana de Parnaíba"
-- Carrossel Embla horizontal com 3 cards visíveis
-- Cards: imagem + badges (tipo, código), specs (área, suítes, vagas), preço BRL, botão "Saiba Mais"
-- Buscar imóveis do Supabase com fallback mock
-
-### 5. Criar Banner Alphaville (substituir FeaturedPropertySection)
-**Arquivo:** `src/components/FeaturedPropertySection.tsx`
-- Card escuro com imagem de fundo e overlay
-- Texto: "As propriedades mais que especiais em Alphaville"
-- 3 botões CTA: "Tamboré I", "Tamboré II", "Tamboré III"
-
-### 6. Refatorar InstitutionalSection → Redes Sociais
-**Arquivo:** `src/components/InstitutionalSection.tsx`
-- Remover blog editorial
-- Título + handle Instagram à direita
-- 3 cards grandes de posts do Instagram
-
-### 7. Criar TeamSection (novo)
-**Arquivo:** `src/components/TeamSection.tsx`
-- Título "Nossa **Equipe**"
-- Carrossel de avatares circulares com nome e cargo
-- Dados de `site_settings` key `team`
-
-### 8. Refatorar AlphavilleMapSection (visual novo, posição nova)
-**Arquivo:** `src/components/AlphavilleMapSection.tsx`
-- Manter mapa SVG interativo e toda a lógica de pins/tooltips
-- Atualizar visual: fundo escuro (bordeaux/dark) em vez de `bg-background`
-- Textos em branco, pins e tooltips com estilo coerente com novo design
-- Bordas e cards com estética do novo layout
-
-### 9. Atualizar Index.tsx
-**Arquivo:** `src/pages/Index.tsx`
-- Remover `LifestyleSection`
-- Nova ordem: Header → Hero → SearchBar → NewArrivals → FeaturedProperty(Banner) → Institutional(Social) → Team → Contact → AlphavilleMap → Footer
-
-### 10. Remover LifestyleSection
-- Remover import de `Index.tsx` (arquivo pode permanecer para não quebrar imports em outros locais)
-
-### Arquivos a criar
-- `src/components/SearchBarSection.tsx`
-- `src/components/TeamSection.tsx`
-
-### Arquivos a editar
-- `src/components/Header.tsx`
-- `src/components/HeroSection.tsx`
-- `src/components/NewArrivalsSection.tsx`
-- `src/components/FeaturedPropertySection.tsx`
-- `src/components/AlphavilleMapSection.tsx`
-- `src/components/InstitutionalSection.tsx`
-- `src/pages/Index.tsx`
+| Elemento | Atual (escuro) | Novo (claro) |
+|----------|---------------|--------------|
+| Section bg | `bg-[hsl(350,60%,5%)]` | `bg-[#F8F8F8]` |
+| Subtítulo | `text-white/40` | `text-[#2A070C]/40` |
+| Título | `text-white` | `text-[#2A070C]` |
+| Mobile cards border | `border-white/15` | `border-[#2A070C]/10` |
+| Mobile cards hover | `hover:bg-white/5` | `hover:bg-[#2A070C]/5` |
+| Mobile card title | `text-white` | `text-[#2A070C]` |
+| Mobile card texts | `text-white/50`, `text-white/80` | `text-[#2A070C]/50`, `text-[#2A070C]/80` |
+| Mobile card link | `text-white/70 hover:text-white` | `text-[#2A070C]/70 hover:text-[#2A070C]` |
+| SVG map container bg | `bg-white/5` border `border-white/10` | `bg-white` border `border-[#2A070C]/10` |
+| SVG strokes | `rgba(255,255,255,0.1)` | `rgba(42,7,12,0.1)` |
+| SVG ellipses | `rgba(255,255,255,0.05)` | `rgba(42,7,12,0.05)` |
+| SVG text | `rgba(255,255,255,0.25)` | `rgba(42,7,12,0.25)` |
+| Pin pulse | `bg-white/10` | `bg-[#2A070C]/10` |
+| Pin circle | `bg-white/70`, `bg-white` | `bg-[#2A070C]`, `bg-[#2A070C]` (icon white) |
+| Pin icon | `text-[hsl(350,60%,5%)]` | `text-white` |
+| Pin label | `text-white/50` | `text-[#2A070C]/50` |
+| Tooltip card | `bg-[hsl(350,60%,8%)]` border `border-white/15` | `bg-white` border `border-[#2A070C]/10` shadow-lg |
+| Tooltip texts | `text-white`, `text-white/60`, `text-white/40` | `text-[#2A070C]`, `text-[#2A070C]/60`, `text-[#2A070C]/40` |
+| Tooltip border-b | `border-white/10` | `border-[#2A070C]/10` |
+| Tooltip link | `text-white/70 hover:text-white` | `text-[#2A070C]/70 hover:text-[#2A070C]` |
+| Close button | `text-white/50 hover:text-white` | `text-[#2A070C]/50 hover:text-[#2A070C]` |
 
