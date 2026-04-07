@@ -1,31 +1,37 @@
 
 
-## Ajuste da Seção de Regiões — Layout e Lógica Dinâmica
+## Redesign do Rodapé — Conforme Layout de Referência
 
-### Mudanças
+### Estrutura do novo footer (2 colunas sobre fundo bordô)
 
-#### 1. Layout: Botões na linha debaixo
-Cada item do grid passa de uma row horizontal (`flex items-center justify-between`) para um layout vertical:
-- Linha 1: Nome do condomínio
-- Linha 2: Botões "COMPRAR | ALUGAR" abaixo do título
+**Coluna esquerda:**
+- "Alpha Business - Imobiliária Alphaville"
+- "Centro Empresarial Alphaville"
+- "Al. Rio Negro, 967 – 2º and. – Cj: 212"
+- "Alphaville – Barueri – SP – 06455-000"
+- Espaço
+- "Rafael Albuquerque"
+- "WHATSAPP: 11 99311-6849"
+- "WHATSAPP: 11 94001-0287"
 
-#### 2. Lógica dinâmica com dados do Supabase
-- Ao montar o componente, fazer query na tabela `properties` agrupando por `condominium` e `transaction_type` onde `status = 'ativo'`
-- Construir um Map com a estrutura: `{ condominium → { hasVenda: bool, hasAluguel: bool } }`
-- Filtrar a lista para exibir **apenas condomínios que possuem pelo menos 1 imóvel ativo**
-- Mostrar botão "COMPRAR" somente se `hasVenda`, "ALUGAR" somente se `hasAluguel`
-- Mostrar skeleton/loading enquanto carrega
+**Coluna direita:**
+- "Nos siga nas redes sociais e acompanhe nossas novidades."
+- Ícone Instagram + "@AlphavilleSP" + "@AlphavilleAB"
+- Espaço
+- "©2026 Rafael Albuquerque | Alpha Buoiness"
+- Texto descritivo: "AlphaBusiness: Negócios Imobiliários em Alphaville São Paulo – Todos os direitos reservados. Imobiliária especializada em mansões e casas em Alphaville, Tamboré e Santana de Parnaíba. Casas e apartamentos a venda em Alphaville"
+- "CRECI-PJ: 035836"
 
-### Arquivo: `src/components/AlphavilleMapSection.tsx`
+### Mudanças técnicas
 
-**Query Supabase:**
-```ts
-const { data } = await supabase
-  .from("properties")
-  .select("condominium, transaction_type")
-  .eq("status", "ativo")
-  .not("condominium", "is", null);
-```
+**Arquivo: `src/components/Footer.tsx`**
 
-Processar `data` para gerar o Map de disponibilidade e renderizar apenas os condomínios presentes.
+- Fundo: `bg-[#2A070C]` (Midnight Bordeaux) com textos em branco/cinza claro
+- Layout: grid 2 colunas (`md:grid-cols-2`) sem a estrutura atual de 4 colunas
+- Remover logo (manter placeholder para futura atualização), remover nav "Navegação", remover rodapé inferior com "Privacidade/Termos"
+- Todos os textos conforme o print — hardcoded por enquanto (dados que não vêm do settings como endereço completo, WhatsApp duplo, etc.)
+- Manter `useSiteSettings` para dados dinâmicos onde aplicável (instagram handles)
+- Ícone Instagram via `lucide-react` (`Instagram`)
+
+Remover header com logo e nav do footer (esses ficam apenas no Header). O footer agora é puramente informativo.
 
