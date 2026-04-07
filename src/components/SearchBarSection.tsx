@@ -168,7 +168,7 @@ const SearchBarSection = () => {
           transition={{ delay: 0.9, duration: 0.7 }}
         >
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-display text-lg md:text-xl font-light text-foreground">
+            <h3 className="text-display text-base md:text-xl font-light text-foreground whitespace-nowrap">
               Encontre seu imóvel com o <strong>Rafa IA</strong>
             </h3>
             <div className="hidden md:flex items-center gap-1 bg-muted rounded-full p-1">
