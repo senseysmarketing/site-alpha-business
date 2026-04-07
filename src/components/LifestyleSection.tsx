@@ -85,8 +85,8 @@ const LifestyleSection = () => {
             {categories.map((cat) => (
               <div
                 key={cat.title}
-                className={`flex-shrink-0 cursor-grab active:cursor-grabbing ${
-                  isMobile ? "basis-[85%]" : "basis-[calc(33.33%-16px)]"
+                className="flex-shrink-0 cursor-grab active:cursor-grabbing basis-[85%] md:basis-[calc(33.33%-16px)]"
+              >
                 }`}
               >
                 <div className="rounded-sm overflow-hidden aspect-[4/3]">
