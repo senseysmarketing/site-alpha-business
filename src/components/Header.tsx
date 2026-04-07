@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import logoAlpha from "@/assets/logo-alpha.png";
+import AdvertisePropertyModal from "@/components/AdvertisePropertyModal";
 
 const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
