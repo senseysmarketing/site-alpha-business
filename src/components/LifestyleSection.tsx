@@ -15,22 +15,16 @@ interface LifestyleCategory {
 
 const defaultCategories = [
   {
-    title: "Imóveis para relaxar",
-    subtitle: "Espaços que proporcionam paz e tranquilidade",
+    title: "Refúgios para relaxar",
     image: mansionModern,
-    count: "24 imóveis",
   },
   {
     title: "Imóveis Assinados",
-    subtitle: "Projetos de arquitetos renomados",
     image: familyHome,
-    count: "38 imóveis",
   },
   {
     title: "Mais espaço para a família",
-    subtitle: "Residenciais amplos com infraestrutura completa",
     image: sustainableHome,
-    count: "12 imóveis",
   },
 ];
 
