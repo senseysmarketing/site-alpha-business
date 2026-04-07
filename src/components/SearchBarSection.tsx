@@ -86,7 +86,7 @@ const SearchBarSection = () => {
               .some((field) => field!.toLowerCase().includes(lower))
           )
           .map(toSearchResult);
-        setResults(filtered.length > 0 ? filtered : mockProperties.map(toSearchResult));
+        setResults(filtered);
       }
     } catch {
       const lower = q.toLowerCase();
@@ -97,7 +97,7 @@ const SearchBarSection = () => {
             .some((field) => field!.toLowerCase().includes(lower))
         )
         .map(toSearchResult);
-      setResults(filtered.length > 0 ? filtered : mockProperties.map(toSearchResult));
+      setResults(filtered);
       toast.info("Exibindo resultados de demonstração.");
     } finally {
       setSearching(false);
