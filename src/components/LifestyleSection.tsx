@@ -3,7 +3,7 @@ import useEmblaCarousel from "embla-carousel-react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
-import { Button } from "@/components/ui/button";
+
 import mansionModern from "@/assets/mansion-modern.jpg";
 import familyHome from "@/assets/family-home.jpg";
 import sustainableHome from "@/assets/sustainable-home.jpg";
