@@ -68,12 +68,12 @@ const Header = () => {
         </nav>
 
         <div className="hidden md:flex items-center">
-          <a
-            href="#"
+          <button
+            onClick={() => setAdvertiseOpen(true)}
             className="text-body text-xs tracking-[0.1em] uppercase px-6 py-2.5 border border-white/30 text-white hover:bg-white/10 transition-colors duration-300"
           >
-            Acessar meu imóvel
-          </a>
+            Anuncie seu imóvel
+          </button>
         </div>
 
         <button
