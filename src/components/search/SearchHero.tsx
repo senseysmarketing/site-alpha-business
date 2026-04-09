@@ -119,8 +119,9 @@ const SearchHero = ({ initialQuery, onResults, onLoading, onParsedFilters }: Sea
             .filter(Boolean)
             .some((field) => field!.toLowerCase().includes(lower))
         )
-        .map(toSearchResult);
-      onResults(filtered.length > 0 ? filtered : mockProperties.map(toSearchResult));
+        .map(toSearchResult)
+        .map(enrichPhoto);
+      onResults(filtered.length > 0 ? filtered : mockProperties.map(toSearchResult).map(enrichPhoto));
       toast.info("Exibindo resultados de demonstração.");
     } finally {
       setSearching(false);
