@@ -1,13 +1,18 @@
 
 
-## Mover botão "Assistir Tour em Vídeo" para a parte inferior da imagem
+## Corrigir imagens ausentes nos resultados de busca
 
-### Problema
-O botão está posicionado com `top-8 right-6`, ficando atrás do header transparente (z-50) que agora sobrepõe a galeria.
+### Causa raiz
+A edge function `ai-property-search` retorna `photo: prop.photos?.[0] || null` (linha 220). Como os imóveis no Supabase não têm fotos cadastradas no campo `photos`, o `photo` chega como `null` e os cards exibem "SEM FOTO".
 
-### Mudança em `src/components/property/PropertyGallery.tsx`
+Na homepage, o `NewArrivalsSection` resolve isso com um fallback: `p.photos?.[0] || mockByCode[p.code] || "/images/property-1.jpg"` — mapeando o código do imóvel para a imagem mockada correspondente.
 
-**Desktop (linha 43):** Trocar `top-8 right-6` por `bottom-8 left-6` — posiciona o botão no canto inferior esquerdo da imagem principal, longe do header e do botão "Explorar todas as fotos" (que fica no canto inferior direito da imagem menor).
+### Solução
+Aplicar a mesma estratégia de fallback no `SearchResults.tsx`:
 
-**Mobile (linha 99):** Trocar `top-4 right-4` por `bottom-14 right-4` — posiciona abaixo do header e acima do botão de fotos que já está em `bottom-4`.
+1. **`src/pages/SearchResults.tsx`**: Após receber os resultados (tanto do `onResults` quanto do estado inicial), enriquecer cada resultado com fallback de imagem usando `mockByCode` — se `photo` for null, buscar pela correspondência de código nos mockProperties, senão usar uma imagem padrão.
 
+2. **`src/components/search/SearchHero.tsx`**: Aplicar o mesmo fallback ao montar os resultados da edge function (linhas 89-100) — antes de chamar `onResults`, mapear cada resultado e preencher `photo` com o fallback dos mockProperties quando vier null.
+
+### Arquivos a editar
+- `src/components/search/SearchHero.tsx` — adicionar fallback de `photo` usando `mockByCode` nos resultados da AI e nos fallbacks locais
