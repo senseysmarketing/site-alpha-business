@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -183,10 +184,13 @@ function PropertyMultiSelect({
   properties: { id: string; code: string; title: string; photos: string[] | null }[];
   max?: number;
 }) {
+  const [open, setOpen] = useState(false);
+
   const addProperty = (id: string) => {
     if (selectedIds.length < max && !selectedIds.includes(id)) {
       onChange([...selectedIds, id]);
     }
+    setOpen(false);
   };
 
   const removeProperty = (id: string) => {
@@ -204,18 +208,33 @@ function PropertyMultiSelect({
         <Label className="font-[Inter] text-xs text-muted-foreground">
           Imóveis no carrossel ({selectedIds.length}/{max})
         </Label>
-        <Select onValueChange={addProperty} disabled={selectedIds.length >= max}>
-          <SelectTrigger className="mt-1 h-9 text-sm border-border/50">
-            <SelectValue placeholder={selectedIds.length >= max ? "Máximo atingido" : "Adicionar imóvel..."} />
-          </SelectTrigger>
-          <SelectContent>
-            {availableProperties.map((p) => (
-              <SelectItem key={p.id} value={p.id}>
-                {p.code} — {p.title}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className="mt-1 w-full justify-start h-9 text-sm border-border/50 font-normal"
+              disabled={selectedIds.length >= max}
+            >
+              {selectedIds.length >= max ? "Máximo atingido" : "Adicionar imóvel..."}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[400px] p-0" align="start">
+            <Command>
+              <CommandInput placeholder="Buscar por código ou nome..." />
+              <CommandList className="max-h-60">
+                <CommandEmpty>Nenhum imóvel encontrado</CommandEmpty>
+                <CommandGroup>
+                  {availableProperties.map((p) => (
+                    <CommandItem key={p.id} value={`${p.code} ${p.title}`} onSelect={() => addProperty(p.id)}>
+                      <span className="font-medium">{p.code}</span>
+                      <span className="ml-2 text-muted-foreground truncate">{p.title}</span>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
       </div>
 
       {selectedProperties.length > 0 && (
