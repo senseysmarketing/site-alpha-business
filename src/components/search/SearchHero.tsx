@@ -5,6 +5,16 @@ import gsap from "gsap";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { mockProperties, toSearchResult } from "@/data/mockProperties";
+
+const mockByCode: Record<string, string> = {};
+mockProperties.forEach((p) => {
+  if (p.photos?.[0]) mockByCode[p.code] = p.photos[0];
+});
+
+const enrichPhoto = (r: SearchResult): SearchResult => ({
+  ...r,
+  photo: r.photo || mockByCode[r.code] || "/images/property-1.jpg",
+});
 import FilterChips, { type ParsedFilters } from "@/components/search/FilterChips";
 import VoiceWaves from "@/components/search/VoiceWaves";
 
