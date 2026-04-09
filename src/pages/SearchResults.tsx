@@ -53,7 +53,7 @@ const SearchResults = () => {
   const initialQuery = searchParams.get("q") || "";
 
   const [results, setResults] = useState<SearchResult[]>(
-    initialQuery ? [] : mockProperties.map(toSearchResult)
+    initialQuery ? [] : mockProperties.map(toSearchResult).map(enrichPhoto)
   );
   const [loading, setLoading] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
