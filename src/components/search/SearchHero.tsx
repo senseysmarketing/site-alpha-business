@@ -8,7 +8,7 @@ import { mockProperties, toSearchResult } from "@/data/mockProperties";
 
 const mockByCode: Record<string, string> = {};
 mockProperties.forEach((p) => {
-  if (p.photos?.[0]) mockByCode[p.code] = p.photos[0];
+  if (p.photo) mockByCode[p.code] = p.photo;
 });
 
 const enrichPhoto = (r: SearchResult): SearchResult => ({
