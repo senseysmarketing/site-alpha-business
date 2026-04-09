@@ -7,7 +7,7 @@ export default function Marketing() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-[Raleway] text-xl font-semibold text-foreground">
+        <h1 className="font-[Raleway] text-2xl font-semibold text-foreground tracking-tight">
           Central de Marketing & Alertas
         </h1>
         <p className="font-[Inter] text-sm text-muted-foreground mt-1">

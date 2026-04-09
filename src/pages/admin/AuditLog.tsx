@@ -156,7 +156,7 @@ const AuditLog = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-[Raleway] text-xl font-semibold text-foreground tracking-tight">
+          <h1 className="font-[Raleway] text-2xl font-semibold text-foreground tracking-tight">
             Atividade Global
           </h1>
           <p className="font-[Inter] text-sm text-muted-foreground mt-0.5">
