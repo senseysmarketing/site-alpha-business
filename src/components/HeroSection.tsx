@@ -5,14 +5,48 @@ import useEmblaCarousel from "embla-carousel-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { mockProperties } from "@/data/mockProperties";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
+
+interface HeroSettings {
+  tagline: string;
+  headline: string;
+  carousel_property_ids: string[];
+}
+
+const DEFAULT_TAGLINE = "Prepare-se para sonhar alto";
+const DEFAULT_HEADLINE = "Se você está buscando *imóveis de luxo*, aqui é o seu lugar";
+
+// Render text with *italic* support
+const renderWithItalic = (text: string) => {
+  const parts = text.split(/\*(.*?)\*/g);
+  return parts.map((part, i) =>
+    i % 2 === 1 ? <em key={i} className="italic">{part}</em> : <span key={i}>{part}</span>
+  );
+};
 
 const HeroSection = () => {
   const [selectedIndex, setSelectedIndex] = useState(0);
 
+  const { data: heroSettings } = useSiteSettings<HeroSettings>("hero");
+
+  const tagline = heroSettings?.tagline || DEFAULT_TAGLINE;
+  const headline = heroSettings?.headline || DEFAULT_HEADLINE;
+  const carouselIds = heroSettings?.carousel_property_ids || [];
+
   // Fetch properties for carousel
   const { data: properties } = useQuery({
-    queryKey: ["hero-carousel-properties"],
+    queryKey: ["hero-carousel-properties", carouselIds],
     queryFn: async () => {
+      if (carouselIds.length > 0) {
+        const { data, error } = await supabase
+          .from("properties")
+          .select("id, title, condominium, neighborhood, city, photos")
+          .in("id", carouselIds);
+        if (error || !data?.length) return null;
+        // Preserve order from carouselIds
+        const byId = new Map(data.map((p) => [p.id, p]));
+        return carouselIds.map((id) => byId.get(id)).filter(Boolean) as typeof data;
+      }
       const { data, error } = await supabase
         .from("properties")
         .select("id, title, condominium, neighborhood, city, photos")
@@ -81,7 +115,7 @@ const HeroSection = () => {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
           >
-            Prepare-se para sonhar alto
+            {tagline}
           </motion.p>
           <motion.h1
             className="text-display text-3xl md:text-5xl lg:text-6xl font-light text-white leading-tight mb-4"
@@ -89,9 +123,7 @@ const HeroSection = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6, duration: 0.8 }}
           >
-            Se você está buscando{" "}
-            <em className="italic">imóveis de luxo</em>,<br />
-            aqui é o seu lugar
+            {renderWithItalic(headline)}
           </motion.h1>
 
           {/* Property info */}

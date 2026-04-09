@@ -11,15 +11,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Save, RotateCcw, Plus, Trash2, Upload, User, RefreshCw, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Save, RotateCcw, Plus, Trash2, Upload, User, RefreshCw, CheckCircle2, AlertCircle, Loader2, X, GripVertical } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 
 // ── Types ──────────────────────────────────────────
 interface HeroSettings {
-  video_url: string;
-  fallback_image: string;
-  title: string;
-  subtitle: string;
+  tagline: string;
+  headline: string;
+  carousel_property_ids: string[];
 }
 
 interface DesignTokens {
@@ -28,14 +28,16 @@ interface DesignTokens {
   secondary_color: string;
 }
 
-interface FeaturedProperty {
-  property_id: string;
-  custom_label: string;
+interface FeaturedBannerSettings {
+  tagline: string;
+  title: string;
+  description: string;
+  background_image: string;
+  buttons: { label: string; href: string }[];
 }
 
 interface LifestyleCategory {
   title: string;
-  subtitle: string;
   image: string;
 }
 
@@ -62,6 +64,24 @@ const DEFAULT_TOKENS: DesignTokens = {
   accent_color: "#2A070C",
   background_color: "#F5F0EB",
   secondary_color: "#8B7D6B",
+};
+
+const DEFAULT_HERO: HeroSettings = {
+  tagline: "Prepare-se para sonhar alto",
+  headline: "Se você está buscando *imóveis de luxo*, aqui é o seu lugar",
+  carousel_property_ids: [],
+};
+
+const DEFAULT_FEATURED: FeaturedBannerSettings = {
+  tagline: "Conheça os condomínios",
+  title: "As propriedades mais que especiais em *Alphaville*",
+  description: "Descubra os melhores condomínios da região e encontre o imóvel perfeito para o seu estilo de vida.",
+  background_image: "",
+  buttons: [
+    { label: "Tamboré I", href: "/busca?condominio=tambore-1" },
+    { label: "Tamboré II", href: "/busca?condominio=tambore-2" },
+    { label: "Tamboré III", href: "/busca?condominio=tambore-3" },
+  ],
 };
 
 // ── Helper: Upload to bucket ──────────────────────
@@ -151,34 +171,151 @@ function SettingsBlock({ title, children, onSave, isSaving }: { title: string; c
   );
 }
 
+// ── Property multi-select for carousel ─────────────
+function PropertyMultiSelect({
+  selectedIds,
+  onChange,
+  properties,
+  max = 5,
+}: {
+  selectedIds: string[];
+  onChange: (ids: string[]) => void;
+  properties: { id: string; code: string; title: string; photos: string[] | null }[];
+  max?: number;
+}) {
+  const addProperty = (id: string) => {
+    if (selectedIds.length < max && !selectedIds.includes(id)) {
+      onChange([...selectedIds, id]);
+    }
+  };
+
+  const removeProperty = (id: string) => {
+    onChange(selectedIds.filter((i) => i !== id));
+  };
+
+  const availableProperties = properties.filter((p) => !selectedIds.includes(p.id));
+  const selectedProperties = selectedIds
+    .map((id) => properties.find((p) => p.id === id))
+    .filter(Boolean) as typeof properties;
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <Label className="font-[Inter] text-xs text-muted-foreground">
+          Imóveis no carrossel ({selectedIds.length}/{max})
+        </Label>
+        <Select onValueChange={addProperty} disabled={selectedIds.length >= max}>
+          <SelectTrigger className="mt-1 h-9 text-sm border-border/50">
+            <SelectValue placeholder={selectedIds.length >= max ? "Máximo atingido" : "Adicionar imóvel..."} />
+          </SelectTrigger>
+          <SelectContent>
+            {availableProperties.map((p) => (
+              <SelectItem key={p.id} value={p.id}>
+                {p.code} — {p.title}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {selectedProperties.length > 0 && (
+        <div className="space-y-2">
+          {selectedProperties.map((p, i) => (
+            <div key={p.id} className="flex items-center gap-3 border border-border/30 rounded-sm p-2">
+              <GripVertical className="h-4 w-4 text-muted-foreground/40 shrink-0" />
+              <span className="font-[Inter] text-xs text-muted-foreground w-5">{i + 1}.</span>
+              {p.photos?.[0] ? (
+                <img src={p.photos[0]} alt="" className="w-10 h-7 object-cover rounded-sm shrink-0" />
+              ) : (
+                <div className="w-10 h-7 bg-muted/30 rounded-sm shrink-0" />
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="font-[Inter] text-xs font-medium truncate">{p.title}</p>
+                <p className="font-[Inter] text-[10px] text-muted-foreground">{p.code}</p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
+                onClick={() => removeProperty(p.id)}
+              >
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main page ──────────────────────────────────────
 const SiteSettings = () => {
   const { user } = useAuth();
 
   // ── Hero ──
   const hero = useSiteSettings<HeroSettings>("hero");
-  const [heroForm, setHeroForm] = useState<HeroSettings>({ video_url: "", fallback_image: "", title: "", subtitle: "" });
-  useEffect(() => { if (hero.data) setHeroForm(hero.data); }, [hero.data]);
+  const [heroForm, setHeroForm] = useState<HeroSettings>(DEFAULT_HERO);
+  useEffect(() => {
+    if (hero.data) {
+      setHeroForm({
+        tagline: hero.data.tagline || DEFAULT_HERO.tagline,
+        headline: hero.data.headline || DEFAULT_HERO.headline,
+        carousel_property_ids: hero.data.carousel_property_ids || [],
+      });
+    }
+  }, [hero.data]);
 
   // ── Tokens ──
   const tokens = useSiteSettings<DesignTokens>("design_tokens");
   const [tokensForm, setTokensForm] = useState<DesignTokens>(DEFAULT_TOKENS);
   useEffect(() => { if (tokens.data) setTokensForm(tokens.data); }, [tokens.data]);
 
-  // Live preview of tokens
   useEffect(() => {
     document.documentElement.style.setProperty("--color-accent-preview", tokensForm.accent_color);
   }, [tokensForm.accent_color]);
 
-  // ── Featured property ──
-  const featured = useSiteSettings<FeaturedProperty>("featured_property");
-  const [featuredForm, setFeaturedForm] = useState<FeaturedProperty>({ property_id: "", custom_label: "Destaque" });
-  useEffect(() => { if (featured.data) setFeaturedForm(featured.data); }, [featured.data]);
+  // ── Featured Banner ──
+  const featured = useSiteSettings<FeaturedBannerSettings>("featured_banner");
+  const [featuredForm, setFeaturedForm] = useState<FeaturedBannerSettings>(DEFAULT_FEATURED);
+  useEffect(() => {
+    if (featured.data) {
+      setFeaturedForm({
+        tagline: featured.data.tagline || DEFAULT_FEATURED.tagline,
+        title: featured.data.title || DEFAULT_FEATURED.title,
+        description: featured.data.description || DEFAULT_FEATURED.description,
+        background_image: featured.data.background_image || "",
+        buttons: featured.data.buttons?.length ? featured.data.buttons : DEFAULT_FEATURED.buttons,
+      });
+    }
+  }, [featured.data]);
 
+  const addFeaturedButton = () => {
+    setFeaturedForm((prev) => ({
+      ...prev,
+      buttons: [...prev.buttons, { label: "", href: "" }],
+    }));
+  };
+
+  const removeFeaturedButton = (i: number) => {
+    setFeaturedForm((prev) => ({
+      ...prev,
+      buttons: prev.buttons.filter((_, idx) => idx !== i),
+    }));
+  };
+
+  const updateFeaturedButton = (i: number, field: "label" | "href", val: string) => {
+    setFeaturedForm((prev) => ({
+      ...prev,
+      buttons: prev.buttons.map((b, idx) => (idx === i ? { ...b, [field]: val } : b)),
+    }));
+  };
+
+  // ── Properties list ──
   const { data: properties } = useQuery({
-    queryKey: ["properties-list"],
+    queryKey: ["properties-list-settings"],
     queryFn: async () => {
-      const { data } = await supabase.from("properties").select("id, code, title").order("title");
+      const { data } = await supabase.from("properties").select("id, code, title, photos").order("title");
       return data ?? [];
     },
   });
@@ -186,7 +323,14 @@ const SiteSettings = () => {
   // ── Lifestyle ──
   const lifestyle = useSiteSettings<{ categories: LifestyleCategory[] }>("lifestyle_categories");
   const [lifestyleForm, setLifestyleForm] = useState<LifestyleCategory[]>([]);
-  useEffect(() => { if (lifestyle.data?.categories) setLifestyleForm(lifestyle.data.categories); }, [lifestyle.data]);
+  useEffect(() => {
+    if (lifestyle.data?.categories) {
+      setLifestyleForm(lifestyle.data.categories.map((c: any) => ({
+        title: c.title || "",
+        image: c.image || "",
+      })));
+    }
+  }, [lifestyle.data]);
 
   const updateLifestyle = (i: number, field: keyof LifestyleCategory, val: string) => {
     setLifestyleForm((prev) => prev.map((c, idx) => (idx === i ? { ...c, [field]: val } : c)));
@@ -269,7 +413,6 @@ const SiteSettings = () => {
     const reset = instaForm.map(p => ({ ...p, thumbnail: "", status: "pending" as const }));
     const scraped = await scrapeInstaThumbnails(reset);
     setInstaForm(scraped);
-    // Auto-save to persist in database
     instaPosts.save({ posts: scraped });
   };
 
@@ -277,6 +420,19 @@ const SiteSettings = () => {
   const footer = useSiteSettings<FooterSettings>("footer");
   const [footerForm, setFooterForm] = useState<FooterSettings>({ copyright_text: "", tagline: "" });
   useEffect(() => { if (footer.data) setFooterForm(footer.data); }, [footer.data]);
+
+  // ── Helper: render headline with italic ──
+  const renderHeadline = (text: string) => {
+    const parts = text.split(/\*(.*?)\*/g);
+    return parts.map((part, i) =>
+      i % 2 === 1 ? <em key={i} className="italic">{part}</em> : <span key={i}>{part}</span>
+    );
+  };
+
+  // Get selected carousel properties for preview
+  const carouselPreviewProperties = heroForm.carousel_property_ids
+    .map((id) => properties?.find((p) => p.id === id))
+    .filter(Boolean) as NonNullable<typeof properties>[number][];
 
   return (
     <div className="max-w-[1400px] mx-auto">
@@ -298,41 +454,33 @@ const SiteSettings = () => {
         <div className="lg:col-span-2 space-y-6">
           {/* Block 1: Hero */}
           <SettingsBlock title="Homepage Hero" onSave={() => hero.save(heroForm)} isSaving={hero.isSaving}>
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div>
-                <Label className="font-[Inter] text-xs text-muted-foreground">URL do Vídeo 4K</Label>
+                <Label className="font-[Inter] text-xs text-muted-foreground">Frase de apoio (tagline)</Label>
                 <Input
-                  value={heroForm.video_url}
-                  onChange={(e) => setHeroForm({ ...heroForm, video_url: e.target.value })}
-                  placeholder="https://..."
+                  value={heroForm.tagline}
+                  onChange={(e) => setHeroForm({ ...heroForm, tagline: e.target.value })}
+                  placeholder="Prepare-se para sonhar alto"
                   className="mt-1 h-9 text-sm border-border/50"
                 />
               </div>
-              <PhotoDrop
-                label="Imagem Fallback"
-                value={heroForm.fallback_image}
-                onUpload={(url) => setHeroForm({ ...heroForm, fallback_image: url })}
-              />
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label className="font-[Inter] text-xs text-muted-foreground">Título <span className="text-muted-foreground/50">(vazio = não exibir)</span></Label>
-                  <Input
-                    value={heroForm.title}
-                    onChange={(e) => setHeroForm({ ...heroForm, title: e.target.value })}
-                    placeholder="Ex: Viver é uma arte."
-                    className="mt-1 h-9 text-sm border-border/50"
-                  />
-                </div>
-                <div>
-                  <Label className="font-[Inter] text-xs text-muted-foreground">Subtítulo <span className="text-muted-foreground/50">(vazio = não exibir)</span></Label>
-                  <Input
-                    value={heroForm.subtitle}
-                    onChange={(e) => setHeroForm({ ...heroForm, subtitle: e.target.value })}
-                    placeholder="Ex: Encontre sua obra-prima em Alphaville."
-                    className="mt-1 h-9 text-sm border-border/50"
-                  />
-                </div>
+              <div>
+                <Label className="font-[Inter] text-xs text-muted-foreground">
+                  Título principal <span className="text-muted-foreground/50">— use *asteriscos* para itálico</span>
+                </Label>
+                <Textarea
+                  value={heroForm.headline}
+                  onChange={(e) => setHeroForm({ ...heroForm, headline: e.target.value })}
+                  placeholder="Se você está buscando *imóveis de luxo*, aqui é o seu lugar"
+                  className="mt-1 text-sm border-border/50 min-h-[60px]"
+                />
               </div>
+              <PropertyMultiSelect
+                selectedIds={heroForm.carousel_property_ids}
+                onChange={(ids) => setHeroForm({ ...heroForm, carousel_property_ids: ids })}
+                properties={properties ?? []}
+                max={5}
+              />
             </div>
           </SettingsBlock>
 
@@ -358,29 +506,80 @@ const SiteSettings = () => {
             </Button>
           </SettingsBlock>
 
-          {/* Block 3: Featured Property */}
-          <SettingsBlock title="Imóvel de Destaque" onSave={() => featured.save(featuredForm)} isSaving={featured.isSaving}>
-            <div className="grid grid-cols-2 gap-3">
+          {/* Block 3: Featured Banner */}
+          <SettingsBlock title="Banner de Destaque (Condomínios)" onSave={() => featured.save(featuredForm)} isSaving={featured.isSaving}>
+            <div className="space-y-4">
               <div>
-                <Label className="font-[Inter] text-xs text-muted-foreground">Imóvel</Label>
-                <Select value={featuredForm.property_id} onValueChange={(v) => setFeaturedForm({ ...featuredForm, property_id: v })}>
-                  <SelectTrigger className="mt-1 h-9 text-sm border-border/50">
-                    <SelectValue placeholder="Selecione..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {properties?.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>{p.code} — {p.title}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label className="font-[Inter] text-xs text-muted-foreground">Label</Label>
+                <Label className="font-[Inter] text-xs text-muted-foreground">Tagline</Label>
                 <Input
-                  value={featuredForm.custom_label}
-                  onChange={(e) => setFeaturedForm({ ...featuredForm, custom_label: e.target.value })}
+                  value={featuredForm.tagline}
+                  onChange={(e) => setFeaturedForm({ ...featuredForm, tagline: e.target.value })}
+                  placeholder="Conheça os condomínios"
                   className="mt-1 h-9 text-sm border-border/50"
                 />
+              </div>
+              <div>
+                <Label className="font-[Inter] text-xs text-muted-foreground">
+                  Título <span className="text-muted-foreground/50">— use *asteriscos* para itálico</span>
+                </Label>
+                <Input
+                  value={featuredForm.title}
+                  onChange={(e) => setFeaturedForm({ ...featuredForm, title: e.target.value })}
+                  placeholder="As propriedades mais que especiais em *Alphaville*"
+                  className="mt-1 h-9 text-sm border-border/50"
+                />
+              </div>
+              <div>
+                <Label className="font-[Inter] text-xs text-muted-foreground">Descrição</Label>
+                <Textarea
+                  value={featuredForm.description}
+                  onChange={(e) => setFeaturedForm({ ...featuredForm, description: e.target.value })}
+                  placeholder="Descubra os melhores condomínios..."
+                  className="mt-1 text-sm border-border/50 min-h-[50px]"
+                />
+              </div>
+              <PhotoDrop
+                label="Imagem de fundo"
+                value={featuredForm.background_image}
+                onUpload={(url) => setFeaturedForm({ ...featuredForm, background_image: url })}
+              />
+              <div>
+                <Label className="font-[Inter] text-xs text-muted-foreground mb-2 block">Botões de condomínio</Label>
+                <div className="space-y-2">
+                  {featuredForm.buttons.map((btn, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <Input
+                        value={btn.label}
+                        onChange={(e) => updateFeaturedButton(i, "label", e.target.value)}
+                        placeholder="Label"
+                        className="h-8 text-sm border-border/50 flex-1"
+                      />
+                      <Input
+                        value={btn.href}
+                        onChange={(e) => updateFeaturedButton(i, "href", e.target.value)}
+                        placeholder="/busca?condominio=..."
+                        className="h-8 text-sm border-border/50 flex-1"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                        onClick={() => removeFeaturedButton(i)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs gap-1.5 border-border/50 rounded-sm"
+                    onClick={addFeaturedButton}
+                  >
+                    <Plus className="h-3 w-3" />
+                    Adicionar Botão
+                  </Button>
+                </div>
               </div>
             </div>
           </SettingsBlock>
@@ -390,15 +589,9 @@ const SiteSettings = () => {
             <div className="space-y-4">
               {lifestyleForm.map((cat, i) => (
                 <div key={i} className="border border-border/30 rounded-sm p-3 space-y-2">
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <Label className="font-[Inter] text-xs text-muted-foreground">Título</Label>
-                      <Input value={cat.title} onChange={(e) => updateLifestyle(i, "title", e.target.value)} className="mt-1 h-8 text-sm border-border/50" />
-                    </div>
-                    <div>
-                      <Label className="font-[Inter] text-xs text-muted-foreground">Subtítulo</Label>
-                      <Input value={cat.subtitle} onChange={(e) => updateLifestyle(i, "subtitle", e.target.value)} className="mt-1 h-8 text-sm border-border/50" />
-                    </div>
+                  <div>
+                    <Label className="font-[Inter] text-xs text-muted-foreground">Título</Label>
+                    <Input value={cat.title} onChange={(e) => updateLifestyle(i, "title", e.target.value)} className="mt-1 h-8 text-sm border-border/50" />
                   </div>
                   <PhotoDrop label="Imagem" value={cat.image} onUpload={(url) => updateLifestyle(i, "image", url)} />
                 </div>
@@ -512,7 +705,6 @@ const SiteSettings = () => {
                     placeholder="https://www.instagram.com/p/..."
                     className="h-9 text-sm border-border/50"
                   />
-                  {/* Status + Preview */}
                   <div className="flex items-center gap-2">
                     {post.thumbnail ? (
                       <>
@@ -531,9 +723,8 @@ const SiteSettings = () => {
                       </Badge>
                     ) : null}
                   </div>
-                  {/* Manual upload fallback when failed */}
                   {post.url.trim() && post.status === "failed" && !post.thumbnail && (
-                     <PhotoDrop
+                    <PhotoDrop
                       label="Subir Imagem Manualmente"
                       value={post.thumbnail}
                       onUpload={(url) => {
@@ -578,21 +769,60 @@ const SiteSettings = () => {
                       height: "312.5%",
                     }}
                   >
-                    {/* Simulated hero */}
-                    <div
-                      className="h-[400px] flex items-center justify-center relative"
-                      style={{ backgroundColor: tokensForm.background_color }}
-                    >
-                      {heroForm.fallback_image && (
-                        <img src={heroForm.fallback_image} alt="" className="absolute inset-0 w-full h-full object-cover opacity-40" />
+                    {/* Simulated hero carousel */}
+                    <div className="h-[400px] relative overflow-hidden bg-black">
+                      {carouselPreviewProperties.length > 0 ? (
+                        <img
+                          src={carouselPreviewProperties[0].photos?.[0] || ""}
+                          alt=""
+                          className="absolute inset-0 w-full h-full object-cover opacity-70"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900" />
                       )}
-                      <div className="relative z-10 text-center px-8">
-                        <h2 className="font-[Raleway] text-4xl font-light mb-2" style={{ color: tokensForm.accent_color }}>
-                          {heroForm.title || "Viver é uma arte."}
-                        </h2>
-                        <p className="font-[Inter] text-lg" style={{ color: tokensForm.secondary_color }}>
-                          {heroForm.subtitle || "Encontre sua obra-prima em Alphaville."}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+                      <div className="relative z-10 h-full flex flex-col justify-end p-8">
+                        <p className="font-[Inter] text-xs tracking-[0.3em] uppercase text-white/60 mb-2">
+                          {heroForm.tagline}
                         </p>
+                        <h2 className="font-[Raleway] text-3xl font-light text-white leading-tight">
+                          {renderHeadline(heroForm.headline)}
+                        </h2>
+                        {carouselPreviewProperties.length > 0 && (
+                          <div className="flex gap-2 mt-4">
+                            {carouselPreviewProperties.map((_, i) => (
+                              <div
+                                key={i}
+                                className={`h-1.5 rounded-full ${i === 0 ? "bg-white w-6" : "bg-white/40 w-1.5"}`}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Simulated featured banner */}
+                    <div className="h-[250px] relative overflow-hidden">
+                      {featuredForm.background_image ? (
+                        <img src={featuredForm.background_image} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                      ) : (
+                        <div className="absolute inset-0 bg-gradient-to-br from-gray-900 to-gray-800" />
+                      )}
+                      <div className="absolute inset-0 bg-[hsl(350,60%,5%)]/80" />
+                      <div className="relative z-10 flex flex-col items-center justify-center text-center h-full p-6">
+                        <p className="font-[Inter] text-[10px] tracking-[0.3em] uppercase text-white/50 mb-2">
+                          {featuredForm.tagline}
+                        </p>
+                        <h3 className="font-[Raleway] text-2xl font-light text-white">
+                          {renderHeadline(featuredForm.title)}
+                        </h3>
+                        <div className="flex gap-2 mt-4">
+                          {featuredForm.buttons.map((btn, i) => (
+                            <span key={i} className="text-[9px] tracking-widest uppercase px-3 py-1.5 border border-white/30 text-white">
+                              {btn.label || "..."}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     </div>
 
@@ -611,7 +841,6 @@ const SiteSettings = () => {
                             )}
                             <div className="p-2">
                               <p className="font-[Raleway] text-sm font-medium" style={{ color: tokensForm.accent_color }}>{cat.title}</p>
-                              <p className="font-[Inter] text-xs" style={{ color: tokensForm.secondary_color }}>{cat.subtitle}</p>
                             </div>
                           </div>
                         ))}
