@@ -1,20 +1,47 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import mansionModern from "@/assets/mansion-modern.jpg";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
-const condominiums = [
+interface FeaturedBannerSettings {
+  tagline: string;
+  title: string;
+  description: string;
+  background_image: string;
+  buttons: { label: string; href: string }[];
+}
+
+const DEFAULT_TAGLINE = "Conheça os condomínios";
+const DEFAULT_TITLE = "As propriedades mais que especiais em *Alphaville*";
+const DEFAULT_DESCRIPTION = "Descubra os melhores condomínios da região e encontre o imóvel perfeito para o seu estilo de vida.";
+const DEFAULT_BUTTONS = [
   { label: "Tamboré I", href: "/busca?condominio=tambore-1" },
   { label: "Tamboré II", href: "/busca?condominio=tambore-2" },
   { label: "Tamboré III", href: "/busca?condominio=tambore-3" },
 ];
 
+const renderWithItalic = (text: string) => {
+  const parts = text.split(/\*(.*?)\*/g);
+  return parts.map((part, i) =>
+    i % 2 === 1 ? <em key={i} className="italic">{part}</em> : <span key={i}>{part}</span>
+  );
+};
+
 const FeaturedPropertySection = () => {
+  const { data: settings } = useSiteSettings<FeaturedBannerSettings>("featured_banner");
+
+  const tagline = settings?.tagline || DEFAULT_TAGLINE;
+  const title = settings?.title || DEFAULT_TITLE;
+  const description = settings?.description || DEFAULT_DESCRIPTION;
+  const backgroundImage = settings?.background_image || mansionModern;
+  const buttons = settings?.buttons?.length ? settings.buttons : DEFAULT_BUTTONS;
+
   return (
     <section className="px-6 md:px-12 lg:px-24 py-10">
       <div className="max-w-7xl mx-auto">
         <div className="relative rounded-lg overflow-hidden min-h-[400px] md:min-h-[450px]">
           <img
-            src={mansionModern}
+            src={backgroundImage}
             alt="Alphaville"
             className="absolute inset-0 w-full h-full object-cover"
           />
@@ -27,7 +54,7 @@ const FeaturedPropertySection = () => {
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
             >
-              Conheça os condomínios
+              {tagline}
             </motion.p>
 
             <motion.h2
@@ -37,8 +64,7 @@ const FeaturedPropertySection = () => {
               viewport={{ once: true }}
               transition={{ duration: 0.8 }}
             >
-              As propriedades mais que especiais em{" "}
-              <em className="italic">Alphaville</em>
+              {renderWithItalic(title)}
             </motion.h2>
 
             <motion.p
@@ -48,8 +74,7 @@ const FeaturedPropertySection = () => {
               viewport={{ once: true }}
               transition={{ delay: 0.2 }}
             >
-              Descubra os melhores condomínios da região e encontre o imóvel
-              perfeito para o seu estilo de vida.
+              {description}
             </motion.p>
 
             <motion.div
@@ -59,7 +84,7 @@ const FeaturedPropertySection = () => {
               viewport={{ once: true }}
               transition={{ delay: 0.4 }}
             >
-              {condominiums.map((c) => (
+              {buttons.map((c) => (
                 <Link
                   key={c.label}
                   to={c.href}
