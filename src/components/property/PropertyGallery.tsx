@@ -40,7 +40,7 @@ const PropertyGallery = ({ images, videoUrl }: PropertyGalleryProps) => {
           {videoUrl && (
             <button
               onClick={(e) => { e.stopPropagation(); setVideoOpen(true); }}
-              className="absolute top-8 right-6 flex items-center gap-2.5 px-5 py-2.5 glass-panel text-body text-xs tracking-[0.1em] uppercase text-foreground hover:bg-background/90 transition-colors"
+              className="absolute bottom-8 left-6 flex items-center gap-2.5 px-5 py-2.5 glass-panel text-body text-xs tracking-[0.1em] uppercase text-foreground hover:bg-background/90 transition-colors"
             >
               <Play size={14} strokeWidth={1.5} />
               Assistir Tour em Vídeo
@@ -96,7 +96,7 @@ const PropertyGallery = ({ images, videoUrl }: PropertyGalleryProps) => {
         {videoUrl && (
           <button
             onClick={() => setVideoOpen(true)}
-            className="absolute top-4 right-4 flex items-center gap-2 px-4 py-2 glass-panel text-body text-[10px] tracking-[0.1em] uppercase text-foreground"
+            className="absolute bottom-14 right-4 flex items-center gap-2 px-4 py-2 glass-panel text-body text-[10px] tracking-[0.1em] uppercase text-foreground"
           >
             <Play size={12} strokeWidth={1.5} />
             Tour em Vídeo
