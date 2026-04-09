@@ -1,30 +1,16 @@
 
 
-## Adicionar busca e scroll ao seletor de imóveis do carrossel
+## Ajustar margem da tela de Configurações
 
 ### Problema
-O dropdown de seleção de imóveis usa um `Select` simples do shadcn/ui, que não tem campo de busca nem scroll limitado. Com muitos imóveis, a lista ficará gigantesca e difícil de navegar.
+A página `SiteSettings.tsx` tem um wrapper `<div className="max-w-[1400px] mx-auto">` que nenhuma outra página admin usa. As demais (Dashboard, CRM, Marketing, etc.) usam apenas `<div>` ou `<div className="space-y-6">` simples, deixando o `padding: 1.5rem` do `AdminLayout` controlar o espaçamento.
 
 ### Solução
-Substituir o `Select` por um **Popover + Command** (componente Combobox do shadcn), que já inclui:
-- Campo de pesquisa integrado (filtra por código ou título)
-- Scroll vertical com altura máxima limitada (`max-h-60` ~240px)
-- Mesmo visual consistente com o design system
+Em `src/pages/admin/SiteSettings.tsx` (linha 457):
+- Remover `max-w-[1400px] mx-auto` do div wrapper
+- Usar `<div className="space-y-6">` para seguir o padrão das outras páginas admin (como Marketing, CRM, etc.)
+- Manter o header (h1 + descrição) e o grid de conteúdo como estão
 
-### Mudanças em `src/pages/admin/SiteSettings.tsx`
-
-No componente `PropertyMultiSelect` (linhas 174-249):
-
-1. **Trocar imports**: Remover `Select, SelectContent, SelectItem, SelectTrigger, SelectValue`. Adicionar `Popover, PopoverContent, PopoverTrigger` e `Command, CommandInput, CommandEmpty, CommandGroup, CommandItem, CommandList`.
-
-2. **Substituir o `<Select>`** por um `<Popover>` com:
-   - `PopoverTrigger` estilizado como o botão atual ("Adicionar imóvel...")
-   - `PopoverContent` contendo um `<Command>` com:
-     - `<CommandInput>` para pesquisa (placeholder: "Buscar por código ou nome...")
-     - `<CommandList>` com `className="max-h-60 overflow-y-auto"` para scroll limitado
-     - `<CommandEmpty>` com mensagem "Nenhum imóvel encontrado"
-     - `<CommandGroup>` mapeando `availableProperties`
-     - `<CommandItem>` exibindo `{p.code} — {p.title}`, ao clicar chama `addProperty(p.id)` e fecha o popover
-
-3. **Estado local** `open` para controlar abertura/fechamento do Popover
+### Arquivo a editar
+- `src/pages/admin/SiteSettings.tsx` — linha 457, trocar a classe do wrapper
 
