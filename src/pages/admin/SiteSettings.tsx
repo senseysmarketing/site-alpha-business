@@ -458,7 +458,7 @@ const SiteSettings = () => {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="font-[Raleway] text-xl font-semibold tracking-tight">Identidade & Marca</h1>
+          <h1 className="font-[Raleway] text-2xl font-semibold tracking-tight text-foreground">Identidade & Marca</h1>
           <p className="font-[Inter] text-sm text-muted-foreground mt-1">Personalize a aparência e conteúdo do site público.</p>
         </div>
         <Avatar className="h-8 w-8 border border-border/50">
