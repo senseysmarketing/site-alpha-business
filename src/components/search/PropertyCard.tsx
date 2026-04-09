@@ -40,7 +40,7 @@ const PropertyCard = ({ property, isWide = false, isSelected = false, onToggleCo
 
   return (
     <div
-      className={`group relative overflow-hidden rounded-xl cursor-pointer ${
+      className={`group relative overflow-hidden rounded-sm cursor-pointer ${
         isWide ? "aspect-[16/9]" : "aspect-[4/5]"
       }`}
       onClick={() => navigate(`/imovel/${property.id}`)}
