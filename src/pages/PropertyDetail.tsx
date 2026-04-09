@@ -39,13 +39,11 @@ const PropertyDetail = () => {
     <div className="min-h-screen bg-background">
       <Header />
 
-      {/* Gallery */}
-      <div className="pt-[100px]">
-        <PropertyGallery images={property.images} videoUrl="/videos/hero-bg.mp4" />
-      </div>
+      {/* Gallery — starts from top, header overlays transparently */}
+      <PropertyGallery images={property.images} videoUrl="/videos/hero-bg.mp4" />
 
       {/* Quick Info */}
-      <motion.div {...fadeIn} className="px-6 md:px-12 lg:px-24 py-8 border-b border-border">
+      <motion.div {...fadeIn} className="section-padding py-8 border-b border-border max-w-7xl mx-auto">
         <div className="flex flex-wrap items-center gap-3 mb-4">
           {[property.property_type, property.neighborhood, `Cód: ${property.code}`].map((tag) => (
             <span
@@ -97,7 +95,7 @@ const PropertyDetail = () => {
       </motion.div>
 
       {/* Two-column layout */}
-      <div className="px-6 md:px-12 lg:px-24 py-12 md:py-20">
+      <div className="section-padding py-12 md:py-20 max-w-7xl mx-auto">
         <div className="flex flex-col lg:flex-row gap-12 lg:gap-16">
           <div className="flex-1 lg:max-w-[65%] space-y-16">
             <motion.section {...fadeIn}>
@@ -204,7 +202,7 @@ const PropertyDetail = () => {
       </div>
 
       {/* Similar Properties */}
-      <motion.section {...fadeIn} className="px-6 md:px-12 lg:px-24 py-16 border-t border-border">
+      <motion.section {...fadeIn} className="section-padding py-16 border-t border-border max-w-7xl mx-auto">
         <h2 className="text-display text-2xl md:text-3xl font-light tracking-wide text-foreground mb-10">
           Imóveis que você também pode gostar
         </h2>
