@@ -454,7 +454,7 @@ const SiteSettings = () => {
     .filter(Boolean) as NonNullable<typeof properties>[number][];
 
   return (
-    <div className="max-w-[1400px] mx-auto">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
