@@ -1,25 +1,13 @@
 
 
-## Ajustes na Página de Detalhes do Imóvel
+## Mover botão "Assistir Tour em Vídeo" para a parte inferior da imagem
 
-### Problema 1: Header branco/invisível
-O Header usa texto branco sobre fundo transparente. Na página inicial funciona porque o HeroSection tem imagem escura por trás. Na página de detalhes, a galeria começa em `pt-[100px]`, deixando fundo off-white atrás do header — texto branco fica invisível.
+### Problema
+O botão está posicionado com `top-8 right-6`, ficando atrás do header transparente (z-50) que agora sobrepõe a galeria.
 
-**Solução**: Aceitar uma prop `variant` no Header. Na página de detalhes, usar `variant="solid"` que força o fundo `bg-[#2A070C]` sempre (não só após scroll). Alternativamente, remover o `pt-[100px]` e fazer a galeria começar do topo (atrás do header), igual o HeroSection na página inicial — assim o header transparente fica sobre a imagem da galeria.
+### Mudança em `src/components/property/PropertyGallery.tsx`
 
-**Abordagem escolhida**: Remover o `pt-[100px]` e fazer a galeria ocupar desde o topo, com o header transparente sobreposto à imagem (igual à home). Isso é mais consistente visualmente.
+**Desktop (linha 43):** Trocar `top-8 right-6` por `bottom-8 left-6` — posiciona o botão no canto inferior esquerdo da imagem principal, longe do header e do botão "Explorar todas as fotos" (que fica no canto inferior direito da imagem menor).
 
-### Problema 2: Alinhar layout da página de detalhes ao padrão visual
-
-**Mudanças em `src/pages/PropertyDetail.tsx`:**
-- Remover `pt-[100px]` da galeria — galeria começa do topo da viewport
-- Envolver seções de conteúdo em `max-w-7xl mx-auto` para consistência de largura com a home
-- Usar `section-padding` onde aplicável
-
-**Mudanças em `src/components/property/PropertyGallery.tsx`:**
-- Ajustar a galeria desktop para começar do topo da tela (sem padding-top), permitindo que o header fique sobreposto transparente sobre a imagem principal
-
-### Arquivos a editar
-1. **`src/pages/PropertyDetail.tsx`** — remover `pt-[100px]`, adicionar `max-w-7xl mx-auto` nos containers de conteúdo
-2. **`src/components/property/PropertyGallery.tsx`** — sem mudanças estruturais, apenas garantir que funciona sem o padding-top
+**Mobile (linha 99):** Trocar `top-4 right-4` por `bottom-14 right-4` — posiciona abaixo do header e acima do botão de fotos que já está em `bottom-4`.
 
