@@ -5,6 +5,16 @@ import gsap from "gsap";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { mockProperties, toSearchResult } from "@/data/mockProperties";
+
+const mockByCode: Record<string, string> = {};
+mockProperties.forEach((p) => {
+  if (p.photo) mockByCode[p.code] = p.photo;
+});
+
+const enrichPhoto = (r: SearchResult): SearchResult => ({
+  ...r,
+  photo: r.photo || mockByCode[r.code] || "/images/property-1.jpg",
+});
 import FilterChips, { type ParsedFilters } from "@/components/search/FilterChips";
 import VoiceWaves from "@/components/search/VoiceWaves";
 
@@ -87,7 +97,7 @@ const SearchHero = ({ initialQuery, onResults, onLoading, onParsedFilters }: Sea
       onParsedFilters?.(filters);
 
       if (results.length > 0) {
-        onResults(results);
+        onResults(results.map(enrichPhoto));
       } else {
         const lower = q.toLowerCase();
         const filtered = mockProperties
@@ -96,8 +106,9 @@ const SearchHero = ({ initialQuery, onResults, onLoading, onParsedFilters }: Sea
               .filter(Boolean)
               .some((field) => field!.toLowerCase().includes(lower))
           )
-          .map(toSearchResult);
-        onResults(filtered.length > 0 ? filtered : mockProperties.map(toSearchResult));
+          .map(toSearchResult)
+          .map(enrichPhoto);
+        onResults(filtered.length > 0 ? filtered : mockProperties.map(toSearchResult).map(enrichPhoto));
       }
     } catch (err: any) {
       console.error("Search error:", err);
@@ -108,8 +119,9 @@ const SearchHero = ({ initialQuery, onResults, onLoading, onParsedFilters }: Sea
             .filter(Boolean)
             .some((field) => field!.toLowerCase().includes(lower))
         )
-        .map(toSearchResult);
-      onResults(filtered.length > 0 ? filtered : mockProperties.map(toSearchResult));
+        .map(toSearchResult)
+        .map(enrichPhoto);
+      onResults(filtered.length > 0 ? filtered : mockProperties.map(toSearchResult).map(enrichPhoto));
       toast.info("Exibindo resultados de demonstração.");
     } finally {
       setSearching(false);

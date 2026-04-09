@@ -15,6 +15,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { mockProperties, toSearchResult } from "@/data/mockProperties";
 
+const mockByCode: Record<string, string> = {};
+mockProperties.forEach((p) => {
+  if (p.photo) mockByCode[p.code] = p.photo;
+});
+const enrichPhoto = (r: SearchResult): SearchResult => ({
+  ...r,
+  photo: r.photo || mockByCode[r.code] || "/images/property-1.jpg",
+});
+
 interface SearchResult {
   id: string;
   code: string;
@@ -44,7 +53,7 @@ const SearchResults = () => {
   const initialQuery = searchParams.get("q") || "";
 
   const [results, setResults] = useState<SearchResult[]>(
-    initialQuery ? [] : mockProperties.map(toSearchResult)
+    initialQuery ? [] : mockProperties.map(toSearchResult).map(enrichPhoto)
   );
   const [loading, setLoading] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
