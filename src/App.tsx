@@ -27,6 +27,8 @@ import DataImport from "./pages/admin/DataImport";
 import SiteSettings from "./pages/admin/SiteSettings";
 import SearchResults from "./pages/SearchResults";
 import SiteGate from "./components/SiteGate";
+import Team from "./pages/admin/Team";
+import TeamProfile from "./pages/admin/TeamProfile";
 
 const queryClient = new QueryClient();
 const AnimatedRoutes = () => {
@@ -44,6 +46,8 @@ const AnimatedRoutes = () => {
           <Route index element={<Dashboard />} />
           <Route path="imoveis" element={<Properties />} />
           <Route path="leads" element={<CRM />} />
+          <Route path="equipe" element={<Team />} />
+          <Route path="equipe/:id" element={<TeamProfile />} />
           <Route path="agenda" element={<Agenda />} />
           <Route path="relatorios" element={<Reports />} />
           <Route path="financeiro" element={<Financial />} />
