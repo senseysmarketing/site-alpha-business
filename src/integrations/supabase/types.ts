@@ -403,6 +403,57 @@ export type Database = {
         }
         Relationships: []
       }
+      team_profiles: {
+        Row: {
+          availability: string
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          creci: string | null
+          full_name: string
+          id: string
+          is_active: boolean
+          phone: string | null
+          role_display: string | null
+          social_instagram: string | null
+          social_linkedin: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          availability?: string
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          creci?: string | null
+          full_name: string
+          id?: string
+          is_active?: boolean
+          phone?: string | null
+          role_display?: string | null
+          social_instagram?: string | null
+          social_linkedin?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          availability?: string
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          creci?: string | null
+          full_name?: string
+          id?: string
+          is_active?: boolean
+          phone?: string | null
+          role_display?: string | null
+          social_instagram?: string | null
+          social_linkedin?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           broker_payout: number
@@ -515,7 +566,13 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "user"
+      app_role:
+        | "admin"
+        | "moderator"
+        | "user"
+        | "gerente"
+        | "corretor"
+        | "assistente"
       blog_category:
         | "inside-alphaville"
         | "arquitetura-design"
@@ -650,7 +707,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "user"],
+      app_role: [
+        "admin",
+        "moderator",
+        "user",
+        "gerente",
+        "corretor",
+        "assistente",
+      ],
       blog_category: [
         "inside-alphaville",
         "arquitetura-design",
