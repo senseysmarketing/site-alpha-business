@@ -1,16 +1,29 @@
 
 
-## Ajustar margem da tela de Configurações
+## Tela de "Site em Construção" com Senha de Acesso
 
-### Problema
-A página `SiteSettings.tsx` tem um wrapper `<div className="max-w-[1400px] mx-auto">` que nenhuma outra página admin usa. As demais (Dashboard, CRM, Marketing, etc.) usam apenas `<div>` ou `<div className="space-y-6">` simples, deixando o `padding: 1.5rem` do `AdminLayout` controlar o espaçamento.
+### Como funciona
+- Um componente `SiteGate` envolve todo o `App`
+- Ao acessar o site, verifica no `localStorage` se já foi desbloqueado
+- Se não, mostra tela elegante de "Site em Construção" com campo de senha
+- Senha correta (`@Alpha123`) → salva no `localStorage` e mostra o site
+- Senha errada → mostra erro
+- Rotas `/admin/*` ficam livres (equipe admin não precisa da senha extra)
 
-### Solução
-Em `src/pages/admin/SiteSettings.tsx` (linha 457):
-- Remover `max-w-[1400px] mx-auto` do div wrapper
-- Usar `<div className="space-y-6">` para seguir o padrão das outras páginas admin (como Marketing, CRM, etc.)
-- Manter o header (h1 + descrição) e o grid de conteúdo como estão
+### Arquivos
 
-### Arquivo a editar
-- `src/pages/admin/SiteSettings.tsx` — linha 457, trocar a classe do wrapper
+**1. Criar `src/components/SiteGate.tsx`**
+- Estado `unlocked` baseado em `localStorage.getItem("site_access")`
+- Tela com logo, texto "Site em Construção", campo de senha, botão "Acessar"
+- Visual alinhado com o branding (cores bordeaux/cashmere, font Raleway)
+- Ao acertar a senha, seta `localStorage` e libera acesso
+
+**2. Editar `src/App.tsx`**
+- Envolver o conteúdo do `App` com `<SiteGate>`
+- O `SiteGate` verifica a rota atual — se começa com `/admin`, passa direto sem pedir senha
+
+### Detalhes técnicos
+- Senha hardcoded no cliente (aceitável pois é temporário, não protege dados sensíveis)
+- `localStorage` key: `"site_access"` com valor `"granted"`
+- Para remover futuramente: basta deletar o `SiteGate` e seu import
 
