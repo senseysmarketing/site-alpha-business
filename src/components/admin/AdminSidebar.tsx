@@ -10,6 +10,7 @@ import {
   Megaphone,
   Activity,
   Upload,
+  UserCog,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -25,26 +26,41 @@ import {
   SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { useAuth } from "@/hooks/useAuth";
 import logoAlpha from "@/assets/logo-alpha.png";
 
-const menuItems = [
+type MenuItem = {
+  title: string;
+  url: string;
+  icon: any;
+  roles?: string[]; // if undefined, visible to all authenticated users
+};
+
+const menuItems: MenuItem[] = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
   { title: "Imóveis", url: "/admin/imoveis", icon: Building2 },
   { title: "Pipeline CRM", url: "/admin/leads", icon: Users },
+  { title: "Equipe", url: "/admin/equipe", icon: UserCog },
   { title: "Agenda", url: "/admin/agenda", icon: CalendarCheck },
-  { title: "Relatórios", url: "/admin/relatorios", icon: BarChart3 },
-  { title: "Financeiro", url: "/admin/financeiro", icon: Wallet },
-  { title: "Marketing", url: "/admin/marketing", icon: Megaphone },
-  { title: "Blog", url: "/admin/blog", icon: FileText },
-  { title: "Importar", url: "/admin/importar", icon: Upload },
-  { title: "Atividade", url: "/admin/atividade", icon: Activity },
-  { title: "Configurações", url: "/admin/configuracoes", icon: Settings },
+  { title: "Relatórios", url: "/admin/relatorios", icon: BarChart3, roles: ["admin", "gerente"] },
+  { title: "Financeiro", url: "/admin/financeiro", icon: Wallet, roles: ["admin"] },
+  { title: "Marketing", url: "/admin/marketing", icon: Megaphone, roles: ["admin", "gerente"] },
+  { title: "Blog", url: "/admin/blog", icon: FileText, roles: ["admin", "gerente"] },
+  { title: "Importar", url: "/admin/importar", icon: Upload, roles: ["admin"] },
+  { title: "Atividade", url: "/admin/atividade", icon: Activity, roles: ["admin"] },
+  { title: "Configurações", url: "/admin/configuracoes", icon: Settings, roles: ["admin"] },
 ];
 
 export function AdminSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
+  const { role } = useAuth();
+
+  const visibleItems = menuItems.filter((item) => {
+    if (!item.roles) return true;
+    return role ? item.roles.includes(role) : false;
+  });
 
   return (
     <Sidebar collapsible="icon" className="border-r border-border/50">
@@ -63,7 +79,7 @@ export function AdminSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
+              {visibleItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink

@@ -1,20 +1,26 @@
-// Auth hook v2
+// Auth hook v3 — with role support
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
 
-async function fetchIsAdmin(userId: string): Promise<boolean> {
-  const { data } = await supabase.rpc("has_role", {
-    _user_id: userId,
-    _role: "admin",
-  });
-  return !!data;
+type AppRole = "admin" | "gerente" | "corretor" | "assistente" | "moderator" | "user" | null;
+
+async function fetchRole(userId: string): Promise<AppRole> {
+  const { data } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .limit(1)
+    .single();
+  return (data?.role as AppRole) || null;
 }
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [role, setRole] = useState<AppRole>(null);
+
+  const isAdmin = role === "admin";
 
   useEffect(() => {
     let cancelled = false;
@@ -22,14 +28,14 @@ export function useAuth() {
     const resolve = async (u: User | null) => {
       setUser(u);
       if (u) {
-        const admin = await fetchIsAdmin(u.id);
+        const r = await fetchRole(u.id);
         if (!cancelled) {
-          setIsAdmin(admin);
+          setRole(r);
           setLoading(false);
         }
       } else {
         if (!cancelled) {
-          setIsAdmin(false);
+          setRole(null);
           setLoading(false);
         }
       }
@@ -55,5 +61,5 @@ export function useAuth() {
     await supabase.auth.signOut();
   };
 
-  return { user, loading, isAdmin, signOut };
+  return { user, loading, isAdmin, role, signOut };
 }
