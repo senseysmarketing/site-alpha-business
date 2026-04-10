@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.scrape-instagram-thumbnail]
 verify_jwt = false
+
+[functions.create-team-member]
+verify_jwt = false

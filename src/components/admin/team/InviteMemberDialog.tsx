@@ -33,6 +33,7 @@ const InviteMemberDialog = () => {
   const [form, setForm] = useState({
     fullName: "",
     email: "",
+    password: "",
     role: "corretor" as string,
     creci: "",
     phone: "",
@@ -40,28 +41,33 @@ const InviteMemberDialog = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.fullName || !form.email) {
-      toast.error("Nome e e-mail são obrigatórios.");
+    if (!form.fullName || !form.email || !form.password) {
+      toast.error("Nome, e-mail e senha são obrigatórios.");
+      return;
+    }
+    if (form.password.length < 6) {
+      toast.error("A senha deve ter pelo menos 6 caracteres.");
       return;
     }
 
     setLoading(true);
     try {
-      // For now, just create the team_profile record.
-      // Full invite flow (auth user creation) would require an edge function.
-      // This creates a placeholder profile that can be linked later.
-      const { error } = await supabase.from("team_profiles").insert({
-        full_name: form.fullName,
-        user_id: crypto.randomUUID(), // placeholder — will be replaced on actual signup
-        creci: form.creci || null,
-        phone: form.phone || null,
-        role_display: roles.find((r) => r.value === form.role)?.label || "Corretor",
+      const { data, error } = await supabase.functions.invoke("create-team-member", {
+        body: {
+          email: form.email,
+          password: form.password,
+          fullName: form.fullName,
+          role: form.role,
+          creci: form.creci,
+          phone: form.phone,
+        },
       });
 
-      if (error) throw error;
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
 
-      toast.success(`${form.fullName} adicionado à equipe.`);
-      setForm({ fullName: "", email: "", role: "corretor", creci: "", phone: "" });
+      toast.success(`${form.fullName} adicionado à equipe. Já pode fazer login!`);
+      setForm({ fullName: "", email: "", password: "", role: "corretor", creci: "", phone: "" });
       setOpen(false);
     } catch (err: any) {
       toast.error(err.message || "Erro ao adicionar membro.");
@@ -101,6 +107,16 @@ const InviteMemberDialog = () => {
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
               placeholder="joao@alpha.com"
+              className="rounded-sm"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="font-[Inter] text-xs">Senha *</Label>
+            <Input
+              type="password"
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              placeholder="Mínimo 6 caracteres"
               className="rounded-sm"
             />
           </div>
