@@ -26,9 +26,9 @@ import AuditLog from "./pages/admin/AuditLog";
 import DataImport from "./pages/admin/DataImport";
 import SiteSettings from "./pages/admin/SiteSettings";
 import SearchResults from "./pages/SearchResults";
+import SiteGate from "./components/SiteGate";
 
 const queryClient = new QueryClient();
-
 const AnimatedRoutes = () => {
   const location = useLocation();
   return (
@@ -69,7 +69,9 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <AnimatedRoutes />
+        <SiteGate>
+          <AnimatedRoutes />
+        </SiteGate>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
