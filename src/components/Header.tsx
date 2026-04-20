@@ -71,7 +71,7 @@ const Header = () => {
         <div className="hidden md:flex items-center">
           <button
             onClick={() => setAdvertiseOpen(true)}
-            className="font-normal text-xs tracking-[0.1em] uppercase px-6 py-2.5 border border-white/30 text-white hover:bg-white/10 transition-colors duration-300"
+            className="font-normal text-xs tracking-[0.1em] uppercase px-6 py-2.5 border border-white/30 text-white rounded-full hover:bg-white/10 transition-colors duration-300"
           >
             Anuncie seu imóvel
           </button>
@@ -116,7 +116,7 @@ const Header = () => {
             )}
             <button
               onClick={() => { setAdvertiseOpen(true); setMenuOpen(false); }}
-              className="font-normal text-xs tracking-[0.1em] uppercase px-6 py-3 border border-white/30 text-white text-center mt-2"
+              className="font-normal text-xs tracking-[0.1em] uppercase px-6 py-3 border border-white/30 text-white rounded-full text-center mt-2"
             >
               Anuncie seu imóvel
             </button>
