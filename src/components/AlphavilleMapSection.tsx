@@ -43,33 +43,24 @@ const AlphavilleMapSection = () => {
   const condos = condoMap ? Array.from(condoMap.entries()) : [];
 
   return (
-    <section id="mapa" className="px-6 md:px-12 lg:px-24 py-20 md:py-32 bg-muted/50">
+    <section id="mapa" className="px-6 md:px-12 lg:px-24 py-20 md:py-32">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-12 md:mb-16">
-          <motion.p
-            className="text-body text-xs tracking-[0.3em] uppercase text-foreground/40 mb-3"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-          >
-            Regiões
-          </motion.p>
-          <motion.h2
-            className="text-display text-3xl md:text-5xl font-light text-foreground"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-          >
-            Conheça o seu futuro imóvel em{" "}
-            <em className="italic">Alphaville</em>
-          </motion.h2>
-        </div>
+        <motion.div
+          className="mb-10 flex items-center justify-between gap-6"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8 }}
+        >
+          <h2 className="text-display text-2xl md:text-3xl font-normal text-foreground">
+            Conheça o seu futuro imóvel em Alphaville
+          </h2>
+        </motion.div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-x-6 gap-y-8">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="border-b border-border pb-3 space-y-2">
+              <div key={i} className="space-y-2">
                 <Skeleton className="h-4 w-3/4" />
                 <Skeleton className="h-3 w-1/2" />
               </div>
@@ -81,33 +72,33 @@ const AlphavilleMapSection = () => {
           </p>
         ) : (
           <motion.div
-            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-6"
+            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-x-6 gap-y-8"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
             {condos.map(([condo, availability]) => (
-              <div key={condo} className="border-b border-border pb-3">
-                <span className="text-body text-sm text-foreground font-medium block mb-1">
+              <div key={condo}>
+                <span className="text-display text-base font-normal text-foreground block mb-1">
                   {condo}
                 </span>
-                <div className="flex items-center gap-2 text-body text-xs">
+                <div className="flex items-center gap-2 text-body text-xs text-muted-foreground">
                   {availability.hasVenda && (
                     <button
                       onClick={() => handleClick(condo, "venda")}
-                      className="text-primary hover:text-primary/80 transition-colors uppercase tracking-wider"
+                      className="hover:text-foreground transition-colors"
                     >
                       Comprar
                     </button>
                   )}
                   {availability.hasVenda && availability.hasAluguel && (
-                    <span className="text-muted-foreground">|</span>
+                    <span className="text-muted-foreground/50">|</span>
                   )}
                   {availability.hasAluguel && (
                     <button
                       onClick={() => handleClick(condo, "aluguel")}
-                      className="text-primary hover:text-primary/80 transition-colors uppercase tracking-wider"
+                      className="hover:text-foreground transition-colors"
                     >
                       Alugar
                     </button>

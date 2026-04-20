@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { CheckCircle } from "lucide-react";
+import contactImage from "@/assets/private-collection.jpg";
 
 const ContactSection = () => {
   const [formData, setFormData] = useState({
@@ -56,12 +57,12 @@ const ContactSection = () => {
   };
 
   const inputClass =
-    "w-full bg-background border border-border text-foreground placeholder:text-muted-foreground px-4 py-3 text-sm text-body rounded-md focus:outline-none focus:ring-1 focus:ring-primary transition-colors";
+    "w-full bg-muted/60 border-0 text-foreground px-4 py-3 text-sm text-body rounded-md focus:outline-none focus:ring-1 focus:ring-foreground/20 transition-colors";
 
   if (success) {
     return (
-      <section id="contato" className="bg-muted/30 py-20 md:py-32">
-        <div className="max-w-xl mx-auto text-center px-6">
+      <section id="contato" className="py-20 md:py-32 px-6">
+        <div className="max-w-xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -69,7 +70,7 @@ const ContactSection = () => {
             className="flex flex-col items-center gap-4"
           >
             <CheckCircle className="w-16 h-16 text-primary" strokeWidth={1} />
-            <h3 className="text-display text-2xl md:text-3xl font-light text-foreground">
+            <h3 className="text-display text-2xl md:text-3xl font-normal text-foreground">
               Recebemos seu contato
             </h3>
             <p className="text-body text-sm text-muted-foreground leading-relaxed max-w-md">
@@ -82,86 +83,103 @@ const ContactSection = () => {
   }
 
   return (
-    <section id="contato" className="bg-muted/30 py-20 md:py-32">
-      <div className="max-w-2xl mx-auto px-6">
-        <motion.p
-          className="text-body text-xs tracking-[0.3em] uppercase text-muted-foreground mb-3 text-center"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-        >
-          Anuncie
-        </motion.p>
-        <motion.h2
-          className="text-display text-3xl md:text-5xl font-light text-foreground mb-4 text-center"
+    <section id="contato" className="py-20 md:py-32 px-6 md:px-12 lg:px-24">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-start">
+        <motion.div
+          className="relative aspect-[4/5] rounded-lg overflow-hidden bg-muted"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
+          transition={{ duration: 0.8 }}
         >
-          Seu imóvel ainda não está na{" "}
-          <em className="italic">Alpha Business</em>?
-        </motion.h2>
-        <motion.p
-          className="text-body text-sm text-muted-foreground leading-relaxed mb-10 max-w-lg mx-auto text-center"
-          initial={{ opacity: 0, y: 15 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.1 }}
-        >
-          Envie suas informações e nossa equipe entrará em contato para uma avaliação exclusiva.
-        </motion.p>
+          <img
+            src={contactImage}
+            alt="Anuncie seu imóvel com a Alpha Business"
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
+        </motion.div>
 
-        <motion.form
-          onSubmit={handleSubmit}
-          className="space-y-4"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.2, duration: 0.7 }}
-        >
-          <input
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            placeholder="Nome completo"
-            required
-            className={inputClass}
-          />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <input
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="E-mail"
-              required
-              className={inputClass}
-            />
-            <input
-              name="phone"
-              value={formData.phone}
-              onChange={handlePhoneChange}
-              placeholder="Telefone"
-              required
-              className={inputClass}
-            />
-          </div>
-          <textarea
-            name="address"
-            value={formData.address}
-            onChange={handleChange}
-            placeholder="Endereço completo do imóvel"
-            rows={3}
-            className={`${inputClass} resize-none`}
-          />
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-primary text-primary-foreground text-body text-xs tracking-[0.15em] uppercase py-3 rounded-md hover:opacity-90 transition-opacity disabled:opacity-50"
+        <div>
+          <motion.h2
+            className="text-display text-2xl md:text-4xl font-normal text-foreground leading-tight mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
           >
-            {loading ? "Enviando..." : "Enviar"}
-          </button>
-        </motion.form>
+            Seu imóvel ainda não está na Alpha Business?
+          </motion.h2>
+
+          <motion.form
+            onSubmit={handleSubmit}
+            className="space-y-5"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1, duration: 0.7 }}
+          >
+            <div>
+              <label htmlFor="name" className="text-body text-sm font-medium text-foreground mb-2 block">
+                Nome completo
+              </label>
+              <input
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                required
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label htmlFor="email" className="text-body text-sm font-medium text-foreground mb-2 block">
+                E-mail
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label htmlFor="phone" className="text-body text-sm font-medium text-foreground mb-2 block">
+                Telefone
+              </label>
+              <input
+                id="phone"
+                name="phone"
+                value={formData.phone}
+                onChange={handlePhoneChange}
+                required
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label htmlFor="address" className="text-body text-sm font-medium text-foreground mb-2 block">
+                Endereço completo do imóvel
+              </label>
+              <textarea
+                id="address"
+                name="address"
+                value={formData.address}
+                onChange={handleChange}
+                rows={3}
+                className={`${inputClass} resize-none`}
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="bg-foreground text-background text-body text-sm px-8 py-3 rounded-md hover:opacity-90 transition-opacity disabled:opacity-50"
+            >
+              {loading ? "Enviando..." : "Enviar"}
+            </button>
+          </motion.form>
+        </div>
       </div>
     </section>
   );
