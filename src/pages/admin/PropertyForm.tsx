@@ -23,6 +23,12 @@ const PropertyForm = () => {
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState(isEditing ? "basics" : "ai");
 
+  // Lifestyle tag suggestions (from site_settings.lifestyle_categories).
+  const { data: lifestyleData } = useSiteSettings<{ categories: { title: string; tag?: string }[] }>("lifestyle_categories");
+  const lifestyleTags = (lifestyleData?.categories ?? [])
+    .map((c) => c.tag?.trim())
+    .filter((t): t is string => !!t);
+
   // AI input
   const [aiText, setAiText] = useState("");
   const [aiProcessing, setAiProcessing] = useState(false);
@@ -483,6 +489,40 @@ const PropertyForm = () => {
 
               <div className="space-y-3">
                 <Label className={labelClass}>Destaques de Engenharia</Label>
+                {lifestyleTags.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 pb-1">
+                    <span className="text-[10px] text-muted-foreground/80 self-center mr-1">
+                      Tags de Lifestyle (clique para adicionar):
+                    </span>
+                    {lifestyleTags.map((t) => {
+                      const already = highlights.some((h) => h.trim().toLowerCase() === t.toLowerCase());
+                      return (
+                        <button
+                          key={t}
+                          type="button"
+                          disabled={already}
+                          onClick={() => {
+                            const empty = highlights.findIndex((h) => !h.trim());
+                            if (empty >= 0) {
+                              const copy = [...highlights];
+                              copy[empty] = t;
+                              setHighlights(copy);
+                            } else {
+                              setHighlights([...highlights, t]);
+                            }
+                          }}
+                          className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${
+                            already
+                              ? "border-primary/40 bg-primary/10 text-primary cursor-default"
+                              : "border-border/60 bg-background hover:border-primary/40 hover:bg-primary/5"
+                          }`}
+                        >
+                          {t}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
                 {highlights.map((h, i) => (
                   <div key={i} className="flex gap-2">
                     <Input
