@@ -1,31 +1,45 @@
 
 
-## Criar Usuário com Senha ao Adicionar Membro
+## Rebrand: Cor Principal, Logo, Fonte do Cabeçalho e Preloader
 
-### Problema
-Atualmente o dialog de "Convidar Membro" cria apenas um registro na tabela `team_profiles` com um `user_id` placeholder. O novo membro não consegue fazer login.
+Primeira etapa do redesign do site principal. Vou alterar a cor de marca (de Bordeaux para `#1f1f1f`), trocar a logo, mudar a fonte do cabeçalho para Roboto e atualizar o preloader.
 
-### Solução
-Criar uma Edge Function `create-team-member` que usa a Admin API do Supabase (`auth.admin.createUser`) para criar o usuário com e-mail e senha, sem exigir confirmação de e-mail. A function também cria o `team_profile` e o `user_role` automaticamente.
+### 1. Cor principal — `#1f1f1f`
+**Arquivo:** `src/index.css`
+- Substituir os tokens HSL que hoje representam o bordeaux (`350 60% 10%`) por `0 0% 12%` (equivalente a `#1f1f1f`):
+  - `--primary`, `--accent`, `--ring`, `--foreground` (ajustar para preservar contraste)
+  - `--bordeaux: 0 0% 12%` (mantém o nome do token para não quebrar referências em todo o código, mas com o novo valor)
+  - `--bordeaux-light: 0 0% 20%`
+- O token continua se chamando `bordeaux` internamente apenas para evitar refatorar dezenas de classes (`bg-bordeaux`, `text-bordeaux`). Visualmente passa a ser cinza-escuro `#1f1f1f`.
+
+### 2. Logo nova
+- Copiar `user-uploads://Logo-Rafael.png` para `src/assets/logo-rafael.png`
+- **Arquivo:** `src/components/Header.tsx`
+  - Trocar import `logoAlpha` → `logoRafael`
+  - Remover `brightness-0 invert` (a logo já vem com cores próprias, branca + detalhe vermelho)
+  - Trocar a cor do header scrolled de `bg-[#2A070C]/95` para `bg-[#1f1f1f]/95` e o menu mobile de `bg-[hsl(350,60%,5%)]` para `bg-[#1f1f1f]`
+- **Arquivo:** `src/components/Preloader.tsx`
+  - Trocar import `logoAlpha` → `logoRafael`
+
+### 3. Fonte do cabeçalho — Roboto Regular
+**Arquivos:** `src/index.css` + `src/components/Header.tsx`
+- Adicionar Roboto ao `@import` do Google Fonts
+- Criar utilitário `font-roboto` (ou aplicar inline `style={{ fontFamily: 'Roboto, sans-serif' }}`) nos itens de navegação, botão "Anuncie seu imóvel" e menu mobile do Header (peso 400 / Regular)
+
+### 4. Preloader na nova cor
+**Arquivo:** `src/components/Preloader.tsx`
+- Trocar `bg-bordeaux` por `bg-[#1f1f1f]` (ou já fica automático se eu atualizar o token `--bordeaux` no CSS — vou usar essa abordagem: token atualizado, classes existentes seguem funcionando)
+- Logo do preloader passa a ser a Logo Rafael
+
+### Observações
+- Mantenho o nome do token `bordeaux` no CSS (apenas o valor muda) para não precisar refatorar dezenas de componentes nesta etapa. Em etapas futuras do redesign podemos renomear semanticamente.
+- Esta é a Parte 1. Próximas etapas (tipografia geral, hero, seções, footer, etc.) virão nos próximos prompts.
 
 ### Arquivos
-
-**1. Criar `supabase/functions/create-team-member/index.ts`**
-- Recebe: `email`, `password`, `fullName`, `role`, `creci`, `phone`
-- Valida que todos os campos obrigatórios existem e que a senha tem pelo menos 6 caracteres
-- Usa `supabase.auth.admin.createUser({ email, password, email_confirm: true })` para criar o usuário já confirmado
-- Insere o registro em `team_profiles` com o `user_id` real retornado
-- Insere o registro em `user_roles` com o role selecionado (admin, gerente, corretor, assistente)
-- Verifica que quem chamou é admin (via token JWT do header Authorization)
-
-**2. Editar `src/components/admin/team/InviteMemberDialog.tsx`**
-- Adicionar campo "Senha" (type password) ao formulário, com validação mínima de 6 caracteres
-- Trocar a lógica de submit: em vez de inserir direto no `team_profiles`, chamar `supabase.functions.invoke('create-team-member', { body: { ... } })`
-- Tratar erros retornados pela edge function (ex: e-mail já existe)
-
-### Fluxo
-1. Admin preenche nome, e-mail, senha, cargo, CRECI, telefone
-2. Frontend chama a edge function
-3. Edge function cria o auth user (já confirmado), o team_profile e o user_role
-4. Novo membro pode fazer login imediatamente com e-mail e senha
+| Ação | Arquivo |
+|------|---------|
+| Editar | `src/index.css` (tokens de cor + import Roboto) |
+| Editar | `src/components/Header.tsx` (logo, fonte Roboto, cores) |
+| Editar | `src/components/Preloader.tsx` (logo nova) |
+| Adicionar | `src/assets/logo-rafael.png` (copiada do upload) |
 
