@@ -61,7 +61,7 @@ const ContactSection = () => {
 
   if (success) {
     return (
-      <section id="contato" className="py-20 md:py-32 px-6">
+      <section id="contato" className="py-12 md:py-20 px-6">
         <div className="max-w-xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
@@ -83,7 +83,7 @@ const ContactSection = () => {
   }
 
   return (
-    <section id="contato" className="py-20 md:py-32 px-6 md:px-12 lg:px-24">
+    <section id="contato" className="py-12 md:py-20 px-6 md:px-12 lg:px-24">
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-start">
         <motion.div
           className="relative aspect-[4/5] rounded-lg overflow-hidden bg-muted"
