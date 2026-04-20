@@ -1,74 +1,65 @@
 
 
-## Lifestyle Section — Cards Clicáveis + Modelo de Categorias
+## Conectar Design System (Admin) às Cores Reais do Site
 
-Hoje a seção "Encontre propriedades que representam seu estilo de vida" tem 3 cards (configuráveis em `Admin → Identidade`) com **título + imagem apenas** — não há clique, não há vínculo com imóveis, e não existe campo "categoria de lifestyle" no cadastro de imóveis.
+Hoje o bloco "Design System" em `/admin/configuracoes` salva 3 cores HEX (`accent_color`, `background_color`, `secondary_color`) em `site_settings.design_tokens`, mas o único efeito é setar uma variável `--color-accent-preview` que **não é usada em lugar nenhum**. As cores reais do site vêm dos tokens HSL fixos em `src/index.css` (`--background`, `--accent`, `--bordeaux`, `--cashmere`, `--greige`, etc.). Por isso #2A070C continua aparecendo em todo lugar.
 
-Vou tornar os cards clicáveis/arrastáveis e propor o modelo completo de categorização.
+### Estratégia
 
----
+Criar um **Theme Provider global** que lê `design_tokens` do Supabase, converte HEX → HSL, e injeta nas variáveis CSS que o site inteiro já consome. Sem migração SQL, sem mudar o Tailwind, sem refatorar componentes.
 
-### Parte 1 — Tornar cards clicáveis e arrastáveis (rápido)
+### Mapeamento HEX → tokens CSS
 
-Em `src/components/LifestyleSection.tsx`:
+| Campo no Admin | Token CSS atualizado | Onde aparece no site |
+|---|---|---|
+| **Cor de Acento** (`accent_color`) | `--accent`, `--bordeaux`, `--primary`, `--ring`, `--foreground` | Footer (fundo escuro), botões primários, headlines, links, preços |
+| **Cor de Fundo** (`background_color`) | `--background`, `--popover`, `--primary-foreground`, `--accent-foreground` | Fundo geral do site, cards claros, texto sobre fundo escuro |
+| **Cor Secundária** (`secondary_color`) | `--secondary`, `--greige`, `--muted-foreground`, `--cashmere` (versão clara) | Subtextos, badges secundários, separadores, detalhes neutros |
 
-1. **Adicionar campo `link`** em cada categoria do tipo `LifestyleCategory` (`title`, `image`, `link`).
-2. **Envolver o card num `<Link to={cat.link}>`** com `draggable={false}` na imagem para não conflitar com o drag do Embla.
-3. **Cursor**: já está `cursor-grab active:cursor-grabbing` — manter, mas adicionar `hover:shadow-md` e leve `group-hover:scale-[1.02]` no card todo (igual ao `NewArrivalsSection`).
-4. **Embla**: já está configurado com `dragFree: true` — funciona em desktop e mobile. Não muda nada.
-5. **Fallback**: se `cat.link` estiver vazio, link aponta para `/busca` sem filtro.
+Observação: `--bordeaux-light` deriva automaticamente do acento (lightness +8%). `--card`, `--muted`, `--border` derivam do background (mistura sutil) para manter a hierarquia visual.
 
-### Parte 2 — Modelo de Categorias de Lifestyle
+### Implementação
 
-**Hoje não existe** vínculo entre os cards de lifestyle e os imóveis. Os cards são puramente editoriais (texto + imagem). Para fazer o filtro funcionar, há duas estratégias:
+1. **Novo arquivo** `src/lib/colorTokens.ts`:
+   - `hexToHSL(hex)` → string `"H S% L%"`
+   - `applyDesignTokens(tokens)` → seta todas as variáveis CSS no `document.documentElement` com base no mapeamento acima.
 
-#### Opção A — Categoria via TAG (recomendada, simples)
+2. **Novo componente** `src/components/ThemeProvider.tsx`:
+   - Usa `useSiteSettings<DesignTokens>("design_tokens")`.
+   - No `useEffect`, chama `applyDesignTokens(data)` quando os dados carregam.
+   - Renderiza `{children}` sem markup adicional.
+   - **Importante**: aplicar também ANTES do React montar (script inline no `index.html` ou `main.tsx`) para evitar flash de cor antiga — versão mínima: aplicar via `useLayoutEffect` no provider, com fallback de `localStorage` cacheado.
 
-Imóveis já têm um campo `tags` (array de strings) usado para "Diferenciais" (ex: `Piscina`, `Vista`, `Smart Home`). Reutilizar:
+3. **Integrar em `src/App.tsx`**:
+   - Envolver as rotas com `<ThemeProvider>` logo após o `QueryClientProvider`.
+   - O admin **não** aplica os tokens em tempo real ao site público (só preview local) — mas após salvar, o `useSiteSettings` invalida a query e o ThemeProvider re-aplica em todas as abas/refresh.
 
-- Cada card de Lifestyle no admin ganha um campo extra: **"Tag de filtro"** (ex: `refugio`, `assinado`, `familia`).
-- O link gerado vira `/busca?tag=refugio`.
-- Na página `/busca`, adicionar suporte ao query param `tag` que filtra `properties.tags @> [tag]`.
-- **Como criar nova categoria**: admin adiciona/edita um card no painel de Identidade → escolhe um nome de tag → no cadastro do imóvel marca essa mesma tag em "Diferenciais/Tags".
+4. **Preview ao vivo no Admin** (`SiteSettings.tsx`):
+   - Trocar o `useEffect` atual (linha 552-554) por uma chamada a `applyDesignTokens(tokensForm)` para que o admin já mostre o preview real conforme o usuário ajusta as cores.
+   - Ao salvar, o site público também atualiza no próximo carregamento.
 
-**Vantagens**: zero migração SQL, reaproveita o que já existe, admin 100% no controle.
-**Desvantagens**: tag é texto livre — risco de digitar errado (`refugio` vs `refúgio`). Mitigação: sugestões/autocomplete no admin baseado em tags já existentes.
+5. **Resetar Padrão**: já funciona — apenas garante que o `applyDesignTokens` seja chamado no estado resetado.
 
-#### Opção B — Campo dedicado `lifestyle_category` (estruturado)
-
-- Nova coluna `lifestyle_categories text[]` na tabela `properties`.
-- Nova tabela `lifestyle_categories` (id, slug, label, image) gerenciada no admin.
-- Cadastro de imóvel ganha um multi-select de categorias.
-- Cards do home leem direto da tabela `lifestyle_categories`.
-
-**Vantagens**: dados estruturados, sem risco de typo, escalável.
-**Desvantagens**: migração SQL, mais código, mais telas no admin.
-
----
-
-### Recomendação
-
-**Ir de Opção A agora** (rápida, sem migração) e migrar para B se a operação crescer. A estrutura do admin atual (`site_settings.lifestyle_categories`) já suporta adicionar o campo `tag` sem mudar schema.
-
-### Escopo desta entrega (Opção A)
+### Arquivos a editar/criar
 
 | Ação | Arquivo |
 |------|---------|
-| Editar | `src/components/LifestyleSection.tsx` — cards viram `<Link>`, leem `cat.link` ou montam `/busca?tag={cat.tag}` |
-| Editar | `src/pages/admin/SiteSettings.tsx` (ou onde edita `lifestyle_categories`) — adicionar input "Tag de filtro" por card + sugestão "Como cadastrar: marque essa tag nos Diferenciais do imóvel" |
-| Editar | `src/pages/SearchResults.tsx` — ler `?tag=` do `useSearchParams` e filtrar imóveis por tag |
-| Editar | `src/pages/admin/PropertyForm.tsx` — no campo de tags/diferenciais, mostrar como sugestão as tags usadas pelos cards de lifestyle (autocomplete a partir de `site_settings.lifestyle_categories`) |
-| Atualizar | `mem://features/lifestyle/layout-content` — refletir o novo comportamento clicável + modelo por tag |
+| Criar | `src/lib/colorTokens.ts` — utilitários `hexToHSL` + `applyDesignTokens` |
+| Criar | `src/components/ThemeProvider.tsx` — lê tokens do Supabase, aplica em `:root` |
+| Editar | `src/App.tsx` — envolver rotas com `<ThemeProvider>` |
+| Editar | `src/pages/admin/SiteSettings.tsx` — trocar preview parcial por `applyDesignTokens` completo |
+| Atualizar | `mem://style/visual-identity` — registrar que cores do site são dinâmicas via `site_settings.design_tokens` |
 
-### Como criar uma nova categoria (fluxo final)
+### Considerações sobre identidade visual
 
-1. **Admin → Identidade → Lifestyle**: adicionar/editar card (título, imagem, **tag**, ex: `praia`).
-2. **Admin → Imóveis → Editar imóvel**: marcar a tag `praia` no campo Diferenciais.
-3. **Home**: card aparece e leva para `/busca?tag=praia`, que mostra todos os imóveis com essa tag.
+- A "Quiet Luxury" depende do contraste suave entre off-white + bordeaux. Se o usuário escolher cores com pouco contraste (ex: dois tons claros), o site pode ficar ilegível. Mantenho o reset para os defaults atuais (#2A070C / #F5F0EB / #8B7D6B) para garantir um caminho de volta seguro.
+- **Header transparente → bordeaux** (na rolagem) usa `--bordeaux` — vai trocar junto.
+- **Footer** (recém ajustado para #1F1F1F) hoje é hardcoded, **não** vai responder ao Design System a menos que troquemos sua cor por `bg-accent` ou `bg-bordeaux`. **Decisão**: manter o footer dinâmico via `--accent` (assim o admin controla também o footer). Se o usuário preferir manter o footer fixo em #1F1F1F, deixamos hardcoded.
 
 ### Observações
 
-- Mantém retrocompatibilidade: cards sem `tag` continuam funcionando (link cai em `/busca`).
-- Drag do carrossel coexiste com o link: Embla intercepta o drag; clique simples navega.
-- Sem migração SQL, sem nova dependência.
+- Sem migração SQL — usa `site_settings.design_tokens` que já existe.
+- Conversão HEX→HSL é matemática pura, ~30 linhas, sem lib externa.
+- Performance: aplicação de variáveis CSS é instantânea, sem re-render do React.
+- Em caso de falha do Supabase, fallback para os defaults do CSS (`src/index.css` permanece como baseline).
 
