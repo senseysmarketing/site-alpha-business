@@ -157,7 +157,194 @@ function PhotoDrop({ value, onUpload, label }: { value: string; onUpload: (url: 
       onUpload(url);
     } finally {
       setUploading(false);
-    }
+}
+
+// ── Media dropzone (image OR video) with size validation ──
+function MediaDrop({
+  mediaType,
+  url,
+  onUpload,
+}: {
+  mediaType: "image" | "video";
+  url: string;
+  onUpload: (next: { url: string; mediaType: "image" | "video" }) => void;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const onDrop = useCallback(
+    async (files: File[]) => {
+      const file = files[0];
+      if (!file) return;
+      const isVideo = file.type.startsWith("video/");
+      const isImage = file.type.startsWith("image/");
+      if (!isVideo && !isImage) {
+        toast.error("Formato não suportado. Envie imagem ou vídeo MP4/WebM.");
+        return;
+      }
+      const limit = isVideo ? MAX_VIDEO_BYTES : MAX_IMAGE_BYTES;
+      const limitMb = isVideo ? 15 : 5;
+      if (file.size > limit) {
+        toast.error(`Arquivo muito grande. Limite: ${limitMb} MB`);
+        return;
+      }
+      setUploading(true);
+      try {
+        const publicUrl = await uploadFile(file, "hero-slides");
+        onUpload({ url: publicUrl, mediaType: isVideo ? "video" : "image" });
+        toast.success("Mídia enviada");
+      } catch {
+        toast.error("Falha no upload. Tente novamente.");
+      } finally {
+        setUploading(false);
+      }
+    },
+    [onUpload],
+  );
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      "image/*": [],
+      "video/mp4": [],
+      "video/webm": [],
+    },
+    maxFiles: 1,
+  });
+
+  return (
+    <div>
+      <Label className="font-[Inter] text-xs text-muted-foreground mb-1 block">Mídia (imagem ou vídeo)</Label>
+      <div
+        {...getRootProps()}
+        className={`border border-dashed border-border/50 rounded-sm p-4 text-center cursor-pointer transition-colors ${
+          isDragActive ? "bg-muted/30" : "bg-white"
+        }`}
+      >
+        <input {...getInputProps()} />
+        {uploading ? (
+          <div className="flex items-center justify-center gap-2 py-2">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            <span className="text-xs text-muted-foreground">Enviando…</span>
+          </div>
+        ) : url ? (
+          mediaType === "video" ? (
+            <video src={url} muted playsInline className="h-24 mx-auto object-cover rounded-sm" />
+          ) : (
+            <img src={url} alt="" className="h-24 mx-auto object-cover rounded-sm" />
+          )
+        ) : (
+          <div className="flex flex-col items-center gap-1 text-muted-foreground/60">
+            <Upload className="h-5 w-5" />
+            <span className="text-xs">Arraste ou clique para enviar imagem ou vídeo</span>
+          </div>
+        )}
+      </div>
+      <p className="text-[11px] text-muted-foreground/80 mt-1.5 leading-relaxed">
+        Recomendado: imagens 1920×1080 (JPG/WebP, até <strong>5 MB</strong>) ou vídeos MP4 H.264 1080p
+        (até <strong>15 MB</strong>, ~10s). Arquivos maiores impactam o tempo de carregamento do site.
+      </p>
+    </div>
+  );
+}
+
+// ── Single Hero slide editor card ─────────────────
+function HeroSlideEditor({
+  slide,
+  index,
+  total,
+  onChange,
+  onRemove,
+  onMove,
+}: {
+  slide: HeroSlide;
+  index: number;
+  total: number;
+  onChange: (next: HeroSlide) => void;
+  onRemove: () => void;
+  onMove: (dir: -1 | 1) => void;
+}) {
+  const [open, setOpen] = useState(index === 0);
+  const update = <K extends keyof HeroSlide>(key: K, value: HeroSlide[K]) =>
+    onChange({ ...slide, [key]: value });
+
+  return (
+    <div className="border border-border/50 rounded-sm bg-white">
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-border/30 bg-muted/20">
+        <GripVertical className="h-4 w-4 text-muted-foreground/40 shrink-0" />
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          className="flex items-center gap-2 flex-1 min-w-0 text-left"
+        >
+          {slide.media_url ? (
+            slide.media_type === "video" ? (
+              <video src={slide.media_url} muted className="w-12 h-8 object-cover rounded-sm shrink-0 bg-muted" />
+            ) : (
+              <img src={slide.media_url} alt="" className="w-12 h-8 object-cover rounded-sm shrink-0" />
+            )
+          ) : (
+            <div className="w-12 h-8 bg-muted/40 rounded-sm shrink-0" />
+          )}
+          <div className="min-w-0">
+            <p className="font-[Inter] text-xs font-medium truncate">
+              Banner {index + 1}{slide.title ? ` — ${slide.title.replace(/\*/g, "").slice(0, 40)}` : ""}
+            </p>
+            <p className="font-[Inter] text-[10px] text-muted-foreground">
+              {slide.media_type === "video" ? "Vídeo" : "Imagem"} · CTA: {slide.cta_label || "—"}
+            </p>
+          </div>
+        </button>
+        <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-muted-foreground" onClick={() => onMove(-1)} disabled={index === 0} title="Mover para cima">
+          <ArrowUp className="h-3.5 w-3.5" />
+        </Button>
+        <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-muted-foreground" onClick={() => onMove(1)} disabled={index === total - 1} title="Mover para baixo">
+          <ArrowDown className="h-3.5 w-3.5" />
+        </Button>
+        <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive" onClick={onRemove} title="Remover banner">
+          <Trash2 className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+
+      {open && (
+        <div className="p-4 space-y-4">
+          <div>
+            <Label className="font-[Inter] text-xs text-muted-foreground">Frase de apoio (tagline)</Label>
+            <Input value={slide.tagline} onChange={(e) => update("tagline", e.target.value)} placeholder="Prepare-se para sonhar alto" className="mt-1 h-9 text-sm border-border/50" />
+          </div>
+          <div>
+            <Label className="font-[Inter] text-xs text-muted-foreground">
+              Título principal <span className="text-muted-foreground/50">— use *asteriscos* para itálico</span>
+            </Label>
+            <Textarea value={slide.title} onChange={(e) => update("title", e.target.value)} placeholder="Se você está buscando *imóveis de luxo*, aqui é o seu lugar" className="mt-1 text-sm border-border/50 min-h-[60px]" />
+          </div>
+          <div>
+            <Label className="font-[Inter] text-xs text-muted-foreground flex items-center justify-between">
+              <span>Subtítulo / descrição curta</span>
+              <span className="text-muted-foreground/50">{slide.subtitle.length}/140</span>
+            </Label>
+            <Textarea value={slide.subtitle} onChange={(e) => update("subtitle", e.target.value.slice(0, 140))} placeholder="Descrição complementar do banner" className="mt-1 text-sm border-border/50 min-h-[50px]" />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <Label className="font-[Inter] text-xs text-muted-foreground">Texto do botão</Label>
+              <Input value={slide.cta_label} onChange={(e) => update("cta_label", e.target.value)} placeholder="Saiba Mais" className="mt-1 h-9 text-sm border-border/50" />
+            </div>
+            <div>
+              <Label className="font-[Inter] text-xs text-muted-foreground">
+                Link do botão <span className="text-muted-foreground/50">— /rota ou https://…</span>
+              </Label>
+              <Input value={slide.cta_href} onChange={(e) => update("cta_href", e.target.value)} placeholder="/imovel/abc-123" className="mt-1 h-9 text-sm border-border/50" />
+            </div>
+          </div>
+          <MediaDrop
+            mediaType={slide.media_type}
+            url={slide.media_url}
+            onUpload={({ url, mediaType }) => onChange({ ...slide, media_url: url, media_type: mediaType })}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
   }, [onUpload]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop, accept: { "image/*": [] }, maxFiles: 1 });
