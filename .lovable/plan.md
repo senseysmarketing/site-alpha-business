@@ -1,52 +1,80 @@
 
 
-## Refatorar "Nossa Equipe" — Header em 1 Linha + Dots Bordeaux
+## Inverter Ordem + Refatorar "Regiões" e "Anuncie" — Estilo Editorial Limpo
 
-Alinhar `TeamSection.tsx` ao mesmo padrão editorial das seções "Nossas Propriedades", "Lifestyle" e "Redes Sociais".
+Conforme o print: **Regiões primeiro, Formulário depois**. Ambos com header em uma linha e estética minimalista (sem eyebrow, sem itálico, sem fundo cinza, alinhamento à esquerda).
 
-### 1. Header — uma linha só
+### 1. Inverter ordem em `Index.tsx`
 
-Substituir o bloco atual (`flex items-end justify-between` com eyebrow "Quem somos" + título grande + botões circulares de navegação) por:
+Trocar:
+```
+<TeamSection />
+<ContactSection />
+<AlphavilleMapSection />
+```
+por:
+```
+<TeamSection />
+<AlphavilleMapSection />
+<ContactSection />
+```
 
-- `flex items-center justify-between mb-10`
-  - Esquerda: `<h2>` em Noto Serif, `text-2xl md:text-3xl font-normal text-foreground` — texto: `Nossa Equipe` (sem eyebrow, sem `<strong>` parcial, sem display gigante).
-  - Direita: link "Ver todos" → `/equipe` (ou `#contato` como fallback se a rota não existir; usaremos `#contato` para manter seguro), em Inter `text-sm text-foreground/70 hover:text-primary transition-colors`.
-- Remover botões `ChevronLeft`/`ChevronRight` (navegação fica só pelos dots, como nas outras seções).
+### 2. `AlphavilleMapSection.tsx` — Header simples + grid mais denso
 
-### 2. Cards — manter visual circular do print
+- **Section**: trocar `bg-muted/50` por fundo padrão (transparente, igual demais seções). Manter `py-20 md:py-32` e padding lateral.
+- **Header em uma linha** (substitui o bloco com eyebrow "Regiões" + título grande):
+  - Remover `<motion.p>` "Regiões".
+  - `<h2>` em Noto Serif (`text-display`), `text-2xl md:text-3xl font-normal text-foreground`, texto: `Conheça o seu futuro imóvel em Alphaville` (sem `<em italic>` em Alphaville — o print mostra tudo regular).
+  - `mb-10` (em vez de `mb-12 md:mb-16`).
+- **Grid**: aumentar para 8 colunas no desktop conforme print (`lg:grid-cols-8`), mantendo responsivo: `grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-x-6 gap-y-8`.
+- **Itens**: 
+  - Remover `border-b border-border pb-3` (print não tem linha divisória).
+  - Nome do condomínio: Noto Serif (`text-display`), `text-base font-normal text-foreground mb-1` (em vez de Inter medium).
+  - Links "Comprar | Alugar": Inter `text-xs text-muted-foreground` (NÃO uppercase, NÃO tracking, NÃO Bordeaux). Hover: `hover:text-foreground transition-colors`. Separador `|` em `text-muted-foreground/50`.
 
-O print mostra exatamente o que já temos: avatar circular grande + nome + cargo centralizados, **sem** wrapper de card branco (diferente das seções de imóveis/lifestyle). Manter:
+### 3. `ContactSection.tsx` — Layout 2 colunas (imagem + form)
 
-- `flex flex-col items-center text-center`
-- Avatar circular: aumentar levemente para `w-32 h-32 md:w-36 md:h-36` (mais próximo do print, hoje está 24/28).
-- Nome: Noto Serif (`text-display`), `text-base font-normal text-foreground mb-1`.
-- Cargo: Inter, `text-sm text-muted-foreground`.
-- Slides: `flex-[0_0_50%] md:flex-[0_0_25%]` (4 visíveis no desktop como no print, 2 no mobile).
-- Gap: `gap-8`.
+Conforme o print: imagem grande à esquerda, formulário à direita com labels acima dos inputs.
 
-### 3. Dots de paginação — padrão Bordeaux unificado
+- **Section**: trocar `bg-muted/30` por fundo padrão (sem fundo cinza). Manter `py-20 md:py-32`.
+- **Container**: ampliar para `max-w-7xl mx-auto px-6 md:px-12 lg:px-24`.
+- **Grid**: `grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-start`.
 
-Substituir os dots atuais (estilo pill alongado) pelo mesmo padrão das outras seções:
-- Container: `flex items-center justify-center gap-2 mt-10` (visível em todos os breakpoints, remover o `md:hidden`).
-- Ativo: `w-7 h-7 rounded-md bg-primary flex items-center justify-center` com `<span className="w-2 h-2 bg-background rounded-sm" />` interno.
-- Inativo: `w-2 h-2 rounded-full bg-muted-foreground/30 hover:bg-muted-foreground/50 transition-colors`.
-- Usar `emblaApi.scrollSnapList()` para refletir snaps reais (com `containScroll: trimSnaps`), em vez de `members.length`.
+#### Coluna esquerda — imagem
+- `<div className="relative aspect-[4/5] rounded-lg overflow-hidden bg-muted">`
+- `<img>` com a imagem do corretor (usar uma das imagens já existentes em `src/assets/` — vou referenciar `team-1.jpg` ou similar; se não houver match, usar placeholder do hero/featured). **Decisão técnica**: como não há imagem específica do corretor in-context, usar a primeira imagem do membro de equipe (`team` settings) como fallback dinâmico, ou simplesmente uma imagem genérica de Alphaville já usada em outras seções. Para simplicidade e fidelidade visual, hardcode uma das imagens do `src/assets` que represente o conceito (ou criar prop `image` editável depois). **Nesta refatoração**: usar `import` de uma imagem existente — verificarei via list_dir o que está disponível na implementação. Fallback seguro: imagem do `featured-property` settings via `useSiteSettings("featured_property")`.
 
-### 4. Limpeza
+#### Coluna direita — formulário
+- **Header em 1 bloco** (left-aligned, sem centralização):
+  - Remover eyebrow "Anuncie".
+  - `<h2>` em Noto Serif, `text-2xl md:text-4xl font-normal text-foreground leading-tight mb-8`, texto: `Seu imóvel ainda não está na Alpha Business?` (sem `<em italic>` em "Alpha Business").
+  - Remover parágrafo descritivo "Envie suas informações...".
+- **Form com labels acima**:
+  - Cada campo: `<label>` em Inter `text-sm font-medium text-foreground mb-2 block` + `<input>`/`<textarea>` abaixo.
+  - Labels: `Nome completo`, `E-mail`, `Telefone`, `Endereço completo do imóvel` (substitui placeholders).
+  - Inputs: remover `placeholder`, fundo `bg-muted/60` (cinza claro como no print, em vez de `bg-background` com border visível), `border-0`, `px-4 py-3 rounded-md`, focus ring sutil.
+  - Espaçamento: `space-y-5`.
+  - Layout: empilhar todos os campos verticalmente (sem grid 2 colunas para email/telefone — print mostra full-width).
+- **Botão Enviar**:
+  - Pequeno, alinhado à esquerda (não full-width).
+  - `bg-foreground text-background px-8 py-3 rounded-md text-sm` (preto/escuro como no print, não Bordeaux).
+  - Texto em case natural: `Enviar` (sem uppercase, sem tracking).
 
-- Remover imports não usados: `ChevronLeft`, `ChevronRight`.
-- Manter `useSiteSettings`, `defaultTeam` fallback e animações framer-motion.
+### 4. Estado de sucesso
+- Manter o bloco `success`, mas atualizar fundo para padrão (sem `bg-muted/30`) e tipografia para alinhar (h3 em Noto Serif `font-normal`).
 
 ### Arquivos
 
 | Ação | Arquivo |
 |------|---------|
-| Editar | `src/components/TeamSection.tsx` (header em 1 linha, avatares maiores, dots Bordeaux unificados) |
-| Atualizar | `mem://features/team/layout-carousel` (refletir novo padrão de header + dots) |
+| Editar | `src/pages/Index.tsx` (reordenar: Map antes de Contact) |
+| Editar | `src/components/AlphavilleMapSection.tsx` (header 1 linha, grid 8 col, sem bordas, links discretos) |
+| Editar | `src/components/ContactSection.tsx` (layout 2 colunas, labels acima, sem fundo cinza, botão escuro pequeno) |
+| Atualizar | `mem://features/alphaville/condo-grid` (refletir novo visual minimalista) |
+| Atualizar | `mem://features/contact/redesign` (refletir layout 2 colunas com imagem) |
 
 ### Observações
-
+- A imagem da coluna esquerda do form usará `useSiteSettings("featured_property")` (mesma usada no banner) como default — assim continua editável pelo admin sem código novo. Se preferir imagem fixa diferente, o admin troca pelo painel.
+- Botões e inputs em case natural seguem o mesmo desvio intencional do `FeaturedPropertySection` (fidelidade ao print > regra global de uppercase em utility labels).
 - Sem mudanças em tokens globais.
-- Cards mantêm formato circular limpo (sem wrapper branco) — é o padrão correto para apresentação de pessoas, distinto dos cards de imóveis/categorias.
-- Dots agora 100% consistentes em todas as 4 seções do home (Propriedades, Lifestyle, Redes Sociais, Equipe).
 
