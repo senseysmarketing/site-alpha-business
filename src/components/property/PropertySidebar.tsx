@@ -40,7 +40,7 @@ const PropertySidebar = ({
             href={`https://wa.me/${whatsappNumber}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 w-full py-3 bg-[#25D366] text-white text-body text-sm font-medium rounded-sm hover:bg-[#20bd5a] transition-colors"
+            className="flex items-center justify-center gap-2 w-full py-3 bg-[#25D366] text-white text-body text-sm font-medium rounded-full hover:bg-[#20bd5a] transition-colors"
           >
             <MessageCircle size={18} />
             Falar com {brokerName.split(" ")[0]}
@@ -48,7 +48,7 @@ const PropertySidebar = ({
 
           <button
             onClick={() => setScheduleOpen(true)}
-            className="flex items-center justify-center gap-2 w-full py-3 border border-border text-body text-sm font-medium text-foreground rounded-sm hover:bg-muted transition-colors"
+            className="flex items-center justify-center gap-2 w-full py-3 border border-border text-body text-sm font-medium text-foreground rounded-full hover:bg-muted transition-colors"
           >
             <Calendar size={18} />
             Agendar visita

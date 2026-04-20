@@ -57,12 +57,12 @@ const PropertyDetail = () => {
 
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-display text-3xl md:text-4xl font-light tracking-wide text-foreground mb-1">
+          <h1 className="text-display text-3xl md:text-5xl font-light tracking-tight text-foreground mb-1">
               {property.title}
             </h1>
             <p className="text-body text-sm text-muted-foreground">{property.subtitle}</p>
           </div>
-          <p className="text-display text-3xl md:text-4xl font-semibold text-foreground whitespace-nowrap">
+          <p className="text-display text-3xl md:text-4xl font-light text-foreground whitespace-nowrap">
             {formatPrice(property.price)}
           </p>
         </div>
@@ -79,14 +79,14 @@ const PropertyDetail = () => {
               href="https://wa.me/5511999999999"
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden md:flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground text-body text-xs tracking-[0.1em] uppercase hover-magnetic"
+              className="hidden md:flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground text-body text-xs tracking-[0.1em] uppercase hover-magnetic rounded-full"
             >
               <MessageCircle size={16} />
               WhatsApp
             </a>
             <button
               onClick={() => setScheduleOpen(true)}
-              className="hidden md:block px-6 py-2.5 border border-border text-body text-xs tracking-[0.1em] uppercase text-foreground hover:bg-muted transition-colors"
+              className="hidden md:block px-6 py-2.5 border border-border text-body text-xs tracking-[0.1em] uppercase text-foreground hover:bg-muted transition-colors rounded-full"
             >
               Agendar visita
             </button>
@@ -99,7 +99,7 @@ const PropertyDetail = () => {
         <div className="flex flex-col lg:flex-row gap-12 lg:gap-16">
           <div className="flex-1 lg:max-w-[65%] space-y-16">
             <motion.section {...fadeIn}>
-              <h2 className="text-display text-2xl font-light tracking-wide text-foreground mb-6">
+              <h2 className="text-display text-2xl md:text-3xl font-light tracking-tight text-foreground mb-6">
                 Sobre o Imóvel
               </h2>
               <div className="text-body text-sm text-muted-foreground leading-[1.9] whitespace-pre-line">
@@ -109,7 +109,7 @@ const PropertyDetail = () => {
 
             {/* Amenities */}
             <motion.section {...fadeIn}>
-              <h2 className="text-display text-2xl font-light tracking-wide text-foreground mb-6">
+              <h2 className="text-display text-2xl md:text-3xl font-light tracking-tight text-foreground mb-6">
                 Diferenciais
               </h2>
               <div className="flex flex-wrap gap-2">
@@ -126,7 +126,7 @@ const PropertyDetail = () => {
 
             {/* Technical Details Accordion */}
             <motion.section {...fadeIn}>
-              <h2 className="text-display text-2xl font-light tracking-wide text-foreground mb-6">
+              <h2 className="text-display text-2xl md:text-3xl font-light tracking-tight text-foreground mb-6">
                 Detalhes do Imóvel
               </h2>
               <Accordion type="multiple" className="w-full">
@@ -203,17 +203,17 @@ const PropertyDetail = () => {
 
       {/* Similar Properties */}
       <motion.section {...fadeIn} className="section-padding py-16 border-t border-border max-w-7xl mx-auto">
-        <h2 className="text-display text-2xl md:text-3xl font-light tracking-wide text-foreground mb-10">
+        <h2 className="text-display text-2xl md:text-3xl font-light tracking-tight text-foreground mb-10">
           Imóveis que você também pode gostar
         </h2>
-        <div className="flex gap-5 overflow-x-auto pb-4 -mx-2 px-2 scrollbar-hide">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {similarProperties.map((prop) => (
             <Link
               key={prop.id}
               to={`/imovel/${prop.id}`}
-              className="flex-shrink-0 w-[280px] group cursor-pointer"
+              className="group block bg-card border border-border/60 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
             >
-              <div className="relative overflow-hidden aspect-[4/3] rounded-sm mb-3">
+              <div className="relative overflow-hidden aspect-[4/3]">
                 <img
                   src={prop.photo || prop.images[0]}
                   alt={prop.title}
@@ -221,15 +221,36 @@ const PropertyDetail = () => {
                   loading="lazy"
                 />
               </div>
-              <p className="text-body text-[11px] tracking-[0.15em] uppercase text-muted-foreground mb-1">
-                {prop.neighborhood}
-              </p>
-              <h3 className="text-display text-lg font-light text-foreground mb-1">
-                {prop.title}
-              </h3>
-              <p className="font-mono text-sm font-medium text-foreground">
-                {formatPrice(prop.price)}
-              </p>
+              <div className="p-5">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-body text-[11px] tracking-[0.15em] uppercase font-semibold text-foreground">
+                    {prop.property_type || "Casa"}
+                  </span>
+                  <span className="text-body text-[11px] tracking-[0.1em] uppercase text-muted-foreground">
+                    {prop.code}
+                  </span>
+                </div>
+                <h3 className="text-display text-xl font-normal text-foreground group-hover:text-primary transition-colors mb-2">
+                  {prop.title}
+                </h3>
+                <p className="text-body text-sm text-muted-foreground">
+                  {prop.area_total}m² &nbsp;-&nbsp; Suítes: {prop.suites} &nbsp;-&nbsp; Vagas: {prop.parking}
+                </p>
+                <div className="border-t border-border/60 my-4" />
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-body text-[11px] tracking-[0.1em] uppercase font-semibold text-foreground">
+                      {prop.transaction_type || "Venda"}:
+                    </p>
+                    <p className="text-display text-lg font-medium text-foreground">
+                      {formatPrice(prop.price)}
+                    </p>
+                  </div>
+                  <span className="text-body text-sm bg-foreground text-background px-5 py-2 rounded-full group-hover:bg-foreground/90 transition-colors">
+                    Saiba Mais
+                  </span>
+                </div>
+              </div>
             </Link>
           ))}
         </div>
@@ -243,14 +264,14 @@ const PropertyDetail = () => {
           href="https://wa.me/5511999999999"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex-1 flex items-center justify-center gap-2 py-3 bg-[#25D366] text-white text-body text-sm font-medium rounded-sm"
+          className="flex-1 flex items-center justify-center gap-2 py-3 bg-[#25D366] text-white text-body text-sm font-medium rounded-full"
         >
           <MessageCircle size={18} />
           WhatsApp
         </a>
         <button
           onClick={() => setScheduleOpen(true)}
-          className="flex-1 flex items-center justify-center gap-2 py-3 bg-primary text-primary-foreground text-body text-sm font-medium rounded-sm"
+          className="flex-1 flex items-center justify-center gap-2 py-3 bg-primary text-primary-foreground text-body text-sm font-medium rounded-full"
         >
           <Calendar size={18} />
           Agendar visita
