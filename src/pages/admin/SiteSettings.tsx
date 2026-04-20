@@ -729,35 +729,44 @@ const SiteSettings = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Settings blocks */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Block 1: Hero */}
+          {/* Block 1: Hero — Multi-slide editorial banners */}
           <SettingsBlock title="Homepage Hero" onSave={() => hero.save(heroForm)} isSaving={hero.isSaving}>
-            <div className="space-y-4">
-              <div>
-                <Label className="font-[Inter] text-xs text-muted-foreground">Frase de apoio (tagline)</Label>
-                <Input
-                  value={heroForm.tagline}
-                  onChange={(e) => setHeroForm({ ...heroForm, tagline: e.target.value })}
-                  placeholder="Prepare-se para sonhar alto"
-                  className="mt-1 h-9 text-sm border-border/50"
-                />
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="font-[Inter] text-xs text-muted-foreground">
+                  Banners do topo ({heroForm.slides.length}/5) — exibidos em rotação
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={addSlide}
+                  disabled={heroForm.slides.length >= 5}
+                  className="h-8 text-xs rounded-sm border-border/50 gap-1.5"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Adicionar banner
+                </Button>
               </div>
-              <div>
-                <Label className="font-[Inter] text-xs text-muted-foreground">
-                  Título principal <span className="text-muted-foreground/50">— use *asteriscos* para itálico</span>
-                </Label>
-                <Textarea
-                  value={heroForm.headline}
-                  onChange={(e) => setHeroForm({ ...heroForm, headline: e.target.value })}
-                  placeholder="Se você está buscando *imóveis de luxo*, aqui é o seu lugar"
-                  className="mt-1 text-sm border-border/50 min-h-[60px]"
-                />
-              </div>
-              <PropertyMultiSelect
-                selectedIds={heroForm.carousel_property_ids}
-                onChange={(ids) => setHeroForm({ ...heroForm, carousel_property_ids: ids })}
-                properties={properties ?? []}
-                max={5}
-              />
+
+              {heroForm.slides.length === 0 ? (
+                <div className="border border-dashed border-border/50 rounded-sm p-8 text-center text-xs text-muted-foreground">
+                  Nenhum banner configurado. Clique em "Adicionar banner" para começar.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {heroForm.slides.map((slide, i) => (
+                    <HeroSlideEditor
+                      key={slide.id}
+                      slide={slide}
+                      index={i}
+                      total={heroForm.slides.length}
+                      onChange={(next) => updateSlide(i, next)}
+                      onRemove={() => removeSlide(i)}
+                      onMove={(dir) => moveSlide(i, dir)}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           </SettingsBlock>
 
