@@ -219,7 +219,7 @@ const ScheduleVisitModal = ({
                         setSelectedTime(slot);
                         setStep(3);
                       }}
-                      className={`py-3 text-body text-sm rounded-sm border transition-all duration-200 ${
+                      className={`py-3 text-body text-sm rounded-full border transition-all duration-200 ${
                         selectedTime === slot
                           ? "bg-primary text-primary-foreground border-primary"
                           : "border-border text-foreground hover:bg-muted hover:border-muted-foreground/30"
@@ -300,7 +300,7 @@ const ScheduleVisitModal = ({
                       <Button
                         type="submit"
                         disabled={isSubmitting}
-                        className="w-full bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-semibold tracking-wide uppercase"
+                        className="w-full bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-semibold tracking-wide uppercase rounded-full"
                       >
                         {isSubmitting ? (
                           <Loader2 className="animate-spin" size={18} />
@@ -350,7 +350,7 @@ const ScheduleVisitModal = ({
 
                 <Button
                   variant="outline"
-                  className="mt-8 text-body text-xs tracking-wider uppercase"
+                  className="mt-8 text-body text-xs tracking-wider uppercase rounded-full"
                   onClick={() => handleOpenChange(false)}
                 >
                   Fechar
