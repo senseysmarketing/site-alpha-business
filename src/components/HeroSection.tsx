@@ -160,7 +160,7 @@ const HeroSection = () => {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 h-full flex flex-col justify-end pb-24 md:pb-28 px-6 md:px-12 lg:px-24">
+      <div className="relative z-10 h-full flex items-center px-6 md:px-12 lg:px-24">
         <div
           className="max-w-3xl"
           onMouseEnter={() => setIsHoveredContent(true)}
@@ -220,7 +220,7 @@ const HeroSection = () => {
       </button>
 
       {/* Desktop controls — progress bars + play/pause */}
-      <div className="hidden md:flex absolute bottom-8 left-12 lg:left-24 z-20 items-center gap-4">
+      <div className="hidden md:flex absolute bottom-8 left-1/2 -translate-x-1/2 z-20 items-center gap-4">
         <div className="flex gap-2">
           {slides.map((_, i) => {
             const fill = i < activeIndex ? 100 : i === activeIndex ? progress : 0;
