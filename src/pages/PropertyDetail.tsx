@@ -29,7 +29,7 @@ const PropertyDetail = () => {
   const [scheduleOpen, setScheduleOpen] = useState(false);
 
   const property = mockProperties.find((p) => p.id === id) || mockProperties[0];
-  const similarProperties = mockProperties.filter((p) => p.id !== property.id).slice(0, 4);
+  const similarProperties = mockProperties.filter((p) => p.id !== property.id).slice(0, 3);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -206,7 +206,7 @@ const PropertyDetail = () => {
         <h2 className="text-display text-2xl md:text-3xl font-light tracking-tight text-foreground mb-10">
           Imóveis que você também pode gostar
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {similarProperties.map((prop) => (
             <Link
               key={prop.id}
