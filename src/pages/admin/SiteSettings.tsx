@@ -550,8 +550,8 @@ const SiteSettings = () => {
   useEffect(() => { if (tokens.data) setTokensForm(tokens.data); }, [tokens.data]);
 
   useEffect(() => {
-    document.documentElement.style.setProperty("--color-accent-preview", tokensForm.accent_color);
-  }, [tokensForm.accent_color]);
+    applyDesignTokens(tokensForm);
+  }, [tokensForm]);
 
   // ── Featured Banner ──
   const featured = useSiteSettings<FeaturedBannerSettings>("featured_banner");
