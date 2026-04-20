@@ -29,6 +29,7 @@ import SearchResults from "./pages/SearchResults";
 import SiteGate from "./components/SiteGate";
 import Team from "./pages/admin/Team";
 import TeamProfile from "./pages/admin/TeamProfile";
+import ThemeProvider from "./components/ThemeProvider";
 
 const queryClient = new QueryClient();
 const AnimatedRoutes = () => {
@@ -69,15 +70,17 @@ const AnimatedRoutes = () => {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <SiteGate>
-          <AnimatedRoutes />
-        </SiteGate>
-      </BrowserRouter>
-    </TooltipProvider>
+    <ThemeProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <SiteGate>
+            <AnimatedRoutes />
+          </SiteGate>
+        </BrowserRouter>
+      </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 

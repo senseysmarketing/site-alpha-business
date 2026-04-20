@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Save, RotateCcw, Plus, Trash2, Upload, User, RefreshCw, CheckCircle2, AlertCircle, Loader2, X, GripVertical, ArrowUp, ArrowDown } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
+import { applyDesignTokens } from "@/lib/colorTokens";
 
 // ── Types ──────────────────────────────────────────
 interface HeroSlide {
@@ -550,8 +551,8 @@ const SiteSettings = () => {
   useEffect(() => { if (tokens.data) setTokensForm(tokens.data); }, [tokens.data]);
 
   useEffect(() => {
-    document.documentElement.style.setProperty("--color-accent-preview", tokensForm.accent_color);
-  }, [tokensForm.accent_color]);
+    applyDesignTokens(tokensForm);
+  }, [tokensForm]);
 
   // ── Featured Banner ──
   const featured = useSiteSettings<FeaturedBannerSettings>("featured_banner");

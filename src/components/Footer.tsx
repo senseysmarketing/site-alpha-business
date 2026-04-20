@@ -17,7 +17,7 @@ const Footer = () => {
   ];
 
   return (
-    <footer className="bg-[#1f1f1f] text-white/80 py-12 px-6 md:px-12">
+    <footer className="bg-accent text-accent-foreground/80 py-12 px-6 md:px-12">
       <div className="max-w-7xl mx-auto">
         {/* Barra superior: Logo + Nav + Botão */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-6 border-b border-white/10 pb-8 mb-8">
