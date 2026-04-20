@@ -1,58 +1,53 @@
 
 
-## Tipografia — Títulos em Noto Serif
+## Refatorar "Nossas Propriedades" — Layout Editorial
 
-Substituir a fonte de títulos atual (Raleway, sans-serif) por **Noto Serif**, com pesos Light (300), Regular (400), Medium (500), SemiBold (600) e variantes itálicas. Foco principal: títulos do Hero e demais headings do site.
+Reformular `NewArrivalsSection.tsx` para espelhar o print de referência: header em uma única linha, cards com card branco completo (imagem + bloco de informações em fundo claro), botão "Saiba Mais" sólido escuro e dots de paginação Bordeaux.
 
-### Reavaliação da regra anterior
-- A diretriz "NEVER use serif" da memória será **revogada para títulos**, mantendo Inter (sans-serif) para corpo/UI.
-- Noto Serif traz peso editorial coerente com a estética "Quiet Luxury" e o tom italic já usado no Hero.
+### 1. Header — uma linha só
+- Remover o eyebrow "Seleção especial" e a estrutura `flex items-end justify-between` com botões de seta.
+- Layout novo: `flex items-center justify-between mb-8`
+  - Esquerda: `<h2>` em Noto Serif, texto único "Nossas propriedades especiais em Alphaville, Tamboré e Santana de Parnaiba" (sem `<em>` parcial, sem quebra forçada, peso `font-normal`, tamanho `text-2xl md:text-3xl`).
+  - Direita: link "Ver todos" → `/busca`, em Inter, `text-sm`, cor `text-foreground/70 hover:text-primary`, sem ícone.
+- Remover completamente os botões circulares de navegação (ChevronLeft/Right) — navegação pelos dots apenas.
 
-### 1. Importação da fonte (`src/index.css`)
-- Substituir o `@import` do Google Fonts:
-  - **Antes**: `Cormorant Garamond + Raleway + Inter + Roboto`
-  - **Depois**: `Noto Serif (300, 400, 500, 600 + ital) + Inter (300, 400, 500, 600) + Roboto (mantido para casos pontuais)`
-- Atualizar a variável `--font-display`:
-  - **Antes**: `'Raleway', sans-serif`
-  - **Depois**: `'Noto Serif', serif`
-- `--font-body` permanece `'Inter', sans-serif`.
-- Classe utilitária `.text-serif` (hoje aponta para Cormorant Garamond) passa a apontar para `'Noto Serif', serif` — consolidando uma única família serifada no projeto.
+### 2. Card de imóvel — card branco completo
+Cada slide vira um "card sólido" com borda sutil e sombra leve:
+- Wrapper: `bg-card border border-border/60 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow`
+- **Imagem** (topo): `aspect-[4/3]`, sem badges sobrepostos (remover badges "CASA" e código da imagem).
+- **Bloco inferior** com padding `p-5`, fundo do card (claro):
+  1. **Linha de meta**: tipo à esquerda (`CASA` em uppercase bold pequeno) + código à direita (`CA0523` em muted) — flex justify-between.
+  2. **Título** do imóvel em Noto Serif, `text-xl font-normal`, cor foreground.
+  3. **Specs** em uma linha separada por traços: `1000m²  -  Suítes: 5  -  Vagas: 5` (texto Inter, `text-sm text-muted-foreground`, sem ícones).
+  4. **Divisor** horizontal sutil (`border-t border-border/60 my-4`).
+  5. **Footer do card**: flex justify-between alinhado ao centro
+     - Esquerda: label "Venda:" (bold pequeno) + preço em BRL `text-lg font-medium` abaixo.
+     - Direita: botão "Saiba Mais" sólido — `bg-foreground text-background px-5 py-2 rounded-md text-sm`, hover `bg-foreground/90`. (Substitui o atual outline Bordeaux.)
 
-### 2. Tailwind (`tailwind.config.ts`)
-- Atualizar `fontFamily.display` de `["Raleway", "sans-serif"]` para `["Noto Serif", "serif"]`.
-- `fontFamily.body` permanece `["Inter", "sans-serif"]`.
-- Todos os componentes que usam `font-display` ou as tags `h1–h6` (que herdam `var(--font-display)` via `src/index.css @layer base`) passam a renderizar em Noto Serif automaticamente.
+### 3. Carrossel
+- Manter Embla com `align: "start"`, `slidesToScroll: 1`.
+- Manter `flex-[0_0_85%] md:flex-[0_0_calc(33.333%-16px)]` — 3 cards visíveis no desktop, 1 no mobile.
+- Gap entre cards: `gap-6`.
 
-### 3. Hero (`src/components/HeroSection.tsx`)
-- O `<h1>` do slide já usa `text-display ... italic` — vai herdar Noto Serif Italic naturalmente.
-- Ajuste fino: trocar `font-light` por `font-normal` no h1 para dar mais presença à serifa (Noto Serif fica fraca demais em 300 sobre imagem).
-- Tagline (`text-xs uppercase tracking-[0.3em]`) permanece em Inter (sans-serif) — é label de UI, não título.
-- CTA "Saiba Mais" permanece em Inter — é botão.
+### 4. Dots de paginação (desktop + mobile)
+- Mover dots para **fora do `md:hidden`** — agora visíveis em todos os breakpoints (como no print).
+- Estilo: `flex justify-center gap-2 mt-10`.
+- Dot ativo: quadrado pequeno Bordeaux com leve arredondamento — `w-6 h-6 rounded-md bg-primary` com um quadrado branco interno (mantém o visual do print: pequeno ícone "ativo" destacado).
+  - Implementação simplificada: ativo = `w-7 h-7 rounded-md bg-primary flex items-center justify-center` contendo um `<span className="w-2 h-2 bg-background rounded-sm" />`.
+- Dot inativo: `w-2 h-2 rounded-full bg-muted-foreground/30` centralizado verticalmente no mesmo eixo (wrapper `flex items-center` para alinhar visualmente os tamanhos diferentes).
 
-### 4. Escopo automático (sem edição arquivo a arquivo)
-Herdam Noto Serif via tokens:
-- Headings de todas as seções da home (Featured, Lifestyle, Alphaville, Private Collection, Team, Contact, Footer).
-- Títulos das páginas Blog, BlogPost, PropertyDetail, SearchResults.
-- Títulos do painel admin (Dashboard, CRM, Properties, Reports, etc.).
-- Modais e dialogs (DialogTitle do shadcn usa font-display indiretamente onde aplicável; demais ficam em Inter, o que é o comportamento desejado para UI).
-
-### 5. Memória / diretrizes
-- Atualizar `mem://index.md` (Core):
-  - **Antes**: "Raleway for headings, Inter for body/support. NEVER use serif."
-  - **Depois**: "Noto Serif (300/400/500/600 + italic) para títulos e headings. Inter para corpo, UI e labels. Cormorant Garamond removido."
-- Atualizar `mem://style/visual-identity` com a nova stack tipográfica.
+### 5. Limpeza
+- Remover imports não utilizados após refatoração: `ChevronLeft`, `ChevronRight`, `Ruler`, `BedDouble`, `Car`, `motion` (se nenhum motion restar).
+- Manter lógica de fetch (`useQuery` + fallback `mockProperties`) intacta.
+- Manter `formatPrice` para o preço.
 
 ### Arquivos
 | Ação | Arquivo |
 |------|---------|
-| Editar | `src/index.css` (import + `--font-display` + `.text-serif`) |
-| Editar | `tailwind.config.ts` (`fontFamily.display`) |
-| Editar | `src/components/HeroSection.tsx` (peso do h1) |
-| Editar | `mem://index.md` (regra de tipografia) |
-| Editar | `mem://style/visual-identity` (stack tipográfica) |
+| Editar | `src/components/NewArrivalsSection.tsx` (refatoração completa do JSX e estilos; lógica de dados preservada) |
 
 ### Observações
-- Nenhuma necessidade de tocar componentes individuais — a herança via `h1–h6` + `font-display` cobre o site inteiro.
-- Cormorant Garamond é descontinuado do projeto (não está em uso ativo significativo).
-- Roboto permanece importado caso algum componente legado dependa, mas pode ser removido em refinamento futuro.
+- Sem mudanças em tokens globais — apenas reorganização visual da seção.
+- O botão escuro "Saiba Mais" é uma exceção pontual ao padrão Bordeaux/outline para fidelidade ao print; trata-se de CTA do card, não de botão de navegação principal.
+- "Ver todos" leva para `/busca` (página de resultados existente).
 
