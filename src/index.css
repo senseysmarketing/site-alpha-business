@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Raleway:wght@300;400;500;600&family=Inter:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Raleway:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=Roboto:wght@400;500&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -7,24 +7,24 @@
 @layer base {
   :root {
     --background: 30 33% 96%;
-    --foreground: 350 60% 5%;
+    --foreground: 0 0% 12%;
 
     --card: 30 25% 94%;
-    --card-foreground: 350 60% 5%;
+    --card-foreground: 0 0% 12%;
 
     --popover: 30 33% 96%;
-    --popover-foreground: 350 60% 5%;
+    --popover-foreground: 0 0% 12%;
 
-    --primary: 350 60% 10%;
+    --primary: 0 0% 12%;
     --primary-foreground: 30 33% 96%;
 
     --secondary: 25 18% 60%;
-    --secondary-foreground: 350 60% 5%;
+    --secondary-foreground: 0 0% 12%;
 
     --muted: 25 15% 88%;
     --muted-foreground: 25 10% 45%;
 
-    --accent: 350 60% 10%;
+    --accent: 0 0% 12%;
     --accent-foreground: 30 33% 96%;
 
     --destructive: 0 84.2% 60.2%;
@@ -32,14 +32,14 @@
 
     --border: 25 20% 85%;
     --input: 25 20% 85%;
-    --ring: 350 60% 10%;
+    --ring: 0 0% 12%;
 
     --radius: 0.25rem;
 
     --cashmere: 30 33% 85%;
     --greige: 15 10% 58%;
-    --bordeaux: 350 60% 10%;
-    --bordeaux-light: 350 40% 20%;
+    --bordeaux: 0 0% 12%;
+    --bordeaux-light: 0 0% 20%;
 
     --font-display: 'Raleway', sans-serif;
     --font-body: 'Inter', sans-serif;

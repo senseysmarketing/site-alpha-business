@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
-import logoAlpha from "@/assets/logo-alpha.png";
+import logoRafael from "@/assets/logo-rafael.png";
 
 interface PreloaderProps {
   onComplete: () => void;
@@ -44,8 +44,8 @@ const Preloader = ({ onComplete }: PreloaderProps) => {
                 transition={{ duration: 1.2, ease: "easeInOut" }}
               />
               <motion.img
-                src={logoAlpha}
-                alt="Alpha Business"
+                src={logoRafael}
+                alt="Rafael Albuquerque"
                 className="h-10 md:h-14 w-auto"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
