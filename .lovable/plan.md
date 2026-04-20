@@ -1,48 +1,113 @@
 
 
-## Footer — Fundo Cinza, Botão Arredondado e Logo Atualizada
+## Hero Editorial — 5 Banners Customizáveis (Admin)
 
-Três ajustes pontuais no `Footer.tsx` para alinhar à paleta clara do site, ao padrão de botões arredondados e à nova identidade visual da logo já usada no Header.
+Transformar o Hero de "carrossel de propriedades existentes" para um sistema de **slides editoriais 100% configuráveis** no admin: até 5 banners, cada um com tagline, título, subtítulo, CTA (label + link) e mídia própria (imagem ou vídeo) com upload + validação de tamanho.
 
-### 1. Fundo + inversão de contraste
+### 1. Nova estrutura de dados (`site_settings.hero`)
 
-Trocar `bg-[#2A070C]` por `bg-muted/50` (cinza arquitetônico padrão do site). Como o fundo agora é claro, todos os textos migram de branco para tons foreground/muted:
+Estender o schema do `HeroSettings`:
 
-- Wrapper: `text-white/80` → `text-foreground/80`
-- Links de navegação: `text-white/70 hover:text-white` → `text-foreground/70 hover:text-foreground`
-- Títulos em negrito (Alpha Business, Rafael Albuquerque): `text-white` → `text-foreground`
-- Endereço/telefones: `text-white/70` → `text-muted-foreground`
-- Borda divisória: `border-white/10` → `border-border`
-- Ícone Instagram + handles: `text-white` → `text-foreground`
-- Copyright e texto institucional: `text-white/50` → `text-muted-foreground/70`
-- CRECI: `text-white/60` → `text-muted-foreground`
+```ts
+interface HeroSlide {
+  id: string;                  // uuid local
+  tagline: string;             // ex: "Prepare-se para sonhar alto"
+  title: string;               // suporta *itálico*
+  subtitle: string;            // descrição curta (substitui o "endereço")
+  cta_label: string;           // ex: "Saiba Mais"
+  cta_href: string;            // link interno (/imovel/x) ou externo (https://)
+  media_type: "image" | "video";
+  media_url: string;           // URL no Supabase Storage
+  poster_url?: string;         // opcional p/ vídeos
+}
 
-### 2. Logo — usar a nova identidade do Header
+interface HeroSettings {
+  slides: HeroSlide[];         // máx 5
+  // legacy mantidos para retrocompat (opcionais):
+  tagline?: string;
+  headline?: string;
+  carousel_property_ids?: string[];
+}
+```
 
-Trocar o import e o `<img>`:
-- De: `import logoAlpha from "@/assets/logo-alpha.png"` com classe `h-8 brightness-0 invert`
-- Para: `import logoRafael from "@/assets/logo-rafael.png"` (mesma logo do Header), classe `h-8 md:h-10 w-auto` (sem filtro CSS — mantém cor original sobre fundo claro).
-- Atualizar `alt` para `Rafael Albuquerque`.
+**Migração defensiva**: ao carregar settings antigos sem `slides`, gerar 1 slide a partir de `tagline + headline` + a primeira propriedade do `carousel_property_ids` como fallback. O admin pode então editar livremente.
 
-### 3. Botão "Anuncie seu imóvel"
+### 2. UI Admin — bloco "Homepage Hero" reformulado
 
-Atualmente: `bg-white text-[#2A070C] rounded-none` (quadrado, claro sobre fundo escuro).
+Substituir o atual SettingsBlock por uma lista vertical de até 5 cards `HeroSlideEditor`:
 
-Novo padrão dark/arredondado (mesmo de `ContactSection` e `FeaturedPropertySection`):
-- `bg-foreground text-background hover:bg-foreground/90`
-- `rounded-md`
-- Manter `size="sm"`, `text-xs uppercase tracking-wider font-semibold`.
+- **Header do bloco**: título + contador `{n}/5` + botão `+ Adicionar banner` (desabilitado quando 5).
+- Cada card de slide (collapsible/accordion):
+  - Header: thumbnail mini + título + drag handle (`GripVertical`) + botão remover (`Trash2`).
+  - Campos:
+    - `Frase de apoio (tagline)` — Input
+    - `Título principal` — Textarea (com nota "use *asteriscos* para itálico")
+    - `Subtítulo / descrição curta` — Textarea (max 140 chars, contador)
+    - `Texto do botão` + `Link do botão` — 2 Inputs em grid 2 col (link aceita `/rota` ou `https://...`)
+    - **Mídia (imagem ou vídeo)** — novo componente `MediaDrop` (ver §3)
+- **Reorder**: drag-and-drop com `@dnd-kit/sortable` (já presente no projeto se houver; se não, usar reorder simples por setas ↑↓ — verificar via lookup, mas para manter simples e sem nova dep, **usaremos botões ↑/↓** ao lado do `GripVertical`).
+
+### 3. Componente `MediaDrop` — upload com validação
+
+Estende o `PhotoDrop` existente, mas:
+
+- Aceita `image/*` **e** `video/mp4, video/webm`.
+- **Limites de tamanho**:
+  - Imagem: **5 MB** máx
+  - Vídeo: **15 MB** máx
+- Validação client-side antes do upload: se exceder, exibir toast `destructive` "Arquivo muito grande. Limite: X MB".
+- Detecta `media_type` automaticamente pelo MIME do arquivo enviado e atualiza o slide.
+- Upload para bucket `property-photos` em `hero-slides/` (mesmo bucket já público).
+- Preview: imagem renderizada inline; vídeo renderizado como `<video muted playsInline>` com controles desativados.
+- **Aviso fixo abaixo do dropzone** (texto `text-xs text-muted-foreground`):
+  > Recomendado: imagens 1920×1080 (JPG/WebP, até 5 MB) ou vídeos MP4 H.264 1080p (até 15 MB, ~10s). Arquivos maiores impactam o tempo de carregamento do site.
+
+### 4. Atualizar `HeroSection.tsx` (público)
+
+Refatorar a fonte de dados:
+
+- Remover `useQuery` de `properties` baseado em `carousel_property_ids`.
+- Ler `heroSettings.slides`. Se vazio, fallback ao bloco atual de mockProperties (mantém home funcional em projeto novo).
+- Mapear cada slide diretamente:
+  ```ts
+  slides = heroSettings.slides.map(s => ({
+    id: s.id,
+    tagline: s.tagline,
+    title: s.title,           // renderizar com parser de *itálico* (igual ao headline antigo)
+    description: s.subtitle,
+    image: s.media_type === "image" ? s.media_url : (s.poster_url || ""),
+    videoUrl: s.media_type === "video" ? s.media_url : undefined,
+    ctaLabel: s.cta_label,
+    ctaHref: s.cta_href,
+  }))
+  ```
+- O `tagline` passa a ser **por slide** (não mais global) — exibe `current.tagline`.
+- Botão "Saiba Mais" passa a usar `current.ctaLabel` + `current.ctaHref`. Se `ctaHref` começa com `http`, renderizar `<a target="_blank">`; senão `<Link>` interno.
+- Suporte a `*itálico*` no título: extrair o helper `renderHeadline` já usado no preview do admin para `src/lib/markdown.tsx` (ou inline) e aplicar.
+
+### 5. Mini Preview (admin)
+
+Atualizar o painel "Mini Preview" do admin para iterar sobre `heroForm.slides` (mostrar slide ativo via state local + dots clicáveis), refletindo tagline/título/subtítulo/CTA/mídia reais. Vídeos mostrados como thumbnail estático (poster) para leveza.
+
+### 6. Memória
+
+Atualizar `mem://features/hero/carousel-layout` para refletir:
+- Hero agora é alimentado por `site_settings.hero.slides` (até 5), não mais por `properties.is_featured`.
+- Cada slide tem CTA e mídia próprios; suporta imagem ou vídeo.
+- Limites de upload: 5 MB (imagem) / 15 MB (vídeo).
 
 ### Arquivos
 
 | Ação | Arquivo |
 |------|---------|
-| Editar | `src/components/Footer.tsx` (fundo cinza, textos foreground/muted, logo nova, botão dark arredondado) |
-| Atualizar | `mem://features/footer/footer-standard` (refletir nova paleta clara + logo Rafael) |
+| Editar | `src/pages/admin/SiteSettings.tsx` (novo bloco multi-slide, MediaDrop, validação) |
+| Editar | `src/components/HeroSection.tsx` (consumir `slides`, CTA dinâmico, vídeo/imagem por slide) |
+| Atualizar | `mem://features/hero/carousel-layout` |
 
 ### Observações
 
-- Sem mudanças em tokens globais ou em outras seções.
-- Logo do rodapé fica idêntica à do Header — identidade unificada em ambos os extremos da página.
-- Demais blocos de conteúdo (endereço, redes sociais, copyright) mantêm a mesma estrutura, apenas com cores invertidas para o fundo claro.
+- Sem nova dependência: drag handle visual + botões ↑/↓ (sem `@dnd-kit`).
+- Bucket `property-photos` já público — sem migração SQL.
+- Retrocompatível: `tagline`/`headline`/`carousel_property_ids` antigos continuam no JSON e geram 1 slide automático na primeira carga; admin pode então salvar a nova estrutura.
+- Limite de 15 MB para vídeo é conservador para Hero acima da dobra; se precisar mais, ajustamos depois.
 
