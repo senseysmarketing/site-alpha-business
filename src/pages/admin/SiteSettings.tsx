@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Save, RotateCcw, Plus, Trash2, Upload, User, RefreshCw, CheckCircle2, AlertCircle, Loader2, X, GripVertical, ArrowUp, ArrowDown } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
+import { applyDesignTokens } from "@/lib/colorTokens";
 
 // ── Types ──────────────────────────────────────────
 interface HeroSlide {
