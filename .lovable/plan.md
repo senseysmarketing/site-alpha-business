@@ -1,62 +1,69 @@
 
 
-## Refatorar "Featured Banner" — Layout Split Editorial
+## Refatorar "Redes Sociais" + Persistência Permanente das Thumbnails
 
-Reformular `FeaturedPropertySection.tsx` para espelhar o print: card retangular dividido em duas colunas — esquerda com fundo escuro e conteúdo textual, direita com imagem real do condomínio sangrando até a borda. Sem overlay escuro sobre toda a imagem.
+Dois objetivos: (1) alinhar visualmente a seção `InstitutionalSection` ao print enviado e (2) eliminar a perda de thumbnails do Instagram, baixando e guardando cada imagem em Supabase Storage (URL permanente) em vez de armazenar a URL temporária do CDN do Instagram.
 
-### 1. Estrutura — split 50/50
+---
 
-Substituir o layout atual (imagem de fundo + overlay escuro + conteúdo centralizado) por um grid de duas colunas:
+### Parte 1 — Visual da seção (InstitutionalSection.tsx)
 
-- Wrapper externo: `relative rounded-lg overflow-hidden grid md:grid-cols-2 min-h-[420px]`
-- **Coluna esquerda** (`bg-[#1a1a1a]` ou `bg-foreground` — cinza-escuro/preto suave, NÃO Bordeaux): conteúdo textual com `p-10 md:p-14 flex flex-col justify-center`.
-- **Coluna direita**: imagem real do condomínio (`object-cover w-full h-full`), sem overlay.
-- **Mobile**: empilha (imagem em cima, conteúdo embaixo) via `grid-cols-1 md:grid-cols-2`.
+Conforme print:
 
-### 2. Transição suave entre colunas (desktop)
+- **Header em uma linha** (`flex items-center justify-between mb-6`):
+  - Esquerda: `<h2>` em Noto Serif, `text-2xl font-normal`, texto `Redes Sociais` (sem o eyebrow/tagline atual nem o subtítulo "Siga-nos no Instagram").
+  - Direita: bloco `Siga-nos:` seguido de **dois handles** lado a lado — `@AlphavilleSP` e `@AlphavilleAB` — cada um link clicável. Ícone Instagram à esquerda do "Siga-nos:". Tudo em Inter `text-sm`, cor `text-foreground/80`.
+- **Grid de cards** (mantido `grid-cols-1 md:grid-cols-3 gap-6`):
+  - Cards com cantos `rounded-lg`, sem overlay no hover (apenas leve `group-hover:scale-[1.02] transition-transform`), aspect `aspect-[4/5]`.
+  - **Selo de vídeo** no canto superior direito de cada card: `<div className="absolute top-3 right-3 w-7 h-7 rounded-md bg-white/85 flex items-center justify-center"><Play className="w-3.5 h-3.5 text-foreground" /></div>` (mostrado em todos os cards conforme print; pode ficar permanente).
+- **Remover** o link "Seguir no Instagram" abaixo do grid (não está no print) — o CTA agora vive no header.
+- Conteúdo de handles: usar `contactData.instagram` como handle principal e adicionar suporte a um segundo handle. Para simplicidade, se settings só tiver um, exibir os dois fixos `@AlphavilleSP` e `@AlphavilleAB` como defaults; quando admin preencher, sobrescreve.
 
-Pequeno gradiente lateral para evitar corte duro entre o painel escuro e a foto:
-- Sobre a coluna direita, na borda esquerda: `absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-[#1a1a1a] to-transparent hidden md:block pointer-events-none`.
+---
 
-### 3. Conteúdo da coluna esquerda (alinhado à esquerda, não centralizado)
+### Parte 2 — Persistência permanente das thumbnails
 
-Trocar `text-center items-center` por `text-left items-start`:
+**Causa raiz**: o scraper guarda a URL `og:image` do Instagram (CDN `scontent-*.cdninstagram.com`), que expira em algumas horas/dias. Quando expira, o `<img>` quebra e o admin precisa "recarregar" no painel.
 
-1. **Tagline**: `text-xs tracking-[0.25em] uppercase text-white/50 mb-5` — texto: `TAMBORÉ I, II, III` (default atualizado).
-2. **Título**: Noto Serif, `text-3xl md:text-4xl lg:text-5xl font-normal text-white leading-[1.1] mb-6 max-w-md`. Sem itálico parcial — o print mostra título inteiro em regular serif. Manter suporte a `*texto*` apenas se settings vier com marcação, mas renderizar como `font-normal` (sem `italic`).
-3. **Descrição**: Inter, `text-sm md:text-base text-white/60 leading-relaxed mb-8 max-w-md`.
-4. **Botões**: `flex flex-wrap gap-3` — cada botão menor que o atual:
-   - `px-6 py-3 border border-white/25 text-white text-sm rounded-md hover:bg-white/10 transition-colors`
-   - Sem `tracking-[0.15em]` nem `uppercase` — o print mostra "Tamboré I" em case normal.
-   - Texto em Inter peso medium.
+**Solução**: ao fazer scrape, baixar a imagem dentro da Edge Function e fazer upload em um **bucket público do Supabase Storage** (`instagram-thumbnails`). Retornar a URL pública do bucket — que nunca expira.
 
-### 4. Defaults atualizados
+#### 2.1 Migration — bucket de storage
+- Criar bucket público `instagram-thumbnails` (idempotente: `on conflict (id) do nothing`).
+- Policies:
+  - `select`: público (`true`).
+  - `insert/update/delete`: apenas service_role (Edge Function usa service key, então não precisa policy adicional — mas deixar apenas admin via `has_role(auth.uid(),'admin')` para qualquer cliente).
 
-- `DEFAULT_TAGLINE`: `"Tamboré I, II, III"` (era "Conheça os condomínios").
-- `DEFAULT_TITLE`: `"As propriedades mais que especiais em Alphaville"` (sem asteriscos — título inteiro regular).
-- `DEFAULT_DESCRIPTION`: `"A Alpha Business vem se consolidando como referência em vendas de propriedades de alto luxo. Encontre uma perfeita para você."`
-- `DEFAULT_BUTTONS`: mantidos (Tamboré I/II/III).
+#### 2.2 Edge Function `scrape-instagram-thumbnail` — atualizar
+- Após extrair a URL do `og:image`, **baixar o binário** (`fetch(thumbUrl)`).
+- Detectar `content-type` (default `image/jpeg`).
+- Gerar nome determinístico baseado no hash do `url` do post (ex.: `crypto.subtle.digest("SHA-1", url)` → hex curto → `${hash}.jpg`). Determinístico = re-scrapes sobrescrevem o mesmo arquivo, sem lixo.
+- Fazer `upload` no bucket usando o `SUPABASE_SERVICE_ROLE_KEY` (já disponível no ambiente das Edge Functions) com `{ upsert: true, contentType }`.
+- Construir `publicUrl = ${SUPABASE_URL}/storage/v1/object/public/instagram-thumbnails/${filename}`.
+- Retornar `{ url, thumbnail: publicUrl }` em vez da URL CDN.
+- Se upload falhar, fallback: retornar a URL CDN original (degrade gracioso).
 
-### 5. Animações
+#### 2.3 Comportamento no painel admin
+- Sem mudanças na UI. `handleSaveInsta` continua chamando a função, mas agora a URL salva em `site_settings.instagram_posts` é a permanente do bucket.
+- `handleReloadThumbnails` (botão "recarregar") continua útil para forçar atualização caso o admin queira refletir uma nova capa do post.
 
-Manter framer-motion nos elementos (tagline, título, descrição, botões) com os mesmos delays atuais — só mudam classes/posicionamento.
+#### 2.4 Migração das URLs já salvas
+- Em `InstitutionalSection`, quando uma `<img>` falhar (`onError`), **não** fazer nada visualmente além de manter o gradient placeholder — evita layout quebrado. (Não vamos disparar re-scrape automático no front para não causar custos/loops; admin recarrega manualmente uma vez para migrar.)
+- Opcionalmente: remover o `decodeHtmlEntities` (URLs do Supabase Storage não têm entities), mas mantê-lo é inócuo.
 
-### 6. Limpeza
-
-- Remover o overlay full `bg-[hsl(350,60%,5%)]/80` (não usado mais — fundo escuro vem da coluna esquerda).
-- Remover `min-h-[400px] md:min-h-[450px]` duplicado no inner div (fica só no wrapper).
-- Manter `useSiteSettings` e `renderWithItalic` (caso settings ainda mande `*texto*`).
+---
 
 ### Arquivos
 
 | Ação | Arquivo |
 |------|---------|
-| Editar | `src/components/FeaturedPropertySection.tsx` (refatoração de layout: grid split + conteúdo left-aligned) |
-| Atualizar | `mem://features/featured-property/banner-layout` (refletir split 50/50 com gradiente de borda) |
+| Editar | `src/components/InstitutionalSection.tsx` (novo header de 1 linha, dois handles, badge de play, sem CTA inferior, fallback `onError`) |
+| Editar | `supabase/functions/scrape-instagram-thumbnail/index.ts` (download + upload no bucket + retorno de URL permanente) |
+| Criar | Migration SQL: bucket `instagram-thumbnails` público + policies |
+| Atualizar | `mem://features/institutional/social-media-static-feed` (refletir novo visual + persistência via Storage) |
 
 ### Observações
 
-- Sem mudanças em tokens globais.
-- Fundo escuro usa `#1a1a1a` (quase preto) para combinar com o print — diferente do Bordeaux usado em outras seções; é uma exceção pontual de banner editorial.
-- Botões em case natural (sem uppercase) — quebra do padrão de utility labels, intencional para fidelidade ao print.
+- URLs antigas que ainda funcionam continuam renderizando; quando expirarem, o admin clica "Recarregar" uma vez e elas migram automaticamente para o bucket.
+- Não há custo recorrente: imagens ficam no Storage do Supabase indefinidamente.
+- Nenhuma alteração em tokens globais ou em outras seções.
 
