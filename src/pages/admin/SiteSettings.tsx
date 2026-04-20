@@ -13,14 +13,30 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Save, RotateCcw, Plus, Trash2, Upload, User, RefreshCw, CheckCircle2, AlertCircle, Loader2, X, GripVertical } from "lucide-react";
+import { Save, RotateCcw, Plus, Trash2, Upload, User, RefreshCw, CheckCircle2, AlertCircle, Loader2, X, GripVertical, ArrowUp, ArrowDown, Image as ImageIcon, Video as VideoIcon, ChevronDown } from "lucide-react";
 import { useDropzone } from "react-dropzone";
+import { toast } from "sonner";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 // ── Types ──────────────────────────────────────────
-interface HeroSettings {
+interface HeroSlide {
+  id: string;
   tagline: string;
-  headline: string;
-  carousel_property_ids: string[];
+  title: string;
+  subtitle: string;
+  cta_label: string;
+  cta_href: string;
+  media_type: "image" | "video";
+  media_url: string;
+  poster_url?: string;
+}
+
+interface HeroSettings {
+  slides: HeroSlide[];
+  // Legacy (mantidos p/ retrocompat no JSON)
+  tagline?: string;
+  headline?: string;
+  carousel_property_ids?: string[];
 }
 
 interface DesignTokens {
