@@ -13,16 +13,30 @@ import ConciergeSidebar from "@/components/search/ConciergeSidebar";
 import FilterChips, { type ParsedFilters } from "@/components/search/FilterChips";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { mockProperties, toSearchResult } from "@/data/mockProperties";
 
 const mockByCode: Record<string, string> = {};
+const mockHighlightsByCode: Record<string, string[]> = {};
 mockProperties.forEach((p) => {
   if (p.photo) mockByCode[p.code] = p.photo;
+  // Use amenities + tag as the "highlights" mock equivalent for tag filtering.
+  mockHighlightsByCode[p.code] = [
+    ...(p.amenities ?? []),
+    ...(p.tag ? [p.tag] : []),
+  ];
 });
 const enrichPhoto = (r: SearchResult): SearchResult => ({
   ...r,
   photo: r.photo || mockByCode[r.code] || "/images/property-1.jpg",
 });
+
+const normalize = (s: string) =>
+  s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
 
 interface SearchResult {
   id: string;
