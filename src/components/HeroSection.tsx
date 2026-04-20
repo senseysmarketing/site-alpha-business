@@ -193,7 +193,7 @@ const HeroSection = () => {
               )}
               <Link
                 to={`/imovel/${current.id}`}
-                className="inline-flex items-center mt-6 px-7 py-3 text-xs tracking-[0.2em] uppercase text-white border border-white/20 hover:opacity-90 transition-opacity"
+                className="inline-flex items-center mt-6 px-7 py-3 text-xs tracking-[0.2em] uppercase text-white border border-white/20 rounded-full hover:opacity-90 transition-opacity"
                 style={{ backgroundColor: "#2A070C" }}
               >
                 Saiba Mais
@@ -207,14 +207,14 @@ const HeroSection = () => {
       <button
         onClick={prev}
         aria-label="Anterior"
-        className={`hidden md:flex absolute left-6 top-1/2 -translate-y-1/2 z-20 w-12 h-12 items-center justify-center text-white bg-white/10 backdrop-blur-md border border-white/20 transition-opacity duration-300 ${isHoveredSection ? "opacity-100" : "opacity-0"}`}
+        className={`hidden md:flex absolute left-6 top-1/2 -translate-y-1/2 z-20 w-12 h-12 items-center justify-center text-white bg-white/10 backdrop-blur-md border border-white/20 rounded-full transition-opacity duration-300 ${isHoveredSection ? "opacity-100" : "opacity-0"}`}
       >
         <ChevronLeft size={20} strokeWidth={1.25} />
       </button>
       <button
         onClick={next}
         aria-label="Próximo"
-        className={`hidden md:flex absolute right-6 top-1/2 -translate-y-1/2 z-20 w-12 h-12 items-center justify-center text-white bg-white/10 backdrop-blur-md border border-white/20 transition-opacity duration-300 ${isHoveredSection ? "opacity-100" : "opacity-0"}`}
+        className={`hidden md:flex absolute right-6 top-1/2 -translate-y-1/2 z-20 w-12 h-12 items-center justify-center text-white bg-white/10 backdrop-blur-md border border-white/20 rounded-full transition-opacity duration-300 ${isHoveredSection ? "opacity-100" : "opacity-0"}`}
       >
         <ChevronRight size={20} strokeWidth={1.25} />
       </button>
@@ -229,10 +229,10 @@ const HeroSection = () => {
                 key={i}
                 onClick={() => goTo(i)}
                 aria-label={`Ir para slide ${i + 1}`}
-                className="relative w-20 h-[2px] bg-white/25 overflow-hidden"
+                className="relative w-20 h-[2px] bg-white/25 rounded-full overflow-hidden"
               >
                 <div
-                  className="absolute inset-y-0 left-0 bg-white"
+                  className="absolute inset-y-0 left-0 bg-white rounded-full"
                   style={{ width: `${fill}%`, transition: i === activeIndex ? "width 50ms linear" : "width 300ms ease" }}
                 />
               </button>
@@ -242,16 +242,16 @@ const HeroSection = () => {
         <button
           onClick={() => setIsPausedManual((p) => !p)}
           aria-label={isPausedManual ? "Retomar" : "Pausar"}
-          className="w-9 h-9 flex items-center justify-center text-white bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 transition-colors"
+          className="w-9 h-9 flex items-center justify-center text-white bg-white/10 backdrop-blur-md border border-white/20 rounded-full hover:bg-white/20 transition-colors"
         >
           {isPaused ? <Play size={14} strokeWidth={1.25} /> : <Pause size={14} strokeWidth={1.25} />}
         </button>
       </div>
 
       {/* Mobile — single ultra-thin progress line */}
-      <div className="md:hidden absolute bottom-0 left-0 right-0 z-20 h-px bg-white/20">
+      <div className="md:hidden absolute bottom-0 left-0 right-0 z-20 h-px bg-white/20 rounded-full">
         <div
-          className="h-full bg-white"
+          className="h-full bg-white rounded-full"
           style={{
             width: `${((activeIndex + progress / 100) / slides.length) * 100}%`,
             transition: "width 50ms linear",
