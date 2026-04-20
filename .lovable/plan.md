@@ -1,113 +1,39 @@
 
 
-## Hero Editorial — 5 Banners Customizáveis (Admin)
+## Reduzir Espaçamento Vertical Entre Seções da Home
 
-Transformar o Hero de "carrossel de propriedades existentes" para um sistema de **slides editoriais 100% configuráveis** no admin: até 5 banners, cada um com tagline, título, subtítulo, CTA (label + link) e mídia própria (imagem ou vídeo) com upload + validação de tamanho.
+Atualmente as seções da home usam `py-20 md:py-32` (80px / 128px) — muito generoso, criando "buracos" entre blocos. Vou reduzir para um ritmo mais coeso, mantendo a respiração editorial mas aproximando os conteúdos.
 
-### 1. Nova estrutura de dados (`site_settings.hero`)
+### Novo padrão de padding vertical
 
-Estender o schema do `HeroSettings`:
+Trocar em todas as seções da home:
+- **De**: `py-20 md:py-32` (80px / 128px)
+- **Para**: `py-12 md:py-20` (48px / 80px)
 
-```ts
-interface HeroSlide {
-  id: string;                  // uuid local
-  tagline: string;             // ex: "Prepare-se para sonhar alto"
-  title: string;               // suporta *itálico*
-  subtitle: string;            // descrição curta (substitui o "endereço")
-  cta_label: string;           // ex: "Saiba Mais"
-  cta_href: string;            // link interno (/imovel/x) ou externo (https://)
-  media_type: "image" | "video";
-  media_url: string;           // URL no Supabase Storage
-  poster_url?: string;         // opcional p/ vídeos
-}
+Isso reduz ~40% do espaço entre seções, mantendo respiração suficiente para hierarquia editorial.
 
-interface HeroSettings {
-  slides: HeroSlide[];         // máx 5
-  // legacy mantidos para retrocompat (opcionais):
-  tagline?: string;
-  headline?: string;
-  carousel_property_ids?: string[];
-}
-```
+### Arquivos a editar
 
-**Migração defensiva**: ao carregar settings antigos sem `slides`, gerar 1 slide a partir de `tagline + headline` + a primeira propriedade do `carousel_property_ids` como fallback. O admin pode então editar livremente.
+| Arquivo | Padding atual | Novo padding |
+|---------|---------------|--------------|
+| `src/components/NewArrivalsSection.tsx` | `py-20 md:py-32` | `py-12 md:py-20` |
+| `src/components/LifestyleSection.tsx` | `py-20 md:py-32` | `py-12 md:py-20` |
+| `src/components/FeaturedPropertySection.tsx` | (verificar) | `py-12 md:py-20` |
+| `src/components/InstitutionalSection.tsx` | (verificar) | `py-12 md:py-20` |
+| `src/components/TeamSection.tsx` | (verificar) | `py-12 md:py-20` |
+| `src/components/AlphavilleMapSection.tsx` | `py-20 md:py-32` | `py-12 md:py-20` |
+| `src/components/ContactSection.tsx` | `py-20 md:py-32` | `py-12 md:py-20` |
 
-### 2. UI Admin — bloco "Homepage Hero" reformulado
+Para seções com fundo destacado (Bordeaux/dark, ex: `FeaturedPropertySection`, `PrivateCollectionSection`) manter padding um pouco maior — `py-16 md:py-24` — para que o bloco escuro ainda tenha presença visual.
 
-Substituir o atual SettingsBlock por uma lista vertical de até 5 cards `HeroSlideEditor`:
+### `SearchBarSection`
 
-- **Header do bloco**: título + contador `{n}/5` + botão `+ Adicionar banner` (desabilitado quando 5).
-- Cada card de slide (collapsible/accordion):
-  - Header: thumbnail mini + título + drag handle (`GripVertical`) + botão remover (`Trash2`).
-  - Campos:
-    - `Frase de apoio (tagline)` — Input
-    - `Título principal` — Textarea (com nota "use *asteriscos* para itálico")
-    - `Subtítulo / descrição curta` — Textarea (max 140 chars, contador)
-    - `Texto do botão` + `Link do botão` — 2 Inputs em grid 2 col (link aceita `/rota` ou `https://...`)
-    - **Mídia (imagem ou vídeo)** — novo componente `MediaDrop` (ver §3)
-- **Reorder**: drag-and-drop com `@dnd-kit/sortable` (já presente no projeto se houver; se não, usar reorder simples por setas ↑↓ — verificar via lookup, mas para manter simples e sem nova dep, **usaremos botões ↑/↓** ao lado do `GripVertical`).
-
-### 3. Componente `MediaDrop` — upload com validação
-
-Estende o `PhotoDrop` existente, mas:
-
-- Aceita `image/*` **e** `video/mp4, video/webm`.
-- **Limites de tamanho**:
-  - Imagem: **5 MB** máx
-  - Vídeo: **15 MB** máx
-- Validação client-side antes do upload: se exceder, exibir toast `destructive` "Arquivo muito grande. Limite: X MB".
-- Detecta `media_type` automaticamente pelo MIME do arquivo enviado e atualiza o slide.
-- Upload para bucket `property-photos` em `hero-slides/` (mesmo bucket já público).
-- Preview: imagem renderizada inline; vídeo renderizado como `<video muted playsInline>` com controles desativados.
-- **Aviso fixo abaixo do dropzone** (texto `text-xs text-muted-foreground`):
-  > Recomendado: imagens 1920×1080 (JPG/WebP, até 5 MB) ou vídeos MP4 H.264 1080p (até 15 MB, ~10s). Arquivos maiores impactam o tempo de carregamento do site.
-
-### 4. Atualizar `HeroSection.tsx` (público)
-
-Refatorar a fonte de dados:
-
-- Remover `useQuery` de `properties` baseado em `carousel_property_ids`.
-- Ler `heroSettings.slides`. Se vazio, fallback ao bloco atual de mockProperties (mantém home funcional em projeto novo).
-- Mapear cada slide diretamente:
-  ```ts
-  slides = heroSettings.slides.map(s => ({
-    id: s.id,
-    tagline: s.tagline,
-    title: s.title,           // renderizar com parser de *itálico* (igual ao headline antigo)
-    description: s.subtitle,
-    image: s.media_type === "image" ? s.media_url : (s.poster_url || ""),
-    videoUrl: s.media_type === "video" ? s.media_url : undefined,
-    ctaLabel: s.cta_label,
-    ctaHref: s.cta_href,
-  }))
-  ```
-- O `tagline` passa a ser **por slide** (não mais global) — exibe `current.tagline`.
-- Botão "Saiba Mais" passa a usar `current.ctaLabel` + `current.ctaHref`. Se `ctaHref` começa com `http`, renderizar `<a target="_blank">`; senão `<Link>` interno.
-- Suporte a `*itálico*` no título: extrair o helper `renderHeadline` já usado no preview do admin para `src/lib/markdown.tsx` (ou inline) e aplicar.
-
-### 5. Mini Preview (admin)
-
-Atualizar o painel "Mini Preview" do admin para iterar sobre `heroForm.slides` (mostrar slide ativo via state local + dots clicáveis), refletindo tagline/título/subtítulo/CTA/mídia reais. Vídeos mostrados como thumbnail estático (poster) para leveza.
-
-### 6. Memória
-
-Atualizar `mem://features/hero/carousel-layout` para refletir:
-- Hero agora é alimentado por `site_settings.hero.slides` (até 5), não mais por `properties.is_featured`.
-- Cada slide tem CTA e mídia próprios; suporta imagem ou vídeo.
-- Limites de upload: 5 MB (imagem) / 15 MB (vídeo).
-
-### Arquivos
-
-| Ação | Arquivo |
-|------|---------|
-| Editar | `src/pages/admin/SiteSettings.tsx` (novo bloco multi-slide, MediaDrop, validação) |
-| Editar | `src/components/HeroSection.tsx` (consumir `slides`, CTA dinâmico, vídeo/imagem por slide) |
-| Atualizar | `mem://features/hero/carousel-layout` |
+A barra de busca flutuante já tem posicionamento próprio (negative margin sobre o Hero). Não alterar.
 
 ### Observações
 
-- Sem nova dependência: drag handle visual + botões ↑/↓ (sem `@dnd-kit`).
-- Bucket `property-photos` já público — sem migração SQL.
-- Retrocompatível: `tagline`/`headline`/`carousel_property_ids` antigos continuam no JSON e geram 1 slide automático na primeira carga; admin pode então salvar a nova estrutura.
-- Limite de 15 MB para vídeo é conservador para Hero acima da dobra; se precisar mais, ajustamos depois.
+- Sem mudanças em tokens globais ou em estrutura interna das seções.
+- Apenas o `py-*` da tag `<section>` raiz de cada componente é ajustado.
+- Headers internos (margin-bottom dos títulos) permanecem inalterados — o ritmo dentro de cada seção continua o mesmo, só o espaço **entre** seções diminui.
+- Atualizar `mem://style/visual-identity` com o novo padrão de espaçamento entre seções (`py-12 md:py-20` padrão; `py-16 md:py-24` para seções com fundo escuro).
 
