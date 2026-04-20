@@ -63,8 +63,9 @@ const defaultFilters: Filters = {
 };
 
 const SearchResults = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const initialQuery = searchParams.get("q") || "";
+  const tagParam = searchParams.get("tag") || "";
 
   const [results, setResults] = useState<SearchResult[]>(
     initialQuery ? [] : mockProperties.map(toSearchResult).map(enrichPhoto)
@@ -77,15 +78,28 @@ const SearchResults = () => {
   const [parsedFilters, setParsedFilters] = useState<ParsedFilters | null>(null);
 
   const filteredResults = useMemo(() => {
+    const tagNorm = tagParam ? normalize(tagParam) : "";
     return results.filter((r) => {
       const price = r.transaction_type === "aluguel" ? r.rental_price : r.price;
       if (price && (price < filters.priceRange[0] || price > filters.priceRange[1])) return false;
       if (filters.transactionType !== "all" && r.transaction_type !== filters.transactionType) return false;
       if (filters.minBedrooms > 0 && (r.bedrooms || 0) < filters.minBedrooms) return false;
       if (filters.condominium !== "all" && r.condominium !== filters.condominium) return false;
+      if (tagNorm) {
+        const highlights = mockHighlightsByCode[r.code] || [];
+        const haystack = [
+          ...highlights,
+          r.title || "",
+          r.condominium || "",
+          r.relevance_reason || "",
+        ]
+          .map(normalize)
+          .join(" | ");
+        if (!haystack.includes(tagNorm)) return false;
+      }
       return true;
     });
-  }, [results, filters]);
+  }, [results, filters, tagParam]);
 
   const condominiums = useMemo(() => {
     return [...new Set(results.map((r) => r.condominium).filter(Boolean))] as string[];
