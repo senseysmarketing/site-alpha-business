@@ -158,6 +158,19 @@ const SearchResults = () => {
               {parsedFilters && !loading && (
                 <FilterChips filters={parsedFilters} />
               )}
+              {tagParam && !loading && (
+                <Badge
+                  variant="outline"
+                  className="text-body text-xs gap-2 rounded-full border-primary/40 bg-primary/5 text-primary cursor-pointer hover:bg-primary/10"
+                  onClick={() => {
+                    const next = new URLSearchParams(searchParams);
+                    next.delete("tag");
+                    setSearchParams(next);
+                  }}
+                >
+                  Lifestyle: {tagParam} <span className="opacity-60">×</span>
+                </Badge>
+              )}
             </div>
             <div className="flex items-center gap-3">
               {compareIds.length === 2 && (

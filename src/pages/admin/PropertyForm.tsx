@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 const CONDOMINIUMS = ["Residencial 1", "Residencial 2", "Tamboré", "Alphaville 11", "Alphaville 0", "Outro"];
 
