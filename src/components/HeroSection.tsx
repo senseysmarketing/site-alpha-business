@@ -220,7 +220,7 @@ const HeroSection = () => {
       </button>
 
       {/* Desktop controls — progress bars + play/pause */}
-      <div className="hidden md:flex absolute bottom-8 left-1/2 -translate-x-1/2 z-20 items-center gap-4">
+      <div className="hidden md:flex absolute bottom-24 md:bottom-28 left-1/2 -translate-x-1/2 z-20 items-center gap-4">
         <div className="flex gap-2">
           {slides.map((_, i) => {
             const fill = i < activeIndex ? 100 : i === activeIndex ? progress : 0;
@@ -249,7 +249,7 @@ const HeroSection = () => {
       </div>
 
       {/* Mobile — single ultra-thin progress line */}
-      <div className="md:hidden absolute bottom-0 left-0 right-0 z-20 h-px bg-white/20 rounded-full">
+      <div className="md:hidden absolute bottom-32 left-6 right-6 z-20 h-px bg-white/20 rounded-full">
         <div
           className="h-full bg-white rounded-full"
           style={{
