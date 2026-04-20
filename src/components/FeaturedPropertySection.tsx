@@ -38,7 +38,7 @@ const FeaturedPropertySection = () => {
   const buttons = settings?.buttons?.length ? settings.buttons : DEFAULT_BUTTONS;
 
   return (
-    <section className="px-6 md:px-12 lg:px-24 py-10">
+    <section className="px-6 md:px-12 lg:px-24 py-6">
       <div className="max-w-7xl mx-auto">
         <div className="relative rounded-lg overflow-hidden grid grid-cols-1 md:grid-cols-2 min-h-[420px]">
           {/* Left column — dark content panel */}

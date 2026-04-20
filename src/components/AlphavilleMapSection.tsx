@@ -43,7 +43,7 @@ const AlphavilleMapSection = () => {
   const condos = condoMap ? Array.from(condoMap.entries()) : [];
 
   return (
-    <section id="mapa" className="px-6 md:px-12 lg:px-24 py-12 md:py-20">
+    <section id="mapa" className="px-6 md:px-12 lg:px-24 py-8 md:py-12">
       <div className="max-w-7xl mx-auto">
         <motion.div
           className="mb-10 flex items-center justify-between gap-6"
