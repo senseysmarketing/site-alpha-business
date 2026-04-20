@@ -11,9 +11,10 @@ interface FeaturedBannerSettings {
   buttons: { label: string; href: string }[];
 }
 
-const DEFAULT_TAGLINE = "Conheça os condomínios";
-const DEFAULT_TITLE = "As propriedades mais que especiais em *Alphaville*";
-const DEFAULT_DESCRIPTION = "Descubra os melhores condomínios da região e encontre o imóvel perfeito para o seu estilo de vida.";
+const DEFAULT_TAGLINE = "Tamboré I, II, III";
+const DEFAULT_TITLE = "As propriedades mais que especiais em Alphaville";
+const DEFAULT_DESCRIPTION =
+  "A Alpha Business vem se consolidando como referência em vendas de propriedades de alto luxo. Encontre uma perfeita para você.";
 const DEFAULT_BUTTONS = [
   { label: "Tamboré I", href: "/busca?condominio=tambore-1" },
   { label: "Tamboré II", href: "/busca?condominio=tambore-2" },
@@ -23,7 +24,7 @@ const DEFAULT_BUTTONS = [
 const renderWithItalic = (text: string) => {
   const parts = text.split(/\*(.*?)\*/g);
   return parts.map((part, i) =>
-    i % 2 === 1 ? <em key={i} className="italic">{part}</em> : <span key={i}>{part}</span>
+    i % 2 === 1 ? <span key={i}>{part}</span> : <span key={i}>{part}</span>
   );
 };
 
@@ -39,17 +40,11 @@ const FeaturedPropertySection = () => {
   return (
     <section className="px-6 md:px-12 lg:px-24 py-10">
       <div className="max-w-7xl mx-auto">
-        <div className="relative rounded-lg overflow-hidden min-h-[400px] md:min-h-[450px]">
-          <img
-            src={backgroundImage}
-            alt="Alphaville"
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-[hsl(350,60%,5%)]/80" />
-
-          <div className="relative z-10 flex flex-col items-center justify-center text-center h-full min-h-[400px] md:min-h-[450px] p-8 md:p-16">
+        <div className="relative rounded-lg overflow-hidden grid grid-cols-1 md:grid-cols-2 min-h-[420px]">
+          {/* Left column — dark content panel */}
+          <div className="bg-[#1a1a1a] p-10 md:p-14 flex flex-col justify-center items-start text-left order-2 md:order-1">
             <motion.p
-              className="text-body text-xs tracking-[0.3em] uppercase text-white/50 mb-4"
+              className="text-body text-xs tracking-[0.25em] uppercase text-white/50 mb-5"
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
@@ -58,7 +53,7 @@ const FeaturedPropertySection = () => {
             </motion.p>
 
             <motion.h2
-              className="text-display text-3xl md:text-5xl font-light text-white mb-4 max-w-2xl leading-tight"
+              className="text-display text-3xl md:text-4xl lg:text-5xl font-normal text-white leading-[1.1] mb-6 max-w-md"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -68,7 +63,7 @@ const FeaturedPropertySection = () => {
             </motion.h2>
 
             <motion.p
-              className="text-body text-sm text-white/60 mb-10 max-w-lg"
+              className="text-body text-sm md:text-base text-white/60 leading-relaxed mb-8 max-w-md"
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
@@ -78,7 +73,7 @@ const FeaturedPropertySection = () => {
             </motion.p>
 
             <motion.div
-              className="flex flex-wrap gap-4 justify-center"
+              className="flex flex-wrap gap-3"
               initial={{ opacity: 0, y: 10 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -88,12 +83,23 @@ const FeaturedPropertySection = () => {
                 <Link
                   key={c.label}
                   to={c.href}
-                  className="text-body text-xs tracking-[0.15em] uppercase px-8 py-3.5 border border-white/30 text-white hover:bg-white/10 transition-colors duration-300 rounded-sm"
+                  className="text-body text-sm font-medium px-6 py-3 border border-white/25 text-white hover:bg-white/10 transition-colors duration-300 rounded-md"
                 >
                   {c.label}
                 </Link>
               ))}
             </motion.div>
+          </div>
+
+          {/* Right column — image */}
+          <div className="relative min-h-[260px] md:min-h-full order-1 md:order-2">
+            <img
+              src={backgroundImage}
+              alt="Alphaville"
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+            {/* Soft gradient blending into the dark panel (desktop only) */}
+            <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-[#1a1a1a] to-transparent hidden md:block pointer-events-none" />
           </div>
         </div>
       </div>
