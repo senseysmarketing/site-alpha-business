@@ -706,10 +706,9 @@ const SiteSettings = () => {
     );
   };
 
-  // Get selected carousel properties for preview
-  const carouselPreviewProperties = heroForm.carousel_property_ids
-    .map((id) => properties?.find((p) => p.id === id))
-    .filter(Boolean) as NonNullable<typeof properties>[number][];
+  // Slide ativo no preview (clamp defensivo)
+  const previewSlide = heroForm.slides[Math.min(activePreviewSlide, heroForm.slides.length - 1)];
+
 
   return (
     <div className="space-y-6">
