@@ -84,10 +84,25 @@ const DEFAULT_TOKENS: DesignTokens = {
 };
 
 const DEFAULT_HERO: HeroSettings = {
+  slides: [],
   tagline: "Prepare-se para sonhar alto",
   headline: "Se você está buscando *imóveis de luxo*, aqui é o seu lugar",
   carousel_property_ids: [],
 };
+
+const newSlide = (): HeroSlide => ({
+  id: typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `slide-${Date.now()}-${Math.random()}`,
+  tagline: "Prepare-se para sonhar alto",
+  title: "Se você está buscando *imóveis de luxo*, aqui é o seu lugar",
+  subtitle: "",
+  cta_label: "Saiba Mais",
+  cta_href: "/busca",
+  media_type: "image",
+  media_url: "",
+});
+
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;   // 5 MB
+const MAX_VIDEO_BYTES = 15 * 1024 * 1024;  // 15 MB
 
 const DEFAULT_FEATURED: FeaturedBannerSettings = {
   tagline: "Conheça os condomínios",
