@@ -493,15 +493,55 @@ const SiteSettings = () => {
   // ── Hero ──
   const hero = useSiteSettings<HeroSettings>("hero");
   const [heroForm, setHeroForm] = useState<HeroSettings>(DEFAULT_HERO);
+  const [activePreviewSlide, setActivePreviewSlide] = useState(0);
   useEffect(() => {
-    if (hero.data) {
+    if (!hero.data) return;
+    const existingSlides = hero.data.slides ?? [];
+    if (existingSlides.length > 0) {
       setHeroForm({
-        tagline: hero.data.tagline || DEFAULT_HERO.tagline,
-        headline: hero.data.headline || DEFAULT_HERO.headline,
-        carousel_property_ids: hero.data.carousel_property_ids || [],
+        slides: existingSlides,
+        tagline: hero.data.tagline,
+        headline: hero.data.headline,
+        carousel_property_ids: hero.data.carousel_property_ids ?? [],
+      });
+    } else {
+      // Migração defensiva: gera 1 slide a partir dos campos legacy
+      const legacy: HeroSlide = {
+        id: typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `slide-${Date.now()}`,
+        tagline: hero.data.tagline || DEFAULT_HERO.tagline!,
+        title: hero.data.headline || DEFAULT_HERO.headline!,
+        subtitle: "",
+        cta_label: "Saiba Mais",
+        cta_href: "/busca",
+        media_type: "image",
+        media_url: "",
+      };
+      setHeroForm({
+        slides: [legacy],
+        tagline: hero.data.tagline,
+        headline: hero.data.headline,
+        carousel_property_ids: hero.data.carousel_property_ids ?? [],
       });
     }
   }, [hero.data]);
+
+  const updateSlide = (index: number, next: HeroSlide) =>
+    setHeroForm((prev) => ({ ...prev, slides: prev.slides.map((s, i) => (i === index ? next : s)) }));
+  const addSlide = () =>
+    setHeroForm((prev) => (prev.slides.length >= 5 ? prev : { ...prev, slides: [...prev.slides, newSlide()] }));
+  const removeSlide = (index: number) => {
+    setHeroForm((prev) => ({ ...prev, slides: prev.slides.filter((_, i) => i !== index) }));
+    setActivePreviewSlide(0);
+  };
+  const moveSlide = (index: number, dir: -1 | 1) =>
+    setHeroForm((prev) => {
+      const target = index + dir;
+      if (target < 0 || target >= prev.slides.length) return prev;
+      const next = [...prev.slides];
+      [next[index], next[target]] = [next[target], next[index]];
+      return { ...prev, slides: next };
+    });
+
 
   // ── Tokens ──
   const tokens = useSiteSettings<DesignTokens>("design_tokens");
