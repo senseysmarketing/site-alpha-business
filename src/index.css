@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Raleway:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=Roboto:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500;1,600&family=Inter:wght@300;400;500;600&family=Roboto:wght@400;500&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -41,7 +41,7 @@
     --bordeaux: 0 0% 12%;
     --bordeaux-light: 0 0% 20%;
 
-    --font-display: 'Raleway', sans-serif;
+    --font-display: 'Noto Serif', serif;
     --font-body: 'Inter', sans-serif;
 
     --sidebar-background: 0 0% 98%;
@@ -76,7 +76,7 @@
     font-family: var(--font-body);
   }
   .text-serif {
-    font-family: 'Cormorant Garamond', serif;
+    font-family: 'Noto Serif', serif;
   }
   .glass-panel {
     @apply backdrop-blur-xl border border-border/50;
