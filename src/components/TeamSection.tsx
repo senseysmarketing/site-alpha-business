@@ -1,8 +1,7 @@
 import { motion } from "framer-motion";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import useEmblaCarousel from "embla-carousel-react";
-import { useCallback, useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface TeamMember {
   name: string;
@@ -21,6 +20,7 @@ const defaultTeam: TeamMember[] = [
 const TeamSection = () => {
   const { data: teamData } = useSiteSettings<{ members: TeamMember[] }>("team");
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [snaps, setSnaps] = useState<number[]>([]);
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: "start",
     containScroll: "trimSnaps",
@@ -29,47 +29,39 @@ const TeamSection = () => {
 
   const members = teamData?.members?.length ? teamData.members : defaultTeam;
 
-  const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
-  const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
-
   useEffect(() => {
     if (!emblaApi) return;
     const onSelect = () => setSelectedIndex(emblaApi.selectedScrollSnap());
+    const onInit = () => setSnaps(emblaApi.scrollSnapList());
+    onInit();
+    onSelect();
     emblaApi.on("select", onSelect);
-    return () => { emblaApi.off("select", onSelect); };
+    emblaApi.on("reInit", onInit);
+    return () => {
+      emblaApi.off("select", onSelect);
+      emblaApi.off("reInit", onInit);
+    };
   }, [emblaApi]);
 
   return (
     <section className="section-padding">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-end justify-between mb-12">
-          <div>
-            <motion.p
-              className="text-body text-xs tracking-[0.3em] uppercase text-muted-foreground mb-3"
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-            >
-              Quem somos
-            </motion.p>
-            <motion.h2
-              className="text-display text-3xl md:text-4xl font-light"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8 }}
-            >
-              Nossa <strong className="font-semibold">Equipe</strong>
-            </motion.h2>
-          </div>
-          <div className="hidden md:flex items-center gap-2">
-            <button onClick={scrollPrev} className="w-10 h-10 border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors rounded-md">
-              <ChevronLeft size={18} />
-            </button>
-            <button onClick={scrollNext} className="w-10 h-10 border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors rounded-md">
-              <ChevronRight size={18} />
-            </button>
-          </div>
+        <div className="flex items-center justify-between mb-10">
+          <motion.h2
+            className="text-display text-2xl md:text-3xl font-normal text-foreground"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            Nossa Equipe
+          </motion.h2>
+          <a
+            href="#contato"
+            className="text-body text-sm text-foreground/70 hover:text-primary transition-colors"
+          >
+            Ver todos
+          </a>
         </div>
 
         <div className="overflow-hidden" ref={emblaRef}>
@@ -77,13 +69,13 @@ const TeamSection = () => {
             {members.map((member, i) => (
               <motion.div
                 key={i}
-                className="flex-[0_0_45%] md:flex-[0_0_20%] min-w-0 flex flex-col items-center text-center"
+                className="flex-[0_0_50%] md:flex-[0_0_25%] min-w-0 flex flex-col items-center text-center"
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1, duration: 0.5 }}
               >
-                <div className="w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden mb-4 bg-muted">
+                <div className="w-32 h-32 md:w-36 md:h-36 rounded-full overflow-hidden mb-4 bg-muted">
                   {member.avatar ? (
                     <img
                       src={member.avatar}
@@ -91,30 +83,40 @@ const TeamSection = () => {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-muted to-card flex items-center justify-center text-display text-2xl font-light text-muted-foreground">
+                    <div className="w-full h-full bg-gradient-to-br from-muted to-card flex items-center justify-center text-display text-3xl font-light text-muted-foreground">
                       {member.name.charAt(0)}
                     </div>
                   )}
                 </div>
-                <h3 className="text-display text-sm font-medium text-foreground mb-1">
+                <h3 className="text-display text-base font-normal text-foreground mb-1">
                   {member.name}
                 </h3>
-                <p className="text-body text-xs text-muted-foreground">{member.role}</p>
+                <p className="text-body text-sm text-muted-foreground">{member.role}</p>
               </motion.div>
             ))}
           </div>
         </div>
 
-        {/* Dots mobile */}
-        <div className="flex justify-center gap-2 mt-6 md:hidden">
-          {members.map((_, i) => (
-            <button
-              key={i}
-              className={`w-2 h-2 rounded-full transition-all ${i === selectedIndex ? "bg-primary w-6" : "bg-muted-foreground/30"}`}
-              onClick={() => emblaApi?.scrollTo(i)}
-            />
-          ))}
-        </div>
+        {snaps.length > 1 && (
+          <div className="flex items-center justify-center gap-2 mt-10">
+            {snaps.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => emblaApi?.scrollTo(i)}
+                aria-label={`Ir para slide ${i + 1}`}
+                className={
+                  i === selectedIndex
+                    ? "w-7 h-7 rounded-md bg-primary flex items-center justify-center"
+                    : "w-2 h-2 rounded-full bg-muted-foreground/30 hover:bg-muted-foreground/50 transition-colors"
+                }
+              >
+                {i === selectedIndex && (
+                  <span className="w-2 h-2 bg-background rounded-sm" />
+                )}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );
