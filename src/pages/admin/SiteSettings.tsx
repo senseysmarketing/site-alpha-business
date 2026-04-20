@@ -1054,37 +1054,58 @@ const SiteSettings = () => {
                       height: "312.5%",
                     }}
                   >
-                    {/* Simulated hero carousel */}
+                    {/* Simulated hero — multi-slide */}
                     <div className="h-[400px] relative overflow-hidden bg-black">
-                      {carouselPreviewProperties.length > 0 ? (
-                        <img
-                          src={carouselPreviewProperties[0].photos?.[0] || ""}
-                          alt=""
-                          className="absolute inset-0 w-full h-full object-cover opacity-70"
-                        />
+                      {previewSlide?.media_url ? (
+                        previewSlide.media_type === "video" ? (
+                          <video
+                            src={previewSlide.media_url}
+                            muted
+                            playsInline
+                            poster={previewSlide.poster_url}
+                            className="absolute inset-0 w-full h-full object-cover opacity-80"
+                          />
+                        ) : (
+                          <img
+                            src={previewSlide.media_url}
+                            alt=""
+                            className="absolute inset-0 w-full h-full object-cover opacity-80"
+                          />
+                        )
                       ) : (
                         <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900" />
                       )}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
                       <div className="relative z-10 h-full flex flex-col justify-end p-8">
                         <p className="font-[Inter] text-xs tracking-[0.3em] uppercase text-white/60 mb-2">
-                          {heroForm.tagline}
+                          {previewSlide?.tagline || ""}
                         </p>
                         <h2 className="font-[Raleway] text-3xl font-light text-white leading-tight">
-                          {renderHeadline(heroForm.headline)}
+                          {previewSlide ? renderHeadline(previewSlide.title) : null}
                         </h2>
-                        {carouselPreviewProperties.length > 0 && (
+                        {previewSlide?.subtitle && (
+                          <p className="text-sm text-white/70 mt-2 max-w-md">{previewSlide.subtitle}</p>
+                        )}
+                        {previewSlide?.cta_label && (
+                          <span className="inline-block mt-4 px-4 py-2 text-[10px] tracking-widest uppercase text-white border border-white/30 rounded-full self-start" style={{ backgroundColor: "#2A070C" }}>
+                            {previewSlide.cta_label}
+                          </span>
+                        )}
+                        {heroForm.slides.length > 1 && (
                           <div className="flex gap-2 mt-4">
-                            {carouselPreviewProperties.map((_, i) => (
-                              <div
-                                key={i}
-                                className={`h-1.5 rounded-full ${i === 0 ? "bg-white w-6" : "bg-white/40 w-1.5"}`}
+                            {heroForm.slides.map((s, i) => (
+                              <button
+                                key={s.id}
+                                onClick={() => setActivePreviewSlide(i)}
+                                className={`h-1.5 rounded-full transition-all ${i === activePreviewSlide ? "bg-white w-6" : "bg-white/40 w-1.5"}`}
+                                aria-label={`Visualizar slide ${i + 1}`}
                               />
                             ))}
                           </div>
                         )}
                       </div>
                     </div>
+
 
                     {/* Simulated featured banner */}
                     <div className="h-[250px] relative overflow-hidden">
