@@ -32,8 +32,8 @@ const Index = () => {
           <FeaturedPropertySection />
           <InstitutionalSection />
           <TeamSection />
-          <ContactSection />
           <AlphavilleMapSection />
+          <ContactSection />
         </main>
         <Footer />
       </div>
