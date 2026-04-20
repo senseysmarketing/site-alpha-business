@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
+import { Link } from "react-router-dom";
 import useEmblaCarousel from "embla-carousel-react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 
@@ -21,6 +21,7 @@ const defaultCategories = [
 
 const LifestyleSection = () => {
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
   const { data: lifestyleSettings } = useSiteSettings<{ categories: LifestyleCategory[] }>("lifestyle_categories");
 
   const categories = defaultCategories.map((def, i) => {
@@ -46,8 +47,12 @@ const LifestyleSection = () => {
   useEffect(() => {
     if (!emblaApi) return;
     onSelect();
+    setScrollSnaps(emblaApi.scrollSnapList());
     emblaApi.on("select", onSelect);
-    emblaApi.on("reInit", onSelect);
+    emblaApi.on("reInit", () => {
+      onSelect();
+      setScrollSnaps(emblaApi.scrollSnapList());
+    });
     return () => {
       emblaApi.off("select", onSelect);
     };
@@ -56,62 +61,64 @@ const LifestyleSection = () => {
   return (
     <section className="section-padding bg-background">
       <div className="max-w-7xl mx-auto">
-        {/* Header with title and nav buttons */}
-        <div className="flex items-end justify-between mb-12">
-          <h2 className="text-display text-2xl md:text-4xl font-light text-foreground max-w-lg">
-            Encontre propriedades que representam seu{" "}
-            <em className="italic">estilo de vida</em>
+        {/* Header — uma linha */}
+        <div className="flex items-center justify-between gap-6 mb-8">
+          <h2 className="text-display text-2xl md:text-3xl font-normal text-foreground">
+            Encontre propriedades que{" "}
+            <span className="font-semibold">representam seu estilo de vida</span>
           </h2>
-
-          <div className="hidden md:flex items-center gap-2">
-            <button
-              className="w-10 h-10 border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors rounded-md"
-              onClick={() => emblaApi?.scrollPrev()}
-            >
-              <ChevronLeft size={18} />
-            </button>
-            <button
-              className="w-10 h-10 border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors rounded-md"
-              onClick={() => emblaApi?.scrollNext()}
-            >
-              <ChevronRight size={18} />
-            </button>
-          </div>
+          <Link
+            to="/busca"
+            className="text-body text-sm text-foreground/70 hover:text-primary transition-colors whitespace-nowrap"
+          >
+            Ver todos
+          </Link>
         </div>
 
         {/* Carousel */}
         <div ref={emblaRef} className="overflow-hidden">
-          <div className="flex gap-4 md:gap-6">
+          <div className="flex gap-6">
             {categories.map((cat) => (
               <div
                 key={cat.title}
                 className="flex-shrink-0 cursor-grab active:cursor-grabbing basis-[85%] md:basis-[calc(33.33%-16px)]"
               >
-                <div className="rounded-sm overflow-hidden aspect-[4/3]">
-                  <img
-                    src={cat.image}
-                    alt={cat.title}
-                    className="w-full h-full object-cover transition-all duration-500 ease-out hover:scale-[1.02] hover:brightness-110"
-                  />
+                <div className="group block bg-card border border-border/60 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                  <div className="overflow-hidden aspect-[4/3]">
+                    <img
+                      src={cat.image}
+                      alt={cat.title}
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                  </div>
+                  <div className="p-5">
+                    <h3 className="text-display text-lg md:text-xl font-normal text-foreground">
+                      {cat.title}
+                    </h3>
+                  </div>
                 </div>
-                <h3 className="text-display text-lg md:text-xl font-light text-foreground mt-3">
-                  {cat.title}
-                </h3>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Mobile dots */}
-        <div className="flex justify-center gap-2 mt-8 md:hidden">
-          {categories.map((_, i) => (
+        {/* Dots */}
+        <div className="flex items-center justify-center gap-2 mt-10">
+          {scrollSnaps.map((_, i) => (
             <button
               key={i}
               onClick={() => emblaApi?.scrollTo(i)}
-              className={`w-2 h-2 rounded-full transition-all ${
-                i === selectedIndex ? "bg-primary w-6" : "bg-muted-foreground/30"
-              }`}
-            />
+              aria-label={`Ir para slide ${i + 1}`}
+              className="flex items-center justify-center"
+            >
+              {i === selectedIndex ? (
+                <span className="w-7 h-7 rounded-md bg-primary flex items-center justify-center">
+                  <span className="w-2 h-2 bg-background rounded-sm" />
+                </span>
+              ) : (
+                <span className="w-2 h-2 rounded-full bg-muted-foreground/30 hover:bg-muted-foreground/50 transition-colors" />
+              )}
+            </button>
           ))}
         </div>
       </div>
