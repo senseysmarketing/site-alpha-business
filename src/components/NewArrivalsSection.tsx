@@ -1,14 +1,13 @@
-import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { mockProperties, formatPrice } from "@/data/mockProperties";
 import useEmblaCarousel from "embla-carousel-react";
-import { useState, useEffect, useCallback } from "react";
-import { ChevronLeft, ChevronRight, Ruler, BedDouble, Car } from "lucide-react";
+import { useState, useEffect } from "react";
 
 const NewArrivalsSection = () => {
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: "start",
     slidesToScroll: 1,
@@ -56,123 +55,116 @@ const NewArrivalsSection = () => {
         transaction: p.transaction_type || "Venda",
       }));
 
-  const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
-  const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
-
   useEffect(() => {
     if (!emblaApi) return;
     const onSelect = () => setSelectedIndex(emblaApi.selectedScrollSnap());
+    setScrollSnaps(emblaApi.scrollSnapList());
     emblaApi.on("select", onSelect);
+    emblaApi.on("reInit", () => setScrollSnaps(emblaApi.scrollSnapList()));
     return () => { emblaApi.off("select", onSelect); };
   }, [emblaApi]);
 
   return (
     <section className="section-padding">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-end justify-between mb-12">
-          <div>
-            <motion.p
-              className="text-body text-xs tracking-[0.3em] uppercase text-muted-foreground mb-3"
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-            >
-              Seleção especial
-            </motion.p>
-            <motion.h2
-              className="text-display text-2xl md:text-4xl font-light max-w-lg"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8 }}
-            >
-              Nossas propriedades especiais em{" "}
-              <em className="italic">Alphaville, Tamboré e Santana de Parnaíba</em>
-            </motion.h2>
-          </div>
-          <div className="hidden md:flex items-center gap-2">
-            <button onClick={scrollPrev} className="w-10 h-10 border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors rounded-md">
-              <ChevronLeft size={18} />
-            </button>
-            <button onClick={scrollNext} className="w-10 h-10 border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors rounded-md">
-              <ChevronRight size={18} />
-            </button>
-          </div>
+        {/* Header — uma linha */}
+        <div className="flex items-center justify-between gap-6 mb-8">
+          <h2 className="text-display text-2xl md:text-3xl font-normal text-foreground">
+            Nossas propriedades especiais em Alphaville, Tamboré e Santana de Parnaiba
+          </h2>
+          <Link
+            to="/busca"
+            className="text-body text-sm text-foreground/70 hover:text-primary transition-colors whitespace-nowrap"
+          >
+            Ver todos
+          </Link>
         </div>
 
+        {/* Carrossel */}
         <div className="overflow-hidden" ref={emblaRef}>
           <div className="flex gap-6">
-            {properties.map((prop, i) => (
-              <motion.article
+            {properties.map((prop) => (
+              <article
                 key={prop.id}
                 className="flex-[0_0_85%] md:flex-[0_0_calc(33.333%-16px)] min-w-0"
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1, duration: 0.5 }}
               >
-                <Link to={`/imovel/${prop.id}`} className="group block">
-                  <div className="relative overflow-hidden rounded-lg aspect-[4/3] mb-4">
+                <Link
+                  to={`/imovel/${prop.id}`}
+                  className="group block bg-card border border-border/60 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                >
+                  {/* Imagem */}
+                  <div className="relative overflow-hidden aspect-[4/3]">
                     <img
                       src={prop.image}
                       alt={prop.title}
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                       loading="lazy"
                     />
-                    <div className="absolute top-3 left-3 flex gap-2">
-                      <span className="text-body text-[10px] tracking-[0.15em] uppercase px-2.5 py-1 bg-primary text-primary-foreground rounded-sm">
+                  </div>
+
+                  {/* Bloco inferior */}
+                  <div className="p-5">
+                    {/* Meta */}
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-body text-[11px] tracking-[0.15em] uppercase font-semibold text-foreground">
                         {prop.type}
                       </span>
-                      <span className="text-body text-[10px] tracking-[0.15em] uppercase px-2.5 py-1 bg-background/90 text-foreground rounded-sm">
+                      <span className="text-body text-[11px] tracking-[0.1em] uppercase text-muted-foreground">
                         {prop.code}
                       </span>
                     </div>
-                  </div>
 
-                  <h3 className="text-display text-lg font-light mb-2 text-foreground group-hover:text-primary transition-colors">
-                    {prop.title}
-                  </h3>
+                    {/* Título */}
+                    <h3 className="text-display text-xl font-normal text-foreground group-hover:text-primary transition-colors mb-2">
+                      {prop.title}
+                    </h3>
 
-                  <div className="flex items-center gap-4 text-muted-foreground text-body text-xs mb-3">
-                    <span className="flex items-center gap-1.5">
-                      <Ruler size={13} />
-                      {prop.area} m²
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <BedDouble size={13} />
-                      {prop.suites} suítes
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <Car size={13} />
-                      {prop.parking} vagas
-                    </span>
-                  </div>
+                    {/* Specs */}
+                    <p className="text-body text-sm text-muted-foreground">
+                      {prop.area}m² &nbsp;-&nbsp; Suítes: {prop.suites} &nbsp;-&nbsp; Vagas: {prop.parking}
+                    </p>
 
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-body text-[10px] tracking-[0.1em] uppercase text-muted-foreground">{prop.transaction}</p>
-                      <p className="text-display text-lg font-medium text-foreground">
-                        {formatPrice(prop.price)}
-                      </p>
+                    {/* Divisor */}
+                    <div className="border-t border-border/60 my-4" />
+
+                    {/* Footer */}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-body text-[11px] tracking-[0.1em] uppercase font-semibold text-foreground">
+                          {prop.transaction}:
+                        </p>
+                        <p className="text-display text-lg font-medium text-foreground">
+                          {formatPrice(prop.price)}
+                        </p>
+                      </div>
+                      <span className="text-body text-sm bg-foreground text-background px-5 py-2 rounded-md group-hover:bg-foreground/90 transition-colors">
+                        Saiba Mais
+                      </span>
                     </div>
-                    <span className="text-body text-[10px] tracking-[0.15em] uppercase text-primary border border-primary px-4 py-2 rounded-sm group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                      Saiba Mais
-                    </span>
                   </div>
                 </Link>
-              </motion.article>
+              </article>
             ))}
           </div>
         </div>
 
         {/* Dots */}
-        <div className="flex justify-center gap-2 mt-8 md:hidden">
-          {properties.map((_, i) => (
+        <div className="flex items-center justify-center gap-2 mt-10">
+          {scrollSnaps.map((_, i) => (
             <button
               key={i}
-              className={`w-2 h-2 rounded-full transition-all ${i === selectedIndex ? "bg-primary w-6" : "bg-muted-foreground/30"}`}
               onClick={() => emblaApi?.scrollTo(i)}
-            />
+              aria-label={`Ir para slide ${i + 1}`}
+              className="flex items-center justify-center"
+            >
+              {i === selectedIndex ? (
+                <span className="w-7 h-7 rounded-md bg-primary flex items-center justify-center">
+                  <span className="w-2 h-2 bg-background rounded-sm" />
+                </span>
+              ) : (
+                <span className="w-2 h-2 rounded-full bg-muted-foreground/30 hover:bg-muted-foreground/50 transition-colors" />
+              )}
+            </button>
           ))}
         </div>
       </div>
