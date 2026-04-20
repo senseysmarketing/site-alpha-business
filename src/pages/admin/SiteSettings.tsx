@@ -55,6 +55,7 @@ interface FeaturedBannerSettings {
 interface LifestyleCategory {
   title: string;
   image: string;
+  tag: string;
 }
 
 interface TeamMember {
@@ -605,6 +606,7 @@ const SiteSettings = () => {
       setLifestyleForm(lifestyle.data.categories.map((c: any) => ({
         title: c.title || "",
         image: c.image || "",
+        tag: c.tag || "",
       })));
     }
   }, [lifestyle.data]);
@@ -877,6 +879,18 @@ const SiteSettings = () => {
                   <div>
                     <Label className="font-[Inter] text-xs text-muted-foreground">Título</Label>
                     <Input value={cat.title} onChange={(e) => updateLifestyle(i, "title", e.target.value)} className="mt-1 h-8 text-sm border-border/50" />
+                  </div>
+                  <div>
+                    <Label className="font-[Inter] text-xs text-muted-foreground">Tag de filtro</Label>
+                    <Input
+                      value={cat.tag}
+                      onChange={(e) => updateLifestyle(i, "tag", e.target.value)}
+                      placeholder="ex: refugio, assinado, familia"
+                      className="mt-1 h-8 text-sm border-border/50"
+                    />
+                    <p className="text-[10px] text-muted-foreground/70 mt-1 leading-snug">
+                      Card direciona para <span className="font-mono">/busca?tag={cat.tag || "sua-tag"}</span>. Marque essa mesma palavra em <span className="font-medium">Destaques de Engenharia</span> ao cadastrar um imóvel para que ele apareça neste filtro.
+                    </p>
                   </div>
                   <PhotoDrop label="Imagem" value={cat.image} onUpload={(url) => updateLifestyle(i, "image", url)} />
                 </div>

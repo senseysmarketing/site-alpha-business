@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import useEmblaCarousel from "embla-carousel-react";
 
@@ -11,24 +11,31 @@ import sustainableHome from "@/assets/sustainable-home.jpg";
 interface LifestyleCategory {
   title: string;
   image: string;
+  tag?: string;
 }
 
-const defaultCategories = [
-  { title: "Refúgios para relaxar", image: mansionModern },
-  { title: "Imóveis Assinados", image: familyHome },
-  { title: "Mais espaço para a família", image: sustainableHome },
+const defaultCategories: LifestyleCategory[] = [
+  { title: "Refúgios para relaxar", image: mansionModern, tag: "" },
+  { title: "Imóveis Assinados", image: familyHome, tag: "" },
+  { title: "Mais espaço para a família", image: sustainableHome, tag: "" },
 ];
+
+const buildHref = (cat: LifestyleCategory) =>
+  cat.tag && cat.tag.trim()
+    ? `/busca?tag=${encodeURIComponent(cat.tag.trim())}`
+    : "/busca";
 
 const LifestyleSection = () => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
   const { data: lifestyleSettings } = useSiteSettings<{ categories: LifestyleCategory[] }>("lifestyle_categories");
 
-  const categories = defaultCategories.map((def, i) => {
+  const categories: LifestyleCategory[] = defaultCategories.map((def, i) => {
     const dbCat = lifestyleSettings?.categories?.[i];
     return {
       title: dbCat?.title || def.title,
       image: dbCat?.image || def.image,
+      tag: dbCat?.tag ?? def.tag,
     };
   });
 
@@ -38,6 +45,23 @@ const LifestyleSection = () => {
     containScroll: "trimSnaps",
     slidesToScroll: 1,
   });
+
+  // Distinguish drag from click — prevent navigation after a drag.
+  const pointerDownX = useRef(0);
+  const draggedRef = useRef(false);
+  const handlePointerDown = (e: React.PointerEvent) => {
+    pointerDownX.current = e.clientX;
+    draggedRef.current = false;
+  };
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (Math.abs(e.clientX - pointerDownX.current) > 5) draggedRef.current = true;
+  };
+  const handleClickCapture = (e: React.MouseEvent) => {
+    if (draggedRef.current) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  };
 
   const onSelect = useCallback(() => {
     if (!emblaApi) return;
@@ -82,21 +106,29 @@ const LifestyleSection = () => {
               <div
                 key={cat.title}
                 className="flex-shrink-0 cursor-grab active:cursor-grabbing basis-[85%] md:basis-[calc(33.33%-16px)]"
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onClickCapture={handleClickCapture}
               >
-                <div className="group block bg-card border border-border/60 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                <Link
+                  to={buildHref(cat)}
+                  draggable={false}
+                  className="group block bg-card border border-border/60 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5"
+                >
                   <div className="overflow-hidden aspect-[4/3]">
                     <img
                       src={cat.image}
                       alt={cat.title}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      draggable={false}
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 select-none"
                     />
                   </div>
                   <div className="p-5">
-                    <h3 className="text-display text-lg md:text-xl font-normal text-foreground">
+                    <h3 className="text-display text-lg md:text-xl font-normal text-foreground group-hover:text-primary transition-colors">
                       {cat.title}
                     </h3>
                   </div>
-                </div>
+                </Link>
               </div>
             ))}
           </div>

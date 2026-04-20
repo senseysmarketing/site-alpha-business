@@ -13,16 +13,30 @@ import ConciergeSidebar from "@/components/search/ConciergeSidebar";
 import FilterChips, { type ParsedFilters } from "@/components/search/FilterChips";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { mockProperties, toSearchResult } from "@/data/mockProperties";
 
 const mockByCode: Record<string, string> = {};
+const mockHighlightsByCode: Record<string, string[]> = {};
 mockProperties.forEach((p) => {
   if (p.photo) mockByCode[p.code] = p.photo;
+  // Use amenities + tag as the "highlights" mock equivalent for tag filtering.
+  mockHighlightsByCode[p.code] = [
+    ...(p.amenities ?? []),
+    ...(p.tag ? [p.tag] : []),
+  ];
 });
 const enrichPhoto = (r: SearchResult): SearchResult => ({
   ...r,
   photo: r.photo || mockByCode[r.code] || "/images/property-1.jpg",
 });
+
+const normalize = (s: string) =>
+  s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
 
 interface SearchResult {
   id: string;
@@ -49,8 +63,9 @@ const defaultFilters: Filters = {
 };
 
 const SearchResults = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const initialQuery = searchParams.get("q") || "";
+  const tagParam = searchParams.get("tag") || "";
 
   const [results, setResults] = useState<SearchResult[]>(
     initialQuery ? [] : mockProperties.map(toSearchResult).map(enrichPhoto)
@@ -63,15 +78,28 @@ const SearchResults = () => {
   const [parsedFilters, setParsedFilters] = useState<ParsedFilters | null>(null);
 
   const filteredResults = useMemo(() => {
+    const tagNorm = tagParam ? normalize(tagParam) : "";
     return results.filter((r) => {
       const price = r.transaction_type === "aluguel" ? r.rental_price : r.price;
       if (price && (price < filters.priceRange[0] || price > filters.priceRange[1])) return false;
       if (filters.transactionType !== "all" && r.transaction_type !== filters.transactionType) return false;
       if (filters.minBedrooms > 0 && (r.bedrooms || 0) < filters.minBedrooms) return false;
       if (filters.condominium !== "all" && r.condominium !== filters.condominium) return false;
+      if (tagNorm) {
+        const highlights = mockHighlightsByCode[r.code] || [];
+        const haystack = [
+          ...highlights,
+          r.title || "",
+          r.condominium || "",
+          r.relevance_reason || "",
+        ]
+          .map(normalize)
+          .join(" | ");
+        if (!haystack.includes(tagNorm)) return false;
+      }
       return true;
     });
-  }, [results, filters]);
+  }, [results, filters, tagParam]);
 
   const condominiums = useMemo(() => {
     return [...new Set(results.map((r) => r.condominium).filter(Boolean))] as string[];
@@ -129,6 +157,19 @@ const SearchResults = () => {
               )}
               {parsedFilters && !loading && (
                 <FilterChips filters={parsedFilters} />
+              )}
+              {tagParam && !loading && (
+                <Badge
+                  variant="outline"
+                  className="text-body text-xs gap-2 rounded-full border-primary/40 bg-primary/5 text-primary cursor-pointer hover:bg-primary/10"
+                  onClick={() => {
+                    const next = new URLSearchParams(searchParams);
+                    next.delete("tag");
+                    setSearchParams(next);
+                  }}
+                >
+                  Lifestyle: {tagParam} <span className="opacity-60">×</span>
+                </Badge>
               )}
             </div>
             <div className="flex items-center gap-3">
