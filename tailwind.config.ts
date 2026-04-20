@@ -14,7 +14,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        display: ["Raleway", "sans-serif"],
+        display: ["Noto Serif", "serif"],
         body: ["Inter", "sans-serif"],
       },
       colors: {

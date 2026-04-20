@@ -183,7 +183,7 @@ const HeroSection = () => {
               exit={{ opacity: 0, y: -16 }}
               transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
             >
-              <h1 className="text-display text-3xl md:text-5xl lg:text-6xl font-light text-white leading-tight italic">
+              <h1 className="text-display text-3xl md:text-5xl lg:text-6xl font-normal text-white leading-tight italic">
                 {current.title}
               </h1>
               {current.description && (
