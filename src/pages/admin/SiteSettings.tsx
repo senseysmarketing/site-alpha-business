@@ -156,6 +156,32 @@ function PhotoDrop({ value, onUpload, label }: { value: string; onUpload: (url: 
       onUpload(url);
     } finally {
       setUploading(false);
+    }
+  }, [onUpload]);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop, accept: { "image/*": [] }, maxFiles: 1 });
+
+  return (
+    <div>
+      <Label className="font-[Inter] text-xs text-muted-foreground mb-1 block">{label}</Label>
+      <div
+        {...getRootProps()}
+        className={`border border-dashed border-border/50 rounded-sm p-4 text-center cursor-pointer transition-colors ${isDragActive ? "bg-muted/30" : "bg-white"}`}
+      >
+        <input {...getInputProps()} />
+        {uploading ? (
+          <Progress value={50} className="h-1" />
+        ) : value ? (
+          <img src={value} alt="" className="h-16 mx-auto object-cover rounded-sm" />
+        ) : (
+          <div className="flex flex-col items-center gap-1 text-muted-foreground/60">
+            <Upload className="h-5 w-5" />
+            <span className="text-xs">Arraste ou clique</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 // ── Media dropzone (image OR video) with size validation ──
