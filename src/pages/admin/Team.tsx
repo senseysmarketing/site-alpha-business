@@ -69,7 +69,7 @@ const Team = () => {
         <h1 className="font-[Raleway] text-2xl font-semibold tracking-tight text-foreground">
           Equipe
         </h1>
-        <InviteMemberDialog />
+        {isAdmin && <InviteMemberDialog />}
       </div>
 
       {/* Filters */}
