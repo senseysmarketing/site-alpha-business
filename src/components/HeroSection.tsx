@@ -127,6 +127,7 @@ const HeroSection = () => {
     >
       {/* Slides — cross-fade */}
       <div className="absolute inset-0">
+
         {slides.map((slide, i) => {
           const isActive = i === activeIndex;
           return (
@@ -164,6 +165,9 @@ const HeroSection = () => {
           );
         })}
       </div>
+
+      {/* Left-to-right gradient overlay for title legibility */}
+      <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent pointer-events-none" />
 
       {/* Content */}
       <div className="relative z-10 h-full flex items-center px-6 md:px-12 lg:px-24">
