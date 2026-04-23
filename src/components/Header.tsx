@@ -27,7 +27,7 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
     { label: "Venda", href: "#" },
     { label: "Locação", href: "#" },
     { label: "Serviços", href: "#" },
-    { label: "Blog", href: "/blog" },
+    { label: "Notícias", href: "/blog" },
     { label: "Fale Conosco", href: "#contact" },
   ];
 
