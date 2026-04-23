@@ -8,6 +8,8 @@ import { Separator } from "@/components/ui/separator";
 type Props = {
   textareaRef: React.RefObject<HTMLTextAreaElement>;
   onInsertMarkdown: (before: string, after: string) => void;
+  onUploadImage?: (file: File) => Promise<string | null>;
+  onInsertText?: (text: string) => void;
 };
 
 type ToolButton = {
