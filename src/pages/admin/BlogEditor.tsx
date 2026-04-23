@@ -310,20 +310,36 @@ const BlogEditor = () => {
             <input type="text" value={subtitle} onChange={(e) => setSubtitle(e.target.value)} placeholder="Subtítulo (opcional)"
               className="w-full font-[Inter] text-lg text-muted-foreground bg-transparent border-none outline-none placeholder:text-muted-foreground/20 mb-8" />
             <div className="w-12 h-px bg-border mb-8" />
-            <EditorToolbar textareaRef={textareaRef} onInsertMarkdown={handleInsertMarkdown} onUploadImage={uploadImage} onInsertText={insertAtCursor} />
-            <textarea ref={textareaRef} value={content} onChange={(e) => setContent(e.target.value)}
-              onPaste={handlePaste}
-              onDrop={handleDrop}
-              onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-              onDragLeave={() => setIsDragging(false)}
-              placeholder="Comece a escrever seu artigo...
+            {richPreview ? (
+              <div
+                onClick={() => setRichPreview(false)}
+                className="min-h-[400px] cursor-text rounded-lg p-4 border border-dashed border-border/60 hover:border-primary/40 transition-colors"
+                title="Clique para voltar a editar"
+              >
+                {content.trim() ? (
+                  renderMarkdownContent(content)
+                ) : (
+                  <p className="font-[Inter] text-lg text-muted-foreground/30">Nada para visualizar ainda. Clique para editar.</p>
+                )}
+              </div>
+            ) : (
+              <>
+                <EditorToolbar textareaRef={textareaRef} onInsertMarkdown={handleInsertMarkdown} onUploadImage={uploadImage} onInsertText={insertAtCursor} />
+                <textarea ref={textareaRef} value={content} onChange={(e) => setContent(e.target.value)}
+                  onPaste={handlePaste}
+                  onDrop={handleDrop}
+                  onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                  onDragLeave={() => setIsDragging(false)}
+                  placeholder="Comece a escrever seu artigo...
 
 Use ## para subtítulos e separe parágrafos com uma linha em branco.
 Cole, arraste ou use o botão de imagem para adicionar fotos."
-              className={cn(
-                "w-full font-[Inter] text-lg leading-relaxed text-foreground bg-transparent border outline-none resize-none placeholder:text-muted-foreground/20 min-h-[400px] rounded-lg p-4 transition-colors",
-                isDragging ? "border-dashed border-primary/50 bg-primary/5" : "border-transparent"
-              )} />
+                  className={cn(
+                    "w-full font-[Inter] text-lg leading-relaxed text-foreground bg-transparent border outline-none resize-none placeholder:text-muted-foreground/20 min-h-[400px] rounded-lg p-4 transition-colors",
+                    isDragging ? "border-dashed border-primary/50 bg-primary/5" : "border-transparent"
+                  )} />
+              </>
+            )}
           </div>
         </div>
       </div>
