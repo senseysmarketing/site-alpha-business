@@ -1,33 +1,42 @@
 
 
-## Sidebar do Imóvel — Indicador "Responde rapidamente"
+## Hero + Banner — Espaçamento entre Linhas dos Títulos
 
-Adicionar um micro-sinal de confiança no card do corretor (`PropertySidebar`), logo abaixo do título do corretor, indicando responsividade rápida.
+Aumentar o `line-height` dos dois títulos serifados para dar respiro vertical adequado e evitar que descendentes ("p", "g") encostem nos ascendentes da linha seguinte.
 
-### Mudança em `src/components/property/PropertySidebar.tsx`
+### 1. Hero (`src/components/HeroSection.tsx`, linha 190)
 
-Abaixo do bloco nome + título do corretor (e antes dos botões "Falar com X" / "Agendar visita"), inserir uma linha com:
-
-- Ícone `Zap` (lucide-react), 12px, `strokeWidth={1.5}`, em verde discreto (`text-[#25D366]` — mesmo verde do WhatsApp já usado no projeto, mantendo coerência visual).
-- Texto: **"Responde em até 15 minutos"** — mais concreto que "rapidamente", reforça expectativa clara.
-- Tipografia: `text-body text-[11px] tracking-wide text-muted-foreground`.
-- Pequeno "pulse dot" verde antes do ícone (um `<span>` 6px com `bg-[#25D366]` + `animate-pulse`) para sinalizar "ativo agora", padrão usado em apps de mensageria.
-
-Layout final do micro-bloco:
+Atual:
 ```
-● ⚡ Responde em até 15 minutos
+className="text-display ... leading-tight"
+```
+(`leading-tight` = 1.1 — muito apertado para serif grande)
+
+Novo:
+```
+className="text-display ... leading-[1.35]"
 ```
 
-Alinhamento: `flex items-center gap-2`, margin `mt-1.5 mb-4` para separar do nome acima e dos botões abaixo sem quebrar a densidade do card.
+### 2. Featured Banner (`src/components/FeaturedPropertySection.tsx`, ~linha 56)
 
-### Por que essa abordagem
+Atual:
+```
+className="text-display ... leading-[1.25] mb-6 max-w-md"
+```
 
-- Reaproveita o verde WhatsApp já presente no projeto (sem nova cor).
-- Mensagem específica ("15 minutos") cria mais confiança que "rapidamente" genérico.
-- Pulse dot é padrão visual reconhecível de "online/ativo".
-- Não altera estrutura nem hierarquia do card — adição puramente aditiva.
+Novo:
+```
+className="text-display ... leading-[1.35] mb-6 max-w-md"
+```
+
+### Por que `1.35`
+
+- `1.1` (atual hero) é apropriado para sans-serif compacto, não para Noto Serif display.
+- `1.25` (atual banner) ainda deixa descendentes próximos das letras maiúsculas da linha seguinte.
+- `1.35` é o valor canônico para títulos serifados editoriais (mesma faixa usada por NYT, Bon Appétit) — abre o respiro sem fazer o título "desmontar" em linhas isoladas.
 
 ### Arquivos editados
 
-- `src/components/property/PropertySidebar.tsx`
+- `src/components/HeroSection.tsx`
+- `src/components/FeaturedPropertySection.tsx`
 
