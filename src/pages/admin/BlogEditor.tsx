@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Eye, Save, CalendarIcon, Send, Sparkles, EyeOff, Trash2 } from "lucide-react";
+import { ArrowLeft, Eye, Save, CalendarIcon, Send, Sparkles, EyeOff, Trash2, Pencil, Image as ImageIcon } from "lucide-react";
+import { renderMarkdownContent } from "@/lib/markdown";
 import {
   AlertDialog,
   AlertDialogAction,
