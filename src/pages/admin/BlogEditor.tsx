@@ -249,6 +249,28 @@ const BlogEditor = () => {
             <Button variant="ghost" size="sm" onClick={() => setPreviewOpen(true)} className="font-[Inter] text-xs gap-1.5">
               <Eye className="h-4 w-4" /> Pré-visualizar
             </Button>
+            {isEditing && existingPost && (
+              isPublished ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => unpublishMutation.mutate()}
+                  disabled={unpublishMutation.isPending}
+                  className="font-[Inter] text-xs gap-1.5 text-muted-foreground"
+                >
+                  <EyeOff className="h-4 w-4" /> Despublicar
+                </Button>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setDeleteDialogOpen(true)}
+                  className="font-[Inter] text-xs gap-1.5 text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" /> Excluir
+                </Button>
+              )
+            )}
             <Button variant="outline" size="sm" onClick={handleSaveDraft} disabled={saveMutation.isPending} className="font-[Inter] text-xs gap-1.5">
               <Save className="h-4 w-4" /> Rascunho
             </Button>
