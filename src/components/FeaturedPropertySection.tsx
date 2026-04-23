@@ -53,7 +53,8 @@ const FeaturedPropertySection = () => {
             </motion.p>
 
             <motion.h2
-              className="text-display text-3xl md:text-4xl lg:text-5xl font-normal text-white leading-[1.35] mb-6 max-w-md"
+              className="text-display text-3xl md:text-4xl lg:text-5xl font-normal text-white !leading-[1.5] mb-6 max-w-md"
+              style={{ lineHeight: 1.5 }}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
