@@ -5,7 +5,11 @@ import { Link } from "react-router-dom";
 import logoRafael from "@/assets/logo-rafael.png";
 import AdvertisePropertyModal from "@/components/AdvertisePropertyModal";
 
-const Header = () => {
+interface HeaderProps {
+  variant?: "transparent" | "solid";
+}
+
+const Header = ({ variant = "transparent" }: HeaderProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [advertiseOpen, setAdvertiseOpen] = useState(false);
@@ -16,6 +20,8 @@ const Header = () => {
     onScroll();
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  const isSolid = variant === "solid" || scrolled || menuOpen;
   const navItems = [
     { label: "Buscar", href: "/busca" },
     { label: "Venda", href: "#" },
