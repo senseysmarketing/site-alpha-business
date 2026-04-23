@@ -34,7 +34,7 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
   return (
     <motion.header
       className={`fixed left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled || menuOpen
+        isSolid
           ? "bg-[#1f1f1f]/95 backdrop-blur-md"
           : "bg-transparent"
       }`}
