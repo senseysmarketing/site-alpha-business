@@ -11,6 +11,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import TeamMemberCard from "@/components/admin/team/TeamMemberCard";
 import InviteMemberDialog from "@/components/admin/team/InviteMemberDialog";
+import { useAuth } from "@/hooks/useAuth";
 
 interface TeamProfile {
   id: string;
@@ -30,6 +31,7 @@ interface UserRole {
 }
 
 const Team = () => {
+  const { isAdmin } = useAuth();
   const [profiles, setProfiles] = useState<TeamProfile[]>([]);
   const [roles, setRoles] = useState<UserRole[]>([]);
   const [search, setSearch] = useState("");
@@ -67,7 +69,7 @@ const Team = () => {
         <h1 className="font-[Raleway] text-2xl font-semibold tracking-tight text-foreground">
           Equipe
         </h1>
-        <InviteMemberDialog />
+        {isAdmin && <InviteMemberDialog />}
       </div>
 
       {/* Filters */}
