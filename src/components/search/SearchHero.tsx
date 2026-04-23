@@ -198,23 +198,10 @@ const SearchHero = ({ initialQuery, onResults, onLoading, onParsedFilters }: Sea
   };
 
   return (
-    <section className="relative h-[40vh] min-h-[320px] flex items-center justify-center overflow-hidden">
-      <div ref={heroImageRef} className="absolute inset-0 will-change-transform">
-        <video
-          src="/videos/hero-bg.mp4"
-          autoPlay
-          muted
-          loop
-          playsInline
-          className="w-full h-full object-cover"
-        />
-      </div>
-
-      <div className="absolute inset-0 bg-gradient-to-b from-foreground/50 via-foreground/30 to-background" />
-
+    <section className="relative bg-background py-12 md:py-16 flex items-center justify-center overflow-hidden">
       <div className="relative z-10 w-full max-w-2xl mx-auto px-4 md:px-6">
         <motion.h1
-          className="text-display text-2xl md:text-3xl font-light text-primary-foreground text-center mb-6 tracking-wide"
+          className="text-display text-2xl md:text-3xl font-light text-foreground text-center mb-6 tracking-wide"
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
@@ -288,7 +275,7 @@ const SearchHero = ({ initialQuery, onResults, onLoading, onParsedFilters }: Sea
             <button
               key={pill.label}
               onClick={() => handlePillClick(pill.query)}
-              className="text-body text-[10px] md:text-xs tracking-[0.12em] uppercase text-primary-foreground/70 hover:text-primary-foreground transition-colors duration-300 px-3 py-1.5 rounded-full border border-primary-foreground/20 hover:border-primary-foreground/50 backdrop-blur-sm"
+              className="text-body text-[10px] md:text-xs tracking-[0.12em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-300 px-3 py-1.5 rounded-full border border-border hover:border-muted-foreground/40 bg-muted/40 hover:bg-muted"
             >
               {pill.label}
             </button>
