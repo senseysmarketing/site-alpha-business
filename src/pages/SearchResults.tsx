@@ -135,7 +135,7 @@ const SearchResults = () => {
       transition={{ duration: 0.4 }}
       className="min-h-screen bg-background"
     >
-      <Header />
+      <Header variant="solid" />
 
       <SearchHero
         initialQuery={initialQuery}
