@@ -1,34 +1,30 @@
 
 
-## Cabeçalho — Ajuste Responsivo para Tablet (iPad)
+## Hero — Overlay Degradê para Legibilidade do Título
 
-No tablet (768px–1024px), o menu desktop aparece todos os 6 itens + botão "Anuncie seu imóvel" + logo na mesma linha, ficando apertado e quebrando "FALE CONOSCO" em duas linhas dentro do botão pill.
+Adicionar um degradê preto sutil partindo da esquerda em direção ao centro do Hero, melhorando o contraste do título sem escurecer a imagem inteira.
 
-### Estratégia
+### Mudança em `src/components/HeroSection.tsx`
 
-Reservar o menu horizontal completo apenas para telas grandes (`lg:` = 1024px+). Em tablets (768px–1023px), usar o menu hambúrguer (já existente) que abre o painel mobile.
+Adicionar uma camada de overlay logo após a mídia (vídeo/imagem) e antes da camada de conteúdo:
 
-### Mudanças em `src/components/Header.tsx`
+```tsx
+<div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent pointer-events-none" />
+```
 
-| Elemento | Atual | Novo |
-|---|---|---|
-| Nav horizontal | `hidden md:flex` | `hidden lg:flex` |
-| Botão "Anuncie seu imóvel" (desktop) | `hidden md:flex` | `hidden lg:flex` |
-| Botão hambúrguer | `md:hidden` | `lg:hidden` |
-| Painel mobile expandido | `md:hidden` | `lg:hidden` |
-| Gap entre itens do nav | `gap-10` | `gap-6 xl:gap-10` (respiro extra em telas muito largas, mais compacto em laptops 1024–1279) |
-| Botão "Anuncie": `whitespace-nowrap` | adicionar para garantir que nunca quebre |
+- **Direção**: `to-r` (esquerda → direita).
+- **Intensidade**: `from-black/60` na borda esquerda (onde está o texto), `via-black/30` no meio, `to-transparent` antes da metade — preserva a imagem do imóvel à direita.
+- **Posição**: sobreposto à mídia mas abaixo do conteúdo (`z-index` natural pela ordem do DOM).
+- **`pointer-events-none`**: garante que o overlay não intercepte cliques no carrossel/CTA.
 
-### Resultado por breakpoint
+### Compatibilidade
 
-- **Mobile (<768px)**: hambúrguer (igual hoje).
-- **Tablet/iPad (768–1023px)**: hambúrguer + logo (limpo, sem aperto).
-- **Laptop (1024–1279px)**: nav completo com `gap-6` (cabe confortavelmente).
-- **Desktop grande (≥1280px)**: nav completo com `gap-10` (respiro generoso).
+- Funciona igual para slides com vídeo ou imagem (Ken Burns).
+- Não interfere nos dots de navegação nem no botão pause (já posicionados com `z-20`).
+- Mobile: o degradê funciona bem mesmo em telas estreitas porque o título sempre ocupa o lado esquerdo.
 
 ### Observações
 
-- Sem mudança visual no mobile nem no desktop grande.
-- Painel mobile já tem todos os itens + CTA — funciona idêntico em iPad.
-- Atualizar `mem://features/header/navigation` para refletir o novo breakpoint `lg:` como ponto de virada.
+- Sem mudança de tokens nem de tipografia.
+- Se ficar escuro demais, fácil ajustar de `/60` para `/40` depois.
 
