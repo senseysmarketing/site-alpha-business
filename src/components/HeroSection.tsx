@@ -187,7 +187,7 @@ const HeroSection = () => {
               <p className="text-xs tracking-[0.3em] uppercase text-white/60 mb-4">
                 {current.tagline}
               </p>
-              <h1 className="text-display text-3xl md:text-5xl lg:text-6xl font-normal text-white leading-tight">
+              <h1 className="text-display text-3xl md:text-5xl lg:text-6xl font-normal text-white leading-[1.35]">
                 {renderTitle(current.title)}
               </h1>
               {current.description && (
