@@ -248,6 +248,9 @@ const BlogEditor = () => {
             <Button variant="ghost" size="sm" onClick={() => setGenerateModalOpen(true)} className="font-[Inter] text-xs gap-1.5 text-primary">
               <Sparkles className="h-4 w-4" /> AI Assist
             </Button>
+            <Button variant="ghost" size="sm" onClick={() => setRichPreview((v) => !v)} className="font-[Inter] text-xs gap-1.5">
+              {richPreview ? <><Pencil className="h-4 w-4" /> Editar texto</> : <><ImageIcon className="h-4 w-4" /> Ver imagens</>}
+            </Button>
             <Button variant="ghost" size="sm" onClick={() => setPreviewOpen(true)} className="font-[Inter] text-xs gap-1.5">
               <Eye className="h-4 w-4" /> Pré-visualizar
             </Button>
