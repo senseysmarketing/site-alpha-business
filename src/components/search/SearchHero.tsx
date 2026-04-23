@@ -198,7 +198,7 @@ const SearchHero = ({ initialQuery, onResults, onLoading, onParsedFilters }: Sea
   };
 
   return (
-    <section className="relative bg-background py-12 md:py-16 flex items-center justify-center overflow-hidden">
+    <section className="relative bg-background pt-28 md:pt-32 pb-10 md:pb-12 flex items-center justify-center overflow-hidden">
       <div className="relative z-10 w-full max-w-2xl mx-auto px-4 md:px-6">
         <motion.h1
           className="text-display text-2xl md:text-3xl font-light text-foreground text-center mb-6 tracking-wide"
