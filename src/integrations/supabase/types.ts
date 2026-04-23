@@ -14,11 +14,38 @@ export type Database = {
   }
   public: {
     Tables: {
+      blog_categories: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          slug: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label: string
+          slug: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          slug?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       blog_posts: {
         Row: {
           author_avatar: string | null
           author_name: string
-          category: Database["public"]["Enums"]["blog_category"]
+          category: string
           content: string
           cover_image: string | null
           created_at: string
@@ -36,7 +63,7 @@ export type Database = {
         Insert: {
           author_avatar?: string | null
           author_name?: string
-          category: Database["public"]["Enums"]["blog_category"]
+          category: string
           content: string
           cover_image?: string | null
           created_at?: string
@@ -54,7 +81,7 @@ export type Database = {
         Update: {
           author_avatar?: string | null
           author_name?: string
-          category?: Database["public"]["Enums"]["blog_category"]
+          category?: string
           content?: string
           cover_image?: string | null
           created_at?: string
@@ -573,11 +600,6 @@ export type Database = {
         | "gerente"
         | "corretor"
         | "assistente"
-      blog_category:
-        | "inside-alphaville"
-        | "arquitetura-design"
-        | "investimento"
-        | "guia-condominios"
       expense_category: "foto_video" | "trafego_pago" | "manutencao" | "outros"
       transaction_status: "pendente" | "pago" | "cancelado"
     }
@@ -714,12 +736,6 @@ export const Constants = {
         "gerente",
         "corretor",
         "assistente",
-      ],
-      blog_category: [
-        "inside-alphaville",
-        "arquitetura-design",
-        "investimento",
-        "guia-condominios",
       ],
       expense_category: ["foto_video", "trafego_pago", "manutencao", "outros"],
       transaction_status: ["pendente", "pago", "cancelado"],

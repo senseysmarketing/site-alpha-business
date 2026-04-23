@@ -1,14 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, ChevronLeft, ChevronRight, Tags } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import type { Database } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
+import { useBlogCategories } from "@/hooks/useBlogCategories";
+import { useAuth } from "@/hooks/useAuth";
 
 type BlogPost = {
   id: string;
@@ -22,14 +23,6 @@ type BlogPost = {
   reading_time_min: number;
 };
 
-const categoryLabels: Record<string, string> = {
-  "inside-alphaville": "Inside Alphaville",
-  "arquitetura-design": "Arquitetura & Design",
-  "investimento": "Investimento",
-  "guia-condominios": "Guia de Condomínios",
-};
-
-const categories = ["Todos", "inside-alphaville", "arquitetura-design", "investimento", "guia-condominios"];
 const statusFilters = ["Todos", "Publicado", "Agendado", "Rascunho"];
 
 function getPostStatus(published_at: string | null): { label: string; variant: "default" | "secondary" | "outline" } {
@@ -45,6 +38,37 @@ const BlogPosts = () => {
   const [filterCategory, setFilterCategory] = useState("Todos");
   const [filterStatus, setFilterStatus] = useState("Todos");
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
+  const { categories, labelOf } = useBlogCategories();
+
+  // Carousel scroll state
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const updateScrollState = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 4);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  };
+
+  useEffect(() => {
+    updateScrollState();
+    const el = scrollRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(updateScrollState);
+    ro.observe(el);
+    el.addEventListener("scroll", updateScrollState);
+    return () => {
+      ro.disconnect();
+      el.removeEventListener("scroll", updateScrollState);
+    };
+  }, [categories.length]);
+
+  const scrollBy = (delta: number) => {
+    scrollRef.current?.scrollBy({ left: delta, behavior: "smooth" });
+  };
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -53,11 +77,11 @@ const BlogPosts = () => {
         .select("id, title, slug, category, published_at, is_featured, is_exclusive, author_name, reading_time_min");
 
       if (filterCategory !== "Todos") {
-        query = query.eq("category", filterCategory as Database["public"]["Enums"]["blog_category"]);
+        query = query.eq("category", filterCategory);
       }
 
       const { data } = await query.order("created_at", { ascending: false });
-      setPosts(data ?? []);
+      setPosts((data ?? []) as BlogPost[]);
     };
     fetchPosts();
   }, [filterCategory]);
@@ -74,6 +98,8 @@ const BlogPosts = () => {
     return new Date(date).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
   };
 
+  const allCategoryChips = [{ slug: "Todos", label: "Todos" }, ...categories.map((c) => ({ slug: c.slug, label: c.label }))];
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -81,9 +107,20 @@ const BlogPosts = () => {
           <h1 className="font-[Raleway] text-2xl font-semibold text-foreground tracking-tight">Blog</h1>
           <p className="font-[Inter] text-sm text-muted-foreground mt-1">Gerencie seus artigos</p>
         </div>
-        <Button onClick={() => navigate("/admin/blog/novo")} className="font-[Inter] text-xs uppercase tracking-widest">
-          <Plus className="h-4 w-4 mr-1" /> Novo Artigo
-        </Button>
+        <div className="flex items-center gap-2">
+          {isAdmin && (
+            <Button
+              variant="outline"
+              onClick={() => navigate("/admin/blog/categorias")}
+              className="font-[Inter] text-xs uppercase tracking-widest"
+            >
+              <Tags className="h-4 w-4 mr-1" /> Categorias
+            </Button>
+          )}
+          <Button onClick={() => navigate("/admin/blog/novo")} className="font-[Inter] text-xs uppercase tracking-widest">
+            <Plus className="h-4 w-4 mr-1" /> Novo Artigo
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -98,28 +135,61 @@ const BlogPosts = () => {
           />
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="font-[Inter] text-[10px] uppercase tracking-widest text-muted-foreground">Categoria</span>
-          <div className="flex gap-1.5">
-            {categories.map((c) => (
-              <button
-                key={c}
-                onClick={() => setFilterCategory(c)}
-                className={`px-3 py-1.5 rounded-full text-xs font-[Inter] transition-colors border ${
-                  filterCategory === c
-                    ? "bg-foreground text-background border-foreground"
-                    : "bg-white text-muted-foreground border-border/50 hover:border-foreground/30"
-                }`}
-              >
-                {c === "Todos" ? c : categoryLabels[c]}
-              </button>
-            ))}
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <span className="font-[Inter] text-[10px] uppercase tracking-widest text-muted-foreground flex-shrink-0">Categoria</span>
+
+          {/* Sliding category carousel */}
+          <div className="relative flex-1 min-w-0">
+            {canScrollLeft && (
+              <>
+                <button
+                  onClick={() => scrollBy(-200)}
+                  aria-label="Anterior"
+                  className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-7 w-7 rounded-full bg-white border border-border/60 shadow-sm flex items-center justify-center hover:bg-foreground hover:text-background transition-colors"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                </button>
+                <div className="absolute left-7 top-0 bottom-0 w-6 bg-gradient-to-r from-[#F8F8F8] to-transparent z-[5] pointer-events-none" />
+              </>
+            )}
+            {canScrollRight && (
+              <>
+                <div className="absolute right-7 top-0 bottom-0 w-6 bg-gradient-to-l from-[#F8F8F8] to-transparent z-[5] pointer-events-none" />
+                <button
+                  onClick={() => scrollBy(200)}
+                  aria-label="Próximo"
+                  className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-7 w-7 rounded-full bg-white border border-border/60 shadow-sm flex items-center justify-center hover:bg-foreground hover:text-background transition-colors"
+                >
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </button>
+              </>
+            )}
+
+            <div
+              ref={scrollRef}
+              className="overflow-x-auto scrollbar-hide flex items-center gap-1.5 whitespace-nowrap py-0.5"
+              style={{ scrollbarWidth: "none" }}
+            >
+              {allCategoryChips.map((c) => (
+                <button
+                  key={c.slug}
+                  onClick={() => setFilterCategory(c.slug)}
+                  className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-[Inter] transition-colors border ${
+                    filterCategory === c.slug
+                      ? "bg-foreground text-background border-foreground"
+                      : "bg-white text-muted-foreground border-border/50 hover:border-foreground/30"
+                  }`}
+                >
+                  {c.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
-        <div className="h-6 w-px bg-border/50" />
+        <div className="h-6 w-px bg-border/50 flex-shrink-0" />
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <span className="font-[Inter] text-[10px] uppercase tracking-widest text-muted-foreground">Status</span>
           <div className="flex gap-1.5">
             {statusFilters.map((s) => (
@@ -174,7 +244,7 @@ const BlogPosts = () => {
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className="font-[Inter] text-[10px]">
-                        {categoryLabels[post.category] ?? post.category}
+                        {labelOf(post.category)}
                       </Badge>
                     </TableCell>
                     <TableCell>

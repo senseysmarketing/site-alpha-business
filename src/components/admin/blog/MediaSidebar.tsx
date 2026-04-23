@@ -6,9 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
-import type { Database } from "@/integrations/supabase/types";
-
-type BlogCategory = Database["public"]["Enums"]["blog_category"];
+import { useBlogCategories } from "@/hooks/useBlogCategories";
 
 type Props = {
   coverImage: string | null;
@@ -17,21 +15,14 @@ type Props = {
   onSlugChange: (slug: string) => void;
   excerpt: string;
   onExcerptChange: (excerpt: string) => void;
-  category: BlogCategory;
-  onCategoryChange: (category: BlogCategory) => void;
+  category: string;
+  onCategoryChange: (category: string) => void;
   isFeatured: boolean;
   onFeaturedChange: (v: boolean) => void;
   isExclusive: boolean;
   onExclusiveChange: (v: boolean) => void;
   readingTime: number;
 };
-
-const categoryOptions: { value: BlogCategory; label: string }[] = [
-  { value: "inside-alphaville", label: "Inside Alphaville" },
-  { value: "arquitetura-design", label: "Arquitetura & Design" },
-  { value: "investimento", label: "Investimento" },
-  { value: "guia-condominios", label: "Guia de Condomínios" },
-];
 
 const MediaSidebar = ({
   coverImage, onCoverImageChange,
@@ -43,6 +34,7 @@ const MediaSidebar = ({
   readingTime,
 }: Props) => {
   const [uploading, setUploading] = useState(false);
+  const { categories } = useBlogCategories();
 
   const handleUpload = useCallback(async (file: File) => {
     setUploading(true);
@@ -142,14 +134,20 @@ const MediaSidebar = ({
         {/* Category */}
         <section>
           <h3 className="font-[Inter] text-[10px] uppercase tracking-[0.15em] text-muted-foreground mb-3">Categoria</h3>
-          <RadioGroup value={category} onValueChange={(v) => onCategoryChange(v as BlogCategory)}>
-            {categoryOptions.map((opt) => (
-              <div key={opt.value} className="flex items-center space-x-2 py-1">
-                <RadioGroupItem value={opt.value} id={opt.value} />
-                <Label htmlFor={opt.value} className="font-[Inter] text-sm cursor-pointer">{opt.label}</Label>
-              </div>
-            ))}
-          </RadioGroup>
+          {categories.length === 0 ? (
+            <p className="font-[Inter] text-xs text-muted-foreground italic">
+              Nenhuma categoria cadastrada. Crie em Blog → Categorias.
+            </p>
+          ) : (
+            <RadioGroup value={category} onValueChange={(v) => onCategoryChange(v)}>
+              {categories.map((opt) => (
+                <div key={opt.slug} className="flex items-center space-x-2 py-1">
+                  <RadioGroupItem value={opt.slug} id={opt.slug} />
+                  <Label htmlFor={opt.slug} className="font-[Inter] text-sm cursor-pointer">{opt.label}</Label>
+                </div>
+              ))}
+            </RadioGroup>
+          )}
         </section>
 
         {/* Settings */}

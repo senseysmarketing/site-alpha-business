@@ -2,19 +2,14 @@ import { motion } from "framer-motion";
 import { Clock, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { Tables } from "@/integrations/supabase/types";
-
-const categoryLabels: Record<string, string> = {
-  "inside-alphaville": "Inside Alphaville",
-  "arquitetura-design": "Arquitetura & Design",
-  "investimento": "Investimento",
-  "guia-condominios": "Guia de Condomínios",
-};
+import { useBlogCategories } from "@/hooks/useBlogCategories";
 
 interface BlogHeroProps {
   post: Tables<"blog_posts">;
 }
 
 const BlogHero = ({ post }: BlogHeroProps) => {
+  const { labelOf } = useBlogCategories();
   return (
     <section className="relative h-[85vh] flex items-end overflow-hidden">
       <div className="absolute inset-0">
@@ -29,7 +24,7 @@ const BlogHero = ({ post }: BlogHeroProps) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          {categoryLabels[post.category] ?? post.category}
+          {labelOf(post.category)}
         </motion.span>
 
         <motion.h1

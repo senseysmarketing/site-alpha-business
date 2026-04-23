@@ -3,6 +3,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { renderMarkdownContent } from "@/lib/markdown";
+import { useBlogCategories } from "@/hooks/useBlogCategories";
 
 type Props = {
   open: boolean;
@@ -15,14 +16,8 @@ type Props = {
   readingTime: number;
 };
 
-const categoryLabels: Record<string, string> = {
-  "inside-alphaville": "Inside Alphaville",
-  "arquitetura-design": "Arquitetura & Design",
-  "investimento": "Investimento",
-  "guia-condominios": "Guia de Condomínios",
-};
-
 const PostPreview = ({ open, onOpenChange, title, subtitle, content, category, authorName, readingTime }: Props) => {
+  const { labelOf } = useBlogCategories();
   const formattedDate = new Date().toLocaleDateString("pt-BR", {
     day: "numeric", month: "long", year: "numeric",
   });
@@ -42,7 +37,7 @@ const PostPreview = ({ open, onOpenChange, title, subtitle, content, category, a
           </div>
           <div className="relative z-10 w-full max-w-3xl mx-auto px-6 md:px-12 pb-10">
             <span className="block text-body text-xs tracking-[0.3em] uppercase text-[hsl(var(--cashmere))]/50 mb-4">
-              {categoryLabels[category] ?? category}
+              {labelOf(category)}
             </span>
             <h1 className="text-display text-3xl md:text-4xl font-light text-[hsl(var(--cashmere))] leading-[1.1] mb-3">
               {title || "Título do artigo..."}

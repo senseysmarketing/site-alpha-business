@@ -3,13 +3,7 @@ import { Clock, Lock } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { Tables } from "@/integrations/supabase/types";
 import { useState } from "react";
-
-const categoryLabels: Record<string, string> = {
-  "inside-alphaville": "Inside Alphaville",
-  "arquitetura-design": "Arquitetura & Design",
-  "investimento": "Investimento",
-  "guia-condominios": "Guia de Condomínios",
-};
+import { useBlogCategories } from "@/hooks/useBlogCategories";
 
 interface BlogCardProps {
   post: Tables<"blog_posts">;
@@ -19,6 +13,7 @@ interface BlogCardProps {
 
 const BlogCard = ({ post, index, large = false }: BlogCardProps) => {
   const [hovered, setHovered] = useState(false);
+  const { labelOf } = useBlogCategories();
 
   const formattedDate = new Date(post.published_at).toLocaleDateString("pt-BR", {
     day: "numeric",
@@ -64,7 +59,7 @@ const BlogCard = ({ post, index, large = false }: BlogCardProps) => {
         <div className="p-5 md:p-6">
           <div className="flex items-center gap-3 mb-3">
             <span className="text-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
-              {categoryLabels[post.category] ?? post.category}
+              {labelOf(post.category)}
             </span>
             <span className="text-muted-foreground/30">•</span>
             <div className="flex items-center gap-1 text-muted-foreground">
