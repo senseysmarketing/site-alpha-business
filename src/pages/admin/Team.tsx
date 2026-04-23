@@ -11,6 +11,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import TeamMemberCard from "@/components/admin/team/TeamMemberCard";
 import InviteMemberDialog from "@/components/admin/team/InviteMemberDialog";
+import { useAuth } from "@/hooks/useAuth";
 
 interface TeamProfile {
   id: string;
