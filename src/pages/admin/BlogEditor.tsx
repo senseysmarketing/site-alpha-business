@@ -16,9 +16,9 @@ import AICopilotSidebar from "@/components/admin/blog/AICopilotSidebar";
 import PostPreview from "@/components/admin/blog/PostPreview";
 import AIGenerateModal from "@/components/admin/blog/AIGenerateModal";
 import { useBlogImageUpload } from "@/hooks/useBlogImageUpload";
-import type { Database } from "@/integrations/supabase/types";
+import { useBlogCategories } from "@/hooks/useBlogCategories";
 
-type BlogCategory = Database["public"]["Enums"]["blog_category"];
+type BlogCategory = string;
 
 function slugify(text: string) {
   return text
@@ -41,7 +41,15 @@ const BlogEditor = () => {
   const [content, setContent] = useState("");
   const [slug, setSlug] = useState("");
   const [excerpt, setExcerpt] = useState("");
+  const { categories } = useBlogCategories();
   const [category, setCategory] = useState<BlogCategory>("inside-alphaville");
+
+  // Default to first available category once loaded (only if not editing)
+  useEffect(() => {
+    if (!isEditing && categories.length > 0 && !categories.some((c) => c.slug === category)) {
+      setCategory(categories[0].slug);
+    }
+  }, [categories, isEditing, category]);
   const [coverImage, setCoverImage] = useState<string | null>(null);
   const [isFeatured, setIsFeatured] = useState(false);
   const [isExclusive, setIsExclusive] = useState(false);

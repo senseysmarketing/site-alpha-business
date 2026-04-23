@@ -22,6 +22,7 @@ import Financial from "./pages/admin/Financial.tsx";
 import Marketing from "./pages/admin/Marketing";
 import BlogPosts from "./pages/admin/BlogPosts";
 import BlogEditor from "./pages/admin/BlogEditor";
+import BlogCategories from "./pages/admin/BlogCategories";
 import AuditLog from "./pages/admin/AuditLog";
 import DataImport from "./pages/admin/DataImport";
 import SiteSettings from "./pages/admin/SiteSettings";
@@ -54,6 +55,7 @@ const AnimatedRoutes = () => {
           <Route path="financeiro" element={<ProtectedRoute allowedRoles={["admin"]}><Financial /></ProtectedRoute>} />
           <Route path="marketing" element={<ProtectedRoute allowedRoles={["admin", "gerente"]}><Marketing /></ProtectedRoute>} />
           <Route path="blog" element={<ProtectedRoute allowedRoles={["admin", "gerente"]}><BlogPosts /></ProtectedRoute>} />
+          <Route path="blog/categorias" element={<ProtectedRoute allowedRoles={["admin"]}><BlogCategories /></ProtectedRoute>} />
           <Route path="blog/novo" element={<ProtectedRoute allowedRoles={["admin", "gerente"]}><BlogEditor /></ProtectedRoute>} />
           <Route path="blog/:id" element={<ProtectedRoute allowedRoles={["admin", "gerente"]}><BlogEditor /></ProtectedRoute>} />
           <Route path="importar" element={<ProtectedRoute allowedRoles={["admin"]}><DataImport /></ProtectedRoute>} />
