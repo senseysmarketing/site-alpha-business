@@ -18,6 +18,7 @@ const Blog = () => {
       const { data, error } = await supabase
         .from("blog_posts")
         .select("*")
+        .lte("published_at", new Date().toISOString())
         .order("published_at", { ascending: false });
       if (error) throw error;
       return data;
