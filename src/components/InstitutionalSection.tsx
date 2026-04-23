@@ -20,11 +20,9 @@ const InstitutionalSection = () => {
   const { data: instaPostsData } = useSiteSettings<{ posts: InstaPost[] }>("instagram_posts");
 
   const handlePrimary = (contactData?.instagram?.replace("@", "") || "AlphavilleSP").trim();
-  const handleSecondary = (contactData?.instagram_secondary?.replace("@", "") || "AlphavilleAB").trim();
 
   const handles = [
     { display: `@${handlePrimary}`, url: `https://instagram.com/${handlePrimary}` },
-    { display: `@${handleSecondary}`, url: `https://instagram.com/${handleSecondary}` },
   ];
 
   const decodeHtmlEntities = (str: string) =>
