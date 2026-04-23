@@ -46,10 +46,12 @@ const BlogFilters = ({ activeCategory, onCategoryChange, searchQuery, onSearchCh
 
   const handleVoice = () => {
     if (!("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) return;
-    const SpeechRecognition = (window as unknown as { SpeechRecognition?: typeof window.SpeechRecognition; webkitSpeechRecognition?: typeof window.SpeechRecognition }).SpeechRecognition || (window as unknown as { webkitSpeechRecognition: typeof window.SpeechRecognition }).webkitSpeechRecognition;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
     recognition.lang = "pt-BR";
-    recognition.onresult = (e: { results: { 0: { 0: { transcript: string } } } }) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    recognition.onresult = (e: any) => {
       onSearchChange(e.results[0][0].transcript);
       setListening(false);
     };
