@@ -1,49 +1,80 @@
 
 
-## Revisão de Permissões — Status e Ajustes
+## Gerenciamento de Categorias do Blog
 
-### O que JÁ está correto para admin
+Hoje as categorias do blog são um **enum Postgres fixo** (`blog_category`) com 4 valores hardcoded em vários arquivos. Para permitir CRUD pelo admin, vamos converter para uma **tabela dinâmica** e adicionar carrossel deslizante nos filtros.
 
-- **Edge function `create-team-member`**: valida JWT do chamador, exige `has_role(admin)`, cria user no Supabase Auth com `email_confirm: true` (login imediato, sem precisar confirmar e-mail), insere `team_profiles` e `user_roles` com o role escolhido. Convidar um admin funciona — ele loga direto com email/senha.
-- **RLS de todas as 12 tabelas**: todas as políticas de escrita (`INSERT/UPDATE/DELETE`) usam `has_role(auth.uid(), 'admin')`. Um admin convidado terá acesso total a: properties, leads, lead_notes, lead_activities, blog_posts, expenses, transactions, market_data, site_settings, team_profiles, user_roles, system_audit_logs, visits_scheduling. **Nenhum ajuste de RLS necessário.**
-- **Sidebar**: admin enxerga todos os 12 itens do menu (Dashboard, Imóveis, CRM, Equipe, Agenda, Relatórios, Financeiro, Marketing, Blog, Importar, Atividade, Configurações).
-- **`useAuth`**: lê `user_roles` corretamente e expõe `role` + `isAdmin`.
+### 1. Migração de banco (Supabase)
 
-### Problemas encontrados (não afetam admin, mas são falhas reais)
+Criar tabela `blog_categories`:
 
-**1. Rotas admin desprotegidas por role no `App.tsx`**
-`ProtectedRoute` aceita `allowedRoles`, mas nenhuma rota usa. Resultado: um corretor/assistente que descubra a URL `/admin/financeiro`, `/admin/configuracoes`, `/admin/atividade` ou `/admin/importar` consegue abrir a página (apesar das ações de escrita serem bloqueadas pela RLS, o conteúdo da tela carrega).
+| Coluna | Tipo | Detalhes |
+|---|---|---|
+| `id` | uuid | PK, default `gen_random_uuid()` |
+| `slug` | text | UNIQUE, NOT NULL (ex: `inside-alphaville`) |
+| `label` | text | NOT NULL (ex: `Inside Alphaville`) |
+| `sort_order` | int | default 0 |
+| `created_at` | timestamptz | default now() |
 
-**Correção**: envolver as rotas restritas com `<ProtectedRoute allowedRoles={[...]}>` espelhando a matriz já definida na sidebar:
+**RLS**:
+- SELECT público (igual `blog_posts`)
+- INSERT/UPDATE/DELETE: apenas admin via `has_role(auth.uid(), 'admin')`
 
-```text
-/admin/financeiro    → ["admin"]
-/admin/configuracoes → ["admin"]
-/admin/atividade     → ["admin"]
-/admin/importar      → ["admin"]
-/admin/relatorios    → ["admin", "gerente"]
-/admin/marketing     → ["admin", "gerente"]
-/admin/blog/*        → ["admin", "gerente"]
-```
+**Migração de dados**: seed com os 4 valores existentes (`inside-alphaville`, `arquitetura-design`, `investimento`, `guia-condominios`) preservando os slugs — assim os `blog_posts.category` (text/enum) continuam funcionando sem renomear nada.
 
-**2. Botão "Convidar Membro" visível a todos em `/admin/equipe`**
-A edge function bloqueia não-admins (HTTP 403), mas o botão aparece para qualquer role. UX confuso.
+**Coluna `blog_posts.category`**: alterar de `enum blog_category` para `text` (mantém os mesmos valores). Isso libera novos slugs sem precisar alterar enum no Postgres a cada categoria criada. Sem perda de dados.
 
-**Correção**: em `Team.tsx`, renderizar `<InviteMemberDialog />` apenas se `isAdmin` (via `useAuth`).
+### 2. Nova tela: `/admin/blog/categorias`
 
-**3. Edição de outros membros em `team_profiles`**
-A política `Members can update own team_profile` permite que qualquer membro edite o próprio perfil — correto. Admin pode editar todos via `Admins can update any team_profile` — correto.
+Acessível via botão **"Categorias"** ao lado de "+ Novo Artigo" no header de `/admin/blog`.
 
-### Resumo para o teste do admin
+Layout simples (estética Quiet Luxury já existente):
+- Lista em tabela: Label, Slug, Nº de artigos vinculados, Ações (Editar / Excluir).
+- Botão **"+ Nova Categoria"** abre dialog com campos: Label (input), Slug (auto-gerado a partir do label, editável).
+- Editar: mesmo dialog em modo edição.
+- Excluir: bloqueado se houver artigos vinculados (mostra toast: "X artigos usam esta categoria. Reatribua antes de excluir.").
 
-Quando você convidar um admin pelo botão "Convidar Membro":
-1. Ele recebe email/senha definidos no formulário e loga imediatamente em `/admin/login`.
-2. Vê os 12 itens do menu lateral.
-3. Tem permissão total de leitura/escrita em todas as tabelas via RLS.
-4. Pode convidar/editar/desativar outros membros e alterar roles.
+Apenas admins veem a página/botão (via `useAuth` + `ProtectedRoute allowedRoles={["admin"]}`).
 
-### Arquivos editados
+### 3. Hook `useBlogCategories`
 
-- `src/App.tsx` (adicionar `allowedRoles` nas rotas restritas)
-- `src/pages/admin/Team.tsx` (esconder botão "Convidar Membro" para não-admins)
+Centraliza fetch + cache local das categorias. Usado por:
+- `BlogPosts.tsx` (filtros admin)
+- `BlogEditor.tsx` / `MediaSidebar.tsx` (seleção de categoria no editor)
+- `Blog.tsx` (filtros públicos)
+- `BlogCard.tsx` / `BlogHero.tsx` / `PostPreview.tsx` (label de exibição)
+
+Substitui todos os `categoryLabels` hardcoded por lookup dinâmico (fallback: usa o próprio slug se não encontrar).
+
+### 4. Carrossel deslizante nos filtros de categoria (`BlogPosts.tsx`)
+
+Container atual quebra layout quando há muitas categorias. Mudanças:
+
+- Wrapper `flex-1 overflow-hidden` com **largura limitada até a divisória `|` antes de "Status"** (usa `min-w-0` + `flex-1`).
+- Dentro: `div` com `overflow-x-auto scrollbar-hide` e os chips de categoria em linha (`flex gap-1.5 whitespace-nowrap`).
+- Setas **chevron-left/chevron-right** (lucide) aparecem apenas quando há overflow, posicionadas absolutamente nas bordas com gradiente fade branco para indicar conteúdo cortado. Clique scrolla `~200px`.
+- Detecção de overflow via `useRef` + `ResizeObserver` no container interno.
+- Divisória `|` e bloco "Status" permanecem fixos à direita, fora do carrossel.
+
+Mesmo tratamento aplicado no filtro de categorias da página pública `Blog.tsx` para consistência.
+
+### 5. Arquivos editados/criados
+
+- **Migração SQL** (nova tabela + alteração da coluna + seed)
+- `src/hooks/useBlogCategories.ts` (novo)
+- `src/pages/admin/BlogCategories.tsx` (nova tela)
+- `src/components/admin/blog/CategoryDialog.tsx` (novo, criar/editar)
+- `src/App.tsx` (rota `/admin/blog/categorias` protegida para admin)
+- `src/components/admin/AdminSidebar.tsx` (item de menu opcional, ou só botão na tela Blog)
+- `src/pages/admin/BlogPosts.tsx` (filtros dinâmicos + carrossel + botão "Categorias")
+- `src/pages/admin/BlogEditor.tsx` (passa categorias dinâmicas)
+- `src/components/admin/blog/MediaSidebar.tsx` (RadioGroup dinâmico)
+- `src/components/admin/blog/PostPreview.tsx` (label dinâmico)
+- `src/pages/Blog.tsx` (filtros públicos dinâmicos + carrossel)
+- `src/components/blog/BlogCard.tsx` + `BlogHero.tsx` (label dinâmico)
+- `mem://features/admin/blog-cms` (registrar gestão de categorias)
+
+### Observação
+
+Como `blog_posts.category` deixa de ser enum e vira `text` referenciando o slug da nova tabela (sem FK rígida, para manter flexibilidade no rename), o `types.ts` regenerado pelo Supabase refletirá a mudança automaticamente. Nenhum artigo existente é afetado.
 
