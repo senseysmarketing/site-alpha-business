@@ -50,15 +50,15 @@ const AnimatedRoutes = () => {
           <Route path="equipe" element={<Team />} />
           <Route path="equipe/:id" element={<TeamProfile />} />
           <Route path="agenda" element={<Agenda />} />
-          <Route path="relatorios" element={<Reports />} />
-          <Route path="financeiro" element={<Financial />} />
-          <Route path="marketing" element={<Marketing />} />
-          <Route path="blog" element={<BlogPosts />} />
-          <Route path="blog/novo" element={<BlogEditor />} />
-          <Route path="blog/:id" element={<BlogEditor />} />
-          <Route path="importar" element={<DataImport />} />
-          <Route path="configuracoes" element={<SiteSettings />} />
-          <Route path="atividade" element={<AuditLog />} />
+          <Route path="relatorios" element={<ProtectedRoute allowedRoles={["admin", "gerente"]}><Reports /></ProtectedRoute>} />
+          <Route path="financeiro" element={<ProtectedRoute allowedRoles={["admin"]}><Financial /></ProtectedRoute>} />
+          <Route path="marketing" element={<ProtectedRoute allowedRoles={["admin", "gerente"]}><Marketing /></ProtectedRoute>} />
+          <Route path="blog" element={<ProtectedRoute allowedRoles={["admin", "gerente"]}><BlogPosts /></ProtectedRoute>} />
+          <Route path="blog/novo" element={<ProtectedRoute allowedRoles={["admin", "gerente"]}><BlogEditor /></ProtectedRoute>} />
+          <Route path="blog/:id" element={<ProtectedRoute allowedRoles={["admin", "gerente"]}><BlogEditor /></ProtectedRoute>} />
+          <Route path="importar" element={<ProtectedRoute allowedRoles={["admin"]}><DataImport /></ProtectedRoute>} />
+          <Route path="configuracoes" element={<ProtectedRoute allowedRoles={["admin"]}><SiteSettings /></ProtectedRoute>} />
+          <Route path="atividade" element={<ProtectedRoute allowedRoles={["admin"]}><AuditLog /></ProtectedRoute>} />
           <Route path="imoveis/novo" element={<PropertyForm />} />
           <Route path="imoveis/:id" element={<PropertyForm />} />
         </Route>
