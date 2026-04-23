@@ -198,6 +198,41 @@ const BlogEditor = () => {
   const handlePublish = () => saveMutation.mutate(new Date().toISOString());
   const handleSchedule = () => { if (scheduleDate) saveMutation.mutate(scheduleDate.toISOString()); };
 
+  const isPublished = !!existingPost && new Date(existingPost.published_at) <= new Date();
+
+  const unpublishMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from("blog_posts")
+        .update({ published_at: new Date(2099, 0, 1).toISOString() })
+        .eq("id", id!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["blog-posts"] });
+      queryClient.invalidateQueries({ queryKey: ["blog-post-edit", id] });
+      toast({ title: "Artigo despublicado" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Erro ao despublicar", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("blog_posts").delete().eq("id", id!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["blog-posts"] });
+      toast({ title: "Artigo excluído" });
+      navigate("/admin/blog");
+    },
+    onError: (err: Error) => {
+      toast({ title: "Erro ao excluir", description: err.message, variant: "destructive" });
+    },
+  });
+
   return (
     <div className="flex h-[calc(100vh-4rem)]">
       {/* Main Editor */}
