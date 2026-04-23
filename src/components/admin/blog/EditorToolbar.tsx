@@ -139,6 +139,8 @@ const EditorToolbar = ({ textareaRef, onInsertMarkdown, onUploadImage, onInsertT
         {listButtons.map((btn) => (
           <ToolbarButton key={btn.title} icon={btn.icon} title={btn.title} onClick={() => onInsertMarkdown(btn.before, btn.after)} />
         ))}
+        <ToolbarButton icon={Image} title="Inserir imagem (upload)" onClick={handleImageButtonClick} />
+        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
       </div>
 
       {/* Bubble menu on selection */}
