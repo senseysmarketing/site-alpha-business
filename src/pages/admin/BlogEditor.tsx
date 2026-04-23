@@ -72,6 +72,7 @@ const BlogEditor = () => {
   const [isDragging, setIsDragging] = useState(false);
   const { uploadImage } = useBlogImageUpload();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [richPreview, setRichPreview] = useState(false);
 
   const insertAtCursor = useCallback((text: string) => {
     const textarea = textareaRef.current;
