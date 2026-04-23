@@ -1,30 +1,22 @@
 
 
-## Hero — Overlay Degradê para Legibilidade do Título
+## Featured Banner — Ajuste de Line-Height do Título
 
-Adicionar um degradê preto sutil partindo da esquerda em direção ao centro do Hero, melhorando o contraste do título sem escurecer a imagem inteira.
+No banner "As propriedades mais que especiais em Alphaville", as linhas do título serif estão muito próximas, fazendo com que ascendentes (l, h, b) encostem nos descendentes da linha de cima.
 
-### Mudança em `src/components/HeroSection.tsx`
+### Mudança em `src/components/FeaturedPropertySection.tsx`
 
-Adicionar uma camada de overlay logo após a mídia (vídeo/imagem) e antes da camada de conteúdo:
+No `<h2>` do título (Noto Serif, `text-3xl→5xl font-normal`), trocar o line-height atual (provavelmente `leading-tight` ou padrão) por **`leading-[1.15]`** — equilíbrio ideal para serifas grandes em layout editorial.
 
 ```tsx
-<div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent pointer-events-none" />
+<h2 className="font-serif text-3xl md:text-4xl lg:text-5xl font-normal leading-[1.15] text-white">
+  {title}
+</h2>
 ```
-
-- **Direção**: `to-r` (esquerda → direita).
-- **Intensidade**: `from-black/60` na borda esquerda (onde está o texto), `via-black/30` no meio, `to-transparent` antes da metade — preserva a imagem do imóvel à direita.
-- **Posição**: sobreposto à mídia mas abaixo do conteúdo (`z-index` natural pela ordem do DOM).
-- **`pointer-events-none`**: garante que o overlay não intercepte cliques no carrossel/CTA.
-
-### Compatibilidade
-
-- Funciona igual para slides com vídeo ou imagem (Ken Burns).
-- Não interfere nos dots de navegação nem no botão pause (já posicionados com `z-20`).
-- Mobile: o degradê funciona bem mesmo em telas estreitas porque o título sempre ocupa o lado esquerdo.
 
 ### Observações
 
-- Sem mudança de tokens nem de tipografia.
-- Se ficar escuro demais, fácil ajustar de `/60` para `/40` depois.
+- Sem alteração de tamanho, peso ou família tipográfica.
+- `leading-[1.15]` é mais respirado que `leading-tight` (1.1) e mais compacto que `leading-snug` (1.375) — perfeito para títulos serif de 3 linhas.
+- Atualizar `mem://features/featured-property/banner-layout` para registrar o novo line-height.
 
