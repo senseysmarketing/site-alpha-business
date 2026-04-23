@@ -15,6 +15,7 @@ import MediaSidebar from "@/components/admin/blog/MediaSidebar";
 import AICopilotSidebar from "@/components/admin/blog/AICopilotSidebar";
 import PostPreview from "@/components/admin/blog/PostPreview";
 import AIGenerateModal from "@/components/admin/blog/AIGenerateModal";
+import { useBlogImageUpload } from "@/hooks/useBlogImageUpload";
 import type { Database } from "@/integrations/supabase/types";
 
 type BlogCategory = Database["public"]["Enums"]["blog_category"];
@@ -49,6 +50,50 @@ const BlogEditor = () => {
   const [slugManual, setSlugManual] = useState(false);
   const [sidebarTab, setSidebarTab] = useState("media");
   const [generateModalOpen, setGenerateModalOpen] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const { uploadImage } = useBlogImageUpload();
+
+  const insertAtCursor = useCallback((text: string) => {
+    const textarea = textareaRef.current;
+    if (!textarea) {
+      setContent((prev) => prev + text);
+      return;
+    }
+    const { selectionStart, selectionEnd } = textarea;
+    setContent((prev) => prev.substring(0, selectionStart) + text + prev.substring(selectionEnd));
+    setTimeout(() => {
+      textarea.focus();
+      const pos = selectionStart + text.length;
+      textarea.setSelectionRange(pos, pos);
+    }, 0);
+  }, []);
+
+  const handleImageFile = useCallback(async (file: File) => {
+    const placeholder = `![enviando...](uploading-${Date.now()})`;
+    insertAtCursor(placeholder);
+    const url = await uploadImage(file);
+    setContent((prev) => {
+      if (url) return prev.replace(placeholder, `![imagem](${url})`);
+      return prev.replace(placeholder, "");
+    });
+  }, [insertAtCursor, uploadImage]);
+
+  const handlePaste = useCallback((e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const items = Array.from(e.clipboardData.items);
+    const imageItem = items.find((it) => it.kind === "file" && it.type.startsWith("image/"));
+    if (imageItem) {
+      e.preventDefault();
+      const file = imageItem.getAsFile();
+      if (file) handleImageFile(file);
+    }
+  }, [handleImageFile]);
+
+  const handleDrop = useCallback((e: React.DragEvent<HTMLTextAreaElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const files = Array.from(e.dataTransfer.files).filter((f) => f.type.startsWith("image/"));
+    files.forEach((file) => handleImageFile(file));
+  }, [handleImageFile]);
 
   const { data: existingPost } = useQuery({
     queryKey: ["blog-post-edit", id],
@@ -184,12 +229,20 @@ const BlogEditor = () => {
             <input type="text" value={subtitle} onChange={(e) => setSubtitle(e.target.value)} placeholder="Subtítulo (opcional)"
               className="w-full font-[Inter] text-lg text-muted-foreground bg-transparent border-none outline-none placeholder:text-muted-foreground/20 mb-8" />
             <div className="w-12 h-px bg-border mb-8" />
-            <EditorToolbar textareaRef={textareaRef} onInsertMarkdown={handleInsertMarkdown} />
+            <EditorToolbar textareaRef={textareaRef} onInsertMarkdown={handleInsertMarkdown} onUploadImage={uploadImage} onInsertText={insertAtCursor} />
             <textarea ref={textareaRef} value={content} onChange={(e) => setContent(e.target.value)}
+              onPaste={handlePaste}
+              onDrop={handleDrop}
+              onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+              onDragLeave={() => setIsDragging(false)}
               placeholder="Comece a escrever seu artigo...
 
-Use ## para subtítulos e separe parágrafos com uma linha em branco."
-              className="w-full font-[Inter] text-lg leading-relaxed text-foreground bg-transparent border-none outline-none resize-none placeholder:text-muted-foreground/20 min-h-[400px]" />
+Use ## para subtítulos e separe parágrafos com uma linha em branco.
+Cole, arraste ou use o botão de imagem para adicionar fotos."
+              className={cn(
+                "w-full font-[Inter] text-lg leading-relaxed text-foreground bg-transparent border outline-none resize-none placeholder:text-muted-foreground/20 min-h-[400px] rounded-lg p-4 transition-colors",
+                isDragging ? "border-dashed border-primary/50 bg-primary/5" : "border-transparent"
+              )} />
           </div>
         </div>
       </div>

@@ -2,7 +2,7 @@ import React, { type ReactNode } from "react";
 
 function parseInline(text: string): ReactNode[] {
   const result: ReactNode[] = [];
-  const regex = /(\*\*(.+?)\*\*|\*(.+?)\*|_(.+?)_|~~(.+?)~~|`(.+?)`|\[(.+?)\]\((.+?)\))/g;
+  const regex = /(!\[(.*?)\]\((.+?)\)|\*\*(.+?)\*\*|\*(.+?)\*|_(.+?)_|~~(.+?)~~|`(.+?)`|\[(.+?)\]\((.+?)\))/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
 
@@ -11,12 +11,13 @@ function parseInline(text: string): ReactNode[] {
       result.push(text.slice(lastIndex, match.index));
     }
     const key = `i${match.index}`;
-    if (match[2]) result.push(<strong key={key}>{match[2]}</strong>);
-    else if (match[3]) result.push(<em key={key}>{match[3]}</em>);
-    else if (match[4]) result.push(<em key={key}>{match[4]}</em>);
-    else if (match[5]) result.push(<del key={key}>{match[5]}</del>);
-    else if (match[6]) result.push(<code key={key} className="bg-muted px-1.5 py-0.5 rounded text-sm">{match[6]}</code>);
-    else if (match[7] && match[8]) result.push(<a key={key} href={match[8]} className="text-primary underline" target="_blank" rel="noopener noreferrer">{match[7]}</a>);
+    if (match[3]) result.push(<img key={key} src={match[3]} alt={match[2] || ""} className="rounded-lg my-6 w-full h-auto" loading="lazy" />);
+    else if (match[4]) result.push(<strong key={key}>{match[4]}</strong>);
+    else if (match[5]) result.push(<em key={key}>{match[5]}</em>);
+    else if (match[6]) result.push(<em key={key}>{match[6]}</em>);
+    else if (match[7]) result.push(<del key={key}>{match[7]}</del>);
+    else if (match[8]) result.push(<code key={key} className="bg-muted px-1.5 py-0.5 rounded text-sm">{match[8]}</code>);
+    else if (match[9] && match[10]) result.push(<a key={key} href={match[10]} className="text-primary underline" target="_blank" rel="noopener noreferrer">{match[9]}</a>);
     lastIndex = match.index + match[0].length;
   }
   if (lastIndex < text.length) result.push(text.slice(lastIndex));
