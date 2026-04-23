@@ -72,8 +72,6 @@ const BlogEditor = () => {
   const { uploadImage } = useBlogImageUpload();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  const isPublished = !!existingPost && new Date(existingPost.published_at) <= new Date();
-
   const insertAtCursor = useCallback((text: string) => {
     const textarea = textareaRef.current;
     if (!textarea) {
