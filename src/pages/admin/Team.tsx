@@ -31,6 +31,7 @@ interface UserRole {
 }
 
 const Team = () => {
+  const { isAdmin } = useAuth();
   const [profiles, setProfiles] = useState<TeamProfile[]>([]);
   const [roles, setRoles] = useState<UserRole[]>([]);
   const [search, setSearch] = useState("");
