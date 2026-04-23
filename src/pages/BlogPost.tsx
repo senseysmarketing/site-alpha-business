@@ -26,6 +26,7 @@ const BlogPost = () => {
         .from("blog_posts")
         .select("*")
         .eq("slug", slug!)
+        .lte("published_at", new Date().toISOString())
         .maybeSingle();
       if (error) throw error;
       return data;
