@@ -127,6 +127,7 @@ const HeroSection = () => {
     >
       {/* Slides — cross-fade */}
       <div className="absolute inset-0">
+
         {slides.map((slide, i) => {
           const isActive = i === activeIndex;
           return (
