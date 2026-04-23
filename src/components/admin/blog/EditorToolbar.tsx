@@ -39,7 +39,6 @@ const listButtons: ToolButton[] = [
   { icon: ListOrdered, before: "\n1. ", after: "", title: "Lista numerada", lineStart: true },
   { icon: Quote, before: "\n> ", after: "", title: "Citação", lineStart: true },
   { icon: Minus, before: "\n---\n", after: "", title: "Linha horizontal", lineStart: true },
-  { icon: Image, before: "![", after: "](url)", title: "Imagem" },
 ];
 
 // Bubble menu buttons (subset)
@@ -63,7 +62,30 @@ const ToolbarButton = ({ icon: Icon, title, onClick }: { icon: React.ElementType
   </button>
 );
 
-const EditorToolbar = ({ textareaRef, onInsertMarkdown }: Props) => {
+const EditorToolbar = ({ textareaRef, onInsertMarkdown, onUploadImage, onInsertText }: Props) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageButtonClick = () => {
+    if (onUploadImage) fileInputRef.current?.click();
+    else onInsertMarkdown("![", "](url)");
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !onUploadImage || !onInsertText) return;
+    const placeholder = `![enviando...](uploading-${Date.now()})`;
+    onInsertText(placeholder);
+    const url = await onUploadImage(file);
+    const ta = textareaRef.current;
+    if (ta) {
+      const newVal = url ? ta.value.replace(placeholder, `![imagem](${url})`) : ta.value.replace(placeholder, "");
+      const setter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value")?.set;
+      setter?.call(ta, newVal);
+      ta.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+  };
+
   // Bubble menu state
   const [bubbleVisible, setBubbleVisible] = useState(false);
   const [bubblePosition, setBubblePosition] = useState({ top: 0, left: 0 });
