@@ -275,7 +275,7 @@ const SearchHero = ({ initialQuery, onResults, onLoading, onParsedFilters }: Sea
             <button
               key={pill.label}
               onClick={() => handlePillClick(pill.query)}
-              className="text-body text-[10px] md:text-xs tracking-[0.12em] uppercase text-primary-foreground/70 hover:text-primary-foreground transition-colors duration-300 px-3 py-1.5 rounded-full border border-primary-foreground/20 hover:border-primary-foreground/50 backdrop-blur-sm"
+              className="text-body text-[10px] md:text-xs tracking-[0.12em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-300 px-3 py-1.5 rounded-full border border-border hover:border-muted-foreground/40 bg-muted/40 hover:bg-muted"
             >
               {pill.label}
             </button>
