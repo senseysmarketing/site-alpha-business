@@ -46,7 +46,7 @@ const Header = () => {
           />
         </a>
 
-        <nav className="hidden md:flex items-center gap-10">
+        <nav className="hidden lg:flex items-center gap-6 xl:gap-10">
           {navItems.map((item) =>
             item.href.startsWith("/") ? (
               <Link
@@ -68,10 +68,10 @@ const Header = () => {
           )}
         </nav>
 
-        <div className="hidden md:flex items-center">
+        <div className="hidden lg:flex items-center">
           <button
             onClick={() => setAdvertiseOpen(true)}
-            className="font-normal text-xs tracking-[0.1em] uppercase px-6 py-2.5 border border-white/30 text-white rounded-full hover:bg-white/10 transition-colors duration-300"
+            className="font-normal text-xs tracking-[0.1em] uppercase whitespace-nowrap px-6 py-2.5 border border-white/30 text-white rounded-full hover:bg-white/10 transition-colors duration-300"
           >
             Anuncie seu imóvel
           </button>
@@ -79,7 +79,7 @@ const Header = () => {
 
         <button
           onClick={() => setMenuOpen(!menuOpen)}
-          className="md:hidden text-white"
+          className="lg:hidden text-white"
         >
           {menuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
@@ -87,7 +87,7 @@ const Header = () => {
 
       {menuOpen && (
         <motion.div
-          className="md:hidden bg-[#1f1f1f] border-t border-white/10"
+          className="lg:hidden bg-[#1f1f1f] border-t border-white/10"
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
           exit={{ opacity: 0, height: 0 }}
