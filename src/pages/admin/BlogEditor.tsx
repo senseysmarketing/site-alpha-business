@@ -1,7 +1,17 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Eye, Save, CalendarIcon, Send, Sparkles } from "lucide-react";
+import { ArrowLeft, Eye, Save, CalendarIcon, Send, Sparkles, EyeOff, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -60,6 +70,7 @@ const BlogEditor = () => {
   const [generateModalOpen, setGenerateModalOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const { uploadImage } = useBlogImageUpload();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const insertAtCursor = useCallback((text: string) => {
     const textarea = textareaRef.current;
@@ -187,6 +198,41 @@ const BlogEditor = () => {
   const handlePublish = () => saveMutation.mutate(new Date().toISOString());
   const handleSchedule = () => { if (scheduleDate) saveMutation.mutate(scheduleDate.toISOString()); };
 
+  const isPublished = !!existingPost && new Date(existingPost.published_at) <= new Date();
+
+  const unpublishMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from("blog_posts")
+        .update({ published_at: new Date(2099, 0, 1).toISOString() })
+        .eq("id", id!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["blog-posts"] });
+      queryClient.invalidateQueries({ queryKey: ["blog-post-edit", id] });
+      toast({ title: "Artigo despublicado" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Erro ao despublicar", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("blog_posts").delete().eq("id", id!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["blog-posts"] });
+      toast({ title: "Artigo excluído" });
+      navigate("/admin/blog");
+    },
+    onError: (err: Error) => {
+      toast({ title: "Erro ao excluir", description: err.message, variant: "destructive" });
+    },
+  });
+
   return (
     <div className="flex h-[calc(100vh-4rem)]">
       {/* Main Editor */}
@@ -203,6 +249,28 @@ const BlogEditor = () => {
             <Button variant="ghost" size="sm" onClick={() => setPreviewOpen(true)} className="font-[Inter] text-xs gap-1.5">
               <Eye className="h-4 w-4" /> Pré-visualizar
             </Button>
+            {isEditing && existingPost && (
+              isPublished ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => unpublishMutation.mutate()}
+                  disabled={unpublishMutation.isPending}
+                  className="font-[Inter] text-xs gap-1.5 text-muted-foreground"
+                >
+                  <EyeOff className="h-4 w-4" /> Despublicar
+                </Button>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setDeleteDialogOpen(true)}
+                  className="font-[Inter] text-xs gap-1.5 text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" /> Excluir
+                </Button>
+              )
+            )}
             <Button variant="outline" size="sm" onClick={handleSaveDraft} disabled={saveMutation.isPending} className="font-[Inter] text-xs gap-1.5">
               <Save className="h-4 w-4" /> Rascunho
             </Button>
@@ -304,6 +372,26 @@ Cole, arraste ou use o botão de imagem para adicionar fotos."
           setSlugManual(false);
         }}
       />
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir artigo permanentemente?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. O artigo "{title}" será removido do banco de dados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteMutation.mutate()}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
