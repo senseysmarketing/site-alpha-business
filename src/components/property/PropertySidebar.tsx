@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MessageCircle, Calendar } from "lucide-react";
+import { MessageCircle, Calendar, Zap } from "lucide-react";
 import ScheduleVisitModal from "./ScheduleVisitModal";
 
 interface PropertySidebarProps {
