@@ -144,10 +144,10 @@ const SearchResults = () => {
         onParsedFilters={setParsedFilters}
       />
 
-      <section className="section-padding">
+      <section className="pt-6 md:pt-8 pb-16 md:pb-24">
         <div className="max-w-7xl mx-auto">
           {/* Toolbar */}
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4 flex-wrap">
               {!loading && results.length > 0 && (
                 <p className="text-body text-xs tracking-[0.15em] uppercase text-muted-foreground">
