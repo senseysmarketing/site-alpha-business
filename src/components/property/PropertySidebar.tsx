@@ -32,6 +32,16 @@ const PropertySidebar = ({
           <div>
             <p className="text-body text-sm font-medium text-foreground">{brokerName}</p>
             <p className="text-body text-xs text-muted-foreground">{brokerTitle}</p>
+            <div className="flex items-center gap-1.5 mt-1.5">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-[#25D366] opacity-75 animate-ping" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#25D366]" />
+              </span>
+              <Zap size={12} strokeWidth={1.5} className="text-[#25D366]" />
+              <span className="text-body text-[11px] tracking-wide text-muted-foreground">
+                Responde em até 15 minutos
+              </span>
+            </div>
           </div>
         </div>
 
