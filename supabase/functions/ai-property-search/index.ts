@@ -254,8 +254,9 @@ const scoreProperty = (
   // Featured bonus
   if (p.is_featured) score += 5;
 
-  // Photos bonus (small)
-  if (p.photos && p.photos.length > 0) score += 1;
+  // Photos bonus — strong, to push photo-less listings to the bottom
+  if (p.photos && p.photos.length > 0) score += 30;
+  else score -= 50;
 
   // Determine if this match has any positive signal
   const hasFilterSignal =
