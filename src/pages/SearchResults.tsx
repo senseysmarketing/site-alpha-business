@@ -69,6 +69,7 @@ const SearchResults = () => {
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [compareOpen, setCompareOpen] = useState(false);
   const [parsedFilters, setParsedFilters] = useState<ParsedFilters | null>(null);
+  const [visibleCount, setVisibleCount] = useState(8);
 
   // When there is no query (e.g. navigation from condo links), load full active list from Supabase.
   useEffect(() => {
@@ -115,7 +116,7 @@ const SearchResults = () => {
 
   const filteredResults = useMemo(() => {
     const tagNorm = tagParam ? normalize(tagParam) : "";
-    return results.filter((r) => {
+    const filtered = results.filter((r) => {
       const rental = isRental(r.transaction_type);
       const price = rental ? r.rental_price : r.price;
       if (price && (price < filters.priceRange[0] || price > filters.priceRange[1])) return false;
@@ -133,7 +134,24 @@ const SearchResults = () => {
       }
       return true;
     });
+    // Priorize properties with photos to avoid empty placeholder cards.
+    return [...filtered].sort((a, b) => {
+      const photoA = a.photo ? 1 : 0;
+      const photoB = b.photo ? 1 : 0;
+      return photoB - photoA;
+    });
   }, [results, filters, tagParam]);
+
+  // Reset pagination whenever the filtered set changes.
+  useEffect(() => {
+    setVisibleCount(8);
+  }, [filteredResults]);
+
+  const visibleResults = useMemo(
+    () => filteredResults.slice(0, visibleCount),
+    [filteredResults, visibleCount]
+  );
+  const hasMore = visibleCount < filteredResults.length;
 
   const condominiums = useMemo(() => {
     return [...new Set(results.map((r) => r.condominium).filter(Boolean))] as string[];
@@ -185,8 +203,9 @@ const SearchResults = () => {
             <div className="flex items-center gap-4 flex-wrap">
               {!loading && results.length > 0 && (
                 <p className="text-body text-xs tracking-[0.15em] uppercase text-muted-foreground">
-                  {filteredResults.length}{" "}
-                  {filteredResults.length === 1 ? "resultado" : "resultados"}
+                  {hasMore
+                    ? `Exibindo ${visibleResults.length} de ${filteredResults.length} resultados`
+                    : `${filteredResults.length} ${filteredResults.length === 1 ? "resultado" : "resultados"}`}
                 </p>
               )}
               {parsedFilters && !loading && (
@@ -242,11 +261,25 @@ const SearchResults = () => {
           )}
 
           {!loading && (
-            <BentoGrid
-              results={filteredResults}
-              compareIds={compareIds}
-              onToggleCompare={handleToggleCompare}
-            />
+            <>
+              <BentoGrid
+                results={visibleResults}
+                compareIds={compareIds}
+                onToggleCompare={handleToggleCompare}
+              />
+              {hasMore && (
+                <div className="flex justify-center mt-12 md:mt-16">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={() => setVisibleCount((c) => c + 8)}
+                    className="text-body text-xs tracking-[0.2em] uppercase rounded-full px-10 py-6 border-primary/40 text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
+                  >
+                    Ver mais imóveis
+                  </Button>
+                </div>
+              )}
+            </>
           )}
 
           {!loading && results.length > 0 && filteredResults.length === 0 && (
