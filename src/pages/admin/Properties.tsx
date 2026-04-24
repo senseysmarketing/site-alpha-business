@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -28,7 +30,10 @@ const Properties = () => {
   const [search, setSearch] = useState("");
   const [filterCondo, setFilterCondo] = useState("Todos");
   const [filterStatus, setFilterStatus] = useState("Todos");
+  const [syncing, setSyncing] = useState(false);
+  const [refreshTick, setRefreshTick] = useState(0);
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
 
   useEffect(() => {
     const fetchProperties = async () => {
@@ -42,7 +47,27 @@ const Properties = () => {
       setProperties(data ?? []);
     };
     fetchProperties();
-  }, [filterCondo, filterStatus]);
+  }, [filterCondo, filterStatus, refreshTick]);
+
+  const handleSync = async () => {
+    setSyncing(true);
+    toast({ title: "Sincronizando com Kenlo...", description: "Buscando feed XML, isso pode levar alguns segundos." });
+    try {
+      const { data, error } = await supabase.functions.invoke("sync-kenlo-properties");
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast({
+        title: "Sincronização concluída",
+        description: `✓ ${data.created} criados, ${data.updated} atualizados, ${data.deactivated} desativados em ${(data.duration_ms / 1000).toFixed(1)}s`,
+      });
+      setRefreshTick((t) => t + 1);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast({ title: "Falha na sincronização", description: msg, variant: "destructive" });
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const filtered = properties.filter(
     (p) =>
@@ -62,9 +87,22 @@ const Properties = () => {
           <h1 className="font-[Raleway] text-2xl font-semibold text-foreground tracking-tight">Imóveis</h1>
           <p className="font-[Inter] text-sm text-muted-foreground mt-1">Gerencie seu portfólio</p>
         </div>
-        <Button onClick={() => navigate("/admin/imoveis/novo")} className="font-[Inter] text-xs uppercase tracking-widest">
-          <Plus className="h-4 w-4 mr-1" /> Novo Imóvel
-        </Button>
+        <div className="flex items-center gap-2">
+          {isAdmin && (
+            <Button
+              onClick={handleSync}
+              disabled={syncing}
+              variant="outline"
+              className="font-[Inter] text-xs uppercase tracking-widest"
+            >
+              <RefreshCw className={`h-4 w-4 mr-1 ${syncing ? "animate-spin" : ""}`} />
+              {syncing ? "Sincronizando..." : "Sincronizar Agora"}
+            </Button>
+          )}
+          <Button onClick={() => navigate("/admin/imoveis/novo")} className="font-[Inter] text-xs uppercase tracking-widest">
+            <Plus className="h-4 w-4 mr-1" /> Novo Imóvel
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
