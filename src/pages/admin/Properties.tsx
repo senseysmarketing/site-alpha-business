@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Search, RefreshCw, Settings, Copy } from "lucide-react";
 import { KenloSettingsDialog } from "@/components/admin/KenloSettingsDialog";
@@ -11,6 +11,12 @@ import { useAuth } from "@/hooks/useAuth";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
+import {
+  Pagination, PaginationContent, PaginationEllipsis, PaginationItem,
+  PaginationLink, PaginationNext, PaginationPrevious,
+} from "@/components/ui/pagination";
+
+const ITEMS_PER_PAGE = 20;
 
 type Property = {
   id: string;
@@ -34,6 +40,7 @@ const Properties = () => {
   const [syncing, setSyncing] = useState(false);
   const [refreshTick, setRefreshTick] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
 
@@ -87,11 +94,36 @@ const Properties = () => {
     }
   };
 
-  const filtered = properties.filter(
-    (p) =>
-      p.title.toLowerCase().includes(search.toLowerCase()) ||
-      p.code.toLowerCase().includes(search.toLowerCase())
+  const filtered = useMemo(
+    () =>
+      properties.filter(
+        (p) =>
+          p.title.toLowerCase().includes(search.toLowerCase()) ||
+          p.code.toLowerCase().includes(search.toLowerCase())
+      ),
+    [properties, search]
   );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, filterCondo, filterStatus]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+  const safePage = Math.min(currentPage, totalPages);
+  const startIdx = (safePage - 1) * ITEMS_PER_PAGE;
+  const paginated = filtered.slice(startIdx, startIdx + ITEMS_PER_PAGE);
+
+  const pageNumbers = useMemo<(number | "ellipsis")[]>(() => {
+    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    const pages: (number | "ellipsis")[] = [1];
+    const left = Math.max(2, safePage - 1);
+    const right = Math.min(totalPages - 1, safePage + 1);
+    if (left > 2) pages.push("ellipsis");
+    for (let i = left; i <= right; i++) pages.push(i);
+    if (right < totalPages - 1) pages.push("ellipsis");
+    pages.push(totalPages);
+    return pages;
+  }, [totalPages, safePage]);
 
   const formatPrice = (price: number | null) => {
     if (!price) return "—";
@@ -210,7 +242,7 @@ const Properties = () => {
                 </TableCell>
               </TableRow>
             ) : (
-              filtered.map((property) => (
+              paginated.map((property) => (
                 <TableRow key={property.id} className="cursor-pointer" onClick={() => navigate(`/admin/imoveis/${property.id}`)}>
                   <TableCell className="font-[Inter] text-xs font-medium">{property.code}</TableCell>
                   <TableCell className="font-[Inter] text-sm">{property.title}</TableCell>
@@ -240,6 +272,58 @@ const Properties = () => {
           </TableBody>
         </Table>
       </div>
+
+      {filtered.length > 0 && totalPages > 1 && (
+        <div className="flex items-center justify-between mt-4">
+          <p className="font-[Inter] text-xs text-muted-foreground">
+            Exibindo {startIdx + 1}–{Math.min(startIdx + ITEMS_PER_PAGE, filtered.length)} de {filtered.length} imóveis
+          </p>
+          <Pagination className="mx-0 w-auto justify-end">
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (safePage > 1) setCurrentPage(safePage - 1);
+                  }}
+                  className={safePage === 1 ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+              {pageNumbers.map((p, i) =>
+                p === "ellipsis" ? (
+                  <PaginationItem key={`e-${i}`}>
+                    <PaginationEllipsis />
+                  </PaginationItem>
+                ) : (
+                  <PaginationItem key={p}>
+                    <PaginationLink
+                      href="#"
+                      isActive={p === safePage}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setCurrentPage(p);
+                      }}
+                    >
+                      {p}
+                    </PaginationLink>
+                  </PaginationItem>
+                )
+              )}
+              <PaginationItem>
+                <PaginationNext
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (safePage < totalPages) setCurrentPage(safePage + 1);
+                  }}
+                  className={safePage === totalPages ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+      )}
     </div>
   );
 };
