@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { MessageCircle, Calendar, FileText, Building2, Wrench } from "lucide-react";
+import { MessageCircle, Calendar, FileText, Building2, Wrench, Loader2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import PropertyGallery from "@/components/property/PropertyGallery";
