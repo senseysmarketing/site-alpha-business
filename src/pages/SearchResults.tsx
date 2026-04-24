@@ -116,7 +116,7 @@ const SearchResults = () => {
 
   const filteredResults = useMemo(() => {
     const tagNorm = tagParam ? normalize(tagParam) : "";
-    return results.filter((r) => {
+    const filtered = results.filter((r) => {
       const rental = isRental(r.transaction_type);
       const price = rental ? r.rental_price : r.price;
       if (price && (price < filters.priceRange[0] || price > filters.priceRange[1])) return false;
@@ -134,7 +134,24 @@ const SearchResults = () => {
       }
       return true;
     });
+    // Priorize properties with photos to avoid empty placeholder cards.
+    return [...filtered].sort((a, b) => {
+      const photoA = a.photo ? 1 : 0;
+      const photoB = b.photo ? 1 : 0;
+      return photoB - photoA;
+    });
   }, [results, filters, tagParam]);
+
+  // Reset pagination whenever the filtered set changes.
+  useEffect(() => {
+    setVisibleCount(8);
+  }, [filteredResults]);
+
+  const visibleResults = useMemo(
+    () => filteredResults.slice(0, visibleCount),
+    [filteredResults, visibleCount]
+  );
+  const hasMore = visibleCount < filteredResults.length;
 
   const condominiums = useMemo(() => {
     return [...new Set(results.map((r) => r.condominium).filter(Boolean))] as string[];
