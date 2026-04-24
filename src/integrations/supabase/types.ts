@@ -296,14 +296,17 @@ export type Database = {
           created_at: string | null
           description: string | null
           engineering_highlights: string[] | null
+          external_id: string | null
           id: string
           is_featured: boolean | null
+          last_synced_at: string | null
           neighborhood: string | null
           parking_spots: number | null
           photos: string[] | null
           price: number | null
           property_type: string
           rental_price: number | null
+          source: string
           status: string | null
           title: string
           transaction_type: string
@@ -322,14 +325,17 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           engineering_highlights?: string[] | null
+          external_id?: string | null
           id?: string
           is_featured?: boolean | null
+          last_synced_at?: string | null
           neighborhood?: string | null
           parking_spots?: number | null
           photos?: string[] | null
           price?: number | null
           property_type?: string
           rental_price?: number | null
+          source?: string
           status?: string | null
           title: string
           transaction_type?: string
@@ -348,14 +354,17 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           engineering_highlights?: string[] | null
+          external_id?: string | null
           id?: string
           is_featured?: boolean | null
+          last_synced_at?: string | null
           neighborhood?: string | null
           parking_spots?: number | null
           photos?: string[] | null
           price?: number | null
           property_type?: string
           rental_price?: number | null
+          source?: string
           status?: string | null
           title?: string
           transaction_type?: string
