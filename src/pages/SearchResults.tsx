@@ -72,7 +72,15 @@ const SearchResults = () => {
   );
   const [loading, setLoading] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [filters, setFilters] = useState<Filters>(defaultFilters);
+  const [filters, setFilters] = useState<Filters>(() => {
+    const condoParam = searchParams.get("condominium");
+    const txParam = searchParams.get("transactionType");
+    return {
+      ...defaultFilters,
+      condominium: condoParam || defaultFilters.condominium,
+      transactionType: (txParam as Filters["transactionType"]) || defaultFilters.transactionType,
+    };
+  });
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [compareOpen, setCompareOpen] = useState(false);
   const [parsedFilters, setParsedFilters] = useState<ParsedFilters | null>(null);
