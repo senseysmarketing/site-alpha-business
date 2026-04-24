@@ -39,14 +39,15 @@ const DEFAULT_CONFIG: SyncConfig = {
 
 function parseBR(value: unknown): number | null {
   if (value == null) return null;
-  const s = String(value).trim();
+  let s = String(value).trim();
   if (!s) return null;
-  const cleaned = s
-    .replace(/R\$/gi, "")
-    .replace(/\s/g, "")
-    .replace(/\./g, "")
-    .replace(",", ".");
-  const n = parseFloat(cleaned);
+  s = s.replace(/R\$/gi, "").replace(/\s/g, "");
+  // Detect format: if contains comma -> BR (1.234.567,89). Else US/decimal (7000000.00).
+  if (s.includes(",")) {
+    s = s.replace(/\./g, "").replace(",", ".");
+  }
+  // else: leave dots as decimal separator
+  const n = parseFloat(s);
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
@@ -223,14 +224,17 @@ Deno.serve(async (req) => {
         })
         .filter((u: any): u is string => typeof u === "string" && u.startsWith("http"));
 
+      const cityFromXml = String(im?.Cidade ?? "").trim();
+      const neighborhoodFromXml = String(im?.Bairro ?? "").trim();
+
       const base: Record<string, unknown> = {
         title: String(im?.TituloAnuncio ?? im?.Titulo ?? `${tipo} - ${condo ?? ref}`).slice(0, 250),
         description: String(im?.Observacao ?? im?.Descricao ?? "") || null,
         property_type: tipo,
         condominium: condo,
         address: String(im?.Endereco ?? im?.Logradouro ?? "") || null,
-        city: String(im?.Cidade ?? "Barueri"),
-        neighborhood: String(im?.Bairro ?? "Alphaville"),
+        city: cityFromXml || "Barueri",
+        neighborhood: neighborhoodFromXml || "Alphaville",
         bedrooms: toInt(im?.QtdDormitorios ?? im?.Dormitorios ?? 0) ?? 0,
         bathrooms: toInt(im?.QtdBanheiros ?? im?.Banheiros ?? 0) ?? 0,
         parking_spots: toInt(im?.QtdVagas ?? im?.Vagas ?? 0) ?? 0,
