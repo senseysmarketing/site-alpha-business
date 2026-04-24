@@ -49,4 +49,5 @@
 - [Blog CMS Workflow](mem://features/admin/blog-cms) — Zen mode editor, AI article generator, published_at status
 - [Social Highlights Config](mem://features/admin/social-highlights) — IG URL scraping config, manual fallback logic
 - [Identity & Brand Control](mem://features/admin/identity-control) — 7-block Bento Hub for site content and design tokens
+- [Homepage Featured Carousel](mem://features/admin/homepage-featured-carousel) — Curate up to 6 properties for the home "Nossas propriedades especiais" carousel
 - [Audit Activity Log](mem://features/admin/audit-log) — Real pagination, 15 items/page, render cycle prevention

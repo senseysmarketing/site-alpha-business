@@ -15,12 +15,37 @@ const NewArrivalsSection = () => {
     containScroll: "trimSnaps",
   });
 
-  const { data: dbProperties } = useQuery({
-    queryKey: ["new-arrivals-properties"],
+  const { data: featuredSetting } = useQuery({
+    queryKey: ["site_settings", "homepage_featured_properties"],
     queryFn: async () => {
+      const { data } = await supabase
+        .from("site_settings")
+        .select("value")
+        .eq("key", "homepage_featured_properties")
+        .maybeSingle();
+      return (data?.value as { property_ids?: string[] } | null) ?? null;
+    },
+  });
+
+  const curatedIds = featuredSetting?.property_ids ?? [];
+
+  const { data: dbProperties } = useQuery({
+    queryKey: ["new-arrivals-properties", curatedIds.join(",")],
+    queryFn: async () => {
+      if (curatedIds.length > 0) {
+        const { data, error } = await supabase
+          .from("properties")
+          .select("*")
+          .in("id", curatedIds);
+        if (error || !data?.length) return null;
+        // preserve admin-defined order
+        const order = new Map(curatedIds.map((id, i) => [id, i]));
+        return [...data].sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+      }
       const { data, error } = await supabase
         .from("properties")
         .select("*")
+        .not("photos", "is", null)
         .order("created_at", { ascending: false })
         .limit(6);
       if (error || !data?.length) return null;
