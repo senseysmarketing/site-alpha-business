@@ -103,6 +103,7 @@ const Properties = () => {
             <Plus className="h-4 w-4 mr-1" /> Novo Imóvel
           </Button>
         </div>
+      </div>
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-4 mb-4">
