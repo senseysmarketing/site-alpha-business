@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Search, RefreshCw } from "lucide-react";
+import { Plus, Search, RefreshCw, Settings, Copy } from "lucide-react";
+import { KenloSettingsDialog } from "@/components/admin/KenloSettingsDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +33,7 @@ const Properties = () => {
   const [filterStatus, setFilterStatus] = useState("Todos");
   const [syncing, setSyncing] = useState(false);
   const [refreshTick, setRefreshTick] = useState(0);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
 
@@ -55,10 +57,26 @@ const Properties = () => {
     try {
       const { data, error } = await supabase.functions.invoke("sync-kenlo-properties");
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      const ip = data?.outbound_ip ? ` · IP: ${data.outbound_ip}` : "";
+      if (!data?.success) {
+        toast({
+          title: "Falha na sincronização",
+          description: `${data?.error ?? "Erro desconhecido"}${ip}`,
+          variant: "destructive",
+          action: data?.outbound_ip ? (
+            <button
+              onClick={() => navigator.clipboard.writeText(data.outbound_ip)}
+              className="inline-flex items-center gap-1 px-2 py-1 rounded border text-[11px] hover:bg-foreground hover:text-background transition-colors"
+            >
+              <Copy className="h-3 w-3" /> Copiar IP
+            </button>
+          ) : undefined,
+        });
+        return;
+      }
       toast({
         title: "Sincronização concluída",
-        description: `✓ ${data.created} criados, ${data.updated} atualizados, ${data.deactivated} desativados em ${(data.duration_ms / 1000).toFixed(1)}s`,
+        description: `✓ ${data.created} criados, ${data.updated} atualizados, ${data.deactivated} desativados em ${(data.duration_ms / 1000).toFixed(1)}s${ip}`,
       });
       setRefreshTick((t) => t + 1);
     } catch (e) {
@@ -82,6 +100,7 @@ const Properties = () => {
 
   return (
     <div>
+      <KenloSettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="font-[Raleway] text-2xl font-semibold text-foreground tracking-tight">Imóveis</h1>
@@ -89,15 +108,26 @@ const Properties = () => {
         </div>
         <div className="flex items-center gap-2">
           {isAdmin && (
-            <Button
-              onClick={handleSync}
-              disabled={syncing}
-              variant="outline"
-              className="font-[Inter] text-xs uppercase tracking-widest"
-            >
-              <RefreshCw className={`h-4 w-4 mr-1 ${syncing ? "animate-spin" : ""}`} />
-              {syncing ? "Sincronizando..." : "Sincronizar Agora"}
-            </Button>
+            <>
+              <Button
+                onClick={() => setSettingsOpen(true)}
+                variant="outline"
+                size="icon"
+                title="Configurar feed Kenlo"
+                className="h-9 w-9"
+              >
+                <Settings className="h-4 w-4" />
+              </Button>
+              <Button
+                onClick={handleSync}
+                disabled={syncing}
+                variant="outline"
+                className="font-[Inter] text-xs uppercase tracking-widest"
+              >
+                <RefreshCw className={`h-4 w-4 mr-1 ${syncing ? "animate-spin" : ""}`} />
+                {syncing ? "Sincronizando..." : "Sincronizar Agora"}
+              </Button>
+            </>
           )}
           <Button onClick={() => navigate("/admin/imoveis/novo")} className="font-[Inter] text-xs uppercase tracking-widest">
             <Plus className="h-4 w-4 mr-1" /> Novo Imóvel

@@ -1,327 +1,357 @@
 // Sync properties from Kenlo (ValueGaia) XML feed.
 // - Upsert by `code` (uses Reference + suffix -V/-L when both prices exist)
 // - Tombstones only `source = 'kenlo'` rows missing from feed
-// - Preserves manually-entered properties
+// - Preserves manually-entered properties (source != 'kenlo')
+// - Captures outbound IP for Kenlo whitelisting diagnostics
+// - Reads dynamic config from site_settings.kenlo_sync_config
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { XMLParser } from "https://esm.sh/fast-xml-parser@4.5.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
 };
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
-const KENLO_XML_URL = Deno.env.get("KENLO_XML_URL")!;
+type SyncConfig = {
+  import_sale: boolean;
+  import_rental: boolean;
+  split_dual: boolean;
+  min_price: number;
+  max_price: number;
+  allowed_property_types: string[];
+  allowed_condominiums: string[];
+  missing_behavior: "inativar" | "manter" | "deletar";
+  protected_fields: string[];
+};
 
-// ---------- helpers ----------
+const DEFAULT_CONFIG: SyncConfig = {
+  import_sale: true,
+  import_rental: true,
+  split_dual: true,
+  min_price: 0,
+  max_price: 0,
+  allowed_property_types: [],
+  allowed_condominiums: [],
+  missing_behavior: "inativar",
+  protected_fields: ["is_featured", "engineering_highlights"],
+};
 
-function parseBR(input: unknown): number | null {
-  if (input === null || input === undefined) return null;
-  const s = String(input).trim();
+function parseBR(value: unknown): number | null {
+  if (value == null) return null;
+  const s = String(value).trim();
   if (!s) return null;
-  // Strip "R$", spaces, dots (thousands), then swap comma for dot.
-  const cleaned = s.replace(/R\$/gi, "").replace(/\s/g, "").replace(/\./g, "").replace(",", ".");
+  const cleaned = s
+    .replace(/R\$/gi, "")
+    .replace(/\s/g, "")
+    .replace(/\./g, "")
+    .replace(",", ".");
   const n = parseFloat(cleaned);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function toInt(value: unknown): number | null {
+  if (value == null) return null;
+  const n = parseInt(String(value), 10);
   return Number.isFinite(n) ? n : null;
 }
 
-function toInt(input: unknown): number | null {
-  if (input === null || input === undefined) return null;
-  const s = String(input).trim();
-  if (!s) return null;
-  const n = parseInt(s, 10);
-  return Number.isFinite(n) ? n : null;
-}
-
-function asArray<T>(v: T | T[] | undefined | null): T[] {
-  if (v === undefined || v === null) return [];
+function toArray<T>(v: T | T[] | undefined | null): T[] {
+  if (v == null) return [];
   return Array.isArray(v) ? v : [v];
 }
 
-function pick(obj: Record<string, unknown>, ...keys: string[]): string | null {
-  for (const k of keys) {
-    const v = obj?.[k];
-    if (v !== undefined && v !== null && String(v).trim() !== "") return String(v).trim();
-  }
-  return null;
-}
-
-function normalizePropertyType(raw: string | null): string {
-  if (!raw) return "casa";
-  const s = raw.toLowerCase();
-  if (s.includes("apart") || s.includes("flat")) return "apartamento";
+function normalizePropertyType(raw: unknown): string {
+  const s = String(raw ?? "").toLowerCase().trim();
+  if (s.includes("apart")) return "apartamento";
+  if (s.includes("casa") && s.includes("cond")) return "casa em condominio";
+  if (s.includes("casa")) return "casa";
   if (s.includes("terreno") || s.includes("lote")) return "terreno";
-  if (s.includes("cobertura")) return "cobertura";
-  if (s.includes("comercial") || s.includes("sala")) return "comercial";
-  return "casa";
+  if (s.includes("cobert")) return "cobertura";
+  if (s.includes("comerc") || s.includes("sala")) return "comercial";
+  return s || "casa";
 }
 
-function extractPhotos(fotosNode: unknown): string[] {
-  // Common Kenlo shapes: { Foto: [{ URLArquivo: "..." }, ...] } or { Foto: { URLArquivo } }
-  if (!fotosNode || typeof fotosNode !== "object") return [];
-  const fotosObj = fotosNode as Record<string, unknown>;
-  const fotos = asArray(fotosObj.Foto ?? fotosObj.foto);
-  return fotos
-    .map((f) => {
-      if (typeof f === "string") return f;
-      const o = f as Record<string, unknown>;
-      return pick(o, "URLArquivo", "URL", "Url", "url") ?? "";
-    })
-    .filter((u) => !!u);
+async function getOutboundIp(): Promise<string> {
+  const endpoints = [
+    "https://api.ipify.org?format=json",
+    "https://ifconfig.me/ip",
+    "https://ipinfo.io/ip",
+  ];
+  for (const url of endpoints) {
+    try {
+      const r = await fetch(url, { signal: AbortSignal.timeout(4000) });
+      if (!r.ok) continue;
+      const txt = (await r.text()).trim();
+      if (url.includes("ipify")) {
+        try { return JSON.parse(txt).ip ?? "unknown"; } catch { return txt; }
+      }
+      return txt;
+    } catch {
+      continue;
+    }
+  }
+  return "unknown";
 }
-
-function buildBaseRow(imovel: Record<string, unknown>) {
-  const ref = pick(imovel, "CodigoImovel", "Referencia", "ReferenciaImovel", "Codigo");
-  const externalId = pick(imovel, "IDImovel", "ID", "Id");
-  const title =
-    pick(imovel, "TituloImovel", "TituloAnuncio", "Titulo") ??
-    `Imóvel ${ref ?? externalId ?? "sem código"}`;
-  const description = pick(imovel, "DescricaoImovel", "Descricao", "Observacao");
-  const propertyType = normalizePropertyType(pick(imovel, "TipoImovel", "SubTipoImovel", "Tipo"));
-  const condominium = pick(imovel, "NomeEdificio", "Condominio", "NomeCondominio");
-  const address = [
-    pick(imovel, "Endereco", "Logradouro"),
-    pick(imovel, "Numero"),
-  ].filter(Boolean).join(", ") || null;
-  const neighborhood = pick(imovel, "Bairro") ?? "Alphaville";
-  const city = pick(imovel, "Cidade") ?? "Barueri";
-
-  const bedrooms = toInt(pick(imovel, "QtdDormitorios", "Dormitorios", "Quartos"));
-  const bathrooms = toInt(pick(imovel, "QtdBanheiros", "Banheiros"));
-  const parkingSpots = toInt(pick(imovel, "QtdVagas", "Vagas", "Garagem"));
-  const areaTotal = parseBR(pick(imovel, "AreaTotal", "AreaTerreno"));
-  const areaBuilt = parseBR(pick(imovel, "AreaUtil", "AreaConstruida", "AreaPrivativa"));
-  const videoUrl = pick(imovel, "URLVideo", "VideoURL", "Video");
-
-  const photos = extractPhotos(imovel.Fotos ?? imovel.fotos);
-
-  return {
-    ref,
-    externalId,
-    base: {
-      title,
-      description,
-      property_type: propertyType,
-      condominium,
-      address,
-      neighborhood,
-      city,
-      bedrooms,
-      bathrooms,
-      parking_spots: parkingSpots,
-      area_total: areaTotal,
-      area_built: areaBuilt,
-      video_url: videoUrl,
-      photos: photos.length ? photos : null,
-      source: "kenlo",
-      external_id: externalId,
-      last_synced_at: new Date().toISOString(),
-      status: "ativo" as const,
-    },
-  };
-}
-
-// ---------- handler ----------
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
 
-  // Auth: must be admin
+  const startedAt = Date.now();
+  let outboundIp = "unknown";
+
   try {
-    const authHeader = req.headers.get("Authorization") ?? "";
-    const userClient = createClient(SUPABASE_URL, ANON_KEY, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const { data: userData, error: userErr } = await userClient.auth.getUser();
-    if (userErr || !userData.user) {
-      return new Response(JSON.stringify({ error: "Não autenticado" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
-    const { data: isAdmin } = await admin.rpc("has_role", {
-      _user_id: userData.user.id,
-      _role: "admin",
-    });
-    if (!isAdmin) {
-      return new Response(JSON.stringify({ error: "Acesso negado" }), {
-        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    outboundIp = await getOutboundIp();
+    console.log("[kenlo-sync] outbound_ip:", outboundIp);
 
-    const startedAt = Date.now();
-    const debugMode = new URL(req.url).searchParams.get("debug") === "1";
+    const KENLO_URL = Deno.env.get("KENLO_XML_URL");
+    if (!KENLO_URL) throw new Error("KENLO_XML_URL não configurado");
 
-    // Diagnostic: outbound IP (helps user whitelist on ValueGaia panel)
-    let outboundIp: string | null = null;
-    try {
-      const ipRes = await fetch("https://api.ipify.org?format=json");
-      const ipJson = await ipRes.json();
-      outboundIp = ipJson?.ip ?? null;
-    } catch (_) { /* ignore */ }
+    const admin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
 
-    if (debugMode) {
-      return new Response(JSON.stringify({ outbound_ip: outboundIp }), {
-        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Fetch XML
-    const xmlRes = await fetch(KENLO_XML_URL, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; AlphaBusinessSync/1.0)",
-        "Accept": "application/xml, text/xml, */*",
+    // Persist last outbound IP for the admin UI
+    await admin.from("site_settings").upsert(
+      {
+        key: "kenlo_last_outbound_ip",
+        value: { ip: outboundIp, checked_at: new Date().toISOString() },
+        updated_at: new Date().toISOString(),
       },
-    });
-    if (!xmlRes.ok) {
-      const body = await xmlRes.text();
-      return new Response(JSON.stringify({
-        error: `Falha ao buscar XML (HTTP ${xmlRes.status})`,
-        outbound_ip: outboundIp,
-        hint: "Se o token estiver restrito por IP, cadastre o outbound_ip no painel ValueGaia.",
-        snippet: body.slice(0, 300),
-      }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-    const xml = await xmlRes.text();
+      { onConflict: "key" },
+    );
 
+    // Load dynamic sync config
+    const { data: cfgRow } = await admin
+      .from("site_settings")
+      .select("value")
+      .eq("key", "kenlo_sync_config")
+      .maybeSingle();
+    const config: SyncConfig = {
+      ...DEFAULT_CONFIG,
+      ...((cfgRow?.value as Partial<SyncConfig>) ?? {}),
+    };
+
+    const xmlResp = await fetch(KENLO_URL, {
+      headers: { "User-Agent": "AlphaBusiness-Sync/1.0" },
+      signal: AbortSignal.timeout(45000),
+    });
+
+    if (!xmlResp.ok) {
+      const bodyPreview = await xmlResp.text().catch(() => "");
+      const status = xmlResp.status;
+      const isIpBlock = status === 403 || status === 401;
+      const msg = isIpBlock
+        ? `Kenlo bloqueou o acesso (HTTP ${status}). Provável restrição por IP. Envie o IP de saída para a Kenlo liberar.`
+        : `Kenlo retornou HTTP ${status}: ${bodyPreview.slice(0, 200)}`;
+
+      await admin.from("system_audit_logs").insert({
+        action: "sincronizou",
+        object_type: "kenlo_sync",
+        object_label: "Falha",
+        user_name: "Sistema",
+        metadata: { error: msg, outbound_ip: outboundIp, status },
+      });
+
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: msg,
+          outbound_ip: outboundIp,
+          status,
+          duration_ms: Date.now() - startedAt,
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    const xmlText = await xmlResp.text();
     const parser = new XMLParser({
       ignoreAttributes: false,
       attributeNamePrefix: "@_",
+      parseTagValue: true,
       trimValues: true,
     });
-    const parsed = parser.parse(xml);
+    const parsed = parser.parse(xmlText);
 
-    // Try common roots
-    const root = parsed?.Carga ?? parsed?.Imoveis ?? parsed?.GaiaImoveis ?? parsed;
-    const imoveis = asArray(root?.Imoveis?.Imovel ?? root?.Imovel ?? root?.imovel);
+    const root: any = parsed?.Carga ?? parsed?.carga ?? parsed?.ListingDataFeed ?? parsed;
+    const imoveisNode =
+      root?.Imoveis?.Imovel ??
+      root?.Imoveis?.imovel ??
+      root?.Listings?.Listing ??
+      root?.imoveis?.imovel ??
+      [];
+    const imoveis = toArray<any>(imoveisNode);
 
-    if (!imoveis.length) {
-      return new Response(JSON.stringify({
-        error: "Nenhum imóvel encontrado no XML.",
-        root_keys: Object.keys(parsed ?? {}),
-      }), { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
+    console.log(`[kenlo-sync] parsed ${imoveis.length} imóveis from feed`);
 
-    // Build rows (split V/L)
-    const rows: Array<Record<string, unknown>> = [];
+    const rows: any[] = [];
     const seenCodes = new Set<string>();
-    const errors: string[] = [];
 
-    for (const imovel of imoveis) {
-      try {
-        const { ref, base } = buildBaseRow(imovel as Record<string, unknown>);
-        if (!ref) { errors.push("Imóvel sem CodigoImovel/Referencia ignorado"); continue; }
+    for (const im of imoveis) {
+      const ref = String(
+        im?.CodigoImovel ?? im?.Referencia ?? im?.codigo ?? im?.Codigo ?? im?.["@_id"] ?? "",
+      ).trim();
+      if (!ref) continue;
 
-        const precoVenda = parseBR(pick(imovel as Record<string, unknown>, "PrecoVenda", "ValorVenda"));
-        const precoLocacao = parseBR(pick(imovel as Record<string, unknown>, "PrecoLocacao", "ValorLocacao", "ValorAluguel"));
+      const tipo = normalizePropertyType(
+        im?.TipoImovel ?? im?.SubTipoImovel ?? im?.Categoria ?? im?.Tipo,
+      );
+      if (config.allowed_property_types.length > 0 && !config.allowed_property_types.includes(tipo)) continue;
 
-        const hasV = precoVenda !== null && precoVenda > 0;
-        const hasL = precoLocacao !== null && precoLocacao > 0;
+      const condo = String(im?.Condominio ?? im?.NomeCondominio ?? im?.Empreendimento ?? "").trim() || null;
+      if (config.allowed_condominiums.length > 0 && condo && !config.allowed_condominiums.includes(condo)) continue;
 
-        if (hasV && hasL) {
-          const codeV = `${ref}-V`;
-          const codeL = `${ref}-L`;
-          if (!seenCodes.has(codeV)) {
-            rows.push({ ...base, code: codeV, transaction_type: "venda", price: precoVenda, rental_price: null });
-            seenCodes.add(codeV);
-          }
-          if (!seenCodes.has(codeL)) {
-            rows.push({ ...base, code: codeL, transaction_type: "locacao", price: null, rental_price: precoLocacao });
-            seenCodes.add(codeL);
-          }
-        } else if (hasV) {
-          if (!seenCodes.has(ref)) {
-            rows.push({ ...base, code: ref, transaction_type: "venda", price: precoVenda, rental_price: null });
-            seenCodes.add(ref);
-          }
-        } else if (hasL) {
-          if (!seenCodes.has(ref)) {
-            rows.push({ ...base, code: ref, transaction_type: "locacao", price: null, rental_price: precoLocacao });
-            seenCodes.add(ref);
-          }
-        } else {
-          // No price -> still upsert as 'venda' with null price, marked active
-          if (!seenCodes.has(ref)) {
-            rows.push({ ...base, code: ref, transaction_type: "venda", price: null, rental_price: null });
-            seenCodes.add(ref);
-          }
-        }
-      } catch (e) {
-        errors.push(`Erro ao mapear imóvel: ${e instanceof Error ? e.message : String(e)}`);
+      const precoVenda = parseBR(im?.PrecoVenda ?? im?.ValorVenda ?? im?.Preco);
+      const precoLocacao = parseBR(im?.PrecoLocacao ?? im?.ValorLocacao ?? im?.PrecoAluguel);
+
+      const passPrice = (p: number | null) =>
+        p != null && p >= (config.min_price || 0) && (config.max_price === 0 || p <= config.max_price);
+
+      const hasV = config.import_sale && passPrice(precoVenda);
+      const hasL = config.import_rental && passPrice(precoLocacao);
+      if (!hasV && !hasL) continue;
+
+      const fotosNode = im?.Fotos?.Foto ?? im?.Imagens?.Imagem ?? im?.Photos?.Photo ?? [];
+      const photos: string[] = toArray<any>(fotosNode)
+        .map((f: any) => {
+          if (typeof f === "string") return f;
+          return f?.URLArquivo ?? f?.Url ?? f?.url ?? f?.["#text"] ?? null;
+        })
+        .filter((u: any): u is string => typeof u === "string" && u.startsWith("http"));
+
+      const base: Record<string, unknown> = {
+        title: String(im?.TituloAnuncio ?? im?.Titulo ?? `${tipo} - ${condo ?? ref}`).slice(0, 250),
+        description: String(im?.Observacao ?? im?.Descricao ?? "") || null,
+        property_type: tipo,
+        condominium: condo,
+        address: String(im?.Endereco ?? im?.Logradouro ?? "") || null,
+        city: String(im?.Cidade ?? "Barueri"),
+        neighborhood: String(im?.Bairro ?? "Alphaville"),
+        bedrooms: toInt(im?.QtdDormitorios ?? im?.Dormitorios ?? 0) ?? 0,
+        bathrooms: toInt(im?.QtdBanheiros ?? im?.Banheiros ?? 0) ?? 0,
+        parking_spots: toInt(im?.QtdVagas ?? im?.Vagas ?? 0) ?? 0,
+        area_total: parseBR(im?.AreaTotal ?? im?.AreaTerreno),
+        area_built: parseBR(im?.AreaUtil ?? im?.AreaConstruida),
+        photos,
+        source: "kenlo",
+        external_id: ref,
+        last_synced_at: new Date().toISOString(),
+        status: "ativo",
+      };
+
+      if (hasV && hasL && config.split_dual) {
+        const codeV = `${ref}-V`;
+        const codeL = `${ref}-L`;
+        rows.push({ ...base, code: codeV, transaction_type: "venda", price: precoVenda, rental_price: null });
+        rows.push({ ...base, code: codeL, transaction_type: "locacao", price: null, rental_price: precoLocacao });
+        seenCodes.add(codeV);
+        seenCodes.add(codeL);
+      } else if (hasV) {
+        rows.push({ ...base, code: ref, transaction_type: "venda", price: precoVenda, rental_price: precoLocacao });
+        seenCodes.add(ref);
+      } else if (hasL) {
+        rows.push({ ...base, code: ref, transaction_type: "locacao", price: precoVenda, rental_price: precoLocacao });
+        seenCodes.add(ref);
       }
     }
 
-    // Count current kenlo properties (for delta)
-    const { data: existing } = await admin
+    // Fetch existing kenlo rows for protected fields preservation
+    const protectedSelect = ["id", "code", ...config.protected_fields].join(", ");
+    const { data: existingRows } = await admin
       .from("properties")
-      .select("code")
+      .select(protectedSelect)
       .eq("source", "kenlo");
-    const existingCodes = new Set((existing ?? []).map((r) => r.code));
+    const existingMap = new Map((existingRows ?? []).map((r: any) => [r.code, r]));
 
     let created = 0;
     let updated = 0;
-    for (const code of seenCodes) {
-      if (existingCodes.has(code)) updated++; else created++;
-    }
-
-    // Upsert in batches of 100
     const BATCH = 100;
+
     for (let i = 0; i < rows.length; i += BATCH) {
-      const slice = rows.slice(i, i + BATCH);
+      const batch = rows.slice(i, i + BATCH).map((row) => {
+        const existing = existingMap.get(row.code);
+        if (existing) {
+          const preserved: Record<string, unknown> = {};
+          for (const f of config.protected_fields) {
+            if (existing[f] != null) preserved[f] = existing[f];
+          }
+          return { ...row, ...preserved };
+        }
+        return row;
+      });
+
       const { error: upErr } = await admin
         .from("properties")
-        .upsert(slice, { onConflict: "code", ignoreDuplicates: false });
+        .upsert(batch, { onConflict: "code" });
       if (upErr) {
-        errors.push(`Upsert batch ${i / BATCH}: ${upErr.message}`);
+        console.error("[kenlo-sync] upsert error:", upErr);
+        throw upErr;
+      }
+
+      for (const row of batch) {
+        if (existingMap.has(row.code)) updated++;
+        else created++;
       }
     }
 
-    // Tombstone: kenlo properties absent in this feed
     let deactivated = 0;
-    const codesArray = Array.from(seenCodes);
-    if (codesArray.length > 0) {
-      const { data: deact, error: deactErr } = await admin
+    if (config.missing_behavior !== "manter" && seenCodes.size > 0) {
+      const seenArr = Array.from(seenCodes);
+      const { data: missingRows } = await admin
         .from("properties")
-        .update({ status: "inativo", last_synced_at: new Date().toISOString() })
+        .select("id, code")
         .eq("source", "kenlo")
-        .eq("status", "ativo")
-        .not("code", "in", `(${codesArray.map((c) => `"${c}"`).join(",")})`)
-        .select("id");
-      if (deactErr) errors.push(`Tombstone: ${deactErr.message}`);
-      deactivated = deact?.length ?? 0;
+        .not("code", "in", `(${seenArr.map((c) => `"${c}"`).join(",")})`);
+
+      const missingIds = (missingRows ?? []).map((r: any) => r.id);
+      if (missingIds.length > 0) {
+        if (config.missing_behavior === "deletar") {
+          const { error } = await admin.from("properties").delete().in("id", missingIds);
+          if (!error) deactivated = missingIds.length;
+        } else {
+          const { error } = await admin.from("properties").update({ status: "inativo" }).in("id", missingIds);
+          if (!error) deactivated = missingIds.length;
+        }
+      }
     }
 
-    const durationMs = Date.now() - startedAt;
-    const summary = {
-      ok: true,
-      created,
-      updated,
-      deactivated,
-      total_in_feed: rows.length,
-      errors,
-      outbound_ip: outboundIp,
-      duration_ms: durationMs,
-    };
+    const duration_ms = Date.now() - startedAt;
 
-    // Audit log
     await admin.from("system_audit_logs").insert({
-      action: "sync",
-      object_type: "properties",
-      user_id: userData.user.id,
-      user_name: userData.user.email ?? "Admin",
-      object_label: "Sincronização Kenlo",
-      metadata: summary,
+      action: "sincronizou",
+      object_type: "kenlo_sync",
+      object_label: `${created + updated} imóveis`,
+      user_name: "Sistema",
+      metadata: { created, updated, deactivated, duration_ms, outbound_ip: outboundIp },
     });
 
-    return new Response(JSON.stringify(summary), {
-      status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Erro interno";
-    return new Response(JSON.stringify({ error: message }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({
+        success: true,
+        created,
+        updated,
+        deactivated,
+        total_in_feed: imoveis.length,
+        duration_ms,
+        outbound_ip: outboundIp,
+      }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("[kenlo-sync] fatal:", msg);
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: msg,
+        outbound_ip: outboundIp,
+        duration_ms: Date.now() - startedAt,
+      }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
   }
 });
