@@ -1,8 +1,11 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
+
+const COLLAPSED_LIMIT = 24;
 
 interface CondoAvailability {
   hasVenda: boolean;
@@ -35,12 +38,16 @@ const AlphavilleMapSection = () => {
     },
   });
 
+  const [expanded, setExpanded] = useState(false);
+
   const handleClick = (condo: string, type: "venda" | "aluguel") => {
-    const params = new URLSearchParams({ condo, transactionType: type });
-    navigate(`/imoveis?${params.toString()}`);
+    const params = new URLSearchParams({ condominium: condo, transactionType: type });
+    navigate(`/busca?${params.toString()}`);
   };
 
-  const condos = condoMap ? Array.from(condoMap.entries()) : [];
+  const allCondos = condoMap ? Array.from(condoMap.entries()) : [];
+  const condos = expanded ? allCondos : allCondos.slice(0, COLLAPSED_LIMIT);
+  const hasMore = allCondos.length > COLLAPSED_LIMIT;
 
   return (
     <section id="mapa" className="px-6 md:px-12 lg:px-24 py-8 md:py-12">
@@ -107,6 +114,17 @@ const AlphavilleMapSection = () => {
               </div>
             ))}
           </motion.div>
+        )}
+
+        {!isLoading && hasMore && (
+          <div className="mt-10 flex justify-center">
+            <button
+              onClick={() => setExpanded((v) => !v)}
+              className="text-body text-xs uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground transition-colors border-b border-muted-foreground/30 hover:border-foreground pb-1"
+            >
+              {expanded ? "Ver menos" : `Ver mais (${allCondos.length - COLLAPSED_LIMIT})`}
+            </button>
+          </div>
         )}
       </div>
     </section>
