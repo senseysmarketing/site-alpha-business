@@ -118,7 +118,7 @@ const SearchResultsPanel = ({ results, loading, visible, onClose, query = "" }: 
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline gap-2">
-                    <h4 className="text-body text-sm font-medium text-foreground truncate">
+                    <h4 className="text-body text-sm font-medium text-foreground line-clamp-2 min-h-[2.5rem]">
                       {toTitleCase(result.title)}
                     </h4>
                     <span className="text-body text-[10px] tracking-wider uppercase text-muted-foreground flex-shrink-0">

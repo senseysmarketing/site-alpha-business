@@ -91,7 +91,7 @@ const PropertyCard = ({ property, isWide = false, isSelected = false, onToggleCo
         </span>
 
         {/* Title */}
-        <h3 className={`text-display ${isWide ? "text-xl md:text-2xl" : "text-lg md:text-xl"} font-normal text-primary-foreground leading-tight mb-1`}>
+        <h3 className={`text-display ${isWide ? "text-xl md:text-2xl min-h-[3.5rem] md:min-h-[4rem]" : "text-lg md:text-xl min-h-[2.75rem] md:min-h-[3.5rem]"} font-normal text-primary-foreground leading-tight mb-1 line-clamp-2`}>
           {toTitleCase(property.title)}
         </h3>
 
