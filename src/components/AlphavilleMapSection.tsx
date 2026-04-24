@@ -115,6 +115,17 @@ const AlphavilleMapSection = () => {
             ))}
           </motion.div>
         )}
+
+        {!isLoading && hasMore && (
+          <div className="mt-10 flex justify-center">
+            <button
+              onClick={() => setExpanded((v) => !v)}
+              className="text-body text-xs uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground transition-colors border-b border-muted-foreground/30 hover:border-foreground pb-1"
+            >
+              {expanded ? "Ver menos" : `Ver mais (${allCondos.length - COLLAPSED_LIMIT})`}
+            </button>
+          </div>
+        )}
       </div>
     </section>
   );
