@@ -87,10 +87,22 @@ const Properties = () => {
           <h1 className="font-[Raleway] text-2xl font-semibold text-foreground tracking-tight">Imóveis</h1>
           <p className="font-[Inter] text-sm text-muted-foreground mt-1">Gerencie seu portfólio</p>
         </div>
-        <Button onClick={() => navigate("/admin/imoveis/novo")} className="font-[Inter] text-xs uppercase tracking-widest">
-          <Plus className="h-4 w-4 mr-1" /> Novo Imóvel
-        </Button>
-      </div>
+        <div className="flex items-center gap-2">
+          {isAdmin && (
+            <Button
+              onClick={handleSync}
+              disabled={syncing}
+              variant="outline"
+              className="font-[Inter] text-xs uppercase tracking-widest"
+            >
+              <RefreshCw className={`h-4 w-4 mr-1 ${syncing ? "animate-spin" : ""}`} />
+              {syncing ? "Sincronizando..." : "Sincronizar Agora"}
+            </Button>
+          )}
+          <Button onClick={() => navigate("/admin/imoveis/novo")} className="font-[Inter] text-xs uppercase tracking-widest">
+            <Plus className="h-4 w-4 mr-1" /> Novo Imóvel
+          </Button>
+        </div>
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-4 mb-4">
