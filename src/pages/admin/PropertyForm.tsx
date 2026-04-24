@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Mic, MicOff, Plus, Sparkles, Trash2, Upload, X, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { SortablePhotoGrid } from "@/components/admin/property/SortablePhotoGrid";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -244,6 +245,23 @@ const PropertyForm = () => {
     setPhotos((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // Debounced persistence + cover-change toast for photo reorder/remove (edit mode only)
+  const prevCoverRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!isEditing || !id) return;
+    const newCover = photos[0] ?? null;
+    if (prevCoverRef.current !== null && newCover && prevCoverRef.current !== newCover) {
+      toast({ title: "Nova capa do imóvel definida" });
+    }
+    prevCoverRef.current = newCover;
+
+    const t = setTimeout(async () => {
+      await supabase.from("properties").update({ photos }).eq("id", id);
+    }, 1000);
+    return () => clearTimeout(t);
+  }, [photos, id, isEditing]);
+
+
   const inputClass = "h-10 bg-white border-border/50 font-[Inter] text-sm";
   const labelClass = "font-[Inter] text-xs uppercase tracking-widest text-muted-foreground";
 
@@ -456,19 +474,11 @@ const PropertyForm = () => {
               </div>
 
               {photos.length > 0 && (
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                  {photos.map((url, i) => (
-                    <div key={i} className="relative group aspect-square rounded-md overflow-hidden border border-border/50">
-                      <img src={url} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
-                      <button
-                        onClick={() => removePhoto(i)}
-                        className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                <SortablePhotoGrid
+                  photos={photos}
+                  onChange={setPhotos}
+                  onRemove={removePhoto}
+                />
               )}
 
               <div className="space-y-2">
