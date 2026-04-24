@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Maximize, Bed, Car, Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { toTitleCase } from "@/lib/utils";
 
 interface PropertyCardProps {
   property: {
@@ -50,7 +51,7 @@ const PropertyCard = ({ property, isWide = false, isSelected = false, onToggleCo
         {property.photo ? (
           <img
             src={property.photo}
-            alt={property.title}
+            alt={toTitleCase(property.title)}
             className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
           />
         ) : (
@@ -91,7 +92,7 @@ const PropertyCard = ({ property, isWide = false, isSelected = false, onToggleCo
 
         {/* Title */}
         <h3 className={`text-display ${isWide ? "text-xl md:text-2xl" : "text-lg md:text-xl"} font-normal text-primary-foreground leading-tight mb-1`}>
-          {property.title}
+          {toTitleCase(property.title)}
         </h3>
 
         {/* Location */}
