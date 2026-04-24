@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { mockProperties, formatPrice } from "@/data/mockProperties";
+import { toTitleCase } from "@/lib/utils";
 import useEmblaCarousel from "embla-carousel-react";
 import { useState, useEffect } from "react";
 
@@ -96,7 +97,7 @@ const NewArrivalsSection = () => {
                   <div className="relative overflow-hidden aspect-[4/3]">
                     <img
                       src={prop.image}
-                      alt={prop.title}
+                      alt={toTitleCase(prop.title)}
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                       loading="lazy"
                     />
@@ -116,7 +117,7 @@ const NewArrivalsSection = () => {
 
                     {/* Título */}
                     <h3 className="text-display text-xl font-normal text-foreground group-hover:text-primary transition-colors mb-2">
-                      {prop.title}
+                      {toTitleCase(prop.title)}
                     </h3>
 
                     {/* Specs */}

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Bed, Bath, Maximize, X, Building2, ArrowRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { type ParsedFilters } from "@/components/search/FilterChips";
+import { toTitleCase } from "@/lib/utils";
 
 interface SearchResult {
   id: string;
@@ -105,7 +106,7 @@ const SearchResultsPanel = ({ results, loading, visible, onClose, query = "" }: 
                   {result.photo ? (
                     <img
                       src={result.photo}
-                      alt={result.title}
+                      alt={toTitleCase(result.title)}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                   ) : (
@@ -118,7 +119,7 @@ const SearchResultsPanel = ({ results, loading, visible, onClose, query = "" }: 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline gap-2">
                     <h4 className="text-body text-sm font-medium text-foreground truncate">
-                      {result.title}
+                      {toTitleCase(result.title)}
                     </h4>
                     <span className="text-body text-[10px] tracking-wider uppercase text-muted-foreground flex-shrink-0">
                       {result.code}

@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, X } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toTitleCase } from "@/lib/utils";
 
 interface Property {
   id: string;
@@ -69,13 +70,13 @@ const ConciergeSidebar = ({ suggestions, visible }: ConciergeSidebarProps) => {
             >
               <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-muted">
                 {p.photo ? (
-                  <img src={p.photo} alt={p.title} className="w-full h-full object-cover" />
+                  <img src={p.photo} alt={toTitleCase(p.title)} className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full bg-muted" />
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <h4 className="text-display text-sm text-foreground truncate">{p.title}</h4>
+                <h4 className="text-display text-sm text-foreground truncate">{toTitleCase(p.title)}</h4>
                 {p.price && (
                   <span className="text-body text-[11px] text-muted-foreground">
                     {formatPrice(p.price)}

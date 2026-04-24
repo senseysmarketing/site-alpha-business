@@ -16,6 +16,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { mockProperties, formatPrice } from "@/data/mockProperties";
+import { toTitleCase } from "@/lib/utils";
 
 const fadeIn = {
   initial: { opacity: 0, y: 20 },
@@ -58,7 +59,7 @@ const PropertyDetail = () => {
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
           <div>
           <h1 className="text-display text-3xl md:text-5xl font-light tracking-tight text-foreground mb-1">
-              {property.title}
+              {toTitleCase(property.title)}
             </h1>
             <p className="text-body text-sm text-muted-foreground">{property.subtitle}</p>
           </div>
@@ -216,7 +217,7 @@ const PropertyDetail = () => {
               <div className="relative overflow-hidden aspect-[4/3]">
                 <img
                   src={prop.photo || prop.images[0]}
-                  alt={prop.title}
+                  alt={toTitleCase(prop.title)}
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                   loading="lazy"
                 />
@@ -231,7 +232,7 @@ const PropertyDetail = () => {
                   </span>
                 </div>
                 <h3 className="text-display text-xl font-normal text-foreground group-hover:text-primary transition-colors mb-2">
-                  {prop.title}
+                  {toTitleCase(prop.title)}
                 </h3>
                 <p className="text-body text-sm text-muted-foreground">
                   {prop.area_total}m² &nbsp;-&nbsp; Suítes: {prop.suites} &nbsp;-&nbsp; Vagas: {prop.parking}
