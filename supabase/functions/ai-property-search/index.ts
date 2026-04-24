@@ -7,230 +7,363 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// ---------- Utils ----------
+const norm = (s: unknown) =>
+  String(s ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const STOPWORDS = new Set([
+  "a","o","os","as","um","uma","de","do","da","dos","das","no","na","nos","nas",
+  "em","para","por","com","sem","e","ou","que","ao","aos","à","às","seu","sua",
+  "meu","minha","mais","menos","ate","até","entre","the","of","com",
+  "casa","apartamento","apto","ap","cobertura","mansao","mansão","imovel","imóvel",
+  "quero","procuro","busco","tem","ter","perto","proximo","próximo","preciso","gostaria",
+]);
+
+const tokenize = (s: string): string[] => {
+  const n = norm(s);
+  if (!n) return [];
+  return n.split(" ").filter((t) => t.length >= 2 && !STOPWORDS.has(t));
+};
+
+interface ParsedFilters {
+  price_min: number | null;
+  price_max: number | null;
+  bedrooms_min: number | null;
+  bathrooms_min: number | null;
+  parking_min: number | null;
+  area_min: number | null;
+  condominium: string | null;
+  transaction_type: string | null; // 'venda' | 'locacao'
+  qualitative_terms: string[];
+}
+
+const parseMoney = (raw: string): number | null => {
+  // Aceita "5", "5m", "5mi", "5 milhoes", "500k", "500 mil", "1.200.000", "1,2 milhoes"
+  let s = raw.trim().toLowerCase().replace(/r\$\s*/g, "");
+  const milhao = /(milhoes|milhao|milhões|milhão|\bmi\b|\bm\b)/.test(s);
+  const mil = /(\bmil\b|\bk\b)/.test(s);
+  s = s.replace(/(milhoes|milhao|milhões|milhão|mi|m|mil|k)/g, "").trim();
+  // remove pontos de milhar e troca virgula por ponto
+  if (/^\d{1,3}(\.\d{3})+(,\d+)?$/.test(s)) {
+    s = s.replace(/\./g, "").replace(",", ".");
+  } else {
+    s = s.replace(",", ".");
+  }
+  const n = parseFloat(s);
+  if (!isFinite(n)) return null;
+  if (milhao) return Math.round(n * 1_000_000);
+  if (mil) return Math.round(n * 1_000);
+  // Heurística: se menor que 1000 sem unidade, presume milhões (ex: "5")
+  if (n < 1000) return Math.round(n * 1_000_000);
+  return Math.round(n);
+};
+
+const parseFilters = (query: string): ParsedFilters => {
+  const q = query.toLowerCase();
+  const n = norm(query);
+  const f: ParsedFilters = {
+    price_min: null, price_max: null, bedrooms_min: null, bathrooms_min: null,
+    parking_min: null, area_min: null, condominium: null, transaction_type: null,
+    qualitative_terms: [],
+  };
+
+  // Transaction
+  if (/\b(alug|loca|loca[cç][aã]o|para alugar|aluguel)/.test(n)) f.transaction_type = "locacao";
+  else if (/\b(vend|comprar|venda|a venda|à venda)/.test(n)) f.transaction_type = "venda";
+
+  // Price ranges
+  const moneyRe = /([\d.,]+)\s*(milhoes|milhao|milhões|milhão|mi|m|mil|k)?/gi;
+  const between = q.match(/entre\s+([\d.,]+\s*(?:milhoes|milhao|milhões|milhão|mi|m|mil|k)?)\s+(?:e|a|até|ate)\s+([\d.,]+\s*(?:milhoes|milhao|milhões|milhão|mi|m|mil|k)?)/i);
+  if (between) {
+    const a = parseMoney(between[1]); const b = parseMoney(between[2]);
+    if (a && b) { f.price_min = Math.min(a, b); f.price_max = Math.max(a, b); }
+  } else {
+    const ate = q.match(/(?:ate|até|abaixo de|menos de|no maximo|no máximo|m[aá]x(?:imo)?(?:\s+de)?)\s+(r\$\s*)?([\d.,]+\s*(?:milhoes|milhao|milhões|milhão|mi|m|mil|k)?)/i);
+    if (ate) { const v = parseMoney(ate[2]); if (v) f.price_max = v; }
+    const min = q.match(/(?:acima de|mais de|a partir de|m[ií]n(?:imo)?(?:\s+de)?)\s+(r\$\s*)?([\d.,]+\s*(?:milhoes|milhao|milhões|milhão|mi|m|mil|k)?)/i);
+    if (min) { const v = parseMoney(min[2]); if (v) f.price_min = v; }
+  }
+
+  // Bedrooms / suites
+  const bed = n.match(/(\d+)\s*(suites|suite|quartos|quarto|dormitorios|dormitorio)/);
+  if (bed) f.bedrooms_min = parseInt(bed[1], 10);
+
+  const bath = n.match(/(\d+)\s*(banheiros|banheiro|lavabos|lavabo)/);
+  if (bath) f.bathrooms_min = parseInt(bath[1], 10);
+
+  const park = n.match(/(\d+)\s*(vagas|vaga|garagens|garagem)/);
+  if (park) f.parking_min = parseInt(park[1], 10);
+
+  const area = n.match(/(?:acima de|mais de|a partir de|min(?:imo)? de)?\s*(\d{2,5})\s*(?:m2|m²|metros)/);
+  if (area) f.area_min = parseInt(area[1], 10);
+
+  // Qualitative
+  const QUAL = [
+    "piscina","churrasqueira","gourmet","adega","home theater","automacao","automação",
+    "mobiliada","mobiliado","reformada","reformado","face norte","piso aquecido",
+    "vista","sauna","spa","pe direito duplo","pé direito duplo","escritorio","escritório",
+    "elevador","jardim","quintal","sustentavel","sustentável","luxo","alto padrao","alto padrão",
+  ];
+  for (const term of QUAL) {
+    if (n.includes(norm(term))) f.qualitative_terms.push(term);
+  }
+
+  return f;
+};
+
+// ---------- Scoring ----------
+interface PropertyRow {
+  id: string; code: string; title: string; description: string | null;
+  property_type: string; transaction_type: string;
+  condominium: string | null; neighborhood: string | null; city: string | null; address: string | null;
+  price: number | null; rental_price: number | null;
+  bedrooms: number | null; bathrooms: number | null; parking_spots: number | null;
+  area_total: number | null; area_built: number | null;
+  engineering_highlights: string[] | null; photos: string[] | null;
+  status: string | null; is_featured: boolean | null;
+}
+
+interface ScoredMatch {
+  prop: PropertyRow;
+  score: number;
+  reasons: string[];
+}
+
+const buildHaystack = (p: PropertyRow): string => {
+  const parts = [
+    p.code, p.title, p.description, p.property_type, p.transaction_type,
+    p.condominium, p.neighborhood, p.city, p.address,
+    ...(p.engineering_highlights ?? []),
+  ];
+  return norm(parts.filter(Boolean).join(" | "));
+};
+
+const scoreProperty = (
+  p: PropertyRow,
+  query: string,
+  filters: ParsedFilters,
+): ScoredMatch | null => {
+  const queryNorm = norm(query);
+  const tokens = tokenize(query);
+  const haystack = buildHaystack(p);
+  const reasons: string[] = [];
+  let score = 0;
+  let hasAnyMatch = false;
+
+  // Exact code match (super strong)
+  if (queryNorm && norm(p.code) === queryNorm) {
+    return { prop: p, score: 1000, reasons: [`Código exato ${p.code}`] };
+  }
+  if (queryNorm && haystack.includes(norm(p.code)) && p.code.length >= 4) {
+    score += 200; hasAnyMatch = true; reasons.push(`Código ${p.code}`);
+  }
+
+  // Transaction filter
+  if (filters.transaction_type) {
+    if (p.transaction_type === filters.transaction_type) {
+      score += 40;
+    } else {
+      // Wrong transaction type — heavy penalty (effectively excludes)
+      score -= 500;
+    }
+  }
+
+  // Condominium match
+  if (p.condominium) {
+    const condoNorm = norm(p.condominium);
+    if (queryNorm.includes(condoNorm) || condoNorm.includes(queryNorm)) {
+      score += 120; hasAnyMatch = true; reasons.push(`Condomínio ${p.condominium}`);
+    } else {
+      // partial token match on condo
+      const condoTokens = tokenize(p.condominium);
+      const overlap = condoTokens.filter((t) => tokens.includes(t)).length;
+      if (overlap > 0) {
+        score += 40 * overlap; hasAnyMatch = true; reasons.push(`Condomínio ${p.condominium}`);
+      }
+    }
+  }
+
+  // Neighborhood / city
+  for (const field of [p.neighborhood, p.city]) {
+    if (!field) continue;
+    const fNorm = norm(field);
+    if (queryNorm.includes(fNorm)) {
+      score += 30; hasAnyMatch = true; reasons.push(field);
+    }
+  }
+
+  // Token matches in haystack (title/description/highlights)
+  const titleNorm = norm(p.title);
+  let tokenHits = 0;
+  for (const t of tokens) {
+    if (titleNorm.includes(t)) { score += 10; tokenHits++; }
+    else if (haystack.includes(t)) { score += 4; tokenHits++; }
+  }
+  if (tokenHits > 0) hasAnyMatch = true;
+
+  // Price filter
+  const effectivePrice =
+    filters.transaction_type === "locacao"
+      ? p.rental_price
+      : p.price ?? p.rental_price;
+  if (filters.price_max != null && effectivePrice != null) {
+    if (effectivePrice <= filters.price_max) score += 25;
+    else score -= 200;
+  }
+  if (filters.price_min != null && effectivePrice != null) {
+    if (effectivePrice >= filters.price_min) score += 15;
+    else score -= 200;
+  }
+
+  // Bedrooms / bathrooms / parking / area
+  if (filters.bedrooms_min != null) {
+    if ((p.bedrooms ?? 0) >= filters.bedrooms_min) {
+      score += 20; reasons.push(`${p.bedrooms} dormitórios`);
+    } else score -= 100;
+  }
+  if (filters.bathrooms_min != null) {
+    if ((p.bathrooms ?? 0) >= filters.bathrooms_min) score += 10;
+    else score -= 60;
+  }
+  if (filters.parking_min != null) {
+    if ((p.parking_spots ?? 0) >= filters.parking_min) score += 10;
+    else score -= 60;
+  }
+  if (filters.area_min != null) {
+    const area = p.area_total ?? p.area_built ?? 0;
+    if (area >= filters.area_min) score += 15;
+    else score -= 80;
+  }
+
+  // Qualitative term matches
+  for (const term of filters.qualitative_terms) {
+    if (haystack.includes(norm(term))) {
+      score += 12; hasAnyMatch = true;
+      if (!reasons.includes(term)) reasons.push(term);
+    } else {
+      score -= 5;
+    }
+  }
+
+  // Featured bonus
+  if (p.is_featured) score += 5;
+
+  // Photos bonus (small)
+  if (p.photos && p.photos.length > 0) score += 1;
+
+  // Determine if this match has any positive signal
+  const hasFilterSignal =
+    filters.condominium != null ||
+    filters.transaction_type != null ||
+    filters.bedrooms_min != null ||
+    filters.bathrooms_min != null ||
+    filters.parking_min != null ||
+    filters.area_min != null ||
+    filters.price_min != null ||
+    filters.price_max != null ||
+    filters.qualitative_terms.length > 0;
+
+  if (!hasAnyMatch && !hasFilterSignal) return null;
+  if (score <= 0) return null;
+
+  return { prop: p, score, reasons: reasons.slice(0, 4) };
+};
+
+const buildReason = (m: ScoredMatch): string => {
+  if (m.reasons.length === 0) return "Compatível com a sua busca.";
+  return m.reasons.join(" · ");
+};
+
+const propertyToResult = (p: PropertyRow, reason: string) => ({
+  id: p.id,
+  code: p.code,
+  title: p.title,
+  condominium: p.condominium,
+  neighborhood: p.neighborhood,
+  city: p.city,
+  price: p.price,
+  rental_price: p.rental_price,
+  transaction_type: p.transaction_type,
+  bedrooms: p.bedrooms,
+  bathrooms: p.bathrooms,
+  area_total: p.area_total,
+  photo: p.photos?.[0] || null,
+  relevance_reason: reason,
+});
+
+const deterministicSearch = (
+  properties: PropertyRow[],
+  query: string,
+  filters: ParsedFilters,
+  limit = 24,
+) => {
+  const trimmed = query.trim();
+  if (!trimmed && Object.values(filters).every((v) => v == null || (Array.isArray(v) && v.length === 0))) {
+    // Generic: return featured + recent
+    const sorted = [...properties].sort((a, b) => Number(b.is_featured ?? 0) - Number(a.is_featured ?? 0));
+    return sorted.slice(0, limit).map((p) => propertyToResult(p, p.is_featured ? "Imóvel em destaque" : "Compatível com a sua busca."));
+  }
+
+  const scored: ScoredMatch[] = [];
+  for (const p of properties) {
+    const m = scoreProperty(p, query, filters);
+    if (m) scored.push(m);
+  }
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, limit).map((m) => propertyToResult(m.prop, buildReason(m)));
+};
+
+// ---------- Handler ----------
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { query } = await req.json();
-    if (!query || typeof query !== "string" || query.trim().length < 2) {
-      return new Response(JSON.stringify({ results: [], parsed_filters: null }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const { query } = await req.json().catch(() => ({ query: "" }));
+    const q = typeof query === "string" ? query : "";
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const lovableKey = Deno.env.get("LOVABLE_API_KEY");
-
-    if (!lovableKey) {
-      throw new Error("LOVABLE_API_KEY is not configured");
-    }
-
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const { data: properties, error } = await supabase
       .from("properties")
       .select(
-        "id, code, title, description, property_type, transaction_type, condominium, neighborhood, city, address, price, rental_price, bedrooms, bathrooms, parking_spots, area_total, area_built, engineering_highlights, photos, status, is_featured"
+        "id, code, title, description, property_type, transaction_type, condominium, neighborhood, city, address, price, rental_price, bedrooms, bathrooms, parking_spots, area_total, area_built, engineering_highlights, photos, status, is_featured",
       )
-      .eq("status", "ativo");
+      .eq("status", "ativo")
+      .limit(2000);
 
     if (error) {
       console.error("DB error:", error);
-      throw new Error("Failed to fetch properties");
+      return new Response(
+        JSON.stringify({ error: "Falha ao consultar imóveis." }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
 
-    const safeProperties = properties || [];
+    const safeProperties = (properties || []) as PropertyRow[];
+    const filters = parseFilters(q);
 
-    const propertyContext = safeProperties.map((p) => {
-      const parts = [
-        `ID: ${p.id}`,
-        `Código: ${p.code}`,
-        `Título: ${p.title}`,
-        p.description ? `Descrição: ${p.description}` : null,
-        `Tipo: ${p.property_type}`,
-        `Transação: ${p.transaction_type}`,
-        p.condominium ? `Condomínio: ${p.condominium}` : null,
-        p.neighborhood ? `Bairro: ${p.neighborhood}` : null,
-        p.city ? `Cidade: ${p.city}` : null,
-        p.address ? `Endereço: ${p.address}` : null,
-        p.price ? `Preço venda: R$ ${Number(p.price).toLocaleString("pt-BR")}` : null,
-        p.rental_price ? `Aluguel: R$ ${Number(p.rental_price).toLocaleString("pt-BR")}` : null,
-        p.bedrooms ? `Quartos: ${p.bedrooms}` : null,
-        p.bathrooms ? `Banheiros: ${p.bathrooms}` : null,
-        p.parking_spots ? `Vagas: ${p.parking_spots}` : null,
-        p.area_total ? `Área total: ${p.area_total}m²` : null,
-        p.area_built ? `Área construída: ${p.area_built}m²` : null,
-        p.engineering_highlights?.length
-          ? `Destaques: ${p.engineering_highlights.join(", ")}`
-          : null,
-        p.is_featured ? `Destaque: Sim` : null,
-      ];
-      return parts.filter(Boolean).join(" | ");
-    }).join("\n---\n");
+    // Always run deterministic search — guarantees results work without AI credits.
+    const results = deterministicSearch(safeProperties, q, filters, 24);
 
-    const systemPrompt = `Você é um concierge imobiliário de luxo especializado em Alphaville e região. Você tem acesso a uma lista de imóveis disponíveis. Sua tarefa é analisar a busca do usuário, extrair os filtros implícitos e retornar os imóveis mais relevantes.
-
-IMÓVEIS DISPONÍVEIS:
-${propertyContext || "Nenhum imóvel cadastrado no momento."}
-
-REGRAS DE INTERPRETAÇÃO:
-- Valores monetários: interprete "até 12M" como max 12.000.000, "entre 8 e 10 milhões" como range, "mínimo 5M" como min 5.000.000, "abaixo de 3mi" como max 3.000.000
-- Atributos físicos: "4 quartos" ou "4 suítes" → bedrooms_min: 4, "mais de 400m²" → area_min: 400, "3 vagas" → parking_min: 3
-- Localização: reconheça variantes de condomínios como "Res. 1", "Residencial 1", "Residencial Um", "Tamboré", "Tambore" e normalize para o nome correto do banco
-- Qualitativos: termos como "moderna", "clássica", "reformada", "face norte", "piso aquecido", "adega", "automação" devem ser buscados na descrição e destaques de engenharia
-- Tipo de transação: "para alugar" ou "aluguel" → transaction_type: "aluguel", "comprar" ou "venda" → transaction_type: "venda"
-- Se a busca for por código (ex: "AB001"), busque exatamente esse código
-- Retorne no máximo 6 imóveis mais relevantes
-- Sempre forneça uma razão curta de por que cada imóvel é relevante
-- CRÍTICO: Se nenhum imóvel corresponder à busca do usuário, retorne matches como array VAZIO []. NÃO force resultados irrelevantes.
-- Só retorne imóveis que realmente atendam pelo menos um critério explícito da busca do usuário.
-- Se a busca for vaga ou genérica (ex: apenas "casa"), priorize imóveis em destaque (is_featured).
-- IMPORTANTE: extraia todos os filtros implícitos na busca do usuário e retorne no campo parsed_filters`;
-
-    const response = await fetch(
-      "https://ai.gateway.lovable.dev/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${lovableKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: query },
-          ],
-          tools: [
-            {
-              type: "function",
-              function: {
-                name: "search_properties",
-                description:
-                  "Return the most relevant properties and the parsed filters extracted from the user query.",
-                parameters: {
-                  type: "object",
-                  properties: {
-                    matches: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        properties: {
-                          property_id: {
-                            type: "string",
-                            description: "The UUID of the property",
-                          },
-                          relevance_reason: {
-                            type: "string",
-                            description:
-                              "Short reason in Portuguese why this property matches the query",
-                          },
-                        },
-                        required: ["property_id", "relevance_reason"],
-                        additionalProperties: false,
-                      },
-                    },
-                    parsed_filters: {
-                      type: "object",
-                      description: "Structured filters extracted from the user's natural language query",
-                      properties: {
-                        price_min: { type: "number", description: "Minimum price in BRL (null if not specified)" },
-                        price_max: { type: "number", description: "Maximum price in BRL (null if not specified)" },
-                        bedrooms_min: { type: "number", description: "Minimum number of bedrooms (null if not specified)" },
-                        bathrooms_min: { type: "number", description: "Minimum number of bathrooms (null if not specified)" },
-                        parking_min: { type: "number", description: "Minimum parking spots (null if not specified)" },
-                        area_min: { type: "number", description: "Minimum total area in m² (null if not specified)" },
-                        condominium: { type: "string", description: "Condominium name normalized (null if not specified)" },
-                        transaction_type: { type: "string", description: "'venda' or 'aluguel' (null if not specified)" },
-                        qualitative_terms: {
-                          type: "array",
-                          items: { type: "string" },
-                          description: "Qualitative terms found in the query like 'moderna', 'face norte', 'piso aquecido'",
-                        },
-                      },
-                      additionalProperties: false,
-                    },
-                  },
-                  required: ["matches", "parsed_filters"],
-                  additionalProperties: false,
-                },
-              },
-            },
-          ],
-          tool_choice: {
-            type: "function",
-            function: { name: "search_properties" },
-          },
-        }),
-      }
+    return new Response(
+      JSON.stringify({ results, parsed_filters: filters }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
-
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Muitas requisições. Tente novamente em alguns segundos." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "Créditos insuficientes para busca IA." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      const errText = await response.text();
-      console.error("AI gateway error:", response.status, errText);
-      throw new Error("AI gateway error");
-    }
-
-    const aiData = await response.json();
-    const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
-
-    if (!toolCall?.function?.arguments) {
-      return new Response(JSON.stringify({ results: [], parsed_filters: null }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const parsed = JSON.parse(toolCall.function.arguments);
-    const matches: { property_id: string; relevance_reason: string }[] =
-      parsed.matches || [];
-    const parsedFilters = parsed.parsed_filters || null;
-
-    const results = matches
-      .map((m) => {
-        const prop = safeProperties.find((p) => p.id === m.property_id);
-        if (!prop) return null;
-        return {
-          id: prop.id,
-          code: prop.code,
-          title: prop.title,
-          condominium: prop.condominium,
-          neighborhood: prop.neighborhood,
-          city: prop.city,
-          price: prop.price,
-          rental_price: prop.rental_price,
-          transaction_type: prop.transaction_type,
-          bedrooms: prop.bedrooms,
-          bathrooms: prop.bathrooms,
-          area_total: prop.area_total,
-          photo: prop.photos?.[0] || null,
-          relevance_reason: m.relevance_reason,
-        };
-      })
-      .filter(Boolean);
-
-    return new Response(JSON.stringify({ results, parsed_filters: parsedFilters }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
   } catch (e) {
     console.error("ai-property-search error:", e);
     return new Response(
       JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 });
