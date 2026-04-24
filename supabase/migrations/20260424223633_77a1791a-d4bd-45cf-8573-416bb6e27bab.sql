@@ -1,0 +1,1 @@
+DELETE FROM public.properties WHERE code IN ('ALT-001','SKY-002','VPV-003');
