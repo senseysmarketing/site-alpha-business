@@ -374,14 +374,18 @@ const PropertyForm = () => {
               </div>
               <div className="space-y-2">
                 <Label className={labelClass}>Condomínio</Label>
-                <Select value={condominium} onValueChange={setCondominium}>
-                  <SelectTrigger className={inputClass}><SelectValue placeholder="Selecione" /></SelectTrigger>
-                  <SelectContent>
-                    {CONDOMINIUMS.map((c) => (
-                      <SelectItem key={c} value={c}>{c}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Input
+                  value={condominium}
+                  onChange={(e) => setCondominium(e.target.value)}
+                  className={inputClass}
+                  placeholder="Ex: Alphaville 4, Edifício Saint Paul"
+                  list="condo-suggestions"
+                />
+                <datalist id="condo-suggestions">
+                  {CONDOMINIUMS.map((c) => (
+                    <option key={c} value={c} />
+                  ))}
+                </datalist>
               </div>
               <div className="space-y-2 lg:col-span-2">
                 <Label className={labelClass}>Endereço</Label>
