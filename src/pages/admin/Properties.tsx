@@ -47,7 +47,27 @@ const Properties = () => {
       setProperties(data ?? []);
     };
     fetchProperties();
-  }, [filterCondo, filterStatus]);
+  }, [filterCondo, filterStatus, refreshTick]);
+
+  const handleSync = async () => {
+    setSyncing(true);
+    toast({ title: "Sincronizando com Kenlo...", description: "Buscando feed XML, isso pode levar alguns segundos." });
+    try {
+      const { data, error } = await supabase.functions.invoke("sync-kenlo-properties");
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast({
+        title: "Sincronização concluída",
+        description: `✓ ${data.created} criados, ${data.updated} atualizados, ${data.deactivated} desativados em ${(data.duration_ms / 1000).toFixed(1)}s`,
+      });
+      setRefreshTick((t) => t + 1);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast({ title: "Falha na sincronização", description: msg, variant: "destructive" });
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const filtered = properties.filter(
     (p) =>
