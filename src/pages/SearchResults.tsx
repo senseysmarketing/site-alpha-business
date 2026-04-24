@@ -261,11 +261,25 @@ const SearchResults = () => {
           )}
 
           {!loading && (
-            <BentoGrid
-              results={filteredResults}
-              compareIds={compareIds}
-              onToggleCompare={handleToggleCompare}
-            />
+            <>
+              <BentoGrid
+                results={visibleResults}
+                compareIds={compareIds}
+                onToggleCompare={handleToggleCompare}
+              />
+              {hasMore && (
+                <div className="flex justify-center mt-12 md:mt-16">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={() => setVisibleCount((c) => c + 8)}
+                    className="text-body text-xs tracking-[0.2em] uppercase rounded-full px-10 py-6 border-primary/40 text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
+                  >
+                    Ver mais imóveis
+                  </Button>
+                </div>
+              )}
+            </>
           )}
 
           {!loading && results.length > 0 && filteredResults.length === 0 && (
