@@ -245,81 +245,85 @@ const PropertyDetail = () => {
             </motion.section>
 
             {/* Amenities */}
-            <motion.section {...fadeIn}>
-              <h2 className="text-display text-2xl md:text-3xl font-light tracking-tight text-foreground mb-6">
-                Diferenciais
-              </h2>
-              <div className="flex flex-wrap gap-2">
-                {property.amenities.map((item) => (
-                  <span
-                    key={item}
-                    className="text-body text-[10px] md:text-[11px] tracking-[0.1em] uppercase px-3 py-1.5 border border-border text-muted-foreground rounded-sm"
-                  >
-                    {item}
-                  </span>
-                ))}
-              </div>
-            </motion.section>
-
-            {/* Technical Details Accordion */}
-            <motion.section {...fadeIn}>
-              <h2 className="text-display text-2xl md:text-3xl font-light tracking-tight text-foreground mb-6">
-                Detalhes do Imóvel
-              </h2>
-              <Accordion type="multiple" className="w-full">
-                <AccordionItem value="docs" className="border-border">
-                  <AccordionTrigger className="text-body text-sm font-medium text-foreground hover:no-underline py-4">
-                    <span className="flex items-center gap-3">
-                      <FileText size={16} strokeWidth={1} className="text-muted-foreground" />
-                      Documentação
+            {property.amenities && property.amenities.length > 0 && (
+              <motion.section {...fadeIn}>
+                <h2 className="text-display text-2xl md:text-3xl font-light tracking-tight text-foreground mb-6">
+                  Diferenciais
+                </h2>
+                <div className="flex flex-wrap gap-2">
+                  {property.amenities.map((item) => (
+                    <span
+                      key={item}
+                      className="text-body text-[10px] md:text-[11px] tracking-[0.1em] uppercase px-3 py-1.5 border border-border text-muted-foreground rounded-sm"
+                    >
+                      {item}
                     </span>
-                  </AccordionTrigger>
-                  <AccordionContent className="text-body text-sm text-muted-foreground leading-relaxed pb-4">
-                    Matrícula atualizada disponível. Imóvel livre de ônus e pendências judiciais. Escritura definitiva em nome do proprietário. Certidões negativas de débitos municipais e federais emitidas.
-                  </AccordionContent>
-                </AccordionItem>
+                  ))}
+                </div>
+              </motion.section>
+            )}
 
-                <AccordionItem value="costs" className="border-border">
-                  <AccordionTrigger className="text-body text-sm font-medium text-foreground hover:no-underline py-4">
-                    <span className="flex items-center gap-3">
-                      <Building2 size={16} strokeWidth={1} className="text-muted-foreground" />
-                      IPTU & Condomínio
-                    </span>
-                  </AccordionTrigger>
-                  <AccordionContent className="text-body text-sm text-muted-foreground leading-relaxed pb-4">
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span>IPTU (2026)</span>
-                        <span className="font-mono text-foreground">R$ 18.500/ano</span>
+            {/* Technical Details Accordion — only show for mock/demo properties with curated content */}
+            {!dbProperty && (
+              <motion.section {...fadeIn}>
+                <h2 className="text-display text-2xl md:text-3xl font-light tracking-tight text-foreground mb-6">
+                  Detalhes do Imóvel
+                </h2>
+                <Accordion type="multiple" className="w-full">
+                  <AccordionItem value="docs" className="border-border">
+                    <AccordionTrigger className="text-body text-sm font-medium text-foreground hover:no-underline py-4">
+                      <span className="flex items-center gap-3">
+                        <FileText size={16} strokeWidth={1} className="text-muted-foreground" />
+                        Documentação
+                      </span>
+                    </AccordionTrigger>
+                    <AccordionContent className="text-body text-sm text-muted-foreground leading-relaxed pb-4">
+                      Matrícula atualizada disponível. Imóvel livre de ônus e pendências judiciais. Escritura definitiva em nome do proprietário. Certidões negativas de débitos municipais e federais emitidas.
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="costs" className="border-border">
+                    <AccordionTrigger className="text-body text-sm font-medium text-foreground hover:no-underline py-4">
+                      <span className="flex items-center gap-3">
+                        <Building2 size={16} strokeWidth={1} className="text-muted-foreground" />
+                        IPTU & Condomínio
+                      </span>
+                    </AccordionTrigger>
+                    <AccordionContent className="text-body text-sm text-muted-foreground leading-relaxed pb-4">
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span>IPTU (2026)</span>
+                          <span className="font-mono text-foreground">R$ 18.500/ano</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Condomínio</span>
+                          <span className="font-mono text-foreground">R$ 3.200/mês</span>
+                        </div>
                       </div>
-                      <div className="flex justify-between">
-                        <span>Condomínio</span>
-                        <span className="font-mono text-foreground">R$ 3.200/mês</span>
-                      </div>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
+                    </AccordionContent>
+                  </AccordionItem>
 
-                <AccordionItem value="tech" className="border-border">
-                  <AccordionTrigger className="text-body text-sm font-medium text-foreground hover:no-underline py-4">
-                    <span className="flex items-center gap-3">
-                      <Wrench size={16} strokeWidth={1} className="text-muted-foreground" />
-                      Características Técnicas
-                    </span>
-                  </AccordionTrigger>
-                  <AccordionContent className="text-body text-sm text-muted-foreground leading-relaxed pb-4">
-                    <ul className="space-y-1.5">
-                      <li>• Automação residencial completa</li>
-                      <li>• Ar-condicionado central VRF</li>
-                      <li>• Sistema de som ambiente integrado</li>
-                      <li>• Iluminação cênica programável</li>
-                      <li>• Esquadrias em alumínio com vidro duplo</li>
-                      <li>• Aquecimento solar + boiler a gás</li>
-                    </ul>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            </motion.section>
+                  <AccordionItem value="tech" className="border-border">
+                    <AccordionTrigger className="text-body text-sm font-medium text-foreground hover:no-underline py-4">
+                      <span className="flex items-center gap-3">
+                        <Wrench size={16} strokeWidth={1} className="text-muted-foreground" />
+                        Características Técnicas
+                      </span>
+                    </AccordionTrigger>
+                    <AccordionContent className="text-body text-sm text-muted-foreground leading-relaxed pb-4">
+                      <ul className="space-y-1.5">
+                        <li>• Automação residencial completa</li>
+                        <li>• Ar-condicionado central VRF</li>
+                        <li>• Sistema de som ambiente integrado</li>
+                        <li>• Iluminação cênica programável</li>
+                        <li>• Esquadrias em alumínio com vidro duplo</li>
+                        <li>• Aquecimento solar + boiler a gás</li>
+                      </ul>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              </motion.section>
+            )}
 
             <PropertyNeighborhood
               name={property.neighborhoodInfo.name}
