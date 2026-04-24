@@ -203,8 +203,9 @@ const SearchResults = () => {
             <div className="flex items-center gap-4 flex-wrap">
               {!loading && results.length > 0 && (
                 <p className="text-body text-xs tracking-[0.15em] uppercase text-muted-foreground">
-                  {filteredResults.length}{" "}
-                  {filteredResults.length === 1 ? "resultado" : "resultados"}
+                  {hasMore
+                    ? `Exibindo ${visibleResults.length} de ${filteredResults.length} resultados`
+                    : `${filteredResults.length} ${filteredResults.length === 1 ? "resultado" : "resultados"}`}
                 </p>
               )}
               {parsedFilters && !loading && (
