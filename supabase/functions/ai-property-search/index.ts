@@ -306,8 +306,13 @@ const deterministicSearch = (
 ) => {
   const trimmed = query.trim();
   if (!trimmed && Object.values(filters).every((v) => v == null || (Array.isArray(v) && v.length === 0))) {
-    // Generic: return featured + recent
-    const sorted = [...properties].sort((a, b) => Number(b.is_featured ?? 0) - Number(a.is_featured ?? 0));
+    // Generic: photos first, then featured, then rest
+    const sorted = [...properties].sort((a, b) => {
+      const photoA = (a.photos?.length ?? 0) > 0 ? 1 : 0;
+      const photoB = (b.photos?.length ?? 0) > 0 ? 1 : 0;
+      if (photoA !== photoB) return photoB - photoA;
+      return Number(b.is_featured ?? 0) - Number(a.is_featured ?? 0);
+    });
     return sorted.slice(0, limit).map((p) => propertyToResult(p, p.is_featured ? "Imóvel em destaque" : "Compatível com a sua busca."));
   }
 
