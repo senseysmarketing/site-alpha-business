@@ -224,14 +224,17 @@ Deno.serve(async (req) => {
         })
         .filter((u: any): u is string => typeof u === "string" && u.startsWith("http"));
 
+      const cityFromXml = String(im?.Cidade ?? "").trim();
+      const neighborhoodFromXml = String(im?.Bairro ?? "").trim();
+
       const base: Record<string, unknown> = {
         title: String(im?.TituloAnuncio ?? im?.Titulo ?? `${tipo} - ${condo ?? ref}`).slice(0, 250),
         description: String(im?.Observacao ?? im?.Descricao ?? "") || null,
         property_type: tipo,
         condominium: condo,
         address: String(im?.Endereco ?? im?.Logradouro ?? "") || null,
-        city: String(im?.Cidade ?? "Barueri"),
-        neighborhood: String(im?.Bairro ?? "Alphaville"),
+        city: cityFromXml || "Barueri",
+        neighborhood: neighborhoodFromXml || "Alphaville",
         bedrooms: toInt(im?.QtdDormitorios ?? im?.Dormitorios ?? 0) ?? 0,
         bathrooms: toInt(im?.QtdBanheiros ?? im?.Banheiros ?? 0) ?? 0,
         parking_spots: toInt(im?.QtdVagas ?? im?.Vagas ?? 0) ?? 0,
