@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Mic, MicOff, Plus, Sparkles, Trash2, Upload, X, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { SortablePhotoGrid } from "@/components/admin/property/SortablePhotoGrid";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
