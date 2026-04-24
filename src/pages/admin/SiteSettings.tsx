@@ -545,6 +545,13 @@ const SiteSettings = () => {
     });
 
 
+  // ── Homepage Featured Properties (carrossel "Nossas propriedades especiais") ──
+  const homeFeatured = useSiteSettings<{ property_ids: string[] }>("homepage_featured_properties");
+  const [homeFeaturedIds, setHomeFeaturedIds] = useState<string[]>([]);
+  useEffect(() => {
+    if (homeFeatured.data?.property_ids) setHomeFeaturedIds(homeFeatured.data.property_ids);
+  }, [homeFeatured.data]);
+
   // ── Tokens ──
   const tokens = useSiteSettings<DesignTokens>("design_tokens");
   const [tokensForm, setTokensForm] = useState<DesignTokens>(DEFAULT_TOKENS);
