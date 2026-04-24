@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { SlidersHorizontal, GitCompareArrows } from "lucide-react";
@@ -14,22 +14,7 @@ import FilterChips, { type ParsedFilters } from "@/components/search/FilterChips
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { mockProperties, toSearchResult } from "@/data/mockProperties";
-
-const mockByCode: Record<string, string> = {};
-const mockHighlightsByCode: Record<string, string[]> = {};
-mockProperties.forEach((p) => {
-  if (p.photo) mockByCode[p.code] = p.photo;
-  // Use amenities + tag as the "highlights" mock equivalent for tag filtering.
-  mockHighlightsByCode[p.code] = [
-    ...(p.amenities ?? []),
-    ...(p.tag ? [p.tag] : []),
-  ];
-});
-const enrichPhoto = (r: SearchResult): SearchResult => ({
-  ...r,
-  photo: r.photo || mockByCode[r.code] || "/images/property-1.jpg",
-});
+import { supabase } from "@/integrations/supabase/client";
 
 const normalize = (s: string) =>
   s
@@ -62,15 +47,15 @@ const defaultFilters: Filters = {
   condominium: "all",
 };
 
+const isRental = (tt: string) => tt === "locacao" || tt === "aluguel";
+
 const SearchResults = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialQuery = searchParams.get("q") || "";
   const tagParam = searchParams.get("tag") || "";
 
-  const [results, setResults] = useState<SearchResult[]>(
-    initialQuery ? [] : mockProperties.map(toSearchResult).map(enrichPhoto)
-  );
-  const [loading, setLoading] = useState(false);
+  const [results, setResults] = useState<SearchResult[]>([]);
+  const [loading, setLoading] = useState(!initialQuery);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filters, setFilters] = useState<Filters>(() => {
     const condoParam = searchParams.get("condominium");
@@ -85,22 +70,63 @@ const SearchResults = () => {
   const [compareOpen, setCompareOpen] = useState(false);
   const [parsedFilters, setParsedFilters] = useState<ParsedFilters | null>(null);
 
+  // When there is no query (e.g. navigation from condo links), load full active list from Supabase.
+  useEffect(() => {
+    if (initialQuery) return;
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("properties")
+        .select(
+          "id, code, title, condominium, neighborhood, city, price, rental_price, transaction_type, bedrooms, bathrooms, area_total, photos, is_featured, created_at"
+        )
+        .eq("status", "ativo")
+        .order("is_featured", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (cancelled) return;
+      if (!error && data) {
+        setResults(
+          data.map((p: any) => ({
+            id: p.id,
+            code: p.code,
+            title: p.title,
+            condominium: p.condominium,
+            neighborhood: p.neighborhood,
+            city: p.city,
+            price: p.price,
+            rental_price: p.rental_price,
+            transaction_type: p.transaction_type,
+            bedrooms: p.bedrooms,
+            bathrooms: p.bathrooms,
+            area_total: p.area_total,
+            photo: p.photos?.[0] ?? null,
+            relevance_reason: "",
+          }))
+        );
+      }
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [initialQuery]);
+
   const filteredResults = useMemo(() => {
     const tagNorm = tagParam ? normalize(tagParam) : "";
     return results.filter((r) => {
-      const price = r.transaction_type === "aluguel" ? r.rental_price : r.price;
+      const rental = isRental(r.transaction_type);
+      const price = rental ? r.rental_price : r.price;
       if (price && (price < filters.priceRange[0] || price > filters.priceRange[1])) return false;
-      if (filters.transactionType !== "all" && r.transaction_type !== filters.transactionType) return false;
+      if (filters.transactionType !== "all") {
+        const wantRental = isRental(filters.transactionType);
+        if (wantRental !== rental) return false;
+      }
       if (filters.minBedrooms > 0 && (r.bedrooms || 0) < filters.minBedrooms) return false;
       if (filters.condominium !== "all" && r.condominium !== filters.condominium) return false;
       if (tagNorm) {
-        const highlights = mockHighlightsByCode[r.code] || [];
-        const haystack = [
-          ...highlights,
-          r.title || "",
-          r.condominium || "",
-          r.relevance_reason || "",
-        ]
+        const haystack = [r.title || "", r.condominium || "", r.relevance_reason || ""]
           .map(normalize)
           .join(" | ");
         if (!haystack.includes(tagNorm)) return false;

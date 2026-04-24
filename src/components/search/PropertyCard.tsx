@@ -37,7 +37,8 @@ const formatPrice = (value: number | null) => {
 
 const PropertyCard = ({ property, isWide = false, isSelected = false, onToggleCompare }: PropertyCardProps) => {
   const navigate = useNavigate();
-  const price = property.transaction_type === "aluguel" ? property.rental_price : property.price;
+  const isRental = property.transaction_type === "aluguel" || property.transaction_type === "locacao";
+  const price = isRental ? property.rental_price : property.price;
 
   return (
     <div
@@ -128,7 +129,7 @@ const PropertyCard = ({ property, isWide = false, isSelected = false, onToggleCo
             <span className="text-body text-sm font-medium text-primary-foreground">
               {formatPrice(price)}
             </span>
-            {property.transaction_type === "aluguel" && (
+            {isRental && (
               <span className="text-body text-[10px] tracking-wider uppercase text-primary-foreground/50">
                 /mês
               </span>

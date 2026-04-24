@@ -31,7 +31,11 @@ const AlphavilleMapSection = () => {
         if (!row.condominium) continue;
         const existing = map.get(row.condominium) || { hasVenda: false, hasAluguel: false };
         if (row.transaction_type === "venda") existing.hasVenda = true;
-        if (row.transaction_type === "aluguel") existing.hasAluguel = true;
+        if (row.transaction_type === "locacao" || row.transaction_type === "aluguel") existing.hasAluguel = true;
+        if (row.transaction_type === "ambos") {
+          existing.hasVenda = true;
+          existing.hasAluguel = true;
+        }
         map.set(row.condominium, existing);
       }
       return map;
@@ -40,7 +44,7 @@ const AlphavilleMapSection = () => {
 
   const [expanded, setExpanded] = useState(false);
 
-  const handleClick = (condo: string, type: "venda" | "aluguel") => {
+  const handleClick = (condo: string, type: "venda" | "locacao") => {
     const params = new URLSearchParams({ condominium: condo, transactionType: type });
     navigate(`/busca?${params.toString()}`);
   };
@@ -104,7 +108,7 @@ const AlphavilleMapSection = () => {
                   )}
                   {availability.hasAluguel && (
                     <button
-                      onClick={() => handleClick(condo, "aluguel")}
+                      onClick={() => handleClick(condo, "locacao")}
                       className="hover:text-foreground transition-colors"
                     >
                       Alugar

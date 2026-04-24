@@ -114,7 +114,7 @@ const AdvancedFiltersDrawer = ({
               <SelectContent>
                 <SelectItem value="all">Todos</SelectItem>
                 <SelectItem value="venda">Venda</SelectItem>
-                <SelectItem value="aluguel">Aluguel</SelectItem>
+                <SelectItem value="locacao">Locação</SelectItem>
               </SelectContent>
             </Select>
           </div>

@@ -92,34 +92,11 @@ const SearchBarSection = () => {
       if (error) throw error;
       if (data?.error) { toast.error(data.error); return; }
 
-      const aiResults = data?.results || [];
-      const aiFilters = data?.parsed_filters || null;
-      setParsedFilters(aiFilters);
-
-      if (aiResults.length > 0) {
-        setResults(aiResults);
-      } else {
-        const lower = q.toLowerCase();
-        const filtered = mockProperties
-          .filter((p) =>
-            [p.title, p.condominium, p.neighborhood, p.city, p.description, p.property_type]
-              .filter(Boolean)
-              .some((field) => field!.toLowerCase().includes(lower))
-          )
-          .map(toSearchResult);
-        setResults(filtered);
-      }
+      setResults(data?.results || []);
+      setParsedFilters(data?.parsed_filters || null);
     } catch {
-      const lower = q.toLowerCase();
-      const filtered = mockProperties
-        .filter((p) =>
-          [p.title, p.condominium, p.neighborhood, p.city, p.description, p.property_type]
-            .filter(Boolean)
-            .some((field) => field!.toLowerCase().includes(lower))
-        )
-        .map(toSearchResult);
-      setResults(filtered);
-      toast.info("Exibindo resultados de demonstração.");
+      toast.error("Não foi possível realizar a busca. Tente novamente.");
+      setResults([]);
     } finally {
       setSearching(false);
     }
@@ -127,12 +104,17 @@ const SearchBarSection = () => {
 
   const handleTraditionalSearch = useCallback(() => {
     const params = new URLSearchParams();
-    if (filterType) params.set("type", filterType);
-    if (filterMinPrice) params.set("minPrice", filterMinPrice);
-    if (filterMaxPrice) params.set("maxPrice", filterMaxPrice);
-    if (filterCondo) params.set("condo", filterCondo);
-    if (filterBedrooms) params.set("bedrooms", filterBedrooms);
-    navigate(`/imoveis?${params.toString()}`);
+    const queryParts: string[] = [];
+    if (filterType) queryParts.push(filterType);
+    if (filterBedrooms) queryParts.push(`${filterBedrooms} quartos`);
+    if (filterCondo) {
+      params.set("condominium", filterCondo);
+      queryParts.push(filterCondo);
+    }
+    if (filterMinPrice) queryParts.push(`acima de ${filterMinPrice}`);
+    if (filterMaxPrice) queryParts.push(`até ${filterMaxPrice}`);
+    if (queryParts.length) params.set("q", queryParts.join(" "));
+    navigate(`/busca?${params.toString()}`);
   }, [filterType, filterMinPrice, filterMaxPrice, filterCondo, filterBedrooms, navigate]);
 
   const handleVoice = useCallback(() => {

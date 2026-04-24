@@ -25,11 +25,71 @@ const fadeIn = {
   transition: { duration: 0.5 },
 };
 
+const isUUID = (s?: string) =>
+  !!s && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
+
 const PropertyDetail = () => {
   const { id } = useParams<{ id: string }>();
   const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [dbProperty, setDbProperty] = useState<any | null>(null);
+  const [loadingDb, setLoadingDb] = useState(isUUID(id));
 
-  const property = mockProperties.find((p) => p.id === id) || mockProperties[0];
+  useEffect(() => {
+    let cancelled = false;
+    if (!isUUID(id)) {
+      setDbProperty(null);
+      setLoadingDb(false);
+      return;
+    }
+    setLoadingDb(true);
+    (async () => {
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { data } = await supabase
+        .from("properties")
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
+      if (cancelled) return;
+      setDbProperty(data ?? null);
+      setLoadingDb(false);
+    })();
+    return () => { cancelled = true; };
+  }, [id]);
+
+  const mockMatch = mockProperties.find((p) => p.id === id);
+  const fallback = mockMatch || mockProperties[0];
+
+  const property = dbProperty
+    ? {
+        id: dbProperty.id,
+        code: dbProperty.code,
+        title: dbProperty.title,
+        subtitle: [dbProperty.condominium, dbProperty.neighborhood, dbProperty.city].filter(Boolean).join(" · "),
+        condominium: dbProperty.condominium,
+        neighborhood: dbProperty.neighborhood,
+        city: dbProperty.city,
+        property_type: dbProperty.property_type,
+        transaction_type: dbProperty.transaction_type,
+        price: (dbProperty.transaction_type === "locacao" || dbProperty.transaction_type === "aluguel")
+          ? dbProperty.rental_price
+          : dbProperty.price,
+        bedrooms: dbProperty.bedrooms ?? 0,
+        bathrooms: dbProperty.bathrooms ?? 0,
+        suites: dbProperty.bedrooms ?? 0,
+        parking: dbProperty.parking_spots ?? 0,
+        area_total: dbProperty.area_total ?? 0,
+        photo: dbProperty.photos?.[0] ?? fallback.photo,
+        images: (dbProperty.photos && dbProperty.photos.length > 0) ? dbProperty.photos : fallback.images,
+        description: dbProperty.description ?? "",
+        amenities: dbProperty.engineering_highlights ?? [],
+        broker: fallback.broker,
+        neighborhoodInfo: {
+          name: dbProperty.neighborhood || fallback.neighborhoodInfo.name,
+          description: fallback.neighborhoodInfo.description,
+        },
+      }
+    : fallback;
+
   const similarProperties = mockProperties.filter((p) => p.id !== property.id).slice(0, 3);
 
   useEffect(() => {

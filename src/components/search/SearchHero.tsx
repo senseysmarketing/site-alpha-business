@@ -89,40 +89,18 @@ const SearchHero = ({ initialQuery, onResults, onLoading, onParsedFilters }: Sea
       if (error) throw error;
       if (data?.error) {
         toast.error(data.error);
+        onResults([]);
         return;
       }
       const results = data?.results || [];
       const filters = data?.parsed_filters || null;
       setParsedFilters(filters);
       onParsedFilters?.(filters);
-
-      if (results.length > 0) {
-        onResults(results.map(enrichPhoto));
-      } else {
-        const lower = q.toLowerCase();
-        const filtered = mockProperties
-          .filter((p) =>
-            [p.title, p.condominium, p.neighborhood, p.city, p.description, p.property_type]
-              .filter(Boolean)
-              .some((field) => field!.toLowerCase().includes(lower))
-          )
-          .map(toSearchResult)
-          .map(enrichPhoto);
-        onResults(filtered.length > 0 ? filtered : mockProperties.map(toSearchResult).map(enrichPhoto));
-      }
+      onResults(results.map(enrichPhoto));
     } catch (err: any) {
       console.error("Search error:", err);
-      const lower = q.toLowerCase();
-      const filtered = mockProperties
-        .filter((p) =>
-          [p.title, p.condominium, p.neighborhood, p.city, p.description, p.property_type]
-            .filter(Boolean)
-            .some((field) => field!.toLowerCase().includes(lower))
-        )
-        .map(toSearchResult)
-        .map(enrichPhoto);
-      onResults(filtered.length > 0 ? filtered : mockProperties.map(toSearchResult).map(enrichPhoto));
-      toast.info("Exibindo resultados de demonstração.");
+      toast.error("Não foi possível realizar a busca. Tente novamente.");
+      onResults([]);
     } finally {
       setSearching(false);
       onLoading(false);

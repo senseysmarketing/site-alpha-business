@@ -146,7 +146,7 @@ const SearchResultsPanel = ({ results, loading, visible, onClose, query = "" }: 
                     {(result.price || result.rental_price) && (
                       <span className="text-body text-xs font-medium text-foreground font-mono">
                         {formatPrice(
-                          result.transaction_type === "aluguel"
+                          (result.transaction_type === "aluguel" || result.transaction_type === "locacao")
                             ? result.rental_price
                             : result.price
                         )}
