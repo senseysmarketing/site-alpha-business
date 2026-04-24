@@ -87,7 +87,7 @@ const CompareModal = ({ open, onOpenChange, properties }: CompareModalProps) => 
               <span className="text-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
                 {p.code}
               </span>
-              <h3 className="text-serif text-lg font-normal text-foreground">{toTitleCase(p.title)}</h3>
+              <h3 className="text-serif text-lg font-normal text-foreground line-clamp-2 min-h-[3.5rem]">{toTitleCase(p.title)}</h3>
             </div>
           ))}
         </div>

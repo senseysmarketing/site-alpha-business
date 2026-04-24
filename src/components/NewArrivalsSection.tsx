@@ -116,7 +116,7 @@ const NewArrivalsSection = () => {
                     </div>
 
                     {/* Título */}
-                    <h3 className="text-display text-xl font-normal text-foreground group-hover:text-primary transition-colors mb-2">
+                    <h3 className="text-display text-xl font-normal text-foreground group-hover:text-primary transition-colors mb-2 line-clamp-2 min-h-[3.5rem]">
                       {toTitleCase(prop.title)}
                     </h3>
 
