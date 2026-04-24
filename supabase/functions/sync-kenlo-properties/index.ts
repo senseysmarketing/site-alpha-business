@@ -227,12 +227,25 @@ Deno.serve(async (req) => {
       const cityFromXml = String(im?.Cidade ?? "").trim();
       const neighborhoodFromXml = String(im?.Bairro ?? "").trim();
 
+      // Endereço: feed da Kenlo retorna "ENDEREÇO NÃO INFORMADO" para ~100% dos imóveis (privacidade).
+      // Tratamos como nulo para permitir preenchimento manual no painel.
+      const rawAddress = String(im?.Endereco ?? im?.Logradouro ?? "").trim();
+      const isPlaceholderAddress = /endere[çc]o\s+n[ãa]o\s+informado/i.test(rawAddress);
+      const address = !rawAddress || isPlaceholderAddress ? null : rawAddress;
+
+      // Título: prioriza TituloImovel (descritivo profissional do XML), depois TituloAnuncio,
+      // por último monta um fallback "tipo - condomínio".
+      const xmlTitle = String(
+        im?.TituloImovel ?? im?.TituloAnuncio ?? im?.Titulo ?? "",
+      ).trim();
+      const finalTitle = xmlTitle || `${tipo} - ${condo ?? ref}`;
+
       const base: Record<string, unknown> = {
-        title: String(im?.TituloAnuncio ?? im?.Titulo ?? `${tipo} - ${condo ?? ref}`).slice(0, 250),
+        title: finalTitle.slice(0, 250),
         description: String(im?.Observacao ?? im?.Descricao ?? "") || null,
         property_type: tipo,
         condominium: condo,
-        address: String(im?.Endereco ?? im?.Logradouro ?? "") || null,
+        address,
         city: cityFromXml || "Barueri",
         neighborhood: neighborhoodFromXml || "Alphaville",
         bedrooms: toInt(im?.QtdDormitorios ?? im?.Dormitorios ?? 0) ?? 0,
