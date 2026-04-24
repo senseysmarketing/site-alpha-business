@@ -30,7 +30,10 @@ const Properties = () => {
   const [search, setSearch] = useState("");
   const [filterCondo, setFilterCondo] = useState("Todos");
   const [filterStatus, setFilterStatus] = useState("Todos");
+  const [syncing, setSyncing] = useState(false);
+  const [refreshTick, setRefreshTick] = useState(0);
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
 
   useEffect(() => {
     const fetchProperties = async () => {
