@@ -108,7 +108,7 @@ const AlphavilleMapSection = () => {
                   )}
                   {availability.hasAluguel && (
                     <button
-                      onClick={() => handleClick(condo, "aluguel")}
+                      onClick={() => handleClick(condo, "locacao")}
                       className="hover:text-foreground transition-colors"
                     >
                       Alugar
