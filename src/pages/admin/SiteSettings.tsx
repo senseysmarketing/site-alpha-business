@@ -779,6 +779,24 @@ const SiteSettings = () => {
             </div>
           </SettingsBlock>
 
+          {/* Block 1.5: Homepage Featured Properties Carousel */}
+          <SettingsBlock
+            title='Carrossel "Nossas propriedades especiais"'
+            onSave={() => homeFeatured.save({ property_ids: homeFeaturedIds })}
+            isSaving={homeFeatured.isSaving}
+          >
+            <p className="font-[Inter] text-xs text-muted-foreground -mt-1">
+              Selecione até 6 imóveis para destacar no carrossel da página inicial. Se nenhum for selecionado,
+              os 6 mais recentes (com foto) serão exibidos automaticamente.
+            </p>
+            <PropertyMultiSelect
+              selectedIds={homeFeaturedIds}
+              onChange={setHomeFeaturedIds}
+              properties={properties ?? []}
+              max={6}
+            />
+          </SettingsBlock>
+
           {/* Block 2: Design Tokens */}
           <SettingsBlock
             title="Design System"
