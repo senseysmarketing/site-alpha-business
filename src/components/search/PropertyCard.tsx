@@ -129,7 +129,7 @@ const PropertyCard = ({ property, isWide = false, isSelected = false, onToggleCo
             <span className="text-body text-sm font-medium text-primary-foreground">
               {formatPrice(price)}
             </span>
-            {property.transaction_type === "aluguel" && (
+            {isRental && (
               <span className="text-body text-[10px] tracking-wider uppercase text-primary-foreground/50">
                 /mês
               </span>
