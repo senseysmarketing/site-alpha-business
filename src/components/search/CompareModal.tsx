@@ -6,6 +6,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Maximize, Bed, Car, MapPin } from "lucide-react";
+import { toTitleCase } from "@/lib/utils";
 
 interface Property {
   id: string;
@@ -71,7 +72,7 @@ const CompareModal = ({ open, onOpenChange, properties }: CompareModalProps) => 
           {[a, b].map((p) => (
             <div key={p.id} className="aspect-[16/10] overflow-hidden">
               {p.photo ? (
-                <img src={p.photo} alt={p.title} className="w-full h-full object-cover" />
+                <img src={p.photo} alt={toTitleCase(p.title)} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground text-xs">
                   Sem foto
@@ -86,7 +87,7 @@ const CompareModal = ({ open, onOpenChange, properties }: CompareModalProps) => 
               <span className="text-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
                 {p.code}
               </span>
-              <h3 className="text-serif text-lg font-normal text-foreground">{p.title}</h3>
+              <h3 className="text-serif text-lg font-normal text-foreground">{toTitleCase(p.title)}</h3>
             </div>
           ))}
         </div>
