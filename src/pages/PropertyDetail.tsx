@@ -33,10 +33,13 @@ const PropertyDetail = () => {
   const { id } = useParams<{ id: string }>();
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [dbProperty, setDbProperty] = useState<any | null>(null);
+  const [similarDb, setSimilarDb] = useState<any[]>([]);
   const [loadingDb, setLoadingDb] = useState(isUUID(id));
+  const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
+    setNotFound(false);
     if (!isUUID(id)) {
       setDbProperty(null);
       setLoadingDb(false);
@@ -51,14 +54,75 @@ const PropertyDetail = () => {
         .eq("id", id)
         .maybeSingle();
       if (cancelled) return;
-      setDbProperty(data ?? null);
+      if (!data) {
+        setNotFound(true);
+        setDbProperty(null);
+        setLoadingDb(false);
+        return;
+      }
+      setDbProperty(data);
       setLoadingDb(false);
+
+      // Fetch similar from DB (exclude current)
+      const { data: sim } = await supabase
+        .from("properties")
+        .select("*")
+        .eq("status", "ativo")
+        .neq("id", id)
+        .limit(3);
+      if (!cancelled) setSimilarDb(sim ?? []);
     })();
     return () => { cancelled = true; };
   }, [id]);
 
-  const mockMatch = mockProperties.find((p) => p.id === id);
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [id]);
+
+  // Only fall back to mock for explicit non-UUID demo IDs
+  const mockMatch = !isUUID(id) ? mockProperties.find((p) => p.id === id) : null;
   const fallback = mockMatch || mockProperties[0];
+
+  // Loading state for real DB fetches
+  if (isUUID(id) && loadingDb) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="pt-32 max-w-7xl mx-auto section-padding">
+          <Skeleton className="w-full aspect-[16/9] rounded-lg mb-8" />
+          <Skeleton className="h-10 w-2/3 mb-4" />
+          <Skeleton className="h-6 w-1/3 mb-8" />
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="animate-spin text-muted-foreground" size={28} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Not found state
+  if (isUUID(id) && notFound) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="pt-40 pb-20 max-w-3xl mx-auto section-padding text-center">
+          <h1 className="text-display text-3xl md:text-4xl font-light text-foreground mb-4">
+            Imóvel não encontrado
+          </h1>
+          <p className="text-body text-sm text-muted-foreground mb-8">
+            Este imóvel pode ter sido removido ou está temporariamente indisponível.
+          </p>
+          <Link
+            to="/busca"
+            className="inline-block px-6 py-2.5 bg-primary text-primary-foreground text-body text-xs tracking-[0.1em] uppercase rounded-full"
+          >
+            Ver outros imóveis
+          </Link>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   const property = dbProperty
     ? {
@@ -91,11 +155,22 @@ const PropertyDetail = () => {
       }
     : fallback;
 
-  const similarProperties = mockProperties.filter((p) => p.id !== property.id).slice(0, 3);
-
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [id]);
+  // Similar: prefer DB results when current property is from DB
+  const similarProperties = dbProperty && similarDb.length > 0
+    ? similarDb.map((p) => ({
+        id: p.id,
+        code: p.code,
+        title: p.title,
+        property_type: p.property_type,
+        transaction_type: p.transaction_type,
+        price: (p.transaction_type === "locacao" || p.transaction_type === "aluguel") ? p.rental_price : p.price,
+        area_total: p.area_total ?? 0,
+        suites: p.bedrooms ?? 0,
+        parking: p.parking_spots ?? 0,
+        photo: p.photos?.[0],
+        images: p.photos ?? [],
+      }))
+    : mockProperties.filter((p) => p.id !== property.id).slice(0, 3);
 
   return (
     <div className="min-h-screen bg-background">
