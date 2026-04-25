@@ -65,7 +65,7 @@ serve(async (req) => {
     const isFullArticle = action === "generate-full-article";
 
     const requestBody: any = {
-      model: "gemini-2.0-flash",
+      model: "gemini-1.5-flash",
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: promptFn(content) },
