@@ -88,21 +88,21 @@ Para transaction_type use: venda, locacao ou ambos.`,
     });
 
     if (!response.ok) {
+      const t = await response.text();
+      console.error("Gemini API error:", response.status, t);
       if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Limite de requisições excedido. Tente novamente em alguns instantes." }), {
+        return new Response(JSON.stringify({ error: "Limite de requisições do Gemini excedido (10/min no tier gratuito). Aguarde alguns segundos e tente novamente." }), {
           status: 429,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Créditos insuficientes. Adicione créditos ao workspace." }), {
-          status: 402,
+      if (response.status === 401 || response.status === 403) {
+        return new Response(JSON.stringify({ error: "GEMINI_API_KEY inválida ou sem permissão. Verifique a chave no Google AI Studio." }), {
+          status: response.status,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      const t = await response.text();
-      console.error("AI gateway error:", response.status, t);
-      return new Response(JSON.stringify({ error: "Erro ao processar com IA" }), {
+      return new Response(JSON.stringify({ error: `Erro Gemini (${response.status}): ${t.slice(0, 200)}` }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
