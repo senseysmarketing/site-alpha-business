@@ -96,7 +96,7 @@ serve(async (req) => {
       requestBody.tool_choice = { type: "function", function: { name: "create_article" } };
     }
 
-    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
+    const callGemini = () => fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${GEMINI_API_KEY}`,
@@ -105,22 +105,30 @@ serve(async (req) => {
       body: JSON.stringify(requestBody),
     });
 
+    let response = await callGemini();
+
+    // Retry once on 429 with backoff (Gemini free tier = 10 RPM)
+    if (response.status === 429) {
+      await new Promise((r) => setTimeout(r, 2500));
+      response = await callGemini();
+    }
+
     if (!response.ok) {
+      const t = await response.text();
+      console.error("Gemini API error:", response.status, t);
       if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Limite de requisições excedido. Tente novamente em alguns segundos." }), {
+        return new Response(JSON.stringify({ error: "Limite de requisições do Gemini excedido (10/min no tier gratuito). Aguarde alguns segundos e tente novamente." }), {
           status: 429,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Créditos de IA esgotados. Adicione créditos no painel Lovable." }), {
-          status: 402,
+      if (response.status === 401 || response.status === 403) {
+        return new Response(JSON.stringify({ error: "GEMINI_API_KEY inválida ou sem permissão. Verifique a chave no Google AI Studio." }), {
+          status: response.status,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      const t = await response.text();
-      console.error("AI gateway error:", response.status, t);
-      return new Response(JSON.stringify({ error: "Erro no gateway de IA" }), {
+      return new Response(JSON.stringify({ error: `Erro Gemini (${response.status}): ${t.slice(0, 200)}` }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
