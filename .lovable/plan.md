@@ -1,17 +1,26 @@
-## Corrigir modelo Gemini para chaves de API novas
+Plano aprovado para execução assim que sair do modo somente leitura:
 
-O Google retornou erro 404 informando que `gemini-2.0-flash` não está disponível para novos usuários da API. Precisamos migrar para `gemini-1.5-flash` que é compatível com todas as chaves.
+1. Atualizar o modelo Gemini nas duas Edge Functions
+   - Em `supabase/functions/blog-ai-assist/index.ts`, trocar:
+     ```ts
+     model: "gemini-1.5-flash-latest"
+     ```
+     por:
+     ```ts
+     model: "gemini-2.5-flash"
+     ```
+   - Em `supabase/functions/parse-property/index.ts`, aplicar a mesma troca.
 
-### Alterações
+2. Preservar o restante da implementação
+   - Manter o endpoint OpenAI-compatible:
+     `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`
+   - Manter `tools` / `tool_choice` como estão.
+   - Manter os retornos com `corsHeaders` intactos.
+   - Manter o tratamento específico de 401/403/429.
+   - Manter o retry de 429 existente em `blog-ai-assist`.
 
-1. **blog-ai-assist/index.ts**
-   - Linha 68: Alterar `model: "gemini-2.0-flash"` para `model: "gemini-1.5-flash"`
+3. Deploy
+   - Re-deployar `blog-ai-assist` e `parse-property` no Supabase.
+   - Depois do deploy, testar novamente a geração no blog e/ou o preenchimento com IA.
 
-2. **parse-property/index.ts**
-   - Linha 38: Alterar `model: "gemini-2.0-flash"` para `model: "gemini-1.5-flash"`
-
-### Pós-alteração
-- Deploy das duas edge functions (`blog-ai-assist` e `parse-property`)
-- Teste rápido para confirmar funcionamento
-
-Nenhuma outra mudança necessária - endpoint OpenAI-compatible, tratamento de erro 429 e estrutura de tools permanecem idênticos.
+Observação técnica: confirmei que o erro atual ainda vem do modelo `gemini-1.5-flash-latest` nas functions, então a correção é somente a troca do identificador do modelo para `gemini-2.5-flash`.
