@@ -174,7 +174,7 @@ const SearchBarSection = () => {
   const selectClass = "bg-background border border-border rounded-md px-3 py-2.5 text-body text-sm text-foreground outline-none focus:ring-1 focus:ring-primary appearance-none cursor-pointer";
 
   return (
-    <section className="relative z-20 px-6 md:px-12 lg:px-24 -mt-6 md:-mt-10 mb-8">
+    <section className="relative z-20 px-6 md:px-12 lg:px-24 -mt-10 mb-8">
       <div className="max-w-4xl mx-auto" ref={panelRef}>
         <motion.div
           className="bg-background rounded-lg shadow-xl p-4 md:p-8"

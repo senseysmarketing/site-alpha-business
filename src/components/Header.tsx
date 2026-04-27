@@ -43,8 +43,8 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
       animate={{ y: 0 }}
       transition={{ delay: 0.3, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
     >
-      <div className="flex items-center justify-between px-6 md:px-8 lg:px-12 xl:px-16 2xl:px-24 py-4 gap-4">
-        <a href="/" className="flex-shrink-0">
+      <div className="flex items-center justify-between px-6 md:px-12 lg:px-24 py-4">
+        <a href="/">
           <img
             src={logoRafael}
             alt="Rafael Albuquerque"
@@ -52,13 +52,13 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
           />
         </a>
 
-        <nav className="hidden xl:flex items-center gap-5 2xl:gap-8 min-w-0">
+        <nav className="hidden lg:flex items-center gap-6 xl:gap-10">
           {navItems.map((item) =>
             item.href.startsWith("/") ? (
               <Link
                 key={item.label}
                 to={item.href}
-                className="font-normal text-xs tracking-[0.15em] uppercase whitespace-nowrap text-white/70 hover:text-white transition-colors duration-300"
+                className="font-normal text-xs tracking-[0.15em] uppercase text-white/70 hover:text-white transition-colors duration-300"
               >
                 {item.label}
               </Link>
@@ -66,7 +66,7 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
               <a
                 key={item.label}
                 href={item.href}
-                className="font-normal text-xs tracking-[0.15em] uppercase whitespace-nowrap text-white/70 hover:text-white transition-colors duration-300"
+                className="font-normal text-xs tracking-[0.15em] uppercase text-white/70 hover:text-white transition-colors duration-300"
               >
                 {item.label}
               </a>
@@ -74,7 +74,7 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
           )}
         </nav>
 
-        <div className="hidden xl:flex items-center flex-shrink-0">
+        <div className="hidden lg:flex items-center">
           <button
             onClick={() => setAdvertiseOpen(true)}
             className="font-normal text-xs tracking-[0.1em] uppercase whitespace-nowrap px-6 py-2.5 border border-white/30 text-white rounded-full hover:bg-white/10 transition-colors duration-300"
@@ -85,7 +85,7 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
 
         <button
           onClick={() => setMenuOpen(!menuOpen)}
-          className="xl:hidden text-white flex-shrink-0"
+          className="lg:hidden text-white"
         >
           {menuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
@@ -93,7 +93,7 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
 
       {menuOpen && (
         <motion.div
-          className="xl:hidden bg-[#1f1f1f] border-t border-white/10"
+          className="lg:hidden bg-[#1f1f1f] border-t border-white/10"
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
           exit={{ opacity: 0, height: 0 }}

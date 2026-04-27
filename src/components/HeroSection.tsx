@@ -113,7 +113,7 @@ const HeroSection = () => {
   const prev = () => goTo((activeIndex - 1 + slides.length) % slides.length);
 
   if (slides.length === 0) {
-    return <section className="min-h-[560px] h-[75vh] md:h-[80vh] bg-bordeaux" />;
+    return <section className="h-[75vh] md:h-[80vh] bg-bordeaux" />;
   }
 
   const current = slides[activeIndex];
@@ -121,7 +121,7 @@ const HeroSection = () => {
 
   return (
     <section
-      className="relative min-h-[560px] h-[75vh] md:h-[80vh] overflow-hidden bg-black"
+      className="relative h-[75vh] md:h-[80vh] overflow-hidden bg-black"
       onMouseEnter={() => setIsHoveredSection(true)}
       onMouseLeave={() => setIsHoveredSection(false)}
     >
@@ -170,7 +170,7 @@ const HeroSection = () => {
       <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent pointer-events-none" />
 
       {/* Content */}
-      <div className="relative z-10 h-full flex items-center px-6 md:px-12 lg:px-24 pb-28 md:pb-36">
+      <div className="relative z-10 h-full flex items-center px-6 md:px-12 lg:px-24">
         <div
           className="max-w-3xl"
           onMouseEnter={() => setIsHoveredContent(true)}
@@ -243,7 +243,7 @@ const HeroSection = () => {
           </button>
 
           {/* Desktop controls — progress bars + play/pause */}
-          <div className="hidden md:flex absolute bottom-32 md:bottom-40 left-1/2 -translate-x-1/2 z-20 items-center gap-4">
+          <div className="hidden md:flex absolute bottom-24 md:bottom-28 left-1/2 -translate-x-1/2 z-20 items-center gap-4">
             <div className="flex gap-2">
               {slides.map((_, i) => {
                 const fill = i < activeIndex ? 100 : i === activeIndex ? progress : 0;
@@ -272,7 +272,7 @@ const HeroSection = () => {
           </div>
 
           {/* Mobile — single ultra-thin progress line */}
-          <div className="md:hidden absolute bottom-40 left-6 right-6 z-20 h-px bg-white/20 rounded-full">
+          <div className="md:hidden absolute bottom-32 left-6 right-6 z-20 h-px bg-white/20 rounded-full">
             <div
               className="h-full bg-white rounded-full"
               style={{
