@@ -113,7 +113,7 @@ const HeroSection = () => {
   const prev = () => goTo((activeIndex - 1 + slides.length) % slides.length);
 
   if (slides.length === 0) {
-    return <section className="h-[75vh] md:h-[80vh] bg-bordeaux" />;
+    return <section className="min-h-[640px] h-[85vh] md:h-[90vh] bg-bordeaux" />;
   }
 
   const current = slides[activeIndex];
@@ -121,7 +121,7 @@ const HeroSection = () => {
 
   return (
     <section
-      className="relative h-[75vh] md:h-[80vh] overflow-hidden bg-black"
+      className="relative min-h-[640px] h-[85vh] md:h-[90vh] overflow-hidden bg-black"
       onMouseEnter={() => setIsHoveredSection(true)}
       onMouseLeave={() => setIsHoveredSection(false)}
     >
@@ -170,7 +170,7 @@ const HeroSection = () => {
       <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent pointer-events-none" />
 
       {/* Content */}
-      <div className="relative z-10 h-full flex items-center px-6 md:px-12 lg:px-24">
+      <div className="relative z-10 h-full flex items-center px-6 md:px-12 lg:px-24 pb-28 md:pb-36">
         <div
           className="max-w-3xl"
           onMouseEnter={() => setIsHoveredContent(true)}
