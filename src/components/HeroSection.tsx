@@ -113,7 +113,7 @@ const HeroSection = () => {
   const prev = () => goTo((activeIndex - 1 + slides.length) % slides.length);
 
   if (slides.length === 0) {
-    return <section className="min-h-[640px] h-[85vh] md:h-[90vh] bg-bordeaux" />;
+    return <section className="min-h-[560px] h-[75vh] md:h-[80vh] bg-bordeaux" />;
   }
 
   const current = slides[activeIndex];
@@ -121,7 +121,7 @@ const HeroSection = () => {
 
   return (
     <section
-      className="relative min-h-[640px] h-[85vh] md:h-[90vh] overflow-hidden bg-black"
+      className="relative min-h-[560px] h-[75vh] md:h-[80vh] overflow-hidden bg-black"
       onMouseEnter={() => setIsHoveredSection(true)}
       onMouseLeave={() => setIsHoveredSection(false)}
     >
