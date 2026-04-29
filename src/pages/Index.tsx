@@ -1,4 +1,5 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import Preloader from "@/components/Preloader";
 import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
@@ -15,6 +16,19 @@ import Footer from "@/components/Footer";
 const Index = () => {
   const [loaded, setLoaded] = useState(false);
   const handleComplete = useCallback(() => setLoaded(true), []);
+  const location = useLocation();
+
+  useEffect(() => {
+    if (!loaded) return;
+    const hash = location.hash?.replace("#", "");
+    if (!hash) return;
+    // Wait one frame so sections are mounted, then scroll.
+    const t = window.setTimeout(() => {
+      const el = document.getElementById(hash);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+    return () => window.clearTimeout(t);
+  }, [loaded, location.hash]);
 
   return (
     <>

@@ -1,20 +1,33 @@
 import { useState } from "react";
 import { Instagram } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import logoRafael from "@/assets/logo-rafael.png";
 import { Button } from "@/components/ui/button";
 import AdvertisePropertyModal from "@/components/AdvertisePropertyModal";
 
+type NavItem = { label: string; to?: string; hash?: string };
+
 const Footer = () => {
   const [advertiseOpen, setAdvertiseOpen] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  const navItems = [
-    { label: "Sobre", href: "#" },
-    { label: "Venda", href: "#" },
-    { label: "Locação", href: "#" },
-    { label: "Serviços", href: "#" },
-    { label: "Fale Conosco", href: "#contact" },
+  const navItems: NavItem[] = [
+    { label: "Venda", to: "/busca?transactionType=venda" },
+    { label: "Locação", to: "/busca?transactionType=locacao" },
+    { label: "Notícias", to: "/blog" },
+    { label: "Fale Conosco", hash: "contato" },
   ];
+
+  const handleHashClick = (e: React.MouseEvent, hash: string) => {
+    e.preventDefault();
+    if (location.pathname === "/") {
+      const el = document.getElementById(hash);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else {
+      navigate(`/#${hash}`);
+    }
+  };
 
   return (
     <footer className="bg-accent text-accent-foreground/80 py-12 px-6 md:px-12">
@@ -30,15 +43,26 @@ const Footer = () => {
           </Link>
 
           <nav className="flex flex-wrap items-center gap-6">
-            {navItems.map((item) => (
-              <a
-                key={item.label}
-                href={item.href}
-                className="text-xs uppercase tracking-widest text-white/70 hover:text-white transition-colors"
-              >
-                {item.label}
-              </a>
-            ))}
+            {navItems.map((item) =>
+              item.hash ? (
+                <a
+                  key={item.label}
+                  href={`/#${item.hash}`}
+                  onClick={(e) => handleHashClick(e, item.hash!)}
+                  className="text-xs uppercase tracking-widest text-white/70 hover:text-white transition-colors"
+                >
+                  {item.label}
+                </a>
+              ) : (
+                <Link
+                  key={item.label}
+                  to={item.to!}
+                  className="text-xs uppercase tracking-widest text-white/70 hover:text-white transition-colors"
+                >
+                  {item.label}
+                </Link>
+              )
+            )}
           </nav>
 
           <Button
