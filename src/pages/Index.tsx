@@ -16,6 +16,19 @@ import Footer from "@/components/Footer";
 const Index = () => {
   const [loaded, setLoaded] = useState(false);
   const handleComplete = useCallback(() => setLoaded(true), []);
+  const location = useLocation();
+
+  useEffect(() => {
+    if (!loaded) return;
+    const hash = location.hash?.replace("#", "");
+    if (!hash) return;
+    // Wait one frame so sections are mounted, then scroll.
+    const t = window.setTimeout(() => {
+      const el = document.getElementById(hash);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+    return () => window.clearTimeout(t);
+  }, [loaded, location.hash]);
 
   return (
     <>
