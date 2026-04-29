@@ -1,4 +1,5 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import Preloader from "@/components/Preloader";
 import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
