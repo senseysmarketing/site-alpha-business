@@ -197,7 +197,7 @@ const SearchResults = () => {
       />
 
       <section className="pt-6 md:pt-8 pb-16 md:pb-24">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-16">
           {/* Toolbar */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4 flex-wrap">
@@ -250,12 +250,9 @@ const SearchResults = () => {
           </div>
 
           {loading && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
               {[1, 2, 3, 4, 5, 6].map((i) => (
-                <Skeleton
-                  key={i}
-                  className={`rounded-xl ${i === 1 ? "col-span-full aspect-[16/9]" : "aspect-[4/5]"}`}
-                />
+                <Skeleton key={i} className="rounded-lg aspect-[4/5]" />
               ))}
             </div>
           )}
