@@ -1,26 +1,43 @@
-Plano aprovado para execução assim que sair do modo somente leitura:
+## Objetivo
+Tornar 100% funcionais os links do Header e do Footer, removendo itens sem destino e corrigindo âncoras quebradas.
 
-1. Atualizar o modelo Gemini nas duas Edge Functions
-   - Em `supabase/functions/blog-ai-assist/index.ts`, trocar:
-     ```ts
-     model: "gemini-1.5-flash-latest"
-     ```
-     por:
-     ```ts
-     model: "gemini-2.5-flash"
-     ```
-   - Em `supabase/functions/parse-property/index.ts`, aplicar a mesma troca.
+## Menu final
 
-2. Preservar o restante da implementação
-   - Manter o endpoint OpenAI-compatible:
-     `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`
-   - Manter `tools` / `tool_choice` como estão.
-   - Manter os retornos com `corsHeaders` intactos.
-   - Manter o tratamento específico de 401/403/429.
-   - Manter o retry de 429 existente em `blog-ai-assist`.
+**Header** (desktop e mobile):
+- Venda → `/busca?modalidade=venda`
+- Locação → `/busca?modalidade=locacao`
+- Notícias → `/blog`
+- Fale Conosco → `#contato` (com fallback inteligente: se não estiver na home, navega para `/#contato`)
+- (Removidos: Buscar, Serviços)
 
-3. Deploy
-   - Re-deployar `blog-ai-assist` e `parse-property` no Supabase.
-   - Depois do deploy, testar novamente a geração no blog e/ou o preenchimento com IA.
+**Footer**:
+- Venda → `/busca?modalidade=venda`
+- Locação → `/busca?modalidade=locacao`
+- Fale Conosco → `/#contato`
+- (Removidos: Sobre, Serviços)
 
-Observação técnica: confirmei que o erro atual ainda vem do modelo `gemini-1.5-flash-latest` nas functions, então a correção é somente a troca do identificador do modelo para `gemini-2.5-flash`.
+## Mudanças técnicas
+
+1. **`src/components/Header.tsx`**
+   - Atualizar `navItems` removendo Buscar e Serviços.
+   - Trocar destinos de Venda/Locação para rotas reais (`/busca?modalidade=...`) usando `Link` do React Router.
+   - Corrigir o link Fale Conosco: hoje aponta `#contact`, mas a seção tem `id="contato"`. Mudar para `#contato` e usar um handler que, quando o usuário não está em `/`, faça `navigate("/#contato")` e role até a seção após a navegação.
+
+2. **`src/components/Footer.tsx`**
+   - Atualizar `navItems` removendo Sobre e Serviços.
+   - Trocar `href="#"` por destinos reais (`Link` para `/busca?modalidade=...` e `/#contato`).
+   - Aplicar o mesmo handler de rolagem para Fale Conosco.
+
+3. **`src/pages/SearchResults.tsx`** (verificação rápida)
+   - Confirmar que o parâmetro `modalidade` (venda/locacao) já é lido pelos filtros tradicionais. Caso ainda não exista esse mapeamento, adicionar leitura de `searchParams.get("modalidade")` no estado inicial dos filtros para que o link já chegue filtrado. Se o filtro existente usa outra chave (ex.: `tipo` ou `transacao`), alinhar o nome do parâmetro entre o link e o leitor.
+
+4. **Comportamento de âncora cross-page**
+   - Pequeno utilitário (inline nos componentes) que, ao clicar em "Fale Conosco":
+     - se `location.pathname === "/"` → `scrollIntoView` suave em `#contato`.
+     - caso contrário → `navigate("/#contato")` e, no `Index.tsx`, um `useEffect` que detecta `location.hash` no mount e rola até o elemento.
+
+5. **Memória do projeto**
+   - Atualizar `mem://features/header/navigation` e `mem://features/footer/footer-standard` refletindo o novo conjunto de itens e destinos.
+
+## Resultado esperado
+Nenhum link com `href="#"`. Todos navegam para uma rota válida ou rolam até uma seção existente, inclusive a partir de páginas internas (blog, busca, imóvel).
