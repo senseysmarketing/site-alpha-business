@@ -1,12 +1,12 @@
 ---
 name: Footer Standard
-description: Rodapé em paleta clara (cinza arquitetônico) com logo Rafael, botão dark arredondado e textos foreground/muted
+description: Rodapé escuro com logo Rafael, nav enxuto com destinos reais e CTA Anuncie seu imóvel
 type: feature
 ---
-O rodapé (`Footer.tsx`) usa fundo `bg-muted/50` (cinza arquitetônico padrão do site, alinhado ao admin) com textos em `text-foreground/80` e tons `text-muted-foreground` para informações secundárias. Borda divisória usa `border-border`.
+O rodapé (`Footer.tsx`) usa fundo `bg-accent` com textos em `text-white/60` a `text-white`. Borda divisória `border-white/10`.
 
-**Logo**: usa `logo-rafael.png` (mesma do Header) em `h-8 md:h-10 w-auto`, sem filtros CSS — identidade unificada entre topo e rodapé.
+**Logo**: `logo-rafael.png` (mesma do Header) em `h-8 md:h-10 w-auto`, sem filtros — identidade unificada.
 
-**Estrutura**: barra superior com logo + nav (5 links em uppercase tracking-widest) + botão "Anuncie seu imóvel" no padrão dark `bg-foreground text-background rounded-md` (size sm, text-xs uppercase). Abaixo, grid 2 colunas: esquerda com endereço institucional e WhatsApps; direita com handles do Instagram, copyright, texto institucional SEO e CRECI-PJ.
+**Nav** (4 itens, uppercase tracking-widest): Venda → `/busca?transactionType=venda`, Locação → `/busca?transactionType=locacao`, Notícias → `/blog`, Fale Conosco → âncora `#contato` (mesmo handler cross-page do Header: scroll suave na home, `navigate("/#contato")` em outras rotas). Itens removidos: Sobre, Serviços. Não reintroduzir sem destino real.
 
 Telefones em formato BR `(XX) XXXXX-XXXX`. Handles IG prefixados com `@`. Modal `AdvertisePropertyModal` aciona o lead capture via botão.
