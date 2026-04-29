@@ -257,7 +257,7 @@ const SearchHero = ({ initialQuery, onResults, onLoading, onParsedFilters }: Sea
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.7 }}
-          className="bg-background rounded-lg shadow-xl p-4 md:p-6"
+          className="bg-card border border-border/60 rounded-lg shadow-xl p-4 md:p-6 ring-1 ring-foreground/5"
         >
           {/* Mode toggle */}
           <div className="flex items-center justify-center md:justify-end mb-4">
