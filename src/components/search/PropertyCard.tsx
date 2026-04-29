@@ -1,6 +1,5 @@
-import { motion } from "framer-motion";
-import { Maximize, Bed, Car, Check } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { Check } from "lucide-react";
 import { toTitleCase } from "@/lib/utils";
 
 interface PropertyCardProps {
@@ -35,113 +34,118 @@ const formatPrice = (value: number | null) => {
   }).format(value);
 };
 
-const PropertyCard = ({ property, isWide = false, isSelected = false, onToggleCompare }: PropertyCardProps) => {
-  const navigate = useNavigate();
-  const isRental = property.transaction_type === "aluguel" || property.transaction_type === "locacao";
+const transactionLabel = (t: string) => {
+  const k = (t || "").toLowerCase();
+  if (k === "aluguel" || k === "locacao") return "Locação";
+  if (k === "venda") return "Venda";
+  return t || "Venda";
+};
+
+const PropertyCard = ({ property, isSelected = false, onToggleCompare }: PropertyCardProps) => {
+  const isRental =
+    property.transaction_type === "aluguel" || property.transaction_type === "locacao";
   const price = isRental ? property.rental_price : property.price;
+  const locationParts = [property.condominium, property.neighborhood, property.city]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
-    <div
-      className={`group relative overflow-hidden rounded-sm cursor-pointer ${
-        isWide ? "aspect-[16/9]" : "aspect-[4/5]"
-      }`}
-      onClick={() => navigate(`/imovel/${property.id}`)}
-    >
-      {/* Image */}
-      <div className="absolute inset-0">
-        {property.photo ? (
-          <img
-            src={property.photo}
-            alt={toTitleCase(property.title)}
-            className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
-          />
-        ) : (
-          <div className="w-full h-full bg-muted flex items-center justify-center">
-            <span className="text-body text-xs tracking-wider uppercase text-muted-foreground">
-              Sem foto
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* Hover overlay gradient */}
-      <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent opacity-60 group-hover:opacity-90 transition-opacity duration-500" />
-
-      {/* Compare checkbox */}
+    <div className="relative h-full">
       {onToggleCompare && (
         <button
           onClick={(e) => {
+            e.preventDefault();
             e.stopPropagation();
             onToggleCompare(property.id);
           }}
-          className={`absolute top-3 right-3 z-10 w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
+          className={`absolute top-3 right-3 z-20 w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all duration-300 backdrop-blur-sm ${
             isSelected
               ? "bg-accent border-accent text-accent-foreground"
-              : "border-primary-foreground/50 text-transparent hover:border-primary-foreground"
+              : "bg-background/40 border-white/70 text-transparent hover:border-white hover:bg-background/60"
           }`}
+          aria-label="Comparar imóvel"
         >
           <Check size={14} />
         </button>
       )}
 
-      {/* Content overlay */}
-      <div className="absolute inset-x-0 bottom-0 p-4 md:p-5 z-10">
-        {/* Code badge */}
-        <span className="text-body text-[10px] tracking-[0.2em] uppercase text-primary-foreground/60 mb-1 block">
-          {property.code}
-        </span>
-
-        {/* Title */}
-        <h3 className={`text-display ${isWide ? "text-xl md:text-2xl min-h-[3.5rem] md:min-h-[4rem]" : "text-lg md:text-xl min-h-[2.75rem] md:min-h-[3.5rem]"} font-normal text-primary-foreground leading-tight mb-1 line-clamp-2`}>
-          {toTitleCase(property.title)}
-        </h3>
-
-        {/* Location */}
-        <p className="text-body text-xs text-primary-foreground/70 mb-3">
-          {[property.condominium, property.neighborhood, property.city].filter(Boolean).join(" · ")}
-        </p>
-
-        {/* Specs row - visible on hover */}
-        <div className="flex items-center gap-4 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-400">
-          {property.area_total && (
-            <span className="flex items-center gap-1.5 text-primary-foreground/80">
-              <Maximize size={13} strokeWidth={1.5} />
-              <span className="text-body text-xs">{property.area_total}m²</span>
-            </span>
-          )}
-          {property.bedrooms && (
-            <span className="flex items-center gap-1.5 text-primary-foreground/80">
-              <Bed size={13} strokeWidth={1.5} />
-              <span className="text-body text-xs">{property.bedrooms}</span>
-            </span>
-          )}
-          {property.bathrooms && (
-            <span className="flex items-center gap-1.5 text-primary-foreground/80">
-              <Car size={13} strokeWidth={1.5} />
-              <span className="text-body text-xs">{property.bathrooms}</span>
-            </span>
+      <Link
+        to={`/imovel/${property.id}`}
+        className="group block h-full bg-card border border-border/60 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+      >
+        {/* Imagem */}
+        <div className="relative overflow-hidden aspect-[4/3]">
+          {property.photo ? (
+            <img
+              src={property.photo}
+              alt={toTitleCase(property.title)}
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+              loading="lazy"
+            />
+          ) : (
+            <div className="w-full h-full bg-muted flex items-center justify-center">
+              <span className="text-body text-xs tracking-wider uppercase text-muted-foreground">
+                Sem foto
+              </span>
+            </div>
           )}
         </div>
 
-        {/* Price */}
-        {price && (
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-body text-sm font-medium text-primary-foreground">
-              {formatPrice(price)}
+        {/* Bloco inferior */}
+        <div className="p-5">
+          {/* Meta */}
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-body text-[11px] tracking-[0.15em] uppercase font-semibold text-foreground">
+              {transactionLabel(property.transaction_type)}
             </span>
-            {isRental && (
-              <span className="text-body text-[10px] tracking-wider uppercase text-primary-foreground/50">
-                /mês
-              </span>
-            )}
+            <span className="text-body text-[11px] tracking-[0.1em] uppercase text-muted-foreground">
+              {property.code}
+            </span>
           </div>
-        )}
 
-        {/* AI relevance */}
-        <p className="text-body text-[11px] text-primary-foreground/50 mt-2 line-clamp-1 italic">
-          {property.relevance_reason}
-        </p>
-      </div>
+          {/* Título */}
+          <h3 className="text-display text-xl font-normal text-foreground group-hover:text-primary transition-colors mb-2 line-clamp-2 min-h-[3.5rem]">
+            {toTitleCase(property.title)}
+          </h3>
+
+          {/* Localização */}
+          {locationParts && (
+            <p className="text-body text-xs text-muted-foreground mb-2 line-clamp-1">
+              {locationParts}
+            </p>
+          )}
+
+          {/* Specs */}
+          <p className="text-body text-sm text-muted-foreground">
+            {property.area_total ? `${property.area_total}m²` : "—"}
+            &nbsp;-&nbsp; Suítes: {property.bedrooms ?? 0}
+            &nbsp;-&nbsp; Vagas: {property.bathrooms ?? 0}
+          </p>
+
+          {/* Divisor */}
+          <div className="border-t border-border/60 my-4" />
+
+          {/* Footer */}
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-body text-[11px] tracking-[0.1em] uppercase font-semibold text-foreground">
+                {transactionLabel(property.transaction_type)}:
+              </p>
+              <p className="text-display text-lg font-medium text-foreground truncate">
+                {price ? formatPrice(price) : "Sob consulta"}
+                {price && isRental && (
+                  <span className="text-body text-[11px] tracking-wider uppercase text-muted-foreground ml-1">
+                    /mês
+                  </span>
+                )}
+              </p>
+            </div>
+            <span className="text-body text-sm bg-foreground text-background px-5 py-2 rounded-md group-hover:bg-foreground/90 transition-colors whitespace-nowrap">
+              Saiba Mais
+            </span>
+          </div>
+        </div>
+      </Link>
     </div>
   );
 };
