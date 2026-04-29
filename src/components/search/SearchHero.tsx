@@ -260,7 +260,7 @@ const SearchHero = ({ initialQuery, onResults, onLoading, onParsedFilters }: Sea
           className="bg-white border border-border rounded-lg shadow-2xl p-4 md:p-6"
         >
           {/* Mode toggle */}
-          <div className="flex items-center justify-center md:justify-end mb-4">
+          <div className="flex items-center justify-center mb-4">
             <div className="flex items-center gap-1 bg-muted rounded-full p-1">
               <button
                 onClick={() => setMode("cognitive")}
