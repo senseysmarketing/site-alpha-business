@@ -786,14 +786,14 @@ const SiteSettings = () => {
             isSaving={homeFeatured.isSaving}
           >
             <p className="font-[Inter] text-xs text-muted-foreground -mt-1">
-              Selecione até 6 imóveis para destacar no carrossel da página inicial. Se nenhum for selecionado,
-              os 6 mais recentes (com foto) serão exibidos automaticamente.
+              Selecione até 12 imóveis para destacar no carrossel da página inicial. Se nenhum for selecionado,
+              os 12 mais recentes (com foto) serão exibidos automaticamente.
             </p>
             <PropertyMultiSelect
               selectedIds={homeFeaturedIds}
               onChange={setHomeFeaturedIds}
               properties={properties ?? []}
-              max={6}
+              max={12}
             />
           </SettingsBlock>
 
