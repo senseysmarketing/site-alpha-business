@@ -57,6 +57,7 @@ const Properties = () => {
   const [refreshTick, setRefreshTick] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [propertyToDelete, setPropertyToDelete] = useState<string | null>(null);
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
 
