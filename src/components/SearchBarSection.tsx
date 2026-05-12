@@ -182,20 +182,20 @@ const SearchBarSection = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.9, duration: 0.7 }}
         >
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-display text-base md:text-xl font-light text-foreground whitespace-nowrap">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <h3 className="text-display text-base md:text-xl font-light text-foreground whitespace-nowrap text-center sm:text-left">
               Encontre seu imóvel com o <strong>Rafa IA</strong>
             </h3>
-            <div className="hidden md:flex items-center gap-1 bg-muted rounded-full p-1">
+            <div className="flex items-center gap-1 bg-muted rounded-full p-1 w-full sm:w-auto">
               <button
                 onClick={() => setMode("cognitive")}
-                className={`text-body text-[10px] tracking-[0.1em] uppercase px-4 py-1.5 rounded-full transition-all ${mode === "cognitive" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+                className={`flex-1 sm:flex-none text-body text-[10px] tracking-[0.1em] uppercase px-4 py-1.5 rounded-full transition-all ${mode === "cognitive" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
               >
                 Cognitivo
               </button>
               <button
                 onClick={() => setMode("traditional")}
-                className={`text-body text-[10px] tracking-[0.1em] uppercase px-4 py-1.5 rounded-full transition-all ${mode === "traditional" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+                className={`flex-1 sm:flex-none text-body text-[10px] tracking-[0.1em] uppercase px-4 py-1.5 rounded-full transition-all ${mode === "traditional" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
               >
                 Busca tradicional
               </button>
