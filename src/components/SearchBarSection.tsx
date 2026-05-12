@@ -197,7 +197,7 @@ const SearchBarSection = () => {
                 onClick={() => setMode("traditional")}
                 className={`flex-1 sm:flex-none text-body text-[10px] tracking-[0.1em] uppercase px-4 py-1.5 rounded-full transition-all ${mode === "traditional" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
               >
-                Busca tradicional
+                Tradicional
               </button>
             </div>
           </div>
