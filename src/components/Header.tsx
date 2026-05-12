@@ -318,8 +318,9 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
               Anuncie seu imóvel
             </button>
           </nav>
-        </motion.div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
       <AdvertisePropertyModal open={advertiseOpen} onOpenChange={setAdvertiseOpen} />
     </motion.header>
   );
