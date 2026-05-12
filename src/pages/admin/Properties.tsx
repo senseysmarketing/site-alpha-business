@@ -313,7 +313,11 @@ const Properties = () => {
               </TableRow>
             ) : (
               paginated.map((property) => (
-                <TableRow key={property.id} className="cursor-pointer" onClick={() => navigate(`/admin/imoveis/${property.id}`)}>
+                <TableRow 
+                  key={property.id} 
+                  className={`cursor-pointer transition-opacity ${property.status !== "ativo" ? "opacity-60 bg-muted/30" : ""}`}
+                  onClick={() => navigate(`/admin/imoveis/${property.id}`)}
+                >
                   <TableCell className="font-[Inter] text-xs font-medium">{property.code}</TableCell>
                   <TableCell className="font-[Inter] text-sm">{property.title}</TableCell>
                   <TableCell className="font-[Inter] text-sm text-muted-foreground">{property.condominium ?? "—"}</TableCell>
@@ -328,13 +332,84 @@ const Properties = () => {
                       variant={property.status === "ativo" ? "default" : "secondary"}
                       className="font-[Inter] text-[10px] uppercase"
                     >
-                      {property.status}
+                      {property.status === "ativo" ? "Ativo" : "Inativo"}
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Button variant="ghost" size="sm" className="font-[Inter] text-xs">
-                      Editar
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={(e) => toggleStatus(e, property.id, property.status)}
+                            >
+                              {property.status === "ativo" ? (
+                                <Eye className="h-4 w-4 text-emerald-600" />
+                              ) : (
+                                <EyeOff className="h-4 w-4 text-muted-foreground" />
+                              )}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{property.status === "ativo" ? "Inativar" : "Ativar"}</p>
+                          </TooltipContent>
+                        </Tooltip>
+
+                        {property.status !== "ativo" ? (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setPropertyToDelete(property.id);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Excluir permanentemente</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        ) : (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 opacity-50 cursor-not-allowed"
+                                  disabled
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Inative o imóvel para poder excluí-lo</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+                      </TooltipProvider>
+
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="font-[Inter] text-xs ml-1"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/admin/imoveis/${property.id}`);
+                        }}
+                      >
+                        Editar
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
