@@ -294,9 +294,9 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
                         ))}
                       </div>
 
-                      <Link to="/busca" className="flex items-center justify-between text-[10px] font-bold text-white uppercase tracking-widest bg-white/5 p-4 rounded-sm border border-white/5 hover:bg-white/10 transition-colors" onClick={() => setMenuOpen(false)}>
+                      <Link to="/busca" className="flex items-center justify-center font-normal text-xs tracking-[0.1em] uppercase px-6 py-3 border border-white/30 text-white rounded-full text-center mt-2 transition-colors hover:bg-white/10" onClick={() => setMenuOpen(false)}>
                         Ver todos os condomínios
-                        <ArrowRight size={14} className="text-white/40" />
+                        <ArrowRight size={14} className="ml-2 text-white/40" />
                       </Link>
                     </div>
                   </AccordionContent>
