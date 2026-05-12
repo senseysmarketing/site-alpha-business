@@ -143,16 +143,16 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
           {renderNavLink({ label: "Venda", to: "/busca?transactionType=venda" }, desktopClass)}
           {renderNavLink({ label: "Locação", to: "/busca?transactionType=locacao" }, desktopClass)}
           
-          <NavigationMenu>
+          <NavigationMenu className="static max-w-none">
             <NavigationMenuList>
               <NavigationMenuItem>
                 <NavigationMenuTrigger className="bg-transparent hover:bg-transparent focus:bg-transparent data-[state=open]:bg-transparent p-0 h-auto border-none shadow-none group">
                   <span className={desktopClass}>Condomínios</span>
                 </NavigationMenuTrigger>
                 <NavigationMenuContent>
-                  <div className="w-[850px] bg-[#1f1f1f] p-8 text-white border border-white/10 shadow-2xl flex gap-10">
+                  <div className="w-[calc(100vw-2rem)] md:w-[850px] bg-[#1f1f1f] p-6 md:p-8 text-white border border-white/10 shadow-2xl flex flex-col md:flex-row gap-8 md:gap-10 max-h-[80vh] overflow-y-auto md:overflow-y-visible">
                     {/* Featured Column */}
-                    <div className="w-1/3 space-y-4">
+                    <div className="w-full md:w-1/3 space-y-4">
                       <p className="text-[10px] tracking-[0.2em] uppercase text-white/40 font-semibold mb-4">Destaques</p>
                       <div className="space-y-4">
                         {(condoMenuSettings?.featured || []).slice(0, 3).map((item, idx) => (
@@ -170,7 +170,7 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
                     </div>
 
                     {/* Regions Column */}
-                    <div className="w-1/3 border-l border-white/5 pl-8 space-y-6">
+                    <div className="w-full md:w-1/3 border-l-0 md:border-l border-white/5 pl-0 md:pl-8 space-y-6">
                       <p className="text-[10px] tracking-[0.2em] uppercase text-white/40 font-semibold mb-2">Por Região</p>
                       <div className="grid grid-cols-1 gap-6">
                         {(condoMenuSettings?.regions || []).map((region, idx) => (
@@ -189,7 +189,7 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
                     </div>
 
                     {/* CTA Column */}
-                    <div className="w-1/3 bg-white/5 p-6 rounded-sm flex flex-col justify-center items-center text-center space-y-4 border border-white/5">
+                    <div className="w-full md:w-1/3 bg-white/5 p-6 rounded-sm flex flex-col justify-center items-center text-center space-y-4 border border-white/5">
                       <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center mb-2">
                         <ArrowRight className="text-white/40 h-5 w-5" />
                       </div>
