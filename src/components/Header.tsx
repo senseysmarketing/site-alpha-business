@@ -12,6 +12,12 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { supabase } from "@/integrations/supabase/client";
 
 interface HeaderProps {
@@ -246,49 +252,56 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
             {renderNavLink({ label: "Locação", to: "/busca?transactionType=locacao" }, mobileClass)}
             
             {/* Mobile Condos */}
-            <div className="flex flex-col gap-4">
-              <span className="font-semibold text-[10px] tracking-[0.2em] uppercase text-white/30 pt-2">Condomínios</span>
-              
-              <div className="space-y-6">
-                {/* Destaques Mobile */}
-                <div className="space-y-3">
-                  <p className="text-[10px] tracking-[0.2em] uppercase text-white/40 font-semibold">Destaques</p>
-                  <div className="grid grid-cols-1 gap-3">
-                    {(condoMenuSettings?.featured || []).slice(0, 3).map((item, idx) => (
-                      <Link key={idx} to={item.href} onClick={() => setMenuOpen(false)} className="group/item block relative aspect-[21/9] overflow-hidden rounded-sm bg-white/5">
-                        {item.image && (
-                          <img src={item.image} alt={item.name} className="absolute inset-0 w-full h-full object-cover opacity-60" />
-                        )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                        <div className="absolute bottom-3 left-3">
-                          <p className="text-xs font-medium tracking-wider uppercase text-white">{item.name}</p>
+            <div className="flex flex-col gap-0 border-t border-white/5 mt-2">
+              <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="condos" className="border-none">
+                  <AccordionTrigger className="text-white/70 hover:text-white hover:no-underline py-4 uppercase text-[10px] tracking-[0.2em] font-semibold transition-colors">
+                    Condomínios
+                  </AccordionTrigger>
+                  <AccordionContent className="pb-6">
+                    <div className="space-y-8 mt-2">
+                      {/* Destaques Mobile */}
+                      <div className="space-y-4">
+                        <p className="text-[10px] tracking-[0.2em] uppercase text-white/40 font-semibold pl-1">Destaques</p>
+                        <div className="grid grid-cols-1 gap-3">
+                          {(condoMenuSettings?.featured || []).slice(0, 3).map((item, idx) => (
+                            <Link key={idx} to={item.href} onClick={() => setMenuOpen(false)} className="group/item block relative aspect-[21/9] overflow-hidden rounded-sm bg-white/5 border border-white/5">
+                              {item.image && (
+                                <img src={item.image} alt={item.name} className="absolute inset-0 w-full h-full object-cover opacity-60" />
+                              )}
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                              <div className="absolute bottom-3 left-3">
+                                <p className="text-xs font-medium tracking-wider uppercase text-white">{item.name}</p>
+                              </div>
+                            </Link>
+                          ))}
                         </div>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
+                      </div>
 
-                {/* Regiões Mobile */}
-                <div className="space-y-4">
-                  {(condoMenuSettings?.regions || []).map((region, idx) => (
-                    <div key={idx} className="space-y-3">
-                      <h4 className="text-[10px] font-semibold text-white/40 uppercase tracking-[0.2em]">{region.title}</h4>
-                      <div className="flex flex-col gap-3 pl-2 border-l border-white/10">
-                        {region.links.map((link, lIdx) => (
-                          <Link key={lIdx} to={link.href} className="text-sm text-white/70 hover:text-white transition-colors" onClick={() => setMenuOpen(false)}>
-                            {link.name}
-                          </Link>
+                      {/* Regiões Mobile */}
+                      <div className="space-y-6">
+                        {(condoMenuSettings?.regions || []).map((region, idx) => (
+                          <div key={idx} className="space-y-4">
+                            <h4 className="text-[10px] font-semibold text-white/40 uppercase tracking-[0.2em] pl-1">{region.title}</h4>
+                            <div className="flex flex-col gap-4 pl-3 border-l border-white/10">
+                              {region.links.map((link, lIdx) => (
+                                <Link key={lIdx} to={link.href} className="text-sm text-white/60 hover:text-white transition-colors" onClick={() => setMenuOpen(false)}>
+                                  {link.name}
+                                </Link>
+                              ))}
+                            </div>
+                          </div>
                         ))}
                       </div>
-                    </div>
-                  ))}
-                </div>
 
-                <Link to="/busca" className="flex items-center gap-2 text-xs font-semibold text-white uppercase tracking-widest bg-white/5 p-4 rounded-sm" onClick={() => setMenuOpen(false)}>
-                  Ver todos os condomínios
-                  <ArrowRight size={14} className="text-white/40" />
-                </Link>
-              </div>
+                      <Link to="/busca" className="flex items-center justify-between text-[10px] font-bold text-white uppercase tracking-widest bg-white/5 p-4 rounded-sm border border-white/5 hover:bg-white/10 transition-colors" onClick={() => setMenuOpen(false)}>
+                        Ver todos os condomínios
+                        <ArrowRight size={14} className="text-white/40" />
+                      </Link>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             </div>
 
             {renderNavLink({ label: "Notícias", to: "/blog" }, mobileClass)}
