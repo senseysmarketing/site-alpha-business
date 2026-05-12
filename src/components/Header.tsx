@@ -254,10 +254,10 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
             {renderNavLink({ label: "Locação", to: "/busca?transactionType=locacao" }, mobileClass)}
             
             {/* Mobile Condos */}
-            <div className="flex flex-col gap-0 border-t border-white/5 mt-2">
+            <div className="flex flex-col">
               <Accordion type="single" collapsible className="w-full">
                 <AccordionItem value="condos" className="border-none">
-                  <AccordionTrigger className="font-normal text-sm tracking-[0.1em] uppercase text-white/70 hover:text-white hover:no-underline py-2 transition-colors text-left [&>svg]:text-white/40" style={{ fontFamily: "'Roboto', sans-serif" }}>
+                  <AccordionTrigger className="font-normal text-sm tracking-[0.1em] uppercase text-white/70 hover:text-white hover:no-underline !py-2 transition-colors text-left [&>svg]:text-white/40" style={{ fontFamily: "'Roboto', sans-serif" }}>
                     Condomínios
                   </AccordionTrigger>
                   <AccordionContent className="pb-6">
