@@ -47,7 +47,6 @@ const Index = () => {
           <HeroSection />
           <SearchBarSection />
           <NewArrivalsSection />
-          <LifestyleSection />
           <FeaturedPropertySection />
           {carousel1?.is_active && (
             <PropertyCarouselSection 
