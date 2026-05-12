@@ -5,6 +5,8 @@ import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
 import SearchBarSection from "@/components/SearchBarSection";
 import NewArrivalsSection from "@/components/NewArrivalsSection";
+import PropertyCarouselSection from "@/components/PropertyCarouselSection";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import FeaturedPropertySection from "@/components/FeaturedPropertySection";
 import LifestyleSection from "@/components/LifestyleSection";
 import InstitutionalSection from "@/components/InstitutionalSection";
@@ -17,6 +19,9 @@ const Index = () => {
   const [loaded, setLoaded] = useState(false);
   const handleComplete = useCallback(() => setLoaded(true), []);
   const location = useLocation();
+
+  const { data: carousel1 } = useSiteSettings<{ title: string; property_ids: string[]; is_active: boolean }>("homepage_carousel_1");
+  const { data: carousel2 } = useSiteSettings<{ title: string; property_ids: string[]; is_active: boolean }>("homepage_carousel_2");
 
   useEffect(() => {
     if (!loaded) return;
@@ -44,6 +49,18 @@ const Index = () => {
           <NewArrivalsSection />
           <LifestyleSection />
           <FeaturedPropertySection />
+          {carousel1?.is_active && (
+            <PropertyCarouselSection 
+              title={carousel1.title} 
+              propertyIds={carousel1.property_ids || []} 
+            />
+          )}
+          {carousel2?.is_active && (
+            <PropertyCarouselSection 
+              title={carousel2.title} 
+              propertyIds={carousel2.property_ids || []} 
+            />
+          )}
           <InstitutionalSection />
           <TeamSection />
           <AlphavilleMapSection />
