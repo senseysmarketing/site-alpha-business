@@ -242,12 +242,12 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
 
       {menuOpen && (
         <motion.div
-          className="lg:hidden bg-[#1f1f1f] border-t border-white/10"
+          className="lg:hidden bg-[#1f1f1f] border-t border-white/10 fixed top-[72px] left-0 right-0 bottom-0 overflow-y-auto"
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
           exit={{ opacity: 0, height: 0 }}
         >
-          <nav className="flex flex-col px-6 py-6 gap-4">
+          <nav className="flex flex-col px-6 py-6 pb-20 gap-4">
             {renderNavLink({ label: "Venda", to: "/busca?transactionType=venda" }, mobileClass)}
             {renderNavLink({ label: "Locação", to: "/busca?transactionType=locacao" }, mobileClass)}
             
