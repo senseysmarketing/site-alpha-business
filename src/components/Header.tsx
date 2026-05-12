@@ -240,14 +240,16 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
         </button>
       </div>
 
-      {menuOpen && (
-        <motion.div
-          className="lg:hidden bg-[#1f1f1f] border-t border-white/10 fixed top-[72px] left-0 right-0 bottom-0 overflow-y-auto"
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: "auto" }}
-          exit={{ opacity: 0, height: 0 }}
-        >
-          <nav className="flex flex-col px-6 py-6 pb-20 gap-4">
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.div
+            className="lg:hidden bg-[#1f1f1f] border-t border-white/10 fixed top-[72px] left-0 right-0 bottom-0 overflow-y-auto z-50"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "calc(100vh - 72px)" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+          >
+            <nav className="flex flex-col px-6 py-6 pb-20 gap-4">
             {renderNavLink({ label: "Venda", to: "/busca?transactionType=venda" }, mobileClass)}
             {renderNavLink({ label: "Locação", to: "/busca?transactionType=locacao" }, mobileClass)}
             
@@ -316,8 +318,9 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
               Anuncie seu imóvel
             </button>
           </nav>
-        </motion.div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
       <AdvertisePropertyModal open={advertiseOpen} onOpenChange={setAdvertiseOpen} />
     </motion.header>
   );
