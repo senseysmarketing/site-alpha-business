@@ -243,7 +243,7 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
       <AnimatePresence>
         {menuOpen && (
           <motion.div
-            className="lg:hidden bg-[#1f1f1f] border-t border-white/10 fixed top-[72px] left-0 right-0 bottom-0 overflow-y-auto z-50"
+            className="lg:hidden bg-[#1f1f1f] border-t border-white/10 fixed top-[64px] md:top-[72px] left-0 right-0 bottom-0 overflow-y-auto z-50"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "calc(100vh - 72px)" }}
             exit={{ opacity: 0, height: 0 }}
