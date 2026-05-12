@@ -47,7 +47,7 @@ const NewArrivalsSection = () => {
         .select("*")
         .not("photos", "is", null)
         .order("created_at", { ascending: false })
-        .limit(6);
+        .limit(12);
       if (error || !data?.length) return null;
       return data;
     },
@@ -68,7 +68,7 @@ const NewArrivalsSection = () => {
         price: p.price,
         transaction: p.transaction_type || "Venda",
       }))
-    : mockProperties.slice(0, 6).map((p) => ({
+    : mockProperties.slice(0, 12).map((p) => ({
         id: p.id,
         image: p.photo || p.images[0],
         title: p.title,
