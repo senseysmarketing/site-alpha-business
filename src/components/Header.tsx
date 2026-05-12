@@ -51,13 +51,13 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
   useEffect(() => {
     const fetchCondoMenu = async () => {
       const { data, error } = await supabase
-        .from("site_settings" as any)
+        .from("site_settings")
         .select("value")
         .eq("key", "condo_menu")
-        .single();
+        .maybeSingle();
       
       if (!error && data) {
-        setCondoMenuSettings(data.value as CondoMenuSettings);
+        setCondoMenuSettings((data as any).value as CondoMenuSettings);
       }
     };
     fetchCondoMenu();
