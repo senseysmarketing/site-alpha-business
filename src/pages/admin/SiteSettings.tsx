@@ -78,6 +78,22 @@ interface FooterSettings {
   tagline: string;
 }
 
+interface CondoLink {
+  name: string;
+  href: string;
+  image?: string;
+}
+
+interface CondoRegion {
+  title: string;
+  links: CondoLink[];
+}
+
+interface CondoMenuSettings {
+  featured: CondoLink[];
+  regions: CondoRegion[];
+}
+
 const DEFAULT_TOKENS: DesignTokens = {
   accent_color: "#2A070C",
   background_color: "#F5F0EB",
@@ -703,6 +719,90 @@ const SiteSettings = () => {
     instaPosts.save({ posts: scraped });
   };
 
+  // ── Condo Menu ──
+  const condoMenu = useSiteSettings<CondoMenuSettings>("condo_menu");
+  const [condoMenuForm, setCondoMenuForm] = useState<CondoMenuSettings>({ featured: [], regions: [] });
+  useEffect(() => {
+    if (condoMenu.data) {
+      setCondoMenuForm({
+        featured: condoMenu.data.featured || [],
+        regions: condoMenu.data.regions || []
+      });
+    }
+  }, [condoMenu.data]);
+
+  const addCondoFeatured = () => {
+    setCondoMenuForm(prev => ({
+      ...prev,
+      featured: [...prev.featured, { name: "", href: "", image: "" }]
+    }));
+  };
+
+  const removeCondoFeatured = (i: number) => {
+    setCondoMenuForm(prev => ({
+      ...prev,
+      featured: prev.featured.filter((_, idx) => idx !== i)
+    }));
+  };
+
+  const updateCondoFeatured = (i: number, field: keyof CondoLink, val: string) => {
+    setCondoMenuForm(prev => ({
+      ...prev,
+      featured: prev.featured.map((item, idx) => idx === i ? { ...item, [field]: val } : item)
+    }));
+  };
+
+  const addCondoRegion = () => {
+    setCondoMenuForm(prev => ({
+      ...prev,
+      regions: [...prev.regions, { title: "", links: [] }]
+    }));
+  };
+
+  const removeCondoRegion = (i: number) => {
+    setCondoMenuForm(prev => ({
+      ...prev,
+      regions: prev.regions.filter((_, idx) => idx !== i)
+    }));
+  };
+
+  const updateCondoRegionTitle = (i: number, title: string) => {
+    setCondoMenuForm(prev => ({
+      ...prev,
+      regions: prev.regions.map((reg, idx) => idx === i ? { ...reg, title } : reg)
+    }));
+  };
+
+  const addCondoRegionLink = (regIndex: number) => {
+    setCondoMenuForm(prev => ({
+      ...prev,
+      regions: prev.regions.map((reg, idx) => 
+        idx === regIndex ? { ...reg, links: [...reg.links, { name: "", href: "" }] } : reg
+      )
+    }));
+  };
+
+  const removeCondoRegionLink = (regIndex: number, linkIndex: number) => {
+    setCondoMenuForm(prev => ({
+      ...prev,
+      regions: prev.regions.map((reg, idx) => 
+        idx === regIndex ? { ...reg, links: reg.links.filter((_, lIdx) => lIdx !== linkIndex) } : reg
+      )
+    }));
+  };
+
+  const updateCondoRegionLink = (regIndex: number, linkIndex: number, field: keyof CondoLink, val: string) => {
+    setCondoMenuForm(prev => ({
+      ...prev,
+      regions: prev.regions.map((reg, idx) => 
+        idx === regIndex ? { 
+          ...reg, 
+          links: reg.links.map((link, lIdx) => lIdx === linkIndex ? { ...link, [field]: val } : link) 
+        } : reg
+      )
+    }));
+  };
+
   // ── Footer ──
   const footer = useSiteSettings<FooterSettings>("footer");
   const [footerForm, setFooterForm] = useState<FooterSettings>({ copyright_text: "", tagline: "" });
@@ -817,6 +917,128 @@ const SiteSettings = () => {
               <RotateCcw className="h-3 w-3" />
               Resetar Padrão
             </Button>
+          </SettingsBlock>
+
+          {/* Block 2.5: Condo Mega Menu */}
+          <SettingsBlock title="Menu de Condomínios (Cabeçalho)" onSave={() => condoMenu.save(condoMenuForm)} isSaving={condoMenu.isSaving}>
+            <div className="space-y-6">
+              {/* Featured Section */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label className="font-[Inter] text-xs font-semibold uppercase tracking-wider text-muted-foreground">Condomínios Destaque (Coluna 1)</Label>
+                  <Button variant="outline" size="sm" onClick={addCondoFeatured} className="h-7 text-[10px] gap-1 px-2">
+                    <Plus className="h-3 w-3" /> Adicionar Destaque
+                  </Button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {condoMenuForm.featured.map((item, i) => (
+                    <div key={i} className="border border-border/30 rounded-sm p-3 space-y-3 bg-muted/5 relative">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-6 w-6 absolute top-1 right-1 text-muted-foreground hover:text-destructive" 
+                        onClick={() => removeCondoFeatured(i)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                      <div>
+                        <Label className="text-[10px] text-muted-foreground uppercase">Nome</Label>
+                        <Input 
+                          value={item.name} 
+                          onChange={(e) => updateCondoFeatured(i, "name", e.target.value)} 
+                          className="h-8 text-xs mt-1" 
+                          placeholder="Ex: Tamboré 3"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-[10px] text-muted-foreground uppercase">Link</Label>
+                        <Input 
+                          value={item.href} 
+                          onChange={(e) => updateCondoFeatured(i, "href", e.target.value)} 
+                          className="h-8 text-xs mt-1" 
+                          placeholder="/busca?condominio=..."
+                        />
+                      </div>
+                      <PhotoDrop 
+                        label="Imagem (opcional)" 
+                        value={item.image || ""} 
+                        onUpload={(url) => updateCondoFeatured(i, "image", url)} 
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="h-px bg-border/30" />
+
+              {/* Regions Section */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label className="font-[Inter] text-xs font-semibold uppercase tracking-wider text-muted-foreground">Regiões e Links (Coluna 2)</Label>
+                  <Button variant="outline" size="sm" onClick={addCondoRegion} className="h-7 text-[10px] gap-1 px-2">
+                    <Plus className="h-3 w-3" /> Adicionar Região
+                  </Button>
+                </div>
+                <div className="space-y-4">
+                  {condoMenuForm.regions.map((reg, i) => (
+                    <div key={i} className="border border-border/30 rounded-sm p-4 bg-muted/5 space-y-4">
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1">
+                          <Label className="text-[10px] text-muted-foreground uppercase">Título da Região</Label>
+                          <Input 
+                            value={reg.title} 
+                            onChange={(e) => updateCondoRegionTitle(i, e.target.value)} 
+                            className="h-8 text-xs mt-1 font-medium" 
+                            placeholder="Ex: Alphaville"
+                          />
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 mt-5 text-muted-foreground hover:text-destructive" 
+                          onClick={() => removeCondoRegion(i)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                      
+                      <div className="space-y-2 pl-4 border-l-2 border-border/20">
+                        <div className="flex items-center justify-between mb-2">
+                          <Label className="text-[10px] text-muted-foreground uppercase">Links dos Condomínios</Label>
+                          <Button variant="ghost" size="sm" onClick={() => addCondoRegionLink(i)} className="h-6 text-[9px] gap-1 px-2 uppercase">
+                            <Plus className="h-2.5 w-2.5" /> Link
+                          </Button>
+                        </div>
+                        {reg.links.map((link, lIdx) => (
+                          <div key={lIdx} className="flex items-center gap-2">
+                            <Input 
+                              value={link.name} 
+                              onChange={(e) => updateCondoRegionLink(i, lIdx, "name", e.target.value)} 
+                              placeholder="Nome" 
+                              className="h-7 text-xs flex-1" 
+                            />
+                            <Input 
+                              value={link.href} 
+                              onChange={(e) => updateCondoRegionLink(i, lIdx, "href", e.target.value)} 
+                              placeholder="Link" 
+                              className="h-7 text-xs flex-1" 
+                            />
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-7 w-7 text-muted-foreground/50 hover:text-destructive" 
+                              onClick={() => removeCondoRegionLink(i, lIdx)}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </SettingsBlock>
 
           {/* Block 3: Featured Banner */}
