@@ -194,7 +194,7 @@ const PropertyDetail = () => {
 
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
           <div>
-          <h1 className="text-display text-3xl md:text-5xl font-light tracking-tight text-foreground mb-1">
+          <h1 className="text-display text-2xl md:text-4xl font-light tracking-normal leading-relaxed text-foreground mb-1">
               {toTitleCase(property.title)}
             </h1>
             <p className="text-body text-sm text-muted-foreground">{property.subtitle}</p>
