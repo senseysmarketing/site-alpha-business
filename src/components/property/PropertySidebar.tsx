@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { MessageCircle, Calendar, Zap } from "lucide-react";
 import ScheduleVisitModal from "./ScheduleVisitModal";
+import rafaelPhoto from "@/assets/rafael-broker.png";
 
 interface PropertySidebarProps {
   brokerName: string;
@@ -24,10 +25,13 @@ const PropertySidebar = ({
       {/* Broker card */}
       <div className="border border-border rounded-sm p-6 bg-card">
         <div className="flex items-center gap-4 mb-6">
-          <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center">
-            <span className="text-display text-lg font-semibold text-muted-foreground">
-              {brokerName.charAt(0)}
-            </span>
+          <div className="w-14 h-14 rounded-full bg-muted overflow-hidden flex items-center justify-center">
+            <img
+              src={rafaelPhoto}
+              alt={brokerName}
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
           </div>
           <div>
             <p className="text-body text-sm font-medium text-foreground">{brokerName}</p>
