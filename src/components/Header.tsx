@@ -255,7 +255,7 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
             <div className="flex flex-col gap-0 border-t border-white/5 mt-2">
               <Accordion type="single" collapsible className="w-full">
                 <AccordionItem value="condos" className="border-none">
-                  <AccordionTrigger className="text-white/70 hover:text-white hover:no-underline py-4 uppercase text-[10px] tracking-[0.2em] font-semibold transition-colors">
+                  <AccordionTrigger className="font-normal text-sm tracking-[0.1em] uppercase text-white/70 hover:text-white hover:no-underline py-2 transition-colors">
                     Condomínios
                   </AccordionTrigger>
                   <AccordionContent className="pb-6">
