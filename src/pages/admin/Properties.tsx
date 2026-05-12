@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Search, RefreshCw, Settings, Copy } from "lucide-react";
+import { Plus, Search, RefreshCw, Settings, Copy, Power, Trash2, Eye, EyeOff } from "lucide-react";
 import { KenloSettingsDialog } from "@/components/admin/KenloSettingsDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,22 @@ import {
   Pagination, PaginationContent, PaginationEllipsis, PaginationItem,
   PaginationLink, PaginationNext, PaginationPrevious,
 } from "@/components/ui/pagination";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const ITEMS_PER_PAGE = 20;
 
@@ -41,6 +57,7 @@ const Properties = () => {
   const [refreshTick, setRefreshTick] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [propertyToDelete, setPropertyToDelete] = useState<string | null>(null);
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
 
@@ -128,6 +145,59 @@ const Properties = () => {
   const formatPrice = (price: number | null) => {
     if (!price) return "—";
     return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(price);
+  };
+
+  const toggleStatus = async (e: React.MouseEvent, id: string, currentStatus: string | null) => {
+    e.stopPropagation();
+    const newStatus = currentStatus === "ativo" ? "inativo" : "ativo";
+    
+    try {
+      const { error } = await supabase
+        .from("properties")
+        .update({ status: newStatus })
+        .eq("id", id);
+
+      if (error) throw error;
+
+      toast({
+        title: `Imóvel ${newStatus === "ativo" ? "ativado" : "inativado"}`,
+        description: `O status do imóvel foi alterado para ${newStatus}.`,
+      });
+      setRefreshTick((t) => t + 1);
+    } catch (error) {
+      toast({
+        title: "Erro ao alterar status",
+        description: "Não foi possível atualizar o status do imóvel.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!propertyToDelete) return;
+
+    try {
+      const { error } = await supabase
+        .from("properties")
+        .delete()
+        .eq("id", propertyToDelete);
+
+      if (error) throw error;
+
+      toast({
+        title: "Imóvel excluído",
+        description: "O imóvel foi removido permanentemente.",
+      });
+      setRefreshTick((t) => t + 1);
+    } catch (error) {
+      toast({
+        title: "Erro ao excluir",
+        description: "Não foi possível excluir o imóvel.",
+        variant: "destructive",
+      });
+    } finally {
+      setPropertyToDelete(null);
+    }
   };
 
   return (
@@ -243,7 +313,11 @@ const Properties = () => {
               </TableRow>
             ) : (
               paginated.map((property) => (
-                <TableRow key={property.id} className="cursor-pointer" onClick={() => navigate(`/admin/imoveis/${property.id}`)}>
+                <TableRow 
+                  key={property.id} 
+                  className={`cursor-pointer transition-opacity ${property.status !== "ativo" ? "opacity-60 bg-muted/30" : ""}`}
+                  onClick={() => navigate(`/admin/imoveis/${property.id}`)}
+                >
                   <TableCell className="font-[Inter] text-xs font-medium">{property.code}</TableCell>
                   <TableCell className="font-[Inter] text-sm">{property.title}</TableCell>
                   <TableCell className="font-[Inter] text-sm text-muted-foreground">{property.condominium ?? "—"}</TableCell>
@@ -258,13 +332,84 @@ const Properties = () => {
                       variant={property.status === "ativo" ? "default" : "secondary"}
                       className="font-[Inter] text-[10px] uppercase"
                     >
-                      {property.status}
+                      {property.status === "ativo" ? "Ativo" : "Inativo"}
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Button variant="ghost" size="sm" className="font-[Inter] text-xs">
-                      Editar
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={(e) => toggleStatus(e, property.id, property.status)}
+                            >
+                              {property.status === "ativo" ? (
+                                <Eye className="h-4 w-4 text-emerald-600" />
+                              ) : (
+                                <EyeOff className="h-4 w-4 text-muted-foreground" />
+                              )}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{property.status === "ativo" ? "Inativar" : "Ativar"}</p>
+                          </TooltipContent>
+                        </Tooltip>
+
+                        {property.status !== "ativo" ? (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setPropertyToDelete(property.id);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Excluir permanentemente</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        ) : (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 opacity-50 cursor-not-allowed"
+                                  disabled
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Inative o imóvel para poder excluí-lo</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+                      </TooltipProvider>
+
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="font-[Inter] text-xs ml-1"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/admin/imoveis/${property.id}`);
+                        }}
+                      >
+                        Editar
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
@@ -324,6 +469,23 @@ const Properties = () => {
           </Pagination>
         </div>
       )}
+
+      <AlertDialog open={!!propertyToDelete} onOpenChange={(open) => !open && setPropertyToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir permanentemente este imóvel? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
