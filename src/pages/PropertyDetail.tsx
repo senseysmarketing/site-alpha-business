@@ -152,6 +152,7 @@ const PropertyDetail = () => {
           name: dbProperty.neighborhood || fallback.neighborhoodInfo.name,
           description: fallback.neighborhoodInfo.description,
         },
+        video_url: dbProperty.video_url,
       }
     : fallback;
 
@@ -177,7 +178,7 @@ const PropertyDetail = () => {
       <Header />
 
       {/* Gallery — starts from top, header overlays transparently */}
-      <PropertyGallery images={property.images} videoUrl="/videos/hero-bg.mp4" />
+      <PropertyGallery images={property.images} videoUrl={property.video_url} />
 
       {/* Quick Info */}
       <motion.div {...fadeIn} className="section-padding py-8 border-b border-border max-w-7xl mx-auto">
