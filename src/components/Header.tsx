@@ -150,7 +150,7 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
                   <span className={desktopClass}>Condomínios</span>
                 </NavigationMenuTrigger>
                 <NavigationMenuContent>
-                  <div className="w-[calc(100vw-2rem)] md:w-[850px] bg-[#1f1f1f] p-6 md:p-8 text-white border border-white/10 shadow-2xl flex flex-col md:flex-row gap-8 md:gap-10 max-h-[80vh] overflow-y-auto md:overflow-y-visible">
+                  <div className="w-[calc(100vw-2rem)] md:w-[850px] bg-[#1f1f1f] p-6 md:p-8 text-white shadow-2xl flex flex-col md:flex-row gap-8 md:gap-10 max-h-[80vh] overflow-y-auto md:overflow-y-visible">
                     {/* Featured Column */}
                     <div className="w-full md:w-1/3 space-y-4">
                       <p className="text-[10px] tracking-[0.2em] uppercase text-white/40 font-semibold mb-4">Destaques</p>
