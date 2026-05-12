@@ -30,6 +30,7 @@ export interface MockProperty {
   tag: string | null;
   broker: { name: string; title: string };
   neighborhoodInfo: { name: string; description: string };
+  video_url?: string;
 }
 
 export const mockProperties: MockProperty[] = [
