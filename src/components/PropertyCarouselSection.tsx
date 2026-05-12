@@ -39,6 +39,15 @@ const PropertyCarouselSection = ({ title, propertyIds, isActive = true }: Proper
     enabled: propertyIds.length > 0,
   });
 
+  useEffect(() => {
+    if (!emblaApi) return;
+    const onSelect = () => setSelectedIndex(emblaApi.selectedScrollSnap());
+    setScrollSnaps(emblaApi.scrollSnapList());
+    emblaApi.on("select", onSelect);
+    emblaApi.on("reInit", () => setScrollSnaps(emblaApi.scrollSnapList()));
+    return () => { emblaApi.off("select", onSelect); };
+  }, [emblaApi, dbProperties]);
+
   if (!isActive || !propertyIds.length || (!dbProperties?.length && propertyIds.length > 0)) {
     return null;
   }
@@ -58,14 +67,6 @@ const PropertyCarouselSection = ({ title, propertyIds, isActive = true }: Proper
     transaction: p.transaction_type || "Venda",
   })) || [];
 
-  useEffect(() => {
-    if (!emblaApi) return;
-    const onSelect = () => setSelectedIndex(emblaApi.selectedScrollSnap());
-    setScrollSnaps(emblaApi.scrollSnapList());
-    emblaApi.on("select", onSelect);
-    emblaApi.on("reInit", () => setScrollSnaps(emblaApi.scrollSnapList()));
-    return () => { emblaApi.off("select", onSelect); };
-  }, [emblaApi]);
 
   return (
     <section className="section-padding">
