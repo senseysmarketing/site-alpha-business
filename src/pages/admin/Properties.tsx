@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Search, RefreshCw, Settings, Copy } from "lucide-react";
+import { Plus, Search, RefreshCw, Settings, Copy, Power, Trash2, Eye, EyeOff } from "lucide-react";
 import { KenloSettingsDialog } from "@/components/admin/KenloSettingsDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
