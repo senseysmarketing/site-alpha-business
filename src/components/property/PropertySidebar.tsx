@@ -13,7 +13,7 @@ interface PropertySidebarProps {
 const PropertySidebar = ({
   brokerName,
   brokerTitle,
-  whatsappNumber = "5511999999999",
+  whatsappNumber = "5511993116849",
   propertyCode,
   propertyId,
 }: PropertySidebarProps) => {
