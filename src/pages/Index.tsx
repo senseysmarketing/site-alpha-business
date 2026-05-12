@@ -48,6 +48,9 @@ const Index = () => {
           <SearchBarSection />
           <NewArrivalsSection />
           <FeaturedPropertySection />
+          <InstitutionalSection />
+          <TeamSection />
+          <AlphavilleMapSection />
           {carousel1?.is_active && (
             <PropertyCarouselSection 
               title={carousel1.title} 
@@ -60,9 +63,6 @@ const Index = () => {
               propertyIds={carousel2.property_ids || []} 
             />
           )}
-          <InstitutionalSection />
-          <TeamSection />
-          <AlphavilleMapSection />
           <ContactSection />
         </main>
         <Footer />
