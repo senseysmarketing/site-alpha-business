@@ -147,6 +147,59 @@ const Properties = () => {
     return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(price);
   };
 
+  const toggleStatus = async (e: React.MouseEvent, id: string, currentStatus: string | null) => {
+    e.stopPropagation();
+    const newStatus = currentStatus === "ativo" ? "inativo" : "ativo";
+    
+    try {
+      const { error } = await supabase
+        .from("properties")
+        .update({ status: newStatus })
+        .eq("id", id);
+
+      if (error) throw error;
+
+      toast({
+        title: `Imóvel ${newStatus === "ativo" ? "ativado" : "inativado"}`,
+        description: `O status do imóvel foi alterado para ${newStatus}.`,
+      });
+      setRefreshTick((t) => t + 1);
+    } catch (error) {
+      toast({
+        title: "Erro ao alterar status",
+        description: "Não foi possível atualizar o status do imóvel.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!propertyToDelete) return;
+
+    try {
+      const { error } = await supabase
+        .from("properties")
+        .delete()
+        .eq("id", propertyToDelete);
+
+      if (error) throw error;
+
+      toast({
+        title: "Imóvel excluído",
+        description: "O imóvel foi removido permanentemente.",
+      });
+      setRefreshTick((t) => t + 1);
+    } catch (error) {
+      toast({
+        title: "Erro ao excluir",
+        description: "Não foi possível excluir o imóvel.",
+        variant: "destructive",
+      });
+    } finally {
+      setPropertyToDelete(null);
+    }
+  };
+
   return (
     <div>
       <KenloSettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
