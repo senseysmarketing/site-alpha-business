@@ -246,23 +246,49 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
             {renderNavLink({ label: "Locação", to: "/busca?transactionType=locacao" }, mobileClass)}
             
             {/* Mobile Condos */}
-            <div className="flex flex-col gap-2">
-              <span className="font-semibold text-[10px] tracking-[0.2em] uppercase text-white/30 pt-2 pb-1">Condomínios</span>
-              {condoMenuSettings?.regions.map((region, idx) => (
-                <div key={idx} className="flex flex-col gap-2 py-1">
-                  <span className="text-[11px] text-white/50 uppercase tracking-widest">{region.title}</span>
-                  <div className="flex flex-wrap gap-x-4 gap-y-2">
-                    {region.links.map((link, lIdx) => (
-                      <Link key={lIdx} to={link.href} className="text-sm text-white/80" onClick={() => setMenuOpen(false)}>
-                        {link.name}
+            <div className="flex flex-col gap-4">
+              <span className="font-semibold text-[10px] tracking-[0.2em] uppercase text-white/30 pt-2">Condomínios</span>
+              
+              <div className="space-y-6">
+                {/* Destaques Mobile */}
+                <div className="space-y-3">
+                  <p className="text-[10px] tracking-[0.2em] uppercase text-white/40 font-semibold">Destaques</p>
+                  <div className="grid grid-cols-1 gap-3">
+                    {(condoMenuSettings?.featured || []).slice(0, 3).map((item, idx) => (
+                      <Link key={idx} to={item.href} onClick={() => setMenuOpen(false)} className="group/item block relative aspect-[21/9] overflow-hidden rounded-sm bg-white/5">
+                        {item.image && (
+                          <img src={item.image} alt={item.name} className="absolute inset-0 w-full h-full object-cover opacity-60" />
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                        <div className="absolute bottom-3 left-3">
+                          <p className="text-xs font-medium tracking-wider uppercase text-white">{item.name}</p>
+                        </div>
                       </Link>
                     ))}
                   </div>
                 </div>
-              ))}
-              <Link to="/busca" className="text-sm text-white/90 underline underline-offset-4 mt-2" onClick={() => setMenuOpen(false)}>
-                Ver todos os condomínios
-              </Link>
+
+                {/* Regiões Mobile */}
+                <div className="space-y-4">
+                  {(condoMenuSettings?.regions || []).map((region, idx) => (
+                    <div key={idx} className="space-y-3">
+                      <h4 className="text-[10px] font-semibold text-white/40 uppercase tracking-[0.2em]">{region.title}</h4>
+                      <div className="flex flex-col gap-3 pl-2 border-l border-white/10">
+                        {region.links.map((link, lIdx) => (
+                          <Link key={lIdx} to={link.href} className="text-sm text-white/70 hover:text-white transition-colors" onClick={() => setMenuOpen(false)}>
+                            {link.name}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <Link to="/busca" className="flex items-center gap-2 text-xs font-semibold text-white uppercase tracking-widest bg-white/5 p-4 rounded-sm" onClick={() => setMenuOpen(false)}>
+                  Ver todos os condomínios
+                  <ArrowRight size={14} className="text-white/40" />
+                </Link>
+              </div>
             </div>
 
             {renderNavLink({ label: "Notícias", to: "/blog" }, mobileClass)}
