@@ -569,23 +569,23 @@ const SiteSettings = () => {
     if (homeFeatured.data?.property_ids) setHomeFeaturedIds(homeFeatured.data.property_ids);
   }, [homeFeatured.data]);
 
-  // ── Homepage Carousels 1 & 2 ──
+  // ── Homepage Carousels 2 & 3 ──
   interface CarouselSettings {
     title: string;
     property_ids: string[];
     is_active: boolean;
   }
-  const carousel1 = useSiteSettings<CarouselSettings>("homepage_carousel_1");
-  const [carousel1Form, setCarousel1Form] = useState<CarouselSettings>({ title: "", property_ids: [], is_active: false });
-  useEffect(() => {
-    if (carousel1.data) setCarousel1Form(carousel1.data);
-  }, [carousel1.data]);
-
   const carousel2 = useSiteSettings<CarouselSettings>("homepage_carousel_2");
   const [carousel2Form, setCarousel2Form] = useState<CarouselSettings>({ title: "", property_ids: [], is_active: false });
   useEffect(() => {
     if (carousel2.data) setCarousel2Form(carousel2.data);
   }, [carousel2.data]);
+
+  const carousel3 = useSiteSettings<CarouselSettings>("homepage_carousel_3");
+  const [carousel3Form, setCarousel3Form] = useState<CarouselSettings>({ title: "", property_ids: [], is_active: false });
+  useEffect(() => {
+    if (carousel3.data) setCarousel3Form(carousel3.data);
+  }, [carousel3.data]);
 
   // ── Tokens ──
   const tokens = useSiteSettings<DesignTokens>("design_tokens");
@@ -916,46 +916,9 @@ const SiteSettings = () => {
             />
           </SettingsBlock>
 
-          {/* Block 1.6: Homepage Carousel 1 */}
+          {/* Block 1.6: Homepage Carousel 2 */}
           <SettingsBlock
             title="Carrossel Adicional 1"
-            onSave={() => carousel1.save(carousel1Form)}
-            isSaving={carousel1.isSaving}
-          >
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 border border-border/30 rounded-sm bg-muted/5">
-                <div className="space-y-0.5">
-                  <Label className="text-sm font-medium">Ativar carrossel na Home</Label>
-                  <p className="text-xs text-muted-foreground">Exibir esta seção na página inicial</p>
-                </div>
-                <Switch
-                  checked={carousel1Form.is_active}
-                  onCheckedChange={(checked) => setCarousel1Form({ ...carousel1Form, is_active: checked })}
-                />
-              </div>
-              
-              <div>
-                <Label className="font-[Inter] text-xs text-muted-foreground">Título da Seção</Label>
-                <Input
-                  value={carousel1Form.title}
-                  onChange={(e) => setCarousel1Form({ ...carousel1Form, title: e.target.value })}
-                  placeholder="Ex: Oportunidades Únicas"
-                  className="mt-1 h-9 text-sm border-border/50"
-                />
-              </div>
-
-              <PropertyMultiSelect
-                selectedIds={carousel1Form.property_ids || []}
-                onChange={(ids) => setCarousel1Form({ ...carousel1Form, property_ids: ids })}
-                properties={properties ?? []}
-                max={12}
-              />
-            </div>
-          </SettingsBlock>
-
-          {/* Block 1.7: Homepage Carousel 2 */}
-          <SettingsBlock
-            title="Carrossel Adicional 2"
             onSave={() => carousel2.save(carousel2Form)}
             isSaving={carousel2.isSaving}
           >
@@ -976,7 +939,7 @@ const SiteSettings = () => {
                 <Input
                   value={carousel2Form.title}
                   onChange={(e) => setCarousel2Form({ ...carousel2Form, title: e.target.value })}
-                  placeholder="Ex: Destaques da Semana"
+                  placeholder="Ex: Oportunidades Únicas"
                   className="mt-1 h-9 text-sm border-border/50"
                 />
               </div>
@@ -984,6 +947,43 @@ const SiteSettings = () => {
               <PropertyMultiSelect
                 selectedIds={carousel2Form.property_ids || []}
                 onChange={(ids) => setCarousel2Form({ ...carousel2Form, property_ids: ids })}
+                properties={properties ?? []}
+                max={12}
+              />
+            </div>
+          </SettingsBlock>
+
+          {/* Block 1.7: Homepage Carousel 3 */}
+          <SettingsBlock
+            title="Carrossel Adicional 2"
+            onSave={() => carousel3.save(carousel3Form)}
+            isSaving={carousel3.isSaving}
+          >
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 border border-border/30 rounded-sm bg-muted/5">
+                <div className="space-y-0.5">
+                  <Label className="text-sm font-medium">Ativar carrossel na Home</Label>
+                  <p className="text-xs text-muted-foreground">Exibir esta seção na página inicial</p>
+                </div>
+                <Switch
+                  checked={carousel3Form.is_active}
+                  onCheckedChange={(checked) => setCarousel3Form({ ...carousel3Form, is_active: checked })}
+                />
+              </div>
+              
+              <div>
+                <Label className="font-[Inter] text-xs text-muted-foreground">Título da Seção</Label>
+                <Input
+                  value={carousel3Form.title}
+                  onChange={(e) => setCarousel3Form({ ...carousel3Form, title: e.target.value })}
+                  placeholder="Ex: Destaques da Semana"
+                  className="mt-1 h-9 text-sm border-border/50"
+                />
+              </div>
+
+              <PropertyMultiSelect
+                selectedIds={carousel3Form.property_ids || []}
+                onChange={(ids) => setCarousel3Form({ ...carousel3Form, property_ids: ids })}
                 properties={properties ?? []}
                 max={12}
               />
