@@ -60,7 +60,7 @@ A suíte master ocupa 65m² de pura sofisticação — closet planejado sob medi
 Cada detalhe foi pensado para quem não aceita o ordinário: piso em mármore Travertino, iluminação Lumini, automação Savant, sistema de som Bose integrado e ar-condicionado central VRF. A área externa abraça uma piscina com borda infinita de 15 metros, deck em madeira cumaru e paisagismo assinado por Gilberto Elkis.`,
     amenities: ["Piscina aquecida", "Adega climatizada", "Home theater", "Espaço gourmet", "Jardim zen", "Automação completa"],
     tag: "Nova",
-    broker: { name: "Carolina Mendes", title: "Corretora especialista em Alphaville" },
+    broker: { name: "Rafael Albuquerque", title: "Corretor especialista em Alphaville" },
     neighborhoodInfo: {
       name: "Alphaville — Oásis Urbano",
       description: "Alphaville é referência em qualidade de vida, segurança e infraestrutura completa. A região combina a tranquilidade de condomínios fechados com acesso rápido aos principais centros empresariais e gastronômicos da Grande São Paulo.",
@@ -126,7 +126,7 @@ O living de 95m² com pé-direito de 4,5 metros se abre completamente para o jar
 Destaques técnicos: estrutura em concreto protendido, vidros low-e com controle solar, sistema de captação de água pluvial, aquecimento solar, iluminação cênica Erco e paisagismo de Isabel Duprat.`,
     amenities: ["Espelho d'água", "Ducha ao ar livre", "Projeto MK27", "Portas pivotantes", "Paisagismo I. Duprat", "Captação pluvial"],
     tag: "Nova",
-    broker: { name: "Carolina Mendes", title: "Corretora especialista em Alphaville" },
+    broker: { name: "Rafael Albuquerque", title: "Corretor especialista em Alphaville" },
     neighborhoodInfo: {
       name: "Alphaville 11 — Exclusividade Verde",
       description: "O residencial Alphaville 11 é um dos condomínios mais arborizados da região, com lotes generosos, mata nativa preservada e segurança 24h com tecnologia de ponta.",
@@ -194,7 +194,7 @@ O primeiro andar abriga as 6 suítes, sendo a master um verdadeiro apartamento d
 Paisagismo de Benedito Abbud com espécies tropicais raras, sistema de irrigação automatizado e iluminação paisagística Bega.`,
     amenities: ["Elevador panorâmico", "Cinema 12 lugares", "Adega 2000 rótulos", "Rooftop com piscina", "Banheira V+A", "Paisagismo B. Abbud"],
     tag: "Destaque",
-    broker: { name: "Carolina Mendes", title: "Corretora especialista em Alphaville" },
+    broker: { name: "Rafael Albuquerque", title: "Corretor especialista em Alphaville" },
     neighborhoodInfo: {
       name: "Alphaville 0 — O Endereço Definitivo",
       description: "O Alphaville Residencial Zero é o condomínio mais exclusivo da região, com apenas 40 lotes de grande metragem, mata atlântica preservada, lago privativo e segurança com padrão embaixada.",
