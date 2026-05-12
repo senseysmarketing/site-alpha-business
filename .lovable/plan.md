@@ -1,24 +1,21 @@
-## Objetivo
-Adicionar o toggle **Cognitivo / Busca Tradicional** ao campo de busca da página de resultados (`/busca`), igualando-o à barra da home.
+## Padronizar tipografia do menu mobile (seção Condomínios)
 
-## Mudanças
+No mobile, o item "Condomínios" usa o `AccordionTrigger` do shadcn, que aplica fonte/peso padrão diferente dos outros itens. Os textos internos (Destaques, regiões, links) também variam entre tamanhos. Vou padronizar tudo seguindo o mesmo `mobileClass` de Venda/Locação e harmonizar a hierarquia interna.
 
-### `src/components/search/SearchHero.tsx`
-- Largura do container: `max-w-2xl` → `max-w-3xl` para acomodar a grade de filtros tradicionais.
-- Envolver a barra de busca num cartão `bg-background rounded-lg shadow-xl p-4 md:p-6` (mesmo estilo do `SearchBarSection` da home), substituindo o `glass-panel` atual.
-- Adicionar estado `mode: "cognitive" | "traditional"` (default `"cognitive"`) e um toggle pill (`bg-muted rounded-full`) acima do campo, idêntico ao da home.
-- **Modo Cognitivo**: mantém o input atual (mic + ícone Search + input + botão Buscar), os chips de filtros parsed e as pills de lifestyle abaixo. Pequeno polish para o botão Buscar ficar inline (alinhado com o estilo da home), removendo a sobreposição absoluta.
-- **Modo Tradicional**: replica o painel da `SearchBarSection`:
-  - Grid `grid-cols-2 md:grid-cols-3 gap-3` com selects: **Transação** (Venda/Locação), **Tipo** (Casa/Apto/Terreno), **Nº Quartos** (1/2/3/4+), **Preço mínimo**, **Até**, **Condomínio** (input texto).
-  - Estado inicial dos filtros lê `searchParams` (`condominium`, `transactionType`) para refletir o que veio dos links do Header/Footer.
-  - Botão **Buscar imóveis** chama `handleTraditionalSearch`: monta `URLSearchParams` (condominium, transactionType, q derivada das partes), aplica via `setSearchParams(next)` e dispara `handleSearch(q)` quando há termos. Sem termos, limpa results para acionar o fallback de "lista completa" já existente em `SearchResults`.
-- Pills de lifestyle só aparecem no modo Cognitivo. Clicar numa pill volta para Cognitivo e dispara a busca.
+### Mudanças em `src/components/Header.tsx`
 
-### Sem mudanças em `SearchResults.tsx`
-Já lê `condominium` e `transactionType` do `searchParams` no estado inicial dos filtros e usa o fallback de lista completa quando não há `q`. O novo handler tradicional reaproveita esse contrato.
+1. **Trigger "Condomínios"** (linha 260): aplicar exatamente as mesmas classes de Venda/Locação (`font-normal text-sm tracking-[0.1em] uppercase text-white/70`), mantendo só o chevron do accordion. Garantir `text-left` e remover qualquer peso/tamanho herdado.
 
-### Memória
-Atualizar `mem://features/search/results-layout` para registrar que o hero da `/busca` agora tem o mesmo cartão e o toggle Cognitivo/Tradicional do hero da home, com filtros tradicionais sincronizados via URL.
+2. **Labels de seção interna** ("Destaques" e nomes de região, linhas 267 e 287): unificar no mesmo estilo discreto — `text-[10px] tracking-[0.2em] uppercase text-white/40 font-semibold` (já é o caso de "Destaques"; alinhar regiões ao mesmo padrão, removendo divergências).
 
-## Resultado esperado
-O usuário em `/busca` vê o mesmo padrão de campo de pesquisa da home, podendo alternar entre IA e filtros tradicionais sem sair da página, com a URL refletindo os filtros aplicados.
+3. **Links de condomínios por região** (linha 290): padronizar para `text-sm tracking-[0.05em] text-white/60` para combinar com a escala dos itens principais sem competir com eles.
+
+4. **Cards de Destaque** (linha 276): manter `text-xs uppercase tracking-wider` (já consistente).
+
+5. **CTA "Ver todos os condomínios"** (linha 299): já está padronizado com os botões — manter.
+
+### Resultado
+
+- "Venda", "Locação", "Condomínios", "Notícias", "Fale Conosco" ficam visualmente idênticos no mobile (mesma fonte, tamanho, tracking, peso e cor).
+- Subitens dentro do accordion seguem hierarquia clara: rótulos de seção minúsculos/destaque, links em peso normal.
+- Apenas mobile é afetado; desktop permanece inalterado.

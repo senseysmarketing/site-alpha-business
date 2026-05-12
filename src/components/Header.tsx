@@ -257,7 +257,7 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
             <div className="flex flex-col gap-0 border-t border-white/5 mt-2">
               <Accordion type="single" collapsible className="w-full">
                 <AccordionItem value="condos" className="border-none">
-                  <AccordionTrigger className="font-normal text-sm tracking-[0.1em] uppercase text-white/70 hover:text-white hover:no-underline py-2 transition-colors">
+                  <AccordionTrigger className="font-normal text-sm tracking-[0.1em] uppercase text-white/70 hover:text-white hover:no-underline py-2 transition-colors text-left [&>svg]:text-white/40" style={{ fontFamily: "'Roboto', sans-serif" }}>
                     Condomínios
                   </AccordionTrigger>
                   <AccordionContent className="pb-6">
@@ -285,9 +285,9 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
                         {(condoMenuSettings?.regions || []).map((region, idx) => (
                           <div key={idx} className="space-y-4">
                             <h4 className="text-[10px] font-semibold text-white/40 uppercase tracking-[0.2em] pl-1">{region.title}</h4>
-                            <div className="flex flex-col gap-4 pl-3 border-l border-white/10">
+                            <div className="flex flex-col gap-3 pl-3 border-l border-white/10">
                               {region.links.map((link, lIdx) => (
-                                <Link key={lIdx} to={link.href} className="text-sm text-white/60 hover:text-white transition-colors" onClick={() => setMenuOpen(false)}>
+                                <Link key={lIdx} to={link.href} className="font-normal text-xs tracking-[0.05em] text-white/60 hover:text-white transition-colors" onClick={() => setMenuOpen(false)}>
                                   {link.name}
                                 </Link>
                               ))}
