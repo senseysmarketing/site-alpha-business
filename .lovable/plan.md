@@ -1,31 +1,41 @@
-## Ajustes estéticos
+# Mega menu de condomínios — automação e scroll
 
-### 1. Espaçamento do título do Hero
-Em `src/components/HeroSection.tsx` (h1 do hero, ~linha 158-163), o `line-height` atual é `1.5` (`!leading-[1.5]` + `style={{ lineHeight: 1.5 }}`), o que ficou folgado demais. Reduzir para `1.15` — espaço suficiente para não encostar nas linhas (descendentes do "g/p/y" + acentos) sem parecer arejado demais. Mesma alteração no `FeaturedPropertySection.tsx` (linha ~58) e `BlogHero.tsx` (já está em `1.1`, OK) se quisermos consistência total — proponho aplicar apenas no Hero principal por enquanto, conforme o pedido.
+## Objetivo
+Manter a altura/largura atuais do mega menu e tornar as duas primeiras colunas roláveis. Destaques continua manual (com scroll), e a coluna de Regiões passa a ser gerada automaticamente a partir dos condomínios cadastrados, agrupando nomes iguais com sufixo numérico.
 
-### 2. "Fale Conosco" → "Contato" no cabeçalho
-Em `src/components/Header.tsx`:
-- Linha 85 (array `navItems`, não usado para render direto mas mantido por consistência).
-- Linha 222 (desktop) e linha 310 (mobile): trocar label `"Fale Conosco"` por `"Contato"`.
-- O `hash="contato"` permanece (já aponta para o id correto da `ContactSection`).
-- Atualizar a memória `features/header/navigation.md` para refletir o novo label.
+## Mudanças
 
-### 3. Otimização para tablet
-**Diagnóstico**: o header usa `hidden lg:flex` para o menu desktop, ou seja, em tablet (768–1023px) só aparecem a logo + hambúrguer. A logo está em `h-8 md:h-10` — visualmente fica pequena/"perdida" no espaço maior do tablet, dando a sensação de "espremida" em relação ao padding `md:px-12`.
+### 1. Coluna "Destaques" (Header.tsx — desktop e mobile)
+- Mantém cadastro manual via admin (sem mudança de schema).
+- Altura visível travada para mostrar ~3 cards; itens excedentes ficam acessíveis via **scroll vertical interno da coluna** (`max-h-[...] overflow-y-auto`), com scrollbar discreta.
+- O container do mega menu mantém sua altura atual; apenas a coluna Destaques scrolla.
 
-**Ajustes propostos**:
-- `Header.tsx` linha 144: logo `h-8 md:h-11 lg:h-10` — tablet ganha um tamanho dedicado, ligeiramente maior, equilibrando o espaço horizontal.
-- `Header.tsx` linha 139: padding do header em tablet `px-6 md:px-10 lg:px-24` (reduzir um pouco o `md:px-12` para dar mais respiro visual à logo sem deixá-la colada na borda).
-- Avaliar breakpoint do menu: manter `lg:` (hambúrguer em tablet) — não mexer no comportamento, só na proporção visual.
+### 2. Coluna "Por Região" — automática a partir do banco
+- Remover totalmente a leitura de `condo_menu.regions` no Header.
+- Buscar em `properties` (status `ativo`, `condominium not null`) a lista distinta de condomínios e construir os grupos no client com a seguinte regra:
+  - **Normalização**: trim, colapso de espaços, remoção de acentos e case-insensitive apenas para *agrupar* (o rótulo exibido usa a versão canônica mais frequente do banco).
+  - **Detecção de sufixo numérico**: se o nome termina em ` <número>` (regex `^(.*?)\s+(\d+)$`), separa em `base` + `num`.
+  - **Agrupamento**:
+    - Se a `base` (normalizada) aparece em 2+ registros com sufixo numérico → cria um grupo com título = `base` canônica e filhos = apenas os números (`1`, `2`, …, `12`), ordenados numericamente.
+    - Se aparece só uma vez (ou sem sufixo) → entra como item solo, exibindo o nome completo.
+  - Cada link aponta para `/busca?condo=<nome completo do condomínio>` (mesmo padrão já usado em `AlphavilleMapSection`).
+- Layout: título do grupo em destaque + linha horizontal compacta de números clicáveis (chips minimalistas) para grupos numerados; itens solo seguem o estilo atual de link de texto.
+- Coluna também ganha **scroll vertical interno** com a mesma altura travada de Destaques, para acomodar a lista completa sem expandir o mega menu.
+- Ordenação alfabética dos grupos/itens.
 
-**Demais seções do site (revisão pontual de tablet)**:
-- `HeroSection.tsx`: o título usa `text-3xl md:text-5xl lg:text-6xl`. Em tablet (768–1023) ele fica em `text-5xl`, que combina bem com a altura `md:h-[80vh]`. Sem ajuste necessário.
-- `FeaturedPropertySection.tsx`: grid `md:grid-cols-2` ativa em tablet — funciona, sem ajuste.
-- Padronizar o padding lateral global de tablet: a maioria das seções já usa `px-6 md:px-12 lg:px-24`. Não vamos mudar todas (escopo grande); apenas o `Header` se beneficia do ajuste fino.
+### 3. Admin `/admin/configuracoes` (SiteSettings.tsx)
+- **Remover** o bloco de edição "Regiões e Links" do bloco do menu de condomínios.
+- Manter apenas o editor de "Destaques" (sem limite de quantidade, já que agora há scroll).
+- A chave `condo_menu` permanece no `site_settings`, mas o campo `regions` deixa de ser lido/escrito pela UI (mantido no payload para compatibilidade, ignorado).
 
-### Resumo das edições
-- `src/components/HeroSection.tsx` — line-height do h1: `1.5` → `1.15`.
-- `src/components/Header.tsx` — label "Fale Conosco" → "Contato" (2 lugares + array), logo `md:h-11`, padding `md:px-10`.
-- `.lovable/memory/features/header/navigation.md` — atualizar label.
+### 4. Mobile
+- Mesma lógica aplicada ao accordion "Condomínios" do menu mobile: Destaques com scroll, Regiões geradas automaticamente com scroll interno e chips numerados.
 
-Sem alterações de comportamento/rota.
+## Detalhes técnicos
+- Nova query no `Header.tsx`: `supabase.from('properties').select('condominium').eq('status','ativo').not('condominium','is',null)` + `useQuery` (TanStack) com cache de 5 min.
+- Função utilitária `buildCondoRegions(rows)` em `src/lib/condoGrouping.ts` (testável) que retorna `{ groups: Array<{ base: string; canonical: string; items: Array<{ label: string; full: string }> }>, singles: Array<{ label: string; full: string }> }`.
+- Sem migração de banco. Sem alteração em rotas.
+- Memórias a atualizar após implementação: `features/header/navigation` (nova fonte automática + scroll) e `features/admin/identity-control` (remoção do editor de regiões).
+
+## Fora de escopo
+- Não vamos consolidar/normalizar duplicatas com acento no banco (ex.: `Tamboré 1` vs `Tambore 1`) — o agrupamento no menu já os trata como mesmo grupo via normalização. Limpeza dos dados pode ser feita em tarefa separada se desejar.
