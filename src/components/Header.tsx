@@ -202,7 +202,7 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
                               {group.items.map((it) => (
                                 <Link
                                   key={it.full}
-                                  to={`/busca?condo=${encodeURIComponent(it.full)}`}
+                                  to={`/busca?condominium=${encodeURIComponent(it.full)}`}
                                   className="min-w-[28px] h-7 px-2 inline-flex items-center justify-center rounded-full border border-white/10 text-[11px] text-white/60 hover:text-white hover:border-white/30 transition-colors"
                                 >
                                   {it.label}
@@ -218,7 +218,7 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
                               {condoMenuData!.singles.map((it) => (
                                 <Link
                                   key={it.full}
-                                  to={`/busca?condo=${encodeURIComponent(it.full)}`}
+                                  to={`/busca?condominium=${encodeURIComponent(it.full)}`}
                                   className="text-[11px] text-white/50 hover:text-white transition-colors"
                                 >
                                   {it.label}
@@ -326,7 +326,7 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
                               {group.items.map((it) => (
                                 <Link
                                   key={it.full}
-                                  to={`/busca?condo=${encodeURIComponent(it.full)}`}
+                                  to={`/busca?condominium=${encodeURIComponent(it.full)}`}
                                   onClick={() => setMenuOpen(false)}
                                   className="min-w-[36px] h-8 px-3 inline-flex items-center justify-center rounded-full border border-white/10 text-xs text-white/70 hover:text-white hover:border-white/30 transition-colors"
                                 >
@@ -343,7 +343,7 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
                               {condoMenuData!.singles.map((it) => (
                                 <Link
                                   key={it.full}
-                                  to={`/busca?condo=${encodeURIComponent(it.full)}`}
+                                  to={`/busca?condominium=${encodeURIComponent(it.full)}`}
                                   onClick={() => setMenuOpen(false)}
                                   className="font-normal text-xs tracking-[0.05em] text-white/60 hover:text-white transition-colors"
                                 >
