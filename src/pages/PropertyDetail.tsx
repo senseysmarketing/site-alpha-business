@@ -146,15 +146,25 @@ const PropertyDetail = () => {
     );
   }
 
+  const condoRegion = dbCondo?.region || null;
+  const condoCity = dbCondo?.city || null;
+  const condoHighlights: NeighborhoodHighlight[] = Array.isArray(dbCondo?.highlights)
+    ? (dbCondo!.highlights as NeighborhoodHighlight[])
+    : [];
+
   const property = dbProperty
     ? {
         id: dbProperty.id,
         code: dbProperty.code,
         title: dbProperty.title,
-        subtitle: [dbProperty.condominium, dbProperty.neighborhood, dbProperty.city].filter(Boolean).join(" · "),
+        subtitle: [
+          dbProperty.condominium,
+          condoRegion || dbProperty.neighborhood,
+          condoCity || dbProperty.city,
+        ].filter(Boolean).join(" · "),
         condominium: dbProperty.condominium,
-        neighborhood: dbProperty.neighborhood,
-        city: dbProperty.city,
+        neighborhood: condoRegion || dbProperty.neighborhood,
+        city: condoCity || dbProperty.city,
         property_type: dbProperty.property_type,
         transaction_type: dbProperty.transaction_type,
         price: (dbProperty.transaction_type === "locacao" || dbProperty.transaction_type === "aluguel")
@@ -171,12 +181,20 @@ const PropertyDetail = () => {
         amenities: dbProperty.engineering_highlights ?? [],
         broker: fallback.broker,
         neighborhoodInfo: {
-          name: dbProperty.neighborhood || fallback.neighborhoodInfo.name,
-          description: fallback.neighborhoodInfo.description,
+          name: condoRegion || dbProperty.neighborhood || dbProperty.city || "",
+          description: dbCondo?.description ?? "",
+          highlights: condoHighlights,
         },
         video_url: dbProperty.video_url,
       }
-    : fallback;
+    : {
+        ...fallback,
+        neighborhoodInfo: {
+          ...fallback.neighborhoodInfo,
+          highlights: [] as NeighborhoodHighlight[],
+        },
+      };
+
 
   // Similar: prefer DB results when current property is from DB
   const similarProperties = dbProperty && similarDb.length > 0
