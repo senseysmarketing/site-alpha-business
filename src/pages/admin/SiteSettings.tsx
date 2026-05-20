@@ -1062,75 +1062,10 @@ const SiteSettings = () => {
                 </div>
               </div>
 
-              <div className="h-px bg-border/30" />
+              <p className="text-[11px] text-muted-foreground/70 italic">
+                A coluna "Por Condomínio" do mega menu é gerada automaticamente a partir dos imóveis ativos cadastrados, agrupando nomes com sufixo numérico (ex.: Alphaville 1, 2, 3…).
+              </p>
 
-              {/* Regions Section */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label className="font-[Inter] text-xs font-semibold uppercase tracking-wider text-muted-foreground">Regiões e Links (Coluna 2)</Label>
-                  <Button variant="outline" size="sm" onClick={addCondoRegion} className="h-7 text-[10px] gap-1 px-2">
-                    <Plus className="h-3 w-3" /> Adicionar Região
-                  </Button>
-                </div>
-                <div className="space-y-4">
-                  {condoMenuForm.regions.map((reg, i) => (
-                    <div key={i} className="border border-border/30 rounded-sm p-4 bg-muted/5 space-y-4">
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1">
-                          <Label className="text-[10px] text-muted-foreground uppercase">Título da Região</Label>
-                          <Input 
-                            value={reg.title} 
-                            onChange={(e) => updateCondoRegionTitle(i, e.target.value)} 
-                            className="h-8 text-xs mt-1 font-medium" 
-                            placeholder="Ex: Alphaville"
-                          />
-                        </div>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8 mt-5 text-muted-foreground hover:text-destructive" 
-                          onClick={() => removeCondoRegion(i)}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                      
-                      <div className="space-y-2 pl-4 border-l-2 border-border/20">
-                        <div className="flex items-center justify-between mb-2">
-                          <Label className="text-[10px] text-muted-foreground uppercase">Links dos Condomínios</Label>
-                          <Button variant="ghost" size="sm" onClick={() => addCondoRegionLink(i)} className="h-6 text-[9px] gap-1 px-2 uppercase">
-                            <Plus className="h-2.5 w-2.5" /> Link
-                          </Button>
-                        </div>
-                        {reg.links.map((link, lIdx) => (
-                          <div key={lIdx} className="flex items-center gap-2">
-                            <Input 
-                              value={link.name} 
-                              onChange={(e) => updateCondoRegionLink(i, lIdx, "name", e.target.value)} 
-                              placeholder="Nome" 
-                              className="h-7 text-xs flex-1" 
-                            />
-                            <Input 
-                              value={link.href} 
-                              onChange={(e) => updateCondoRegionLink(i, lIdx, "href", e.target.value)} 
-                              placeholder="Link" 
-                              className="h-7 text-xs flex-1" 
-                            />
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-7 w-7 text-muted-foreground/50 hover:text-destructive" 
-                              onClick={() => removeCondoRegionLink(i, lIdx)}
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
             </div>
           </SettingsBlock>
 
