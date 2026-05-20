@@ -82,7 +82,7 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
     { label: "Venda", to: "/busca?transactionType=venda" },
     { label: "Locação", to: "/busca?transactionType=locacao" },
     { label: "Notícias", to: "/blog" },
-    { label: "Fale Conosco", hash: "contato" },
+    { label: "Contato", hash: "contato" },
   ];
 
   const handleHashClick = (e: React.MouseEvent, hash: string) => {
@@ -136,12 +136,12 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
       animate={{ y: 0 }}
       transition={{ delay: 0.3, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
     >
-      <div className="flex items-center justify-between px-6 md:px-12 lg:px-24 py-4">
+      <div className="flex items-center justify-between px-6 md:px-10 lg:px-24 py-4">
         <Link to="/">
           <img
             src={logoRafael}
             alt="Rafael Albuquerque"
-            className="h-8 md:h-10 w-auto"
+            className="h-8 md:h-11 lg:h-10 w-auto"
           />
         </Link>
 
@@ -219,7 +219,7 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
           </NavigationMenu>
 
           {renderNavLink({ label: "Notícias", to: "/blog" }, desktopClass)}
-          {renderNavLink({ label: "Fale Conosco", hash: "contato" }, desktopClass)}
+          {renderNavLink({ label: "Contato", hash: "contato" }, desktopClass)}
         </nav>
 
         <div className="hidden lg:flex items-center">
@@ -307,7 +307,7 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
             </div>
 
             {renderNavLink({ label: "Notícias", to: "/blog" }, mobileClass)}
-            {renderNavLink({ label: "Fale Conosco", hash: "contato" }, mobileClass)}
+            {renderNavLink({ label: "Contato", hash: "contato" }, mobileClass)}
             <button
               onClick={() => {
                 setAdvertiseOpen(true);

@@ -9,7 +9,7 @@ type: feature
 - Venda → `/busca?transactionType=venda`
 - Locação → `/busca?transactionType=locacao`
 - Notícias → `/blog`
-- Fale Conosco → âncora `#contato` (id real da `ContactSection`)
+- Contato → âncora `#contato` (id real da `ContactSection`)
 
 Itens removidos: Buscar, Serviços, Sobre. NÃO reintroduzir sem rota/seção real.
 
