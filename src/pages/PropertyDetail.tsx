@@ -369,6 +369,7 @@ const PropertyDetail = () => {
             <PropertyNeighborhood
               name={property.neighborhoodInfo.name}
               description={property.neighborhoodInfo.description}
+              highlights={(property.neighborhoodInfo as any).highlights ?? []}
             />
           </div>
 
