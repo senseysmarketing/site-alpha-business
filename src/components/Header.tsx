@@ -75,12 +75,11 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
     queryKey: ["header-condos"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("properties")
-        .select("condominium")
-        .eq("status", "ativo")
-        .not("condominium", "is", null);
+        .from("condominiums")
+        .select("name")
+        .eq("is_active", true);
       if (error) throw error;
-      const names = (data || []).map((r: any) => r.condominium as string).filter(Boolean);
+      const names = (data || []).map((r: any) => r.name as string).filter(Boolean);
       return buildCondoMenuData(names);
     },
     staleTime: 5 * 60 * 1000,
