@@ -6,7 +6,9 @@ import { useEffect, useState } from "react";
 interface TeamMember {
   name: string;
   role: string;
+  photo?: string;
   avatar?: string;
+  creci?: string;
 }
 
 const defaultTeam: TeamMember[] = [
@@ -76,9 +78,9 @@ const TeamSection = () => {
                 transition={{ delay: i * 0.1, duration: 0.5 }}
               >
                 <div className="w-32 h-32 md:w-36 md:h-36 rounded-full overflow-hidden mb-4 bg-muted">
-                  {member.avatar ? (
+                  {(member.photo ?? member.avatar) ? (
                     <img
-                      src={member.avatar}
+                      src={member.photo ?? member.avatar}
                       alt={member.name}
                       className="w-full h-full object-cover"
                     />
