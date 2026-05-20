@@ -39,7 +39,7 @@ interface CondoRegion {
 
 interface CondoMenuSettings {
   featured: CondoLink[];
-  regions: CondoRegion[];
+  regions?: CondoRegion[]; // legacy, ignored
 }
 
 type NavItem = {
