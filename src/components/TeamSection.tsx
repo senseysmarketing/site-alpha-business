@@ -48,7 +48,7 @@ const TeamSection = () => {
   return (
     <section className="section-padding">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-10">
+        <div className="mb-10">
           <motion.h2
             className="text-display text-2xl md:text-3xl font-normal text-foreground"
             initial={{ opacity: 0, y: 20 }}
@@ -58,13 +58,8 @@ const TeamSection = () => {
           >
             Nossa Equipe
           </motion.h2>
-          <a
-            href="#contato"
-            className="text-body text-sm text-foreground/70 hover:text-primary transition-colors"
-          >
-            Ver todos
-          </a>
         </div>
+
 
         <div className="overflow-hidden" ref={emblaRef}>
           <div className="flex gap-8">
