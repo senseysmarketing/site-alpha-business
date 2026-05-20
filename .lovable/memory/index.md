@@ -39,6 +39,7 @@
 - [Admin Layout Standard](mem://features/admin/layout) — Quiet Luxury admin aesthetic, Glassmorphism header, global padding
 - [Admin Access Control](mem://auth/admin-access) — RBAC via user_roles and has_role RPC, async auth checks
 - [Admin Property Management](mem://features/admin/property-management) — Filter groups, AI-powered creation wizard via Web Speech/Gemini
+- [Condominium Management](mem://features/admin/condominium-management) — Admin CRUD for condo region/description/highlights shown on property detail
 - [Data Entry Standards](mem://features/admin/data-entry-standards) — Normalized condo names, pure number prices, luxury tags
 - [Bulk Import System](mem://features/admin/bulk-import) — 5-step wizard with PapaParse, CSV templates, batch processing
 - [CRM Kanban Pipeline](mem://features/admin/crm-kanban-structure) — 5-stage pipeline, origin icons, Sentiment Score
