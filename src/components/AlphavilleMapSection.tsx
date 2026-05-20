@@ -16,27 +16,31 @@ const AlphavilleMapSection = () => {
   const navigate = useNavigate();
 
   const { data: condoMap, isLoading } = useQuery({
-    queryKey: ["condo-availability"],
+    queryKey: ["condo-availability-v2"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("properties")
-        .select("condominium, transaction_type")
-        .eq("status", "ativo")
-        .not("condominium", "is", null);
+      const [{ data: condos, error: e1 }, { data: props, error: e2 }] = await Promise.all([
+        supabase.from("condominiums").select("name").eq("is_active", true).order("name"),
+        supabase.from("properties").select("condominium, transaction_type").eq("status", "ativo").not("condominium", "is", null),
+      ]);
+      if (e1) throw e1;
+      if (e2) throw e2;
 
-      if (error) throw error;
-
-      const map = new Map<string, CondoAvailability>();
-      for (const row of data || []) {
+      const availability = new Map<string, CondoAvailability>();
+      const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+      for (const row of props || []) {
         if (!row.condominium) continue;
-        const existing = map.get(row.condominium) || { hasVenda: false, hasAluguel: false };
+        const key = norm(row.condominium);
+        const existing = availability.get(key) || { hasVenda: false, hasAluguel: false };
         if (row.transaction_type === "venda") existing.hasVenda = true;
         if (row.transaction_type === "locacao" || row.transaction_type === "aluguel") existing.hasAluguel = true;
-        if (row.transaction_type === "ambos") {
-          existing.hasVenda = true;
-          existing.hasAluguel = true;
-        }
-        map.set(row.condominium, existing);
+        if (row.transaction_type === "ambos") { existing.hasVenda = true; existing.hasAluguel = true; }
+        availability.set(key, existing);
+      }
+
+      const map = new Map<string, CondoAvailability>();
+      for (const c of condos || []) {
+        const a = availability.get(norm(c.name));
+        if (a && (a.hasVenda || a.hasAluguel)) map.set(c.name, a);
       }
       return map;
     },
