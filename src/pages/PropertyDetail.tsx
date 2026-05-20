@@ -18,6 +18,8 @@ import {
 } from "@/components/ui/accordion";
 import { mockProperties, formatPrice } from "@/data/mockProperties";
 import { toTitleCase } from "@/lib/utils";
+import { normalizeCondoName } from "@/lib/lucideIconMap";
+import type { NeighborhoodHighlight } from "@/components/property/PropertyNeighborhood";
 
 const fadeIn = {
   initial: { opacity: 0, y: 20 },
