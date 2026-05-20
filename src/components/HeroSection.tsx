@@ -188,8 +188,8 @@ const HeroSection = () => {
                 {current.tagline}
               </p>
               <h1
-                className="text-display text-3xl md:text-5xl lg:text-6xl font-normal text-white !leading-[1.5]"
-                style={{ lineHeight: 1.5 }}
+                className="text-display text-3xl md:text-5xl lg:text-6xl font-normal text-white !leading-[1.15]"
+                style={{ lineHeight: 1.15 }}
               >
                 {renderTitle(current.title)}
               </h1>
