@@ -1,41 +1,75 @@
-# Mega menu de condomínios — automação e scroll
+## Problema
 
-## Objetivo
-Manter a altura/largura atuais do mega menu e tornar as duas primeiras colunas roláveis. Destaques continua manual (com scroll), e a coluna de Regiões passa a ser gerada automaticamente a partir dos condomínios cadastrados, agrupando nomes iguais com sufixo numérico.
+Na página pública do imóvel (ex.: "CASA Varanda" no Condomínio Vintage / Granja Viana), a seção "Sobre o bairro" sempre mostra **Alphaville** — texto e ícones (Shopping Iguatemi Alphaville, etc.) — independente do condomínio cadastrado. Motivos:
 
-## Mudanças
+1. `PropertyNeighborhood.tsx` tem 4 highlights **hardcoded** sobre Alphaville.
+2. `PropertyDetail.tsx` monta `neighborhoodInfo` usando `dbProperty.neighborhood` (que vem como "Alphaville" por default em toda propriedade) e cai num fallback de descrição genérica de Alphaville.
+3. Não existe nenhum lugar para cadastrar/gerenciar informações dos condomínios (descrição, região real, destaques, imagem, etc.) — então qualquer imóvel novo fora de Alphaville exibe conteúdo errado.
 
-### 1. Coluna "Destaques" (Header.tsx — desktop e mobile)
-- Mantém cadastro manual via admin (sem mudança de schema).
-- Altura visível travada para mostrar ~3 cards; itens excedentes ficam acessíveis via **scroll vertical interno da coluna** (`max-h-[...] overflow-y-auto`), com scrollbar discreta.
-- O container do mega menu mantém sua altura atual; apenas a coluna Destaques scrolla.
+## Solução proposta
 
-### 2. Coluna "Por Região" — automática a partir do banco
-- Remover totalmente a leitura de `condo_menu.regions` no Header.
-- Buscar em `properties` (status `ativo`, `condominium not null`) a lista distinta de condomínios e construir os grupos no client com a seguinte regra:
-  - **Normalização**: trim, colapso de espaços, remoção de acentos e case-insensitive apenas para *agrupar* (o rótulo exibido usa a versão canônica mais frequente do banco).
-  - **Detecção de sufixo numérico**: se o nome termina em ` <número>` (regex `^(.*?)\s+(\d+)$`), separa em `base` + `num`.
-  - **Agrupamento**:
-    - Se a `base` (normalizada) aparece em 2+ registros com sufixo numérico → cria um grupo com título = `base` canônica e filhos = apenas os números (`1`, `2`, …, `12`), ordenados numericamente.
-    - Se aparece só uma vez (ou sem sufixo) → entra como item solo, exibindo o nome completo.
-  - Cada link aponta para `/busca?condo=<nome completo do condomínio>` (mesmo padrão já usado em `AlphavilleMapSection`).
-- Layout: título do grupo em destaque + linha horizontal compacta de números clicáveis (chips minimalistas) para grupos numerados; itens solo seguem o estilo atual de link de texto.
-- Coluna também ganha **scroll vertical interno** com a mesma altura travada de Destaques, para acomodar a lista completa sem expandir o mega menu.
-- Ordenação alfabética dos grupos/itens.
+Criar uma entidade **Condomínios** gerenciável pelo admin, e fazer a página pública do imóvel ler as informações do condomínio vinculado.
 
-### 3. Admin `/admin/configuracoes` (SiteSettings.tsx)
-- **Remover** o bloco de edição "Regiões e Links" do bloco do menu de condomínios.
-- Manter apenas o editor de "Destaques" (sem limite de quantidade, já que agora há scroll).
-- A chave `condo_menu` permanece no `site_settings`, mas o campo `regions` deixa de ser lido/escrito pela UI (mantido no payload para compatibilidade, ignorado).
+### 1. Banco de dados
 
-### 4. Mobile
-- Mesma lógica aplicada ao accordion "Condomínios" do menu mobile: Destaques com scroll, Regiões geradas automaticamente com scroll interno e chips numerados.
+Nova tabela `condominiums` em Supabase:
 
-## Detalhes técnicos
-- Nova query no `Header.tsx`: `supabase.from('properties').select('condominium').eq('status','ativo').not('condominium','is',null)` + `useQuery` (TanStack) com cache de 5 min.
-- Função utilitária `buildCondoRegions(rows)` em `src/lib/condoGrouping.ts` (testável) que retorna `{ groups: Array<{ base: string; canonical: string; items: Array<{ label: string; full: string }> }>, singles: Array<{ label: string; full: string }> }`.
-- Sem migração de banco. Sem alteração em rotas.
-- Memórias a atualizar após implementação: `features/header/navigation` (nova fonte automática + scroll) e `features/admin/identity-control` (remoção do editor de regiões).
+- `name` (text, unique, normalizado p/ matching) — ex.: "Condomínio Vintage"
+- `region` (text) — ex.: "Granja Viana" (usado como título da seção bairro)
+- `city` (text) — ex.: "Cotia"
+- `description` (text) — texto exibido em "Sobre o bairro"
+- `highlights` (jsonb array) — lista `{ icon: string, label: string }` (4–6 itens), com `icon` sendo um nome do lucide-react (ex.: `Utensils`, `TreePine`, `ShoppingBag`, `GraduationCap`, `Trees`, `Dumbbell`, `Waves`)
+- `cover_image` (text, opcional) — para uso futuro
+- `is_active` (bool, default true)
+- `created_at` / `updated_at`
+
+RLS: leitura pública, escrita só para `admin`.
+
+Vínculo com `properties`: **não** adiciona FK — fazemos match por nome normalizado (trim + lowercase + sem acento) entre `properties.condominium` e `condominiums.name`. Isso preserva o fluxo do sync Kenlo e cadastros manuais sem migrações destrutivas.
+
+### 2. Admin — nova tela `/admin/condominios`
+
+Página listando todos os condomínios em formato tabela (Quiet Luxury, mesmo padrão de `/admin/imoveis`):
+
+- Colunas: Nome · Região · Cidade · Destaques (contagem) · Status · Ações
+- Botão "Novo Condomínio"
+- Botão **"Sincronizar com imóveis"**: varre `properties.condominium` distintos e cria entradas vazias (apenas `name`) para condomínios ainda não cadastrados — admin depois preenche região/descrição/destaques
+
+Modal/drawer de edição (ou rota `/admin/condominios/:id`) com:
+
+- Campos: Nome, Região, Cidade, Descrição (textarea longa), Cover image (upload), Status ativo
+- Editor de Destaques: lista dinâmica com seletor de ícone (dropdown com os ícones lucide suportados) + input de label, botão adicionar/remover
+- Botão Salvar com toast e audit log
+
+Adicionar item "Condomínios" na `AdminSidebar.tsx` (entre Imóveis e Equipe).
+
+### 3. Frontend público
+
+**`PropertyDetail.tsx`**:
+- Após carregar o imóvel, busca o condomínio correspondente em `condominiums` por nome normalizado.
+- Monta `neighborhoodInfo` priorizando dados do condomínio:
+  - `name` = `condo.region` (ex.: "Granja Viana") em vez de `neighborhood`
+  - `description` = `condo.description`
+  - `highlights` = `condo.highlights`
+- Atualiza também o `subtitle` do hero para usar `condo.region` em vez do `neighborhood` genérico, quando disponível.
+
+**`PropertyNeighborhood.tsx`**:
+- Remove os 4 highlights hardcoded.
+- Recebe `highlights: { iconName: string, label: string }[]` por prop e renderiza dinamicamente usando um mapa `iconName → componente lucide`.
+- Se o condomínio não tiver highlights cadastrados, esconde o grid (mantém apenas título + descrição).
+
+### 4. Comportamento de fallback
+
+- Imóvel sem condomínio cadastrado na tabela `condominiums` → mostra `neighborhood` + `city` do próprio imóvel como título; descrição e highlights ocultos (sem texto de Alphaville).
+- Texto genérico de Alphaville do `fallback` é removido para evitar conteúdo enganoso.
+
+### 5. Memórias a atualizar
+
+- `features/property-detail/layout` — registrar que a seção de bairro agora é dirigida por `condominiums` e fallback é vazio.
+- Nova memória `features/admin/condominium-management` documentando a tela de CRUD e o matching por nome normalizado.
 
 ## Fora de escopo
-- Não vamos consolidar/normalizar duplicatas com acento no banco (ex.: `Tamboré 1` vs `Tambore 1`) — o agrupamento no menu já os trata como mesmo grupo via normalização. Limpeza dos dados pode ser feita em tarefa separada se desejar.
+
+- Não altera o sync do Kenlo nem a estrutura da tabela `properties`.
+- Não cria página pública "/condominios/:slug" (pode ser próxima fase).
+- Não toca no mega menu de condomínios (já automatizado).
