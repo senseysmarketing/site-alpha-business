@@ -35,6 +35,7 @@ const PropertyDetail = () => {
   const { id } = useParams<{ id: string }>();
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [dbProperty, setDbProperty] = useState<any | null>(null);
+  const [dbCondo, setDbCondo] = useState<any | null>(null);
   const [similarDb, setSimilarDb] = useState<any[]>([]);
   const [loadingDb, setLoadingDb] = useState(isUUID(id));
   const [notFound, setNotFound] = useState(false);
@@ -44,6 +45,7 @@ const PropertyDetail = () => {
     setNotFound(false);
     if (!isUUID(id)) {
       setDbProperty(null);
+      setDbCondo(null);
       setLoadingDb(false);
       return;
     }
@@ -59,11 +61,29 @@ const PropertyDetail = () => {
       if (!data) {
         setNotFound(true);
         setDbProperty(null);
+        setDbCondo(null);
         setLoadingDb(false);
         return;
       }
       setDbProperty(data);
       setLoadingDb(false);
+
+      // Fetch condominium info by normalized name
+      if (data.condominium) {
+        const { data: condos } = await supabase
+          .from("condominiums" as never)
+          .select("*")
+          .eq("is_active", true);
+        if (!cancelled && condos) {
+          const target = normalizeCondoName(data.condominium);
+          const match = (condos as any[]).find(
+            (c) => normalizeCondoName(c.name ?? "") === target,
+          );
+          setDbCondo(match ?? null);
+        }
+      } else {
+        setDbCondo(null);
+      }
 
       // Fetch similar from DB (exclude current)
       const { data: sim } = await supabase
