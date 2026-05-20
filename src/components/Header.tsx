@@ -175,10 +175,10 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
                 <NavigationMenuContent>
                   <div className="w-[calc(100vw-2rem)] md:w-[850px] bg-[#1f1f1f] p-6 md:p-8 text-white shadow-2xl flex flex-col md:flex-row gap-8 md:gap-10 max-h-[80vh] overflow-y-auto md:overflow-y-visible">
                     {/* Featured Column */}
-                    <div className="w-full md:w-1/3 space-y-4">
-                      <p className="text-[10px] tracking-[0.2em] uppercase text-white/40 font-semibold mb-4">Destaques</p>
-                      <div className="space-y-4">
-                        {(condoMenuSettings?.featured || []).slice(0, 3).map((item, idx) => (
+                    <div className="w-full md:w-1/3 space-y-4 flex flex-col min-h-0">
+                      <p className="text-[10px] tracking-[0.2em] uppercase text-white/40 font-semibold">Destaques</p>
+                      <div className="space-y-4 max-h-[460px] overflow-y-auto pr-2 -mr-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-thumb]:rounded-full">
+                        {(condoMenuSettings?.featured || []).map((item, idx) => (
                           <Link key={idx} to={item.href} className="group/item block relative aspect-[16/9] overflow-hidden rounded-sm bg-muted/20">
                             {item.image && (
                               <img src={item.image} alt={item.name} className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-110 opacity-70" />
@@ -192,24 +192,45 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
                       </div>
                     </div>
 
-                    {/* Regions Column */}
-                    <div className="w-full md:w-1/3 border-l-0 md:border-l border-white/5 pl-0 md:pl-8 space-y-6">
-                      <p className="text-[10px] tracking-[0.2em] uppercase text-white/40 font-semibold mb-2">Por Região</p>
-                      <div className="grid grid-cols-1 gap-6">
-                        {(condoMenuSettings?.regions || []).map((region, idx) => (
-                          <div key={idx} className="space-y-3">
-                            <h4 className="text-xs font-semibold text-white/80 uppercase tracking-widest">{region.title}</h4>
-                            <div className="flex flex-col gap-2">
-                              {region.links.map((link, lIdx) => (
-                                <Link key={lIdx} to={link.href} className="text-[11px] text-white/50 hover:text-white transition-colors">
-                                  {link.name}
+                    {/* Regions Column (auto from DB) */}
+                    <div className="w-full md:w-1/3 border-l-0 md:border-l border-white/5 pl-0 md:pl-8 flex flex-col min-h-0">
+                      <p className="text-[10px] tracking-[0.2em] uppercase text-white/40 font-semibold mb-4">Por Condomínio</p>
+                      <div className="space-y-5 max-h-[460px] overflow-y-auto pr-2 -mr-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-thumb]:rounded-full">
+                        {(condoMenuData?.groups || []).map((group) => (
+                          <div key={group.base} className="space-y-2">
+                            <h4 className="text-xs font-semibold text-white/80 uppercase tracking-widest">{group.canonical}</h4>
+                            <div className="flex flex-wrap gap-1.5">
+                              {group.items.map((it) => (
+                                <Link
+                                  key={it.full}
+                                  to={`/busca?condo=${encodeURIComponent(it.full)}`}
+                                  className="min-w-[28px] h-7 px-2 inline-flex items-center justify-center rounded-full border border-white/10 text-[11px] text-white/60 hover:text-white hover:border-white/30 transition-colors"
+                                >
+                                  {it.label}
                                 </Link>
                               ))}
                             </div>
                           </div>
                         ))}
+                        {(condoMenuData?.singles || []).length > 0 && (
+                          <div className="space-y-2 pt-1">
+                            <h4 className="text-xs font-semibold text-white/80 uppercase tracking-widest">Outros</h4>
+                            <div className="flex flex-col gap-2">
+                              {condoMenuData!.singles.map((it) => (
+                                <Link
+                                  key={it.full}
+                                  to={`/busca?condo=${encodeURIComponent(it.full)}`}
+                                  className="text-[11px] text-white/50 hover:text-white transition-colors"
+                                >
+                                  {it.label}
+                                </Link>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
+
 
                     {/* CTA Column */}
                     <div className="w-full md:w-1/3 bg-white/5 p-6 rounded-sm flex flex-col justify-center items-center text-center space-y-4 border border-white/5">
