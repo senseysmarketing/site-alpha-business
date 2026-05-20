@@ -98,6 +98,45 @@ export type Database = {
         }
         Relationships: []
       }
+      condominiums: {
+        Row: {
+          city: string | null
+          cover_image: string | null
+          created_at: string
+          description: string | null
+          highlights: Json
+          id: string
+          is_active: boolean
+          name: string
+          region: string | null
+          updated_at: string
+        }
+        Insert: {
+          city?: string | null
+          cover_image?: string | null
+          created_at?: string
+          description?: string | null
+          highlights?: Json
+          id?: string
+          is_active?: boolean
+          name: string
+          region?: string | null
+          updated_at?: string
+        }
+        Update: {
+          city?: string | null
+          cover_image?: string | null
+          created_at?: string
+          description?: string | null
+          highlights?: Json
+          id?: string
+          is_active?: boolean
+          name?: string
+          region?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       expenses: {
         Row: {
           amount: number

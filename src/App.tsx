@@ -15,6 +15,7 @@ import AdminLayout from "./components/admin/AdminLayout.tsx";
 import Dashboard from "./pages/admin/Dashboard.tsx";
 import Properties from "./pages/admin/Properties.tsx";
 import PropertyForm from "./pages/admin/PropertyForm.tsx";
+import Condominiums from "./pages/admin/Condominiums.tsx";
 import CRM from "./pages/admin/CRM.tsx";
 import Agenda from "./pages/admin/Agenda.tsx";
 import Reports from "./pages/admin/Reports.tsx";
@@ -47,6 +48,7 @@ const AnimatedRoutes = () => {
         <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
           <Route index element={<Dashboard />} />
           <Route path="imoveis" element={<Properties />} />
+          <Route path="condominios" element={<ProtectedRoute allowedRoles={["admin"]}><Condominiums /></ProtectedRoute>} />
           <Route path="leads" element={<CRM />} />
           <Route path="equipe" element={<Team />} />
           <Route path="equipe/:id" element={<TeamProfile />} />
