@@ -1,24 +1,22 @@
 import { motion } from "framer-motion";
-import { MapPin, Utensils, TreePine, ShoppingBag, GraduationCap } from "lucide-react";
+import { MapPin } from "lucide-react";
+import { getLucideIcon } from "@/lib/lucideIconMap";
 
-interface HighlightItem {
-  icon: React.ReactNode;
+export interface NeighborhoodHighlight {
+  icon: string;
   label: string;
 }
 
-const highlights: HighlightItem[] = [
-  { icon: <Utensils size={16} strokeWidth={1.5} />, label: "Gastronomia premium a minutos" },
-  { icon: <TreePine size={16} strokeWidth={1.5} />, label: "Parques e áreas verdes" },
-  { icon: <ShoppingBag size={16} strokeWidth={1.5} />, label: "Shopping Iguatemi Alphaville" },
-  { icon: <GraduationCap size={16} strokeWidth={1.5} />, label: "Escolas internacionais" },
-];
-
 interface PropertyNeighborhoodProps {
   name: string;
-  description: string;
+  description?: string;
+  highlights?: NeighborhoodHighlight[];
 }
 
-const PropertyNeighborhood = ({ name, description }: PropertyNeighborhoodProps) => {
+const PropertyNeighborhood = ({ name, description, highlights = [] }: PropertyNeighborhoodProps) => {
+  const hasContent = (description && description.trim().length > 0) || highlights.length > 0;
+  if (!name && !hasContent) return null;
+
   return (
     <motion.section
       initial={{ opacity: 0, y: 30 }}
@@ -33,21 +31,30 @@ const PropertyNeighborhood = ({ name, description }: PropertyNeighborhoodProps) 
         </h2>
       </div>
 
-      <p className="text-body text-sm text-muted-foreground leading-relaxed mb-8">
-        {description}
-      </p>
+      {description && description.trim().length > 0 && (
+        <p className="text-body text-sm text-muted-foreground leading-relaxed mb-8 whitespace-pre-line">
+          {description}
+        </p>
+      )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {highlights.map((item, i) => (
-          <div
-            key={i}
-            className="flex items-center gap-3 p-4 border border-border rounded-sm bg-card/50"
-          >
-            <span className="text-muted-foreground">{item.icon}</span>
-            <span className="text-body text-sm text-foreground">{item.label}</span>
-          </div>
-        ))}
-      </div>
+      {highlights.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {highlights.map((item, i) => {
+            const Icon = getLucideIcon(item.icon);
+            return (
+              <div
+                key={`${item.label}-${i}`}
+                className="flex items-center gap-3 p-4 border border-border rounded-sm bg-card/50"
+              >
+                <span className="text-muted-foreground">
+                  <Icon size={16} strokeWidth={1.5} />
+                </span>
+                <span className="text-body text-sm text-foreground">{item.label}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </motion.section>
   );
 };
