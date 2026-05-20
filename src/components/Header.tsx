@@ -71,6 +71,21 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
     fetchCondoMenu();
   }, []);
 
+  const { data: condoMenuData } = useQuery({
+    queryKey: ["header-condos"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("properties")
+        .select("condominium")
+        .eq("status", "ativo")
+        .not("condominium", "is", null);
+      if (error) throw error;
+      const names = (data || []).map((r: any) => r.condominium as string).filter(Boolean);
+      return buildCondoMenuData(names);
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener("scroll", onScroll, { passive: true });
