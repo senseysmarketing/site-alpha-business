@@ -1,27 +1,38 @@
-## Problema
-`normalizeCondoTokens` em `src/lib/condoMatching.ts` descarta tokens de 1 caractere com `t.length > 1`. Isso elimina os números "0".."9" usados nas variantes "Alphaville 0", "Alphaville 1", ..., "Alphaville 9". Consequências:
+## Diagnóstico
+Hoje o título do hero usa breakpoints discretos (`text-3xl md:text-5xl lg:text-6xl`) e a logo idem (`h-8 md:h-11 lg:h-10`). Entre breakpoints (ex: laptop 1366px, tablet 900px, celular grande), os tamanhos "travam" no valor de uma faixa e ficam desproporcionais — exatamente o que aparece nas fotos.
 
-1. **Agrupamento errado em `useCondoList`**: "Alphaville", "Alphaville 0", "Alphaville 1"... todos viram a mesma assinatura `"alphaville"` e colapsam em uma única entrada na lista canônica.
-2. **Filtro errado em `SearchResults`**: `matchCondo("Alphaville 5", "Alphaville 0")` retorna `true` porque o token "0" é jogado fora, sobrando apenas `["alphaville"]`, que está contido em qualquer "Alphaville X".
+A solução padrão para isso é **tipografia fluida com `clamp()`**, que faz o valor variar continuamente com a largura da viewport, entre um mínimo e um máximo.
 
-Por isso `/busca?condominium=Alphaville+0` mostra 234 imóveis (todos os "Alphaville algo") em vez dos 17 reais.
+## Mudanças
 
-## Mudança
+### 1. `src/components/HeroSection.tsx`
+Substituir classes discretas por `clamp()` inline:
 
-**`src/lib/condoMatching.ts`** — preservar tokens numéricos mesmo com 1 caractere:
+- **Tagline** (`p` superior): `font-size: clamp(0.625rem, 0.6vw + 0.5rem, 0.75rem)` + letter-spacing proporcional
+- **Título h1**: `font-size: clamp(1.75rem, 4.2vw + 0.5rem, 3.75rem)` — escala suave de mobile (~28px) a desktop (~60px), passando por valores intermediários em tablets/laptops
+- **Descrição**: `font-size: clamp(0.875rem, 0.4vw + 0.75rem, 1rem)`
+- **Botão CTA**: padding também fluido
+- **Container**: padding lateral fluido `clamp(1.5rem, 4vw, 6rem)`
 
-```ts
-.filter((t) => t && !STOPWORDS.has(t) && (t.length > 1 || /^\d$/.test(t)))
+Manter `text-display` (Raleway) e `!leading-[1.15]`.
+
+### 2. `src/components/Header.tsx`
+Logo fluida:
+
+```tsx
+<img className="w-auto" style={{ height: "clamp(1.75rem, 1.4vw + 1.1rem, 2.75rem)" }} />
 ```
 
-Com isso:
-- `normalizeCondoTokens("Alphaville 0")` → `["alphaville", "0"]`
-- `normalizeCondoTokens("Alphaville 5")` → `["alphaville", "5"]`
-- assinaturas distintas → entradas separadas em `useCondoList`
-- `matchCondo("Alphaville 5", "Alphaville 0")` → `false` (token "0" não está em `{alphaville, 5}`)
-- `matchCondo("Alphaville 0", "Alphaville 0")` → `true` (17 imóveis)
+Vai de ~28px (mobile pequeno) até ~44px (desktop largo), sem saltos. Manter `w-auto` para preservar proporção.
 
-Também mantém o agrupamento por variantes textuais que era o objetivo original ("Jardins de Tamboré" / "Ed. Jardins Tamboré" continuam colapsando, porque só diferem em stopwords).
+### 3. (Opcional, mesmo padrão) Padding vertical do header
+`py-[clamp(0.75rem,1.2vw,1.25rem)]` para que a barra acompanhe a altura da logo.
 
 ## Fora de escopo
-Não mexer em `SearchResults`, `useCondoList` nem `SearchHero` — o fix de 1 linha em `condoMatching.ts` resolve os dois sintomas.
+- Não mexer no menu de navegação, mega menu, ou conteúdo dos slides.
+- Não tocar em outros heroes (página de imóvel, blog, etc.) — só o `HeroSection` da home e a logo do `Header` global.
+
+## Resultado esperado
+- Laptop 13" (1366px) e tablets (768–1024px) param de mostrar o título "estourado" ou a logo desproporcional.
+- Mobile pequeno (≤375px) recebe título legível sem quebrar layout.
+- Transição visual contínua, sem "pulos" em breakpoints.
