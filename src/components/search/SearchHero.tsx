@@ -9,6 +9,7 @@ import { mockProperties } from "@/data/mockProperties";
 import FilterChips, { type ParsedFilters } from "@/components/search/FilterChips";
 import VoiceWaves from "@/components/search/VoiceWaves";
 import { useCondoList } from "@/hooks/useCondoList";
+import { usePriceBounds, buildPriceOptions } from "@/hooks/usePriceBounds";
 
 const mockByCode: Record<string, string> = {};
 mockProperties.forEach((p) => {
