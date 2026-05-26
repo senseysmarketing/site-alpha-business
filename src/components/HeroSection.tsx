@@ -170,7 +170,13 @@ const HeroSection = () => {
       <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent pointer-events-none" />
 
       {/* Content */}
-      <div className="relative z-10 h-full flex items-center px-6 md:px-12 lg:px-24">
+      <div
+        className="relative z-10 h-full flex items-center"
+        style={{
+          paddingLeft: "clamp(1.5rem, 4vw, 6rem)",
+          paddingRight: "clamp(1.5rem, 4vw, 6rem)",
+        }}
+      >
         <div
           className="max-w-3xl"
           onMouseEnter={() => setIsHoveredContent(true)}
@@ -184,17 +190,29 @@ const HeroSection = () => {
               exit={{ opacity: 0, y: -16 }}
               transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
             >
-              <p className="text-xs tracking-[0.3em] uppercase text-white/60 mb-4">
+              <p
+                className="uppercase text-white/60 mb-4"
+                style={{
+                  fontSize: "clamp(0.625rem, 0.6vw + 0.5rem, 0.75rem)",
+                  letterSpacing: "0.3em",
+                }}
+              >
                 {current.tagline}
               </p>
               <h1
-                className="text-display text-3xl md:text-5xl lg:text-6xl font-normal text-white !leading-[1.15]"
-                style={{ lineHeight: 1.15 }}
+                className="text-display font-normal text-white !leading-[1.15]"
+                style={{
+                  fontSize: "clamp(1.75rem, 4.2vw + 0.5rem, 3.75rem)",
+                  lineHeight: 1.15,
+                }}
               >
                 {renderTitle(current.title)}
               </h1>
               {current.description && (
-                <p className="mt-4 text-sm md:text-base text-white/70 max-w-xl">
+                <p
+                  className="mt-4 text-white/70 max-w-xl"
+                  style={{ fontSize: "clamp(0.875rem, 0.4vw + 0.75rem, 1rem)" }}
+                >
                   {current.description}
                 </p>
               )}
@@ -204,16 +222,28 @@ const HeroSection = () => {
                     href={current.ctaHref}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center mt-6 px-7 py-3 text-xs tracking-[0.2em] uppercase text-white border border-white/20 rounded-full hover:opacity-90 transition-opacity"
-                    style={{ backgroundColor: "#2A070C" }}
+                    className="inline-flex items-center mt-6 text-white border border-white/20 rounded-full hover:opacity-90 transition-opacity uppercase"
+                    style={{
+                      backgroundColor: "#2A070C",
+                      paddingInline: "clamp(1.25rem, 1.6vw, 1.75rem)",
+                      paddingBlock: "clamp(0.65rem, 0.7vw, 0.85rem)",
+                      fontSize: "clamp(0.65rem, 0.3vw + 0.55rem, 0.75rem)",
+                      letterSpacing: "0.2em",
+                    }}
                   >
                     {current.ctaLabel}
                   </a>
                 ) : (
                   <Link
                     to={current.ctaHref}
-                    className="inline-flex items-center mt-6 px-7 py-3 text-xs tracking-[0.2em] uppercase text-white border border-white/20 rounded-full hover:opacity-90 transition-opacity"
-                    style={{ backgroundColor: "#2A070C" }}
+                    className="inline-flex items-center mt-6 text-white border border-white/20 rounded-full hover:opacity-90 transition-opacity uppercase"
+                    style={{
+                      backgroundColor: "#2A070C",
+                      paddingInline: "clamp(1.25rem, 1.6vw, 1.75rem)",
+                      paddingBlock: "clamp(0.65rem, 0.7vw, 0.85rem)",
+                      fontSize: "clamp(0.65rem, 0.3vw + 0.55rem, 0.75rem)",
+                      letterSpacing: "0.2em",
+                    }}
                   >
                     {current.ctaLabel}
                   </Link>

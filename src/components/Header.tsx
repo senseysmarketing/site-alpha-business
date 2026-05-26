@@ -152,12 +152,21 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
       animate={{ y: 0 }}
       transition={{ delay: 0.3, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
     >
-      <div className="flex items-center justify-between px-6 md:px-10 lg:px-24 py-4">
+      <div
+        className="flex items-center justify-between"
+        style={{
+          paddingLeft: "clamp(1rem, 4vw, 6rem)",
+          paddingRight: "clamp(1rem, 4vw, 6rem)",
+          paddingTop: "clamp(0.75rem, 1.2vw, 1.25rem)",
+          paddingBottom: "clamp(0.75rem, 1.2vw, 1.25rem)",
+        }}
+      >
         <Link to="/">
           <img
             src={logoRafael}
             alt="Rafael Albuquerque"
-            className="h-8 md:h-11 lg:h-10 w-auto"
+            className="w-auto"
+            style={{ height: "clamp(1.75rem, 1.4vw + 1.1rem, 2.75rem)" }}
           />
         </Link>
 
