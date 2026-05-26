@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useCondoList, resolveCanonicalCondo } from "@/hooks/useCondoList";
-import { normalizeCondoName } from "@/lib/lucideIconMap";
+import { matchCondo } from "@/lib/condoMatching";
 
 const normalize = (s: string) =>
   s
@@ -87,17 +87,12 @@ const SearchResults = () => {
           "id, code, title, condominium, neighborhood, city, price, rental_price, transaction_type, bedrooms, bathrooms, area_total, photos, is_featured, created_at"
         )
         .eq("status", "ativo");
-      if (condoParam) {
-        // ILIKE tolerates accent-free / case differences without depending on the canonical list.
-        q = q.ilike("condominium", condoParam);
-      }
       if (txParam === "venda" || txParam === "locacao" || txParam === "aluguel") {
         q = q.in("transaction_type", txParam === "venda" ? ["venda"] : ["locacao", "aluguel"]);
       }
       const { data, error } = await q
         .order("is_featured", { ascending: false })
-        .order("created_at", { ascending: false })
-        .limit(condoParam ? 500 : 500);
+        .order("created_at", { ascending: false });
       if (cancelled) return;
       if (!error && data) {
         setResults(
@@ -124,7 +119,7 @@ const SearchResults = () => {
     return () => {
       cancelled = true;
     };
-  }, [initialQuery, condoParam, txParam]);
+  }, [initialQuery, txParam]);
 
   const filteredResults = useMemo(() => {
     const tagNorm = tagParam ? normalize(tagParam) : "";
@@ -138,7 +133,7 @@ const SearchResults = () => {
       }
       if (filters.minBedrooms > 0 && (r.bedrooms || 0) < filters.minBedrooms) return false;
       if (filters.condominium !== "all") {
-        if (normalizeCondoName(r.condominium ?? "") !== normalizeCondoName(filters.condominium)) return false;
+        if (!matchCondo(r.condominium, filters.condominium)) return false;
       }
       if (tagNorm) {
         const haystack = [r.title || "", r.condominium || "", r.relevance_reason || ""]
