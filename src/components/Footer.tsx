@@ -85,7 +85,7 @@ const Footer = () => {
             <div className="pt-4 space-y-1">
               <p className="font-bold text-white uppercase tracking-wider text-xs">Rafael Albuquerque</p>
               <p className="text-xs text-white/60">WHATSAPP: 11 99311-6849</p>
-              <p className="text-xs text-white/60">WHATSAPP: 11 94001-0287</p>
+              
             </div>
           </div>
 
