@@ -140,7 +140,10 @@ const SearchHero = ({ initialQuery, onResults, onLoading, onParsedFilters }: Sea
     const next = new URLSearchParams();
     const queryParts: string[] = [];
     if (filterType) queryParts.push(filterType);
-    if (filterBedrooms) queryParts.push(`${filterBedrooms} quartos`);
+    if (filterBedrooms) {
+      queryParts.push(`${filterBedrooms} suítes`);
+      next.set("minBedrooms", filterBedrooms);
+    }
     if (filterCondo) {
       next.set("condominium", filterCondo);
       queryParts.push(filterCondo);
