@@ -100,7 +100,8 @@ const PropertyCarouselSection = ({ title, propertyIds, isActive = true }: Proper
         </div>
 
         {/* Carrossel */}
-        <div className="overflow-hidden" ref={emblaRef}>
+        <div className="relative">
+          <div className="overflow-hidden" ref={emblaRef}>
           <div className="flex gap-6">
             {properties.map((prop) => (
               <article
