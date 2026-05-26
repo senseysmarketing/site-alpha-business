@@ -15,6 +15,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
+import { useCondoList, resolveCanonicalCondo } from "@/hooks/useCondoList";
+import { normalizeCondoName } from "@/lib/lucideIconMap";
 
 const normalize = (s: string) =>
   s
@@ -125,7 +127,9 @@ const SearchResults = () => {
         if (wantRental !== rental) return false;
       }
       if (filters.minBedrooms > 0 && (r.bedrooms || 0) < filters.minBedrooms) return false;
-      if (filters.condominium !== "all" && r.condominium !== filters.condominium) return false;
+      if (filters.condominium !== "all") {
+        if (normalizeCondoName(r.condominium ?? "") !== normalizeCondoName(filters.condominium)) return false;
+      }
       if (tagNorm) {
         const haystack = [r.title || "", r.condominium || "", r.relevance_reason || ""]
           .map(normalize)
@@ -153,9 +157,20 @@ const SearchResults = () => {
   );
   const hasMore = visibleCount < filteredResults.length;
 
+  const { condos: allCondos } = useCondoList();
   const condominiums = useMemo(() => {
+    if (allCondos.length) return allCondos;
     return [...new Set(results.map((r) => r.condominium).filter(Boolean))] as string[];
-  }, [results]);
+  }, [allCondos, results]);
+
+  // Canonicalize condominium filter coming from URL once the list is loaded.
+  useEffect(() => {
+    if (!allCondos.length || filters.condominium === "all") return;
+    const canonical = resolveCanonicalCondo(filters.condominium, allCondos);
+    if (canonical && canonical !== filters.condominium) {
+      setFilters((f) => ({ ...f, condominium: canonical }));
+    }
+  }, [allCondos, filters.condominium]);
 
   const handleToggleCompare = useCallback((id: string) => {
     setCompareIds((prev) => {

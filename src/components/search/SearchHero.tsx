@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { mockProperties } from "@/data/mockProperties";
 import FilterChips, { type ParsedFilters } from "@/components/search/FilterChips";
 import VoiceWaves from "@/components/search/VoiceWaves";
+import { useCondoList } from "@/hooks/useCondoList";
 
 const mockByCode: Record<string, string> = {};
 mockProperties.forEach((p) => {
@@ -64,6 +65,7 @@ const selectClass =
   "bg-background border border-border rounded-md px-3 py-2.5 text-body text-sm text-foreground outline-none focus:ring-1 focus:ring-primary appearance-none cursor-pointer";
 
 const SearchHero = ({ initialQuery, onResults, onLoading, onParsedFilters }: SearchHeroProps) => {
+  const { condos: allCondos } = useCondoList();
   const [searchParams, setSearchParams] = useSearchParams();
   const [query, setQuery] = useState(initialQuery);
   const [listening, setListening] = useState(false);
@@ -392,13 +394,18 @@ const SearchHero = ({ initialQuery, onResults, onLoading, onParsedFilters }: Sea
                   ))}
                 </select>
 
-                <input
-                  type="text"
+                <select
                   value={filterCondo}
                   onChange={(e) => setFilterCondo(e.target.value)}
-                  placeholder="Condomínio"
                   className={`${selectClass} w-full`}
-                />
+                >
+                  <option value="">Condomínio</option>
+                  {allCondos.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <button
