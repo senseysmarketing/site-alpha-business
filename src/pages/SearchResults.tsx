@@ -133,7 +133,7 @@ const SearchResults = () => {
       }
       if (filters.minBedrooms > 0 && (r.bedrooms || 0) < filters.minBedrooms) return false;
       if (filters.condominium !== "all") {
-        if (normalizeCondoName(r.condominium ?? "") !== normalizeCondoName(filters.condominium)) return false;
+        if (!matchCondo(r.condominium, filters.condominium)) return false;
       }
       if (tagNorm) {
         const haystack = [r.title || "", r.condominium || "", r.relevance_reason || ""]
