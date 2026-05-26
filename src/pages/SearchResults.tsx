@@ -134,7 +134,16 @@ const SearchResults = () => {
         const wantRental = isRental(filters.transactionType);
         if (wantRental !== rental) return false;
       }
+      if (filters.propertyType !== "all" && r.property_type !== filters.propertyType) return false;
       if (filters.minBedrooms > 0 && (r.bedrooms || 0) < filters.minBedrooms) return false;
+      if (filters.minBathrooms > 0 && (r.bathrooms || 0) < filters.minBathrooms) return false;
+      if (filters.minParking > 0 && (r.parking_spots || 0) < filters.minParking) return false;
+      if (r.area_total != null) {
+        if (r.area_total < filters.areaRange[0] || r.area_total > filters.areaRange[1]) return false;
+      }
+      if (filters.city !== "all" && r.city !== filters.city) return false;
+      if (filters.neighborhood !== "all" && r.neighborhood !== filters.neighborhood) return false;
+      if (filters.onlyFeatured && !r.is_featured) return false;
       if (filters.condominium !== "all") {
         if (!matchCondo(r.condominium, filters.condominium)) return false;
       }
