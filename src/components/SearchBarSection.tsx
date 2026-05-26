@@ -99,7 +99,10 @@ const SearchBarSection = () => {
     const params = new URLSearchParams();
     const queryParts: string[] = [];
     if (filterType) queryParts.push(filterType);
-    if (filterBedrooms) queryParts.push(`${filterBedrooms} quartos`);
+    if (filterBedrooms) {
+      queryParts.push(`${filterBedrooms} suítes`);
+      params.set("minBedrooms", filterBedrooms);
+    }
     if (filterCondo) {
       params.set("condominium", filterCondo);
       queryParts.push(filterCondo);
