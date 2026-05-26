@@ -15,6 +15,8 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Save, RotateCcw, Plus, Trash2, Upload, User, RefreshCw, CheckCircle2, AlertCircle, Loader2, X, GripVertical, ArrowUp, ArrowDown, Power, ChevronsUpDown, Check } from "lucide-react";
 import { useCondoList, resolveCanonicalCondo } from "@/hooks/useCondoList";
+import { normalizeCondoTokens } from "@/lib/condoMatching";
+
 import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 import { useDropzone } from "react-dropzone";
@@ -1185,8 +1187,16 @@ const SiteSettings = () => {
                               </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-[280px] p-0" align="start">
-                              <Command>
+                              <Command
+                                filter={(value, search) => {
+                                  const q = normalizeCondoTokens(search);
+                                  if (!q.length) return 1;
+                                  const tokens = new Set(normalizeCondoTokens(value));
+                                  return q.every((t) => [...tokens].some((c) => c.includes(t))) ? 1 : 0;
+                                }}
+                              >
                                 <CommandInput placeholder="Buscar condomínio..." className="h-9" />
+
                                 <CommandList>
                                   <CommandEmpty>Nenhum condomínio encontrado.</CommandEmpty>
                                   <CommandGroup>

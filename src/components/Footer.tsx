@@ -101,11 +101,16 @@ const Footer = () => {
           {/* Coluna Direita */}
           <div className="space-y-4">
             <p className="text-xs text-white/60 uppercase tracking-wider">Nos siga nas redes sociais e acompanhe nossas novidades.</p>
-            <div className="flex items-center gap-3">
+            <a
+              href="https://instagram.com/alphaville.sp"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-xs text-white hover:text-white/80 transition-colors"
+            >
               <Instagram size={16} className="text-white" />
-              <span className="text-xs text-white">@AlphavilleSP</span>
-              <span className="text-xs text-white">@AlphavilleAB</span>
-            </div>
+              <span>@AlphavilleSP</span>
+            </a>
+
             <div className="pt-4 space-y-2">
               <p className="text-[11px] text-white/50">
                 ©2026 Rafael Albuquerque | Alpha Business

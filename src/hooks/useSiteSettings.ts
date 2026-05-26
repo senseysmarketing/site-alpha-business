@@ -13,9 +13,9 @@ export function useSiteSettings<T = Record<string, unknown>>(key: string) {
         .from("site_settings" as never)
         .select("value")
         .eq("key", key)
-        .single();
+        .maybeSingle();
       if (error) throw error;
-      return (data as { value: T }).value;
+      return (data as { value: T } | null)?.value ?? null;
     },
     staleTime: 0,
   });
@@ -25,8 +25,10 @@ export function useSiteSettings<T = Record<string, unknown>>(key: string) {
       const { data: { user } } = await supabase.auth.getUser();
       const { error } = await supabase
         .from("site_settings" as never)
-        .update({ value, updated_at: new Date().toISOString(), updated_by: user?.id } as never)
-        .eq("key", key);
+        .upsert(
+          { key, value, updated_at: new Date().toISOString(), updated_by: user?.id } as never,
+          { onConflict: "key" } as never,
+        );
       if (error) throw error;
 
       // Audit log
@@ -39,6 +41,7 @@ export function useSiteSettings<T = Record<string, unknown>>(key: string) {
         metadata: { key },
       });
     },
+
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["site_settings", key] });
       toast({ title: "Salvo com sucesso" });
