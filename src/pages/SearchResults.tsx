@@ -401,6 +401,8 @@ const SearchResults = () => {
         filters={filters}
         onApply={setFilters}
         condominiums={condominiums}
+        bounds={bounds}
+        matchCount={filteredResults.length}
       />
 
       <CompareModal
