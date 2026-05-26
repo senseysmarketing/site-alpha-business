@@ -9,6 +9,7 @@ import { mockProperties } from "@/data/mockProperties";
 import FilterChips, { type ParsedFilters } from "@/components/search/FilterChips";
 import VoiceWaves from "@/components/search/VoiceWaves";
 import { useCondoList } from "@/hooks/useCondoList";
+import { usePriceBounds, buildPriceOptions } from "@/hooks/usePriceBounds";
 
 const mockByCode: Record<string, string> = {};
 mockProperties.forEach((p) => {
@@ -50,19 +51,9 @@ const LIFESTYLE_PILLS = [
   { label: "VGV Exclusivo", query: "mansão acima de 5 milhões exclusiva" },
 ];
 
-const priceOptions = [
-  { value: "500000", label: "R$ 500 mil" },
-  { value: "1000000", label: "R$ 1 milhão" },
-  { value: "2000000", label: "R$ 2 milhões" },
-  { value: "3000000", label: "R$ 3 milhões" },
-  { value: "5000000", label: "R$ 5 milhões" },
-  { value: "8000000", label: "R$ 8 milhões" },
-  { value: "10000000", label: "R$ 10 milhões" },
-  { value: "15000000", label: "R$ 15 milhões" },
-];
-
 const selectClass =
   "bg-background border border-border rounded-md px-3 py-2.5 text-body text-sm text-foreground outline-none focus:ring-1 focus:ring-primary appearance-none cursor-pointer";
+
 
 const SearchHero = ({ initialQuery, onResults, onLoading, onParsedFilters }: SearchHeroProps) => {
   const { condos: allCondos } = useCondoList();
@@ -84,6 +75,12 @@ const SearchHero = ({ initialQuery, onResults, onLoading, onParsedFilters }: Sea
   const [filterTransaction, setFilterTransaction] = useState(
     () => searchParams.get("transactionType") || ""
   );
+
+  const priceBounds = usePriceBounds();
+  const rental = filterTransaction === "locacao" || filterTransaction === "aluguel";
+  const priceOptions = rental
+    ? buildPriceOptions(priceBounds.rentMin, priceBounds.rentMax, true)
+    : buildPriceOptions(priceBounds.saleMin, priceBounds.saleMax, false);
 
   useEffect(() => {
     if (heroImageRef.current) {
@@ -143,7 +140,10 @@ const SearchHero = ({ initialQuery, onResults, onLoading, onParsedFilters }: Sea
     const next = new URLSearchParams();
     const queryParts: string[] = [];
     if (filterType) queryParts.push(filterType);
-    if (filterBedrooms) queryParts.push(`${filterBedrooms} quartos`);
+    if (filterBedrooms) {
+      queryParts.push(`${filterBedrooms} suítes`);
+      next.set("minBedrooms", filterBedrooms);
+    }
     if (filterCondo) {
       next.set("condominium", filterCondo);
       queryParts.push(filterCondo);
@@ -361,11 +361,12 @@ const SearchHero = ({ initialQuery, onResults, onLoading, onParsedFilters }: Sea
                   onChange={(e) => setFilterBedrooms(e.target.value)}
                   className={selectClass}
                 >
-                  <option value="">Nº Quartos</option>
-                  <option value="1">1</option>
-                  <option value="2">2</option>
-                  <option value="3">3</option>
+                  <option value="">Suítes (mínimo)</option>
+                  <option value="1">1+</option>
+                  <option value="2">2+</option>
+                  <option value="3">3+</option>
                   <option value="4">4+</option>
+                  <option value="5">5+</option>
                 </select>
 
                 <select

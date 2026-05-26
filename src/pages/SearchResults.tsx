@@ -62,10 +62,12 @@ const SearchResults = () => {
   const [filters, setFilters] = useState<Filters>(() => {
     const condoParam = searchParams.get("condominium");
     const txParam = searchParams.get("transactionType");
+    const minBedParam = parseInt(searchParams.get("minBedrooms") || "0", 10);
     return {
       ...defaultFilters,
       condominium: condoParam || defaultFilters.condominium,
       transactionType: (txParam as Filters["transactionType"]) || defaultFilters.transactionType,
+      minBedrooms: Number.isFinite(minBedParam) ? minBedParam : 0,
     };
   });
   const [compareIds, setCompareIds] = useState<string[]>([]);

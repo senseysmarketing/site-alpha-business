@@ -8,6 +8,7 @@ import FilterChips, { type ParsedFilters } from "./search/FilterChips";
 import VoiceWaves from "./search/VoiceWaves";
 import { mockProperties, toSearchResult } from "@/data/mockProperties";
 import { useNavigate } from "react-router-dom";
+import { usePriceBounds, buildPriceOptions } from "@/hooks/usePriceBounds";
 
 interface SearchResult {
   id: string;
@@ -26,17 +27,6 @@ interface SearchResult {
   relevance_reason: string;
 }
 
-const priceOptions = [
-  { value: "", label: "Qualquer" },
-  { value: "500000", label: "R$ 500 mil" },
-  { value: "1000000", label: "R$ 1 milhão" },
-  { value: "2000000", label: "R$ 2 milhões" },
-  { value: "3000000", label: "R$ 3 milhões" },
-  { value: "5000000", label: "R$ 5 milhões" },
-  { value: "8000000", label: "R$ 8 milhões" },
-  { value: "10000000", label: "R$ 10 milhões" },
-  { value: "15000000", label: "R$ 15 milhões" },
-];
 
 const SearchBarSection = () => {
   const [query, setQuery] = useState("");
@@ -56,6 +46,9 @@ const SearchBarSection = () => {
   const [filterMaxPrice, setFilterMaxPrice] = useState("");
   const [filterCondo, setFilterCondo] = useState("");
   const [filterBedrooms, setFilterBedrooms] = useState("");
+
+  const priceBounds = usePriceBounds();
+  const priceOptions = buildPriceOptions(priceBounds.saleMin, priceBounds.saleMax, false);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -106,7 +99,10 @@ const SearchBarSection = () => {
     const params = new URLSearchParams();
     const queryParts: string[] = [];
     if (filterType) queryParts.push(filterType);
-    if (filterBedrooms) queryParts.push(`${filterBedrooms} quartos`);
+    if (filterBedrooms) {
+      queryParts.push(`${filterBedrooms} suítes`);
+      params.set("minBedrooms", filterBedrooms);
+    }
     if (filterCondo) {
       params.set("condominium", filterCondo);
       queryParts.push(filterCondo);
@@ -297,11 +293,12 @@ const SearchBarSection = () => {
                   onChange={(e) => setFilterBedrooms(e.target.value)}
                   className={selectClass}
                 >
-                  <option value="">Nº Quartos</option>
-                  <option value="1">1</option>
-                  <option value="2">2</option>
-                  <option value="3">3</option>
+                  <option value="">Suítes (mínimo)</option>
+                  <option value="1">1+</option>
+                  <option value="2">2+</option>
+                  <option value="3">3+</option>
                   <option value="4">4+</option>
+                  <option value="5">5+</option>
                 </select>
               </div>
 
