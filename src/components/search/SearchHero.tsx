@@ -394,13 +394,18 @@ const SearchHero = ({ initialQuery, onResults, onLoading, onParsedFilters }: Sea
                   ))}
                 </select>
 
-                <input
-                  type="text"
+                <select
                   value={filterCondo}
                   onChange={(e) => setFilterCondo(e.target.value)}
-                  placeholder="Condomínio"
                   className={`${selectClass} w-full`}
-                />
+                >
+                  <option value="">Condomínio</option>
+                  {allCondos.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <button
