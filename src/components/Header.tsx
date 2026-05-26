@@ -46,7 +46,10 @@ type NavItem = {
   label: string;
   to?: string;
   hash?: string;
+  href?: string;
 };
+
+const WHATSAPP_URL = "https://wa.me/5511993116849";
 
 const Header = ({ variant = "transparent" }: HeaderProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
