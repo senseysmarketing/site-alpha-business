@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { mockProperties } from "@/data/mockProperties";
 import FilterChips, { type ParsedFilters } from "@/components/search/FilterChips";
 import VoiceWaves from "@/components/search/VoiceWaves";
+import { useCondoList } from "@/hooks/useCondoList";
 
 const mockByCode: Record<string, string> = {};
 mockProperties.forEach((p) => {
