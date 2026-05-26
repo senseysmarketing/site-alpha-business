@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useCondoList, resolveCanonicalCondo } from "@/hooks/useCondoList";
-import { normalizeCondoName } from "@/lib/lucideIconMap";
+import { matchCondo } from "@/lib/condoMatching";
 
 const normalize = (s: string) =>
   s
