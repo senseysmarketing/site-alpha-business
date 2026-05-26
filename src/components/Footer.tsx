@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Instagram } from "lucide-react";
+import { Instagram, MessageCircle } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import logoRafael from "@/assets/logo-rafael.png";
 import { Button } from "@/components/ui/button";
