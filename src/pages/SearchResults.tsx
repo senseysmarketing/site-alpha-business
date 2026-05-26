@@ -180,6 +180,58 @@ const SearchResults = () => {
     return [...new Set(results.map((r) => r.condominium).filter(Boolean))] as string[];
   }, [allCondos, results]);
 
+  // Compute filter bounds dynamically from loaded results.
+  const bounds = useMemo<FilterBounds>(() => {
+    const salePrices = results
+      .filter((r) => !isRental(r.transaction_type) && r.price)
+      .map((r) => r.price as number);
+    const rentPrices = results
+      .filter((r) => isRental(r.transaction_type) && r.rental_price)
+      .map((r) => r.rental_price as number);
+    const areas = results.filter((r) => r.area_total).map((r) => r.area_total as number);
+
+    const roundUp = (n: number, step: number) => Math.ceil(n / step) * step;
+    const roundDown = (n: number, step: number) => Math.floor(n / step) * step;
+
+    const saleMin = salePrices.length ? roundDown(Math.min(...salePrices), 100_000) : 0;
+    const saleMax = salePrices.length ? roundUp(Math.max(...salePrices), 100_000) : 50_000_000;
+    const rentMin = rentPrices.length ? roundDown(Math.min(...rentPrices), 1_000) : 0;
+    const rentMax = rentPrices.length ? roundUp(Math.max(...rentPrices), 1_000) : 50_000;
+    const areaMin = areas.length ? roundDown(Math.min(...areas), 10) : 0;
+    const areaMax = areas.length ? roundUp(Math.max(...areas), 10) : 5000;
+
+    const propertyTypes = [
+      ...new Set(results.map((r) => r.property_type).filter(Boolean) as string[]),
+    ].sort();
+    const cities = [
+      ...new Set(results.map((r) => r.city).filter(Boolean) as string[]),
+    ].sort();
+    const neighborhoods = [
+      ...new Set(results.map((r) => r.neighborhood).filter(Boolean) as string[]),
+    ].sort();
+
+    return {
+      saleRange: [saleMin, saleMax],
+      rentRange: [rentMin, rentMax],
+      areaRange: [areaMin, areaMax],
+      propertyTypes,
+      cities,
+      neighborhoods,
+    };
+  }, [results]);
+
+  // Initialize price/area ranges to real bounds once data lands.
+  const [boundsInitialized, setBoundsInitialized] = useState(false);
+  useEffect(() => {
+    if (boundsInitialized || results.length === 0) return;
+    setFilters((f) => ({
+      ...f,
+      priceRange: isRental(f.transactionType) ? bounds.rentRange : bounds.saleRange,
+      areaRange: bounds.areaRange,
+    }));
+    setBoundsInitialized(true);
+  }, [bounds, results.length, boundsInitialized]);
+
   // Canonicalize condominium filter coming from URL once the list is loaded.
   useEffect(() => {
     if (!allCondos.length || filters.condominium === "all") return;
