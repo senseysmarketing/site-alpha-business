@@ -7,7 +7,11 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SearchHero from "@/components/search/SearchHero";
 import BentoGrid from "@/components/search/BentoGrid";
-import AdvancedFiltersDrawer, { type Filters } from "@/components/search/AdvancedFiltersDrawer";
+import AdvancedFiltersDrawer, {
+  type Filters,
+  type FilterBounds,
+  defaultFilters,
+} from "@/components/search/AdvancedFiltersDrawer";
 import CompareModal from "@/components/search/CompareModal";
 import ConciergeSidebar from "@/components/search/ConciergeSidebar";
 import FilterChips, { type ParsedFilters } from "@/components/search/FilterChips";
@@ -35,19 +39,15 @@ interface SearchResult {
   price: number | null;
   rental_price: number | null;
   transaction_type: string;
+  property_type?: string | null;
   bedrooms: number | null;
   bathrooms: number | null;
+  parking_spots?: number | null;
   area_total: number | null;
+  is_featured?: boolean | null;
   photo: string | null;
   relevance_reason: string;
 }
-
-const defaultFilters: Filters = {
-  priceRange: [0, 50_000_000],
-  transactionType: "all",
-  minBedrooms: 0,
-  condominium: "all",
-};
 
 const isRental = (tt: string) => tt === "locacao" || tt === "aluguel";
 
@@ -84,7 +84,7 @@ const SearchResults = () => {
       let q = supabase
         .from("properties")
         .select(
-          "id, code, title, condominium, neighborhood, city, price, rental_price, transaction_type, bedrooms, bathrooms, area_total, photos, is_featured, created_at"
+          "id, code, title, condominium, neighborhood, city, price, rental_price, transaction_type, property_type, bedrooms, bathrooms, parking_spots, area_total, photos, is_featured, created_at"
         )
         .eq("status", "ativo");
       if (txParam === "venda" || txParam === "locacao" || txParam === "aluguel") {
@@ -106,9 +106,12 @@ const SearchResults = () => {
             price: p.price,
             rental_price: p.rental_price,
             transaction_type: p.transaction_type,
+            property_type: p.property_type,
             bedrooms: p.bedrooms,
             bathrooms: p.bathrooms,
+            parking_spots: p.parking_spots,
             area_total: p.area_total,
+            is_featured: p.is_featured,
             photo: p.photos?.[0] ?? null,
             relevance_reason: "",
           }))
@@ -131,7 +134,16 @@ const SearchResults = () => {
         const wantRental = isRental(filters.transactionType);
         if (wantRental !== rental) return false;
       }
+      if (filters.propertyType !== "all" && r.property_type !== filters.propertyType) return false;
       if (filters.minBedrooms > 0 && (r.bedrooms || 0) < filters.minBedrooms) return false;
+      if (filters.minBathrooms > 0 && (r.bathrooms || 0) < filters.minBathrooms) return false;
+      if (filters.minParking > 0 && (r.parking_spots || 0) < filters.minParking) return false;
+      if (r.area_total != null) {
+        if (r.area_total < filters.areaRange[0] || r.area_total > filters.areaRange[1]) return false;
+      }
+      if (filters.city !== "all" && r.city !== filters.city) return false;
+      if (filters.neighborhood !== "all" && r.neighborhood !== filters.neighborhood) return false;
+      if (filters.onlyFeatured && !r.is_featured) return false;
       if (filters.condominium !== "all") {
         if (!matchCondo(r.condominium, filters.condominium)) return false;
       }
@@ -167,6 +179,58 @@ const SearchResults = () => {
     if (allCondos.length) return allCondos;
     return [...new Set(results.map((r) => r.condominium).filter(Boolean))] as string[];
   }, [allCondos, results]);
+
+  // Compute filter bounds dynamically from loaded results.
+  const bounds = useMemo<FilterBounds>(() => {
+    const salePrices = results
+      .filter((r) => !isRental(r.transaction_type) && r.price)
+      .map((r) => r.price as number);
+    const rentPrices = results
+      .filter((r) => isRental(r.transaction_type) && r.rental_price)
+      .map((r) => r.rental_price as number);
+    const areas = results.filter((r) => r.area_total).map((r) => r.area_total as number);
+
+    const roundUp = (n: number, step: number) => Math.ceil(n / step) * step;
+    const roundDown = (n: number, step: number) => Math.floor(n / step) * step;
+
+    const saleMin = salePrices.length ? roundDown(Math.min(...salePrices), 100_000) : 0;
+    const saleMax = salePrices.length ? roundUp(Math.max(...salePrices), 100_000) : 50_000_000;
+    const rentMin = rentPrices.length ? roundDown(Math.min(...rentPrices), 1_000) : 0;
+    const rentMax = rentPrices.length ? roundUp(Math.max(...rentPrices), 1_000) : 50_000;
+    const areaMin = areas.length ? roundDown(Math.min(...areas), 10) : 0;
+    const areaMax = areas.length ? roundUp(Math.max(...areas), 10) : 5000;
+
+    const propertyTypes = [
+      ...new Set(results.map((r) => r.property_type).filter(Boolean) as string[]),
+    ].sort();
+    const cities = [
+      ...new Set(results.map((r) => r.city).filter(Boolean) as string[]),
+    ].sort();
+    const neighborhoods = [
+      ...new Set(results.map((r) => r.neighborhood).filter(Boolean) as string[]),
+    ].sort();
+
+    return {
+      saleRange: [saleMin, saleMax],
+      rentRange: [rentMin, rentMax],
+      areaRange: [areaMin, areaMax],
+      propertyTypes,
+      cities,
+      neighborhoods,
+    };
+  }, [results]);
+
+  // Initialize price/area ranges to real bounds once data lands.
+  const [boundsInitialized, setBoundsInitialized] = useState(false);
+  useEffect(() => {
+    if (boundsInitialized || results.length === 0) return;
+    setFilters((f) => ({
+      ...f,
+      priceRange: isRental(f.transactionType) ? bounds.rentRange : bounds.saleRange,
+      areaRange: bounds.areaRange,
+    }));
+    setBoundsInitialized(true);
+  }, [bounds, results.length, boundsInitialized]);
 
   // Canonicalize condominium filter coming from URL once the list is loaded.
   useEffect(() => {
@@ -337,6 +401,8 @@ const SearchResults = () => {
         filters={filters}
         onApply={setFilters}
         condominiums={condominiums}
+        bounds={bounds}
+        matchCount={filteredResults.length}
       />
 
       <CompareModal
