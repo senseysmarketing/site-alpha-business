@@ -116,6 +116,20 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
   };
 
   const renderNavLink = (item: NavItem, sizeClass: string) => {
+    if (item.href) {
+      return (
+        <a
+          key={item.label}
+          href={item.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => setMenuOpen(false)}
+          className={sizeClass}
+        >
+          {item.label}
+        </a>
+      );
+    }
     if (item.hash) {
       return (
         <a
