@@ -3,23 +3,34 @@ import { Link } from "react-router-dom";
 import mansionModern from "@/assets/mansion-modern.jpg";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 
+interface FeaturedBannerButton {
+  label: string;
+  condominium?: string;
+  /** Legacy field, still honored for older saved configs. */
+  href?: string;
+}
+
 interface FeaturedBannerSettings {
   tagline: string;
   title: string;
   description: string;
   background_image: string;
-  buttons: { label: string; href: string }[];
+  buttons: FeaturedBannerButton[];
 }
 
 const DEFAULT_TAGLINE = "Tamboré I, II, III";
 const DEFAULT_TITLE = "As propriedades mais que especiais em Alphaville";
 const DEFAULT_DESCRIPTION =
   "A Alpha Business vem se consolidando como referência em vendas de propriedades de alto luxo. Encontre uma perfeita para você.";
-const DEFAULT_BUTTONS = [
-  { label: "Tamboré I", href: "/busca?condominio=tambore-1" },
-  { label: "Tamboré II", href: "/busca?condominio=tambore-2" },
-  { label: "Tamboré III", href: "/busca?condominio=tambore-3" },
-];
+const DEFAULT_BUTTONS: FeaturedBannerButton[] = [];
+
+const buildButtonHref = (b: FeaturedBannerButton): string | null => {
+  if (b.condominium && b.condominium.trim()) {
+    return `/busca?condominium=${encodeURIComponent(b.condominium.trim())}`;
+  }
+  if (b.href && b.href.trim()) return b.href;
+  return null;
+};
 
 const renderWithItalic = (text: string) => {
   const parts = text.split(/\*(.*?)\*/g);
