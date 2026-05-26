@@ -5,10 +5,14 @@ import { mockProperties, formatPrice } from "@/data/mockProperties";
 import { toTitleCase } from "@/lib/utils";
 import useEmblaCarousel from "embla-carousel-react";
 import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 
 const NewArrivalsSection = () => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
+  const [canScrollPrev, setCanScrollPrev] = useState(false);
+  const [canScrollNext, setCanScrollNext] = useState(false);
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: "start",
     slidesToScroll: 1,
@@ -83,11 +87,22 @@ const NewArrivalsSection = () => {
 
   useEffect(() => {
     if (!emblaApi) return;
-    const onSelect = () => setSelectedIndex(emblaApi.selectedScrollSnap());
-    setScrollSnaps(emblaApi.scrollSnapList());
+    const onSelect = () => {
+      setSelectedIndex(emblaApi.selectedScrollSnap());
+      setCanScrollPrev(emblaApi.canScrollPrev());
+      setCanScrollNext(emblaApi.canScrollNext());
+    };
+    const onReInit = () => {
+      setScrollSnaps(emblaApi.scrollSnapList());
+      onSelect();
+    };
+    onReInit();
     emblaApi.on("select", onSelect);
-    emblaApi.on("reInit", () => setScrollSnaps(emblaApi.scrollSnapList()));
-    return () => { emblaApi.off("select", onSelect); };
+    emblaApi.on("reInit", onReInit);
+    return () => {
+      emblaApi.off("select", onSelect);
+      emblaApi.off("reInit", onReInit);
+    };
   }, [emblaApi]);
 
   return (
@@ -107,7 +122,8 @@ const NewArrivalsSection = () => {
         </div>
 
         {/* Carrossel */}
-        <div className="overflow-hidden" ref={emblaRef}>
+        <div className="relative">
+          <div className="overflow-hidden" ref={emblaRef}>
           <div className="flex gap-6">
             {properties.map((prop) => (
               <article
@@ -172,6 +188,27 @@ const NewArrivalsSection = () => {
               </article>
             ))}
           </div>
+          </div>
+          <Button
+            variant="outline"
+            size="icon"
+            className="hidden md:flex absolute -left-4 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full"
+            onClick={() => emblaApi?.scrollPrev()}
+            disabled={!canScrollPrev}
+            aria-label="Anterior"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="hidden md:flex absolute -right-4 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full"
+            onClick={() => emblaApi?.scrollNext()}
+            disabled={!canScrollNext}
+            aria-label="Próximo"
+          >
+            <ArrowRight className="h-4 w-4" />
+          </Button>
         </div>
 
         {/* Dots */}
