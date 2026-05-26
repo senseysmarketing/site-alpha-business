@@ -71,7 +71,7 @@ const SearchResults = () => {
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [compareOpen, setCompareOpen] = useState(false);
   const [parsedFilters, setParsedFilters] = useState<ParsedFilters | null>(null);
-  const [visibleCount, setVisibleCount] = useState(8);
+  const [visibleCount, setVisibleCount] = useState(9);
 
   // When there is no query (e.g. navigation from condo links), load full active list from Supabase.
   const condoParam = searchParams.get("condominium") || "";
@@ -153,7 +153,7 @@ const SearchResults = () => {
 
   // Reset pagination whenever the filtered set changes.
   useEffect(() => {
-    setVisibleCount(8);
+    setVisibleCount(9);
   }, [filteredResults]);
 
   const visibleResults = useMemo(
@@ -289,7 +289,7 @@ const SearchResults = () => {
                   <Button
                     variant="outline"
                     size="lg"
-                    onClick={() => setVisibleCount((c) => c + 8)}
+                    onClick={() => setVisibleCount((c) => c + 9)}
                     className="text-body text-xs tracking-[0.2em] uppercase rounded-full px-10 py-6 border-primary/40 text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
                   >
                     Ver mais imóveis
