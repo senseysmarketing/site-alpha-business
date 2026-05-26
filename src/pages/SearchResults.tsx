@@ -163,6 +163,15 @@ const SearchResults = () => {
     return [...new Set(results.map((r) => r.condominium).filter(Boolean))] as string[];
   }, [allCondos, results]);
 
+  // Canonicalize condominium filter coming from URL once the list is loaded.
+  useEffect(() => {
+    if (!allCondos.length || filters.condominium === "all") return;
+    const canonical = resolveCanonicalCondo(filters.condominium, allCondos);
+    if (canonical && canonical !== filters.condominium) {
+      setFilters((f) => ({ ...f, condominium: canonical }));
+    }
+  }, [allCondos, filters.condominium]);
+
   const handleToggleCompare = useCallback((id: string) => {
     setCompareIds((prev) => {
       if (prev.includes(id)) return prev.filter((x) => x !== id);
