@@ -101,7 +101,7 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
     { label: "Venda", to: "/busca?transactionType=venda" },
     { label: "Locação", to: "/busca?transactionType=locacao" },
     { label: "Notícias", to: "/blog" },
-    { label: "Contato", hash: "contato" },
+    { label: "Contato", href: WHATSAPP_URL },
   ];
 
   const handleHashClick = (e: React.MouseEvent, hash: string) => {
