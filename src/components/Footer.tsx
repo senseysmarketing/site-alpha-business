@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Instagram } from "lucide-react";
+import { Instagram, MessageCircle } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import logoRafael from "@/assets/logo-rafael.png";
 import { Button } from "@/components/ui/button";
@@ -84,7 +84,16 @@ const Footer = () => {
             <p className="text-xs text-white/60">Alphaville – Barueri – SP – 06455-000</p>
             <div className="pt-4 space-y-1">
               <p className="font-bold text-white uppercase tracking-wider text-xs">Rafael Albuquerque</p>
-              <p className="text-xs text-white/60">WHATSAPP: 11 99311-6849</p>
+              <a
+                href="https://wa.me/5511993116849"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-xs text-white/60 hover:text-white transition-colors group"
+              >
+                <MessageCircle size={14} className="text-white/60 group-hover:text-white transition-colors" />
+                <span>WHATSAPP: (11) 99311-6849</span>
+              </a>
+
               
             </div>
           </div>

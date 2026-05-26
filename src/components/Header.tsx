@@ -46,7 +46,10 @@ type NavItem = {
   label: string;
   to?: string;
   hash?: string;
+  href?: string;
 };
+
+const WHATSAPP_URL = "https://wa.me/5511993116849";
 
 const Header = ({ variant = "transparent" }: HeaderProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -98,7 +101,7 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
     { label: "Venda", to: "/busca?transactionType=venda" },
     { label: "Locação", to: "/busca?transactionType=locacao" },
     { label: "Notícias", to: "/blog" },
-    { label: "Contato", hash: "contato" },
+    { label: "Contato", href: WHATSAPP_URL },
   ];
 
   const handleHashClick = (e: React.MouseEvent, hash: string) => {
@@ -113,6 +116,20 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
   };
 
   const renderNavLink = (item: NavItem, sizeClass: string) => {
+    if (item.href) {
+      return (
+        <a
+          key={item.label}
+          href={item.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => setMenuOpen(false)}
+          className={sizeClass}
+        >
+          {item.label}
+        </a>
+      );
+    }
     if (item.hash) {
       return (
         <a
