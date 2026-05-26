@@ -157,9 +157,11 @@ const SearchResults = () => {
   );
   const hasMore = visibleCount < filteredResults.length;
 
+  const { condos: allCondos } = useCondoList();
   const condominiums = useMemo(() => {
+    if (allCondos.length) return allCondos;
     return [...new Set(results.map((r) => r.condominium).filter(Boolean))] as string[];
-  }, [results]);
+  }, [allCondos, results]);
 
   const handleToggleCompare = useCallback((id: string) => {
     setCompareIds((prev) => {
