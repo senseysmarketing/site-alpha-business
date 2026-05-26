@@ -11,6 +11,8 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 const NewArrivalsSection = () => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
+  const [canScrollPrev, setCanScrollPrev] = useState(false);
+  const [canScrollNext, setCanScrollNext] = useState(false);
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: "start",
     slidesToScroll: 1,
