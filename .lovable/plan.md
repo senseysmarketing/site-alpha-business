@@ -1,20 +1,27 @@
-## Causa raiz
+## Problema
+`normalizeCondoTokens` em `src/lib/condoMatching.ts` descarta tokens de 1 caractere com `t.length > 1`. Isso elimina os números "0".."9" usados nas variantes "Alphaville 0", "Alphaville 1", ..., "Alphaville 9". Consequências:
 
-O carregamento inicial de `/busca` (sem `q`) faz `select ... limit(200)` em `properties`. Existem 729 imóveis ativos, então qualquer imóvel fora do top 200 (ordenado por `is_featured desc, created_at desc`) nunca chega ao filtro client-side — é o caso do AP0144 (Edifício Chateau). A normalização que adicionamos está correta, mas não tem efeito porque o item nem sequer está na lista.
+1. **Agrupamento errado em `useCondoList`**: "Alphaville", "Alphaville 0", "Alphaville 1"... todos viram a mesma assinatura `"alphaville"` e colapsam em uma única entrada na lista canônica.
+2. **Filtro errado em `SearchResults`**: `matchCondo("Alphaville 5", "Alphaville 0")` retorna `true` porque o token "0" é jogado fora, sobrando apenas `["alphaville"]`, que está contido em qualquer "Alphaville X".
 
-## Correção
+Por isso `/busca?condominium=Alphaville+0` mostra 234 imóveis (todos os "Alphaville algo") em vez dos 17 reais.
 
-Em `src/pages/SearchResults.tsx`, no `useEffect` que carrega a lista quando não há `q`:
+## Mudança
 
-1. Ler `condominium` e `transactionType` da URL.
-2. Resolver o `condominium` para o nome canônico (via `useCondoList` / `resolveCanonicalCondo`) — fazer o fetch numa função que aguarda a lista canônica antes de consultar, ou aplicar `.ilike("condominium", value)` para tolerar variações.
-3. Montar a query com `.eq("condominium", canonical)` (ou `.ilike`) e `.eq("transaction_type", tx)` quando aplicável.
-4. Manter `limit(500)` para o caso geral (sem filtro), suficiente para a base atual de 729.
-5. Re-executar o fetch quando `searchParams` mudar (condominium/transactionType).
+**`src/lib/condoMatching.ts`** — preservar tokens numéricos mesmo com 1 caractere:
 
-Resultado: ao chegar em `/busca?condominium=Edifício+Chateau`, o Supabase já devolve apenas os imóveis daquele condomínio, garantindo que o AP0144 (e quaisquer outros fora do top 200) apareçam.
+```ts
+.filter((t) => t && !STOPWORDS.has(t) && (t.length > 1 || /^\d$/.test(t)))
+```
+
+Com isso:
+- `normalizeCondoTokens("Alphaville 0")` → `["alphaville", "0"]`
+- `normalizeCondoTokens("Alphaville 5")` → `["alphaville", "5"]`
+- assinaturas distintas → entradas separadas em `useCondoList`
+- `matchCondo("Alphaville 5", "Alphaville 0")` → `false` (token "0" não está em `{alphaville, 5}`)
+- `matchCondo("Alphaville 0", "Alphaville 0")` → `true` (17 imóveis)
+
+Também mantém o agrupamento por variantes textuais que era o objetivo original ("Jardins de Tamboré" / "Ed. Jardins Tamboré" continuam colapsando, porque só diferem em stopwords).
 
 ## Fora de escopo
-
-- Não mexer no SearchHero/mega menu.
-- Não mudar busca cognitiva (IA) — só o caminho "sem q".
+Não mexer em `SearchResults`, `useCondoList` nem `SearchHero` — o fix de 1 linha em `condoMatching.ts` resolve os dois sintomas.
