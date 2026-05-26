@@ -41,7 +41,7 @@ export function normalizeCondoTokens(name: string | null | undefined): string[] 
     .toLowerCase()
     .replace(/[^a-z0-9\s]/g, " ")
     .split(/\s+/)
-    .filter((t) => t && !STOPWORDS.has(t) && t.length > 1);
+    .filter((t) => t && !STOPWORDS.has(t) && (t.length > 1 || /^\d$/.test(t)));
 }
 
 /** True when every significant token of `query` exists in `candidate`. */
