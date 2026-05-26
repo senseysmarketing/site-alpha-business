@@ -84,7 +84,7 @@ const SearchResults = () => {
       let q = supabase
         .from("properties")
         .select(
-          "id, code, title, condominium, neighborhood, city, price, rental_price, transaction_type, bedrooms, bathrooms, area_total, photos, is_featured, created_at"
+          "id, code, title, condominium, neighborhood, city, price, rental_price, transaction_type, property_type, bedrooms, bathrooms, parking_spots, area_total, photos, is_featured, created_at"
         )
         .eq("status", "ativo");
       if (txParam === "venda" || txParam === "locacao" || txParam === "aluguel") {
@@ -106,9 +106,12 @@ const SearchResults = () => {
             price: p.price,
             rental_price: p.rental_price,
             transaction_type: p.transaction_type,
+            property_type: p.property_type,
             bedrooms: p.bedrooms,
             bathrooms: p.bathrooms,
+            parking_spots: p.parking_spots,
             area_total: p.area_total,
+            is_featured: p.is_featured,
             photo: p.photos?.[0] ?? null,
             relevance_reason: "",
           }))
