@@ -65,6 +65,7 @@ const selectClass =
   "bg-background border border-border rounded-md px-3 py-2.5 text-body text-sm text-foreground outline-none focus:ring-1 focus:ring-primary appearance-none cursor-pointer";
 
 const SearchHero = ({ initialQuery, onResults, onLoading, onParsedFilters }: SearchHeroProps) => {
+  const { condos: allCondos } = useCondoList();
   const [searchParams, setSearchParams] = useSearchParams();
   const [query, setQuery] = useState(initialQuery);
   const [listening, setListening] = useState(false);
