@@ -188,6 +188,27 @@ const NewArrivalsSection = () => {
               </article>
             ))}
           </div>
+          </div>
+          <Button
+            variant="outline"
+            size="icon"
+            className="hidden md:flex absolute -left-4 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full"
+            onClick={() => emblaApi?.scrollPrev()}
+            disabled={!canScrollPrev}
+            aria-label="Anterior"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="hidden md:flex absolute -right-4 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full"
+            onClick={() => emblaApi?.scrollNext()}
+            disabled={!canScrollNext}
+            aria-label="Próximo"
+          >
+            <ArrowRight className="h-4 w-4" />
+          </Button>
         </div>
 
         {/* Dots */}
