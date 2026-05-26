@@ -15,6 +15,8 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Save, RotateCcw, Plus, Trash2, Upload, User, RefreshCw, CheckCircle2, AlertCircle, Loader2, X, GripVertical, ArrowUp, ArrowDown, Power, ChevronsUpDown, Check } from "lucide-react";
 import { useCondoList, resolveCanonicalCondo } from "@/hooks/useCondoList";
+import { normalizeCondoTokens } from "@/lib/condoMatching";
+
 import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 import { useDropzone } from "react-dropzone";
