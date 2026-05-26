@@ -1187,8 +1187,16 @@ const SiteSettings = () => {
                               </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-[280px] p-0" align="start">
-                              <Command>
+                              <Command
+                                filter={(value, search) => {
+                                  const q = normalizeCondoTokens(search);
+                                  if (!q.length) return 1;
+                                  const tokens = new Set(normalizeCondoTokens(value));
+                                  return q.every((t) => [...tokens].some((c) => c.includes(t))) ? 1 : 0;
+                                }}
+                              >
                                 <CommandInput placeholder="Buscar condomínio..." className="h-9" />
+
                                 <CommandList>
                                   <CommandEmpty>Nenhum condomínio encontrado.</CommandEmpty>
                                   <CommandGroup>
