@@ -39,7 +39,7 @@ const InstitutionalSection = () => {
     thumbnail: decodeHtmlEntities(p.thumbnail),
   }));
 
-  const displayPosts = instaPosts.slice(0, 3);
+  const displayPosts = instaPosts;
   const fallbackUrl = handles[0].url;
 
   return (
