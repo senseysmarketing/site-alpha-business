@@ -1,5 +1,12 @@
 import { motion } from "framer-motion";
 import { Instagram, Play } from "lucide-react";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 interface InstaPost {
