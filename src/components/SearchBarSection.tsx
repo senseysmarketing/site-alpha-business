@@ -47,6 +47,9 @@ const SearchBarSection = () => {
   const [filterCondo, setFilterCondo] = useState("");
   const [filterBedrooms, setFilterBedrooms] = useState("");
 
+  const priceBounds = usePriceBounds();
+  const priceOptions = buildPriceOptions(priceBounds.saleMin, priceBounds.saleMax, false);
+
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
