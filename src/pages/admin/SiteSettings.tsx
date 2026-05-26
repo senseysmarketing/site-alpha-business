@@ -137,11 +137,23 @@ const DEFAULT_FEATURED: FeaturedBannerSettings = {
   description: "Descubra os melhores condomínios da região e encontre o imóvel perfeito para o seu estilo de vida.",
   background_image: "",
   buttons: [
-    { label: "Tamboré I", href: "/busca?condominio=tambore-1" },
-    { label: "Tamboré II", href: "/busca?condominio=tambore-2" },
-    { label: "Tamboré III", href: "/busca?condominio=tambore-3" },
+    { label: "Tamboré I", condominium: "" },
+    { label: "Tamboré II", condominium: "" },
+    { label: "Tamboré III", condominium: "" },
   ],
 };
+
+/** Extract a condominium value from a legacy href like `/busca?condominio=tambore-1`. */
+function extractCondoFromHref(href?: string): string {
+  if (!href) return "";
+  try {
+    const q = href.split("?")[1] || "";
+    const params = new URLSearchParams(q);
+    return decodeURIComponent(params.get("condominium") || params.get("condominio") || "").replace(/-/g, " ").trim();
+  } catch {
+    return "";
+  }
+}
 
 // ── Helper: Upload to bucket ──────────────────────
 async function uploadFile(file: File, path: string) {
