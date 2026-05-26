@@ -1,37 +1,20 @@
-## Problema
+## Causa raiz
 
-1. Ao clicar em um condomínio no mega menu (ex: "Edifício Chateau"), `/busca?condominium=...` retorna 0 resultados mesmo havendo imóvel cadastrado com esse condomínio. A comparação atual em `SearchResults.tsx` é estrita (`r.condominium !== filters.condominium`), então qualquer diferença sutil (acento NFC/NFD, espaço extra, caixa) zera os resultados.
-2. O select "Condomínio" do drawer de Filtros Avançados aparece vazio porque a lista é derivada de `results` em memória — se a busca ainda não retornou (ou veio vazia), o dropdown fica sem opções e o valor pré-selecionado da URL não casa com nenhum item.
-3. O campo "Condomínio" do modo Busca Tradicional é um `input` de texto livre, o que também leva a mismatches com a grafia do banco.
+O carregamento inicial de `/busca` (sem `q`) faz `select ... limit(200)` em `properties`. Existem 729 imóveis ativos, então qualquer imóvel fora do top 200 (ordenado por `is_featured desc, created_at desc`) nunca chega ao filtro client-side — é o caso do AP0144 (Edifício Chateau). A normalização que adicionamos está correta, mas não tem efeito porque o item nem sequer está na lista.
 
-## Solução
+## Correção
 
-### 1. Comparação tolerante em `SearchResults.tsx`
-- Criar helper `normalizeCondo(s)` (lowercase + `NFD` + remove diacríticos + trim/colapsa espaços) — já existe `normalizeCondoName` em `src/lib/lucideIconMap.ts`, reaproveitar.
-- Filtro vira: `normalizeCondo(r.condominium ?? "") !== normalizeCondo(filters.condominium)` quando `filters.condominium !== "all"`.
-- Aplicar a mesma normalização no `filteredResults` para qualquer comparação por condomínio.
+Em `src/pages/SearchResults.tsx`, no `useEffect` que carrega a lista quando não há `q`:
 
-### 2. Fonte única de condomínios via Supabase
-- Em `SearchResults.tsx`, carregar a lista de condomínios diretamente da tabela `condominiums` (ou, como fallback, `select distinct condominium from properties where status='ativo'`) num `useEffect` independente do `results`. Guardar em `allCondos: string[]` ordenado.
-- Passar `allCondos` ao `AdvancedFiltersDrawer` no lugar do array derivado de `results`. Assim o dropdown sempre vem populado, mesmo antes da busca terminar.
-- Se o valor de `filters.condominium` vier da URL e não bater exatamente com nenhum item, fazer match normalizado e selecionar o item canônico correspondente para exibir corretamente no `Select`.
+1. Ler `condominium` e `transactionType` da URL.
+2. Resolver o `condominium` para o nome canônico (via `useCondoList` / `resolveCanonicalCondo`) — fazer o fetch numa função que aguarda a lista canônica antes de consultar, ou aplicar `.ilike("condominium", value)` para tolerar variações.
+3. Montar a query com `.eq("condominium", canonical)` (ou `.ilike`) e `.eq("transaction_type", tx)` quando aplicável.
+4. Manter `limit(500)` para o caso geral (sem filtro), suficiente para a base atual de 729.
+5. Re-executar o fetch quando `searchParams` mudar (condominium/transactionType).
 
-### 3. Condomínio como `Select` no modo Busca Tradicional
-- Em `SearchHero.tsx`, substituir o `<input>` de condomínio por um `<select>` populado com a mesma lista `allCondos` (carregada via prop ou hook compartilhado `useCondoList`).
-- Manter "Todos" como opção padrão; ao escolher um item, `handleTraditionalSearch` grava `condominium=<nome canônico>` na URL.
-
-### 4. Pequenos ajustes
-- Garantir que ao chegar em `/busca?condominium=X` sem `q`, o fallback de "lista completa" do `SearchResults` continue rodando (já roda) e que `filters.condominium` seja inicializado com o valor da URL (já é) — apenas a comparação normalizada conserta o caso.
-- Adicionar `condominium` no `useEffect` que reseta paginação se mudar.
-
-## Arquivos afetados
-
-- `src/pages/SearchResults.tsx` — comparação normalizada, fetch da lista canônica de condomínios, prop para drawer/hero.
-- `src/components/search/AdvancedFiltersDrawer.tsx` — usar lista canônica, resolver valor inicial via match normalizado.
-- `src/components/search/SearchHero.tsx` — trocar input de condomínio por select com a lista canônica.
-- (Opcional) novo hook `src/hooks/useCondoList.ts` para evitar duplicação de fetch entre Hero e SearchResults.
+Resultado: ao chegar em `/busca?condominium=Edifício+Chateau`, o Supabase já devolve apenas os imóveis daquele condomínio, garantindo que o AP0144 (e quaisquer outros fora do top 200) apareçam.
 
 ## Fora de escopo
 
-- Mexer no mega menu do Header (já envia `condominium=<nome canônico do banco>`).
-- Mudar comportamento da busca cognitiva (IA).
+- Não mexer no SearchHero/mega menu.
+- Não mudar busca cognitiva (IA) — só o caminho "sem q".
