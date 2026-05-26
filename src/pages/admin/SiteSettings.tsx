@@ -1153,31 +1153,80 @@ const SiteSettings = () => {
               />
               <div>
                 <Label className="font-[Inter] text-xs text-muted-foreground mb-2 block">Botões de condomínio</Label>
+                <p className="text-[10px] text-muted-foreground/70 mb-2 leading-snug">
+                  O título do botão é livre. O link é montado automaticamente a partir do condomínio selecionado, garantindo que a busca abra com o filtro correto.
+                </p>
                 <div className="space-y-2">
-                  {featuredForm.buttons.map((btn, i) => (
-                    <div key={i} className="flex items-center gap-2">
-                      <Input
-                        value={btn.label}
-                        onChange={(e) => updateFeaturedButton(i, "label", e.target.value)}
-                        placeholder="Label"
-                        className="h-8 text-sm border-border/50 flex-1"
-                      />
-                      <Input
-                        value={btn.href}
-                        onChange={(e) => updateFeaturedButton(i, "href", e.target.value)}
-                        placeholder="/busca?condominio=..."
-                        className="h-8 text-sm border-border/50 flex-1"
-                      />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
-                        onClick={() => removeFeaturedButton(i)}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  ))}
+                  {featuredForm.buttons.map((btn, i) => {
+                    const hasDestination = !!btn.condominium;
+                    return (
+                      <div key={i} className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={btn.label}
+                            onChange={(e) => updateFeaturedButton(i, "label", e.target.value)}
+                            placeholder="Texto do botão (ex.: Tamboré I)"
+                            className="h-8 text-sm border-border/50 flex-1"
+                          />
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                className={cn(
+                                  "h-8 text-sm border-border/50 flex-1 justify-between font-normal",
+                                  !hasDestination && "text-muted-foreground"
+                                )}
+                              >
+                                <span className="truncate">
+                                  {btn.condominium || "Selecione o condomínio"}
+                                </span>
+                                <ChevronsUpDown className="h-3.5 w-3.5 opacity-50 shrink-0 ml-2" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[280px] p-0" align="start">
+                              <Command>
+                                <CommandInput placeholder="Buscar condomínio..." className="h-9" />
+                                <CommandList>
+                                  <CommandEmpty>Nenhum condomínio encontrado.</CommandEmpty>
+                                  <CommandGroup>
+                                    {allCondos.map((name) => (
+                                      <CommandItem
+                                        key={name}
+                                        value={name}
+                                        onSelect={() => updateFeaturedButton(i, "condominium", name)}
+                                      >
+                                        <Check
+                                          className={cn(
+                                            "mr-2 h-3.5 w-3.5",
+                                            btn.condominium === name ? "opacity-100" : "opacity-0"
+                                          )}
+                                        />
+                                        {name}
+                                      </CommandItem>
+                                    ))}
+                                  </CommandGroup>
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                            onClick={() => removeFeaturedButton(i)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                        {!hasDestination && (
+                          <p className="text-[10px] text-amber-700/80 pl-1">
+                            Selecione um condomínio para este botão ficar ativo.
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
                   <Button
                     variant="outline"
                     size="sm"
