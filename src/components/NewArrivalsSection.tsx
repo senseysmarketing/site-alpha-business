@@ -5,6 +5,8 @@ import { mockProperties, formatPrice } from "@/data/mockProperties";
 import { toTitleCase } from "@/lib/utils";
 import useEmblaCarousel from "embla-carousel-react";
 import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 
 const NewArrivalsSection = () => {
   const [selectedIndex, setSelectedIndex] = useState(0);
