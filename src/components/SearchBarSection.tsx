@@ -27,17 +27,6 @@ interface SearchResult {
   relevance_reason: string;
 }
 
-const priceOptions = [
-  { value: "", label: "Qualquer" },
-  { value: "500000", label: "R$ 500 mil" },
-  { value: "1000000", label: "R$ 1 milhão" },
-  { value: "2000000", label: "R$ 2 milhões" },
-  { value: "3000000", label: "R$ 3 milhões" },
-  { value: "5000000", label: "R$ 5 milhões" },
-  { value: "8000000", label: "R$ 8 milhões" },
-  { value: "10000000", label: "R$ 10 milhões" },
-  { value: "15000000", label: "R$ 15 milhões" },
-];
 
 const SearchBarSection = () => {
   const [query, setQuery] = useState("");
