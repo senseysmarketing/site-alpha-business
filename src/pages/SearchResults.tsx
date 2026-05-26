@@ -289,7 +289,7 @@ const SearchResults = () => {
                   <Button
                     variant="outline"
                     size="lg"
-                    onClick={() => setVisibleCount((c) => c + 8)}
+                    onClick={() => setVisibleCount((c) => c + 9)}
                     className="text-body text-xs tracking-[0.2em] uppercase rounded-full px-10 py-6 border-primary/40 text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
                   >
                     Ver mais imóveis
