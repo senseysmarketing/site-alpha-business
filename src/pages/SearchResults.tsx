@@ -153,7 +153,7 @@ const SearchResults = () => {
 
   // Reset pagination whenever the filtered set changes.
   useEffect(() => {
-    setVisibleCount(8);
+    setVisibleCount(9);
   }, [filteredResults]);
 
   const visibleResults = useMemo(
