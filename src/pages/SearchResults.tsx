@@ -46,13 +46,6 @@ interface SearchResult {
   relevance_reason: string;
 }
 
-const defaultFilters: Filters = {
-  priceRange: [0, 50_000_000],
-  transactionType: "all",
-  minBedrooms: 0,
-  condominium: "all",
-};
-
 const isRental = (tt: string) => tt === "locacao" || tt === "aluguel";
 
 const SearchResults = () => {
