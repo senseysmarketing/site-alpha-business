@@ -8,6 +8,7 @@ import FilterChips, { type ParsedFilters } from "./search/FilterChips";
 import VoiceWaves from "./search/VoiceWaves";
 import { mockProperties, toSearchResult } from "@/data/mockProperties";
 import { useNavigate } from "react-router-dom";
+import { usePriceBounds, buildPriceOptions } from "@/hooks/usePriceBounds";
 
 interface SearchResult {
   id: string;
