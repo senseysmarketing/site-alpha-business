@@ -7,7 +7,11 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SearchHero from "@/components/search/SearchHero";
 import BentoGrid from "@/components/search/BentoGrid";
-import AdvancedFiltersDrawer, { type Filters } from "@/components/search/AdvancedFiltersDrawer";
+import AdvancedFiltersDrawer, {
+  type Filters,
+  type FilterBounds,
+  defaultFilters,
+} from "@/components/search/AdvancedFiltersDrawer";
 import CompareModal from "@/components/search/CompareModal";
 import ConciergeSidebar from "@/components/search/ConciergeSidebar";
 import FilterChips, { type ParsedFilters } from "@/components/search/FilterChips";
