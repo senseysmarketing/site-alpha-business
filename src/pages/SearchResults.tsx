@@ -71,7 +71,7 @@ const SearchResults = () => {
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [compareOpen, setCompareOpen] = useState(false);
   const [parsedFilters, setParsedFilters] = useState<ParsedFilters | null>(null);
-  const [visibleCount, setVisibleCount] = useState(8);
+  const [visibleCount, setVisibleCount] = useState(9);
 
   // When there is no query (e.g. navigation from condo links), load full active list from Supabase.
   const condoParam = searchParams.get("condominium") || "";
