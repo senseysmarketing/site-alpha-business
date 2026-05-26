@@ -48,12 +48,19 @@ interface DesignTokens {
   secondary_color: string;
 }
 
+interface FeaturedBannerButton {
+  label: string;
+  condominium?: string;
+  /** Legacy: only kept to migrate old entries. */
+  href?: string;
+}
+
 interface FeaturedBannerSettings {
   tagline: string;
   title: string;
   description: string;
   background_image: string;
-  buttons: { label: string; href: string }[];
+  buttons: FeaturedBannerButton[];
 }
 
 interface LifestyleCategory {
