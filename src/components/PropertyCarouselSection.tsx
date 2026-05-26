@@ -45,11 +45,22 @@ const PropertyCarouselSection = ({ title, propertyIds, isActive = true }: Proper
 
   useEffect(() => {
     if (!emblaApi) return;
-    const onSelect = () => setSelectedIndex(emblaApi.selectedScrollSnap());
-    setScrollSnaps(emblaApi.scrollSnapList());
+    const onSelect = () => {
+      setSelectedIndex(emblaApi.selectedScrollSnap());
+      setCanScrollPrev(emblaApi.canScrollPrev());
+      setCanScrollNext(emblaApi.canScrollNext());
+    };
+    const onReInit = () => {
+      setScrollSnaps(emblaApi.scrollSnapList());
+      onSelect();
+    };
+    onReInit();
     emblaApi.on("select", onSelect);
-    emblaApi.on("reInit", () => setScrollSnaps(emblaApi.scrollSnapList()));
-    return () => { emblaApi.off("select", onSelect); };
+    emblaApi.on("reInit", onReInit);
+    return () => {
+      emblaApi.off("select", onSelect);
+      emblaApi.off("reInit", onReInit);
+    };
   }, [emblaApi, dbProperties]);
 
   if (!isActive || !propertyIds.length || (!dbProperties?.length && propertyIds.length > 0)) {
