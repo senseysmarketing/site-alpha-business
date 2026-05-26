@@ -91,15 +91,18 @@ const FeaturedPropertySection = () => {
               viewport={{ once: true }}
               transition={{ delay: 0.4 }}
             >
-              {buttons.map((c) => (
-                <Link
-                  key={c.label}
-                  to={c.href}
-                  className="text-body text-sm font-medium px-6 py-3 border border-white/25 text-white hover:bg-white/10 transition-colors duration-300 rounded-md"
-                >
-                  {c.label}
-                </Link>
-              ))}
+              {buttons
+                .map((c) => ({ button: c, href: buildButtonHref(c) }))
+                .filter((x) => x.href && x.button.label)
+                .map(({ button, href }) => (
+                  <Link
+                    key={button.label}
+                    to={href!}
+                    className="text-body text-sm font-medium px-6 py-3 border border-white/25 text-white hover:bg-white/10 transition-colors duration-300 rounded-md"
+                  >
+                    {button.label}
+                  </Link>
+                ))}
             </motion.div>
           </div>
 
