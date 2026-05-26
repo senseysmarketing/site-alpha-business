@@ -13,7 +13,9 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Save, RotateCcw, Plus, Trash2, Upload, User, RefreshCw, CheckCircle2, AlertCircle, Loader2, X, GripVertical, ArrowUp, ArrowDown, Power } from "lucide-react";
+import { Save, RotateCcw, Plus, Trash2, Upload, User, RefreshCw, CheckCircle2, AlertCircle, Loader2, X, GripVertical, ArrowUp, ArrowDown, Power, ChevronsUpDown, Check } from "lucide-react";
+import { useCondoList, resolveCanonicalCondo } from "@/hooks/useCondoList";
+import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
@@ -46,12 +48,19 @@ interface DesignTokens {
   secondary_color: string;
 }
 
+interface FeaturedBannerButton {
+  label: string;
+  condominium?: string;
+  /** Legacy: only kept to migrate old entries. */
+  href?: string;
+}
+
 interface FeaturedBannerSettings {
   tagline: string;
   title: string;
   description: string;
   background_image: string;
-  buttons: { label: string; href: string }[];
+  buttons: FeaturedBannerButton[];
 }
 
 interface LifestyleCategory {
@@ -128,11 +137,23 @@ const DEFAULT_FEATURED: FeaturedBannerSettings = {
   description: "Descubra os melhores condomínios da região e encontre o imóvel perfeito para o seu estilo de vida.",
   background_image: "",
   buttons: [
-    { label: "Tamboré I", href: "/busca?condominio=tambore-1" },
-    { label: "Tamboré II", href: "/busca?condominio=tambore-2" },
-    { label: "Tamboré III", href: "/busca?condominio=tambore-3" },
+    { label: "Tamboré I", condominium: "" },
+    { label: "Tamboré II", condominium: "" },
+    { label: "Tamboré III", condominium: "" },
   ],
 };
+
+/** Extract a condominium value from a legacy href like `/busca?condominio=tambore-1`. */
+function extractCondoFromHref(href?: string): string {
+  if (!href) return "";
+  try {
+    const q = href.split("?")[1] || "";
+    const params = new URLSearchParams(q);
+    return decodeURIComponent(params.get("condominium") || params.get("condominio") || "").replace(/-/g, " ").trim();
+  } catch {
+    return "";
+  }
+}
 
 // ── Helper: Upload to bucket ──────────────────────
 async function uploadFile(file: File, path: string) {
@@ -598,23 +619,38 @@ const SiteSettings = () => {
 
   // ── Featured Banner ──
   const featured = useSiteSettings<FeaturedBannerSettings>("featured_banner");
+  const { condos: allCondos } = useCondoList();
   const [featuredForm, setFeaturedForm] = useState<FeaturedBannerSettings>(DEFAULT_FEATURED);
   useEffect(() => {
     if (featured.data) {
+      const rawButtons: FeaturedBannerButton[] = featured.data.buttons?.length
+        ? featured.data.buttons
+        : DEFAULT_FEATURED.buttons;
+      // Migrate legacy `href` → `condominium` whenever possible.
+      const migrated = rawButtons.map((b) => {
+        if (b.condominium) return { label: b.label || "", condominium: b.condominium };
+        const fromHref = extractCondoFromHref(b.href);
+        const resolved = fromHref && allCondos.length ? resolveCanonicalCondo(fromHref, allCondos) : null;
+        return {
+          label: b.label || "",
+          condominium: resolved || "",
+          ...(resolved ? {} : { href: b.href }),
+        };
+      });
       setFeaturedForm({
         tagline: featured.data.tagline || DEFAULT_FEATURED.tagline,
         title: featured.data.title || DEFAULT_FEATURED.title,
         description: featured.data.description || DEFAULT_FEATURED.description,
         background_image: featured.data.background_image || "",
-        buttons: featured.data.buttons?.length ? featured.data.buttons : DEFAULT_FEATURED.buttons,
+        buttons: migrated,
       });
     }
-  }, [featured.data]);
+  }, [featured.data, allCondos]);
 
   const addFeaturedButton = () => {
     setFeaturedForm((prev) => ({
       ...prev,
-      buttons: [...prev.buttons, { label: "", href: "" }],
+      buttons: [...prev.buttons, { label: "", condominium: "" }],
     }));
   };
 
@@ -625,12 +661,21 @@ const SiteSettings = () => {
     }));
   };
 
-  const updateFeaturedButton = (i: number, field: "label" | "href", val: string) => {
+  const updateFeaturedButton = (i: number, field: "label" | "condominium", val: string) => {
     setFeaturedForm((prev) => ({
       ...prev,
-      buttons: prev.buttons.map((b, idx) => (idx === i ? { ...b, [field]: val } : b)),
+      buttons: prev.buttons.map((b, idx) => {
+        if (idx !== i) return b;
+        // When selecting condominium, drop legacy href.
+        if (field === "condominium") {
+          const { href: _drop, ...rest } = b;
+          return { ...rest, condominium: val };
+        }
+        return { ...b, [field]: val };
+      }),
     }));
   };
+
 
   // ── Properties list ──
   const { data: properties } = useQuery({
@@ -1108,31 +1153,80 @@ const SiteSettings = () => {
               />
               <div>
                 <Label className="font-[Inter] text-xs text-muted-foreground mb-2 block">Botões de condomínio</Label>
+                <p className="text-[10px] text-muted-foreground/70 mb-2 leading-snug">
+                  O título do botão é livre. O link é montado automaticamente a partir do condomínio selecionado, garantindo que a busca abra com o filtro correto.
+                </p>
                 <div className="space-y-2">
-                  {featuredForm.buttons.map((btn, i) => (
-                    <div key={i} className="flex items-center gap-2">
-                      <Input
-                        value={btn.label}
-                        onChange={(e) => updateFeaturedButton(i, "label", e.target.value)}
-                        placeholder="Label"
-                        className="h-8 text-sm border-border/50 flex-1"
-                      />
-                      <Input
-                        value={btn.href}
-                        onChange={(e) => updateFeaturedButton(i, "href", e.target.value)}
-                        placeholder="/busca?condominio=..."
-                        className="h-8 text-sm border-border/50 flex-1"
-                      />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
-                        onClick={() => removeFeaturedButton(i)}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  ))}
+                  {featuredForm.buttons.map((btn, i) => {
+                    const hasDestination = !!btn.condominium;
+                    return (
+                      <div key={i} className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={btn.label}
+                            onChange={(e) => updateFeaturedButton(i, "label", e.target.value)}
+                            placeholder="Texto do botão (ex.: Tamboré I)"
+                            className="h-8 text-sm border-border/50 flex-1"
+                          />
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                className={cn(
+                                  "h-8 text-sm border-border/50 flex-1 justify-between font-normal",
+                                  !hasDestination && "text-muted-foreground"
+                                )}
+                              >
+                                <span className="truncate">
+                                  {btn.condominium || "Selecione o condomínio"}
+                                </span>
+                                <ChevronsUpDown className="h-3.5 w-3.5 opacity-50 shrink-0 ml-2" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[280px] p-0" align="start">
+                              <Command>
+                                <CommandInput placeholder="Buscar condomínio..." className="h-9" />
+                                <CommandList>
+                                  <CommandEmpty>Nenhum condomínio encontrado.</CommandEmpty>
+                                  <CommandGroup>
+                                    {allCondos.map((name) => (
+                                      <CommandItem
+                                        key={name}
+                                        value={name}
+                                        onSelect={() => updateFeaturedButton(i, "condominium", name)}
+                                      >
+                                        <Check
+                                          className={cn(
+                                            "mr-2 h-3.5 w-3.5",
+                                            btn.condominium === name ? "opacity-100" : "opacity-0"
+                                          )}
+                                        />
+                                        {name}
+                                      </CommandItem>
+                                    ))}
+                                  </CommandGroup>
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                            onClick={() => removeFeaturedButton(i)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                        {!hasDestination && (
+                          <p className="text-[10px] text-amber-700/80 pl-1">
+                            Selecione um condomínio para este botão ficar ativo.
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
                   <Button
                     variant="outline"
                     size="sm"
