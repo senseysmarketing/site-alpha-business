@@ -1,5 +1,12 @@
 import { motion } from "framer-motion";
 import { Instagram, Play } from "lucide-react";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 interface InstaPost {
@@ -32,7 +39,7 @@ const InstitutionalSection = () => {
     thumbnail: decodeHtmlEntities(p.thumbnail),
   }));
 
-  const displayPosts = instaPosts.slice(0, 3);
+  const displayPosts = instaPosts;
   const fallbackUrl = handles[0].url;
 
   return (
@@ -60,48 +67,60 @@ const InstitutionalSection = () => {
           </div>
         </div>
 
-        {/* Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {displayPosts.length > 0
-            ? displayPosts.map((post, i) => (
-                <motion.a
+        {/* Carrossel */}
+        {displayPosts.length > 0 ? (
+          <Carousel opts={{ align: "start", dragFree: true, loop: false }} className="relative">
+            <CarouselContent className="-ml-4">
+              {displayPosts.map((post, i) => (
+                <CarouselItem
                   key={i}
-                  href={post.url || fallbackUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group relative block overflow-hidden rounded-lg aspect-[4/5] bg-gradient-to-br from-muted to-card"
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.1, duration: 0.5 }}
+                  className="pl-4 basis-[80%] sm:basis-1/2 md:basis-1/3"
                 >
-                  {post.thumbnail && (
-                    <img
-                      src={post.thumbnail}
-                      alt=""
-                      loading="lazy"
-                      onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).style.display = "none";
-                      }}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.02]"
-                    />
-                  )}
-                  <div className="absolute top-3 right-3 w-7 h-7 rounded-md bg-white/85 flex items-center justify-center shadow-sm">
-                    <Play className="w-3.5 h-3.5 text-foreground fill-foreground" />
-                  </div>
-                </motion.a>
-              ))
-            : [0, 1, 2].map((i) => (
-                <motion.div
-                  key={i}
-                  className="aspect-[4/5] bg-gradient-to-br from-muted to-card rounded-lg"
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.1, duration: 0.5 }}
-                />
+                  <motion.a
+                    href={post.url || fallbackUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group relative block overflow-hidden rounded-lg aspect-[4/5] bg-gradient-to-br from-muted to-card"
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: Math.min(i, 3) * 0.1, duration: 0.5 }}
+                  >
+                    {post.thumbnail && (
+                      <img
+                        src={post.thumbnail}
+                        alt=""
+                        loading="lazy"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).style.display = "none";
+                        }}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.02]"
+                      />
+                    )}
+                    <div className="absolute top-3 right-3 w-7 h-7 rounded-md bg-white/85 flex items-center justify-center shadow-sm">
+                      <Play className="w-3.5 h-3.5 text-foreground fill-foreground" />
+                    </div>
+                  </motion.a>
+                </CarouselItem>
               ))}
-        </div>
+            </CarouselContent>
+            <CarouselPrevious className="hidden md:flex -left-4" />
+            <CarouselNext className="hidden md:flex -right-4" />
+          </Carousel>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[0, 1, 2].map((i) => (
+              <motion.div
+                key={i}
+                className="aspect-[4/5] bg-gradient-to-br from-muted to-card rounded-lg"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1, duration: 0.5 }}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );
