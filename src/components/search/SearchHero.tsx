@@ -76,6 +76,12 @@ const SearchHero = ({ initialQuery, onResults, onLoading, onParsedFilters }: Sea
     () => searchParams.get("transactionType") || ""
   );
 
+  const priceBounds = usePriceBounds();
+  const rental = filterTransaction === "locacao" || filterTransaction === "aluguel";
+  const priceOptions = rental
+    ? buildPriceOptions(priceBounds.rentMin, priceBounds.rentMax, true)
+    : buildPriceOptions(priceBounds.saleMin, priceBounds.saleMax, false);
+
   useEffect(() => {
     if (heroImageRef.current) {
       gsap.fromTo(
