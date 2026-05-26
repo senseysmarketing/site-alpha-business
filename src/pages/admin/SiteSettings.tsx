@@ -619,23 +619,38 @@ const SiteSettings = () => {
 
   // ── Featured Banner ──
   const featured = useSiteSettings<FeaturedBannerSettings>("featured_banner");
+  const { condos: allCondos } = useCondoList();
   const [featuredForm, setFeaturedForm] = useState<FeaturedBannerSettings>(DEFAULT_FEATURED);
   useEffect(() => {
     if (featured.data) {
+      const rawButtons: FeaturedBannerButton[] = featured.data.buttons?.length
+        ? featured.data.buttons
+        : DEFAULT_FEATURED.buttons;
+      // Migrate legacy `href` → `condominium` whenever possible.
+      const migrated = rawButtons.map((b) => {
+        if (b.condominium) return { label: b.label || "", condominium: b.condominium };
+        const fromHref = extractCondoFromHref(b.href);
+        const resolved = fromHref && allCondos.length ? resolveCanonicalCondo(fromHref, allCondos) : null;
+        return {
+          label: b.label || "",
+          condominium: resolved || "",
+          ...(resolved ? {} : { href: b.href }),
+        };
+      });
       setFeaturedForm({
         tagline: featured.data.tagline || DEFAULT_FEATURED.tagline,
         title: featured.data.title || DEFAULT_FEATURED.title,
         description: featured.data.description || DEFAULT_FEATURED.description,
         background_image: featured.data.background_image || "",
-        buttons: featured.data.buttons?.length ? featured.data.buttons : DEFAULT_FEATURED.buttons,
+        buttons: migrated,
       });
     }
-  }, [featured.data]);
+  }, [featured.data, allCondos]);
 
   const addFeaturedButton = () => {
     setFeaturedForm((prev) => ({
       ...prev,
-      buttons: [...prev.buttons, { label: "", href: "" }],
+      buttons: [...prev.buttons, { label: "", condominium: "" }],
     }));
   };
 
@@ -646,12 +661,21 @@ const SiteSettings = () => {
     }));
   };
 
-  const updateFeaturedButton = (i: number, field: "label" | "href", val: string) => {
+  const updateFeaturedButton = (i: number, field: "label" | "condominium", val: string) => {
     setFeaturedForm((prev) => ({
       ...prev,
-      buttons: prev.buttons.map((b, idx) => (idx === i ? { ...b, [field]: val } : b)),
+      buttons: prev.buttons.map((b, idx) => {
+        if (idx !== i) return b;
+        // When selecting condominium, drop legacy href.
+        if (field === "condominium") {
+          const { href: _drop, ...rest } = b;
+          return { ...rest, condominium: val };
+        }
+        return { ...b, [field]: val };
+      }),
     }));
   };
+
 
   // ── Properties list ──
   const { data: properties } = useQuery({
