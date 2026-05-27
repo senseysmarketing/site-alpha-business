@@ -153,7 +153,7 @@ const PropertyDetail = () => {
   const condoRegion = dbCondo?.region || null;
   const condoCity = dbCondo?.city || null;
   const condoHighlights: NeighborhoodHighlight[] = Array.isArray(dbCondo?.highlights)
-    ? (dbCondo!.highlights as NeighborhoodHighlight[])
+    ? (dbCondo!.highlights as unknown as NeighborhoodHighlight[])
     : [];
   const dbImages =
     dbProperty?.photos && dbProperty.photos.length > 0
