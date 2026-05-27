@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { mockProperties, formatPrice } from "@/data/mockProperties";
+import { formatPrice } from "@/lib/formatters";
 import { toTitleCase } from "@/lib/utils";
 import useEmblaCarousel from "embla-carousel-react";
 import { useState, useEffect } from "react";
@@ -32,8 +32,9 @@ const PropertyCarouselSection = ({ title, propertyIds, isActive = true }: Proper
         const { data, error } = await supabase
           .from("properties")
           .select("*")
-          .in("id", propertyIds);
-        if (error || !data?.length) return null;
+          .in("id", propertyIds)
+          .eq("status", "ativo");
+        if (error || !data?.length) return [];
         // preserve admin-defined order
         const order = new Map(propertyIds.map((id, i) => [id, i]));
         return [...data].sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
@@ -67,11 +68,9 @@ const PropertyCarouselSection = ({ title, propertyIds, isActive = true }: Proper
     return null;
   }
 
-  const mockByCode = Object.fromEntries(mockProperties.map((m) => [m.code, m.photo]));
-
   const properties = dbProperties?.map((p) => ({
     id: p.id,
-    image: p.photos?.[0] || mockByCode[p.code] || "/images/property-1.jpg",
+    image: p.photos?.[0] || "/placeholder.svg",
     title: p.title,
     code: p.code,
     type: p.property_type || "Casa",

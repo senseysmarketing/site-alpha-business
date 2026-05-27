@@ -12,14 +12,14 @@ USING (bucket_id = 'instagram-thumbnails');
 CREATE POLICY "Admins can upload instagram thumbnails"
 ON storage.objects FOR INSERT
 TO authenticated
-WITH CHECK (bucket_id = 'instagram-thumbnails' AND has_role(auth.uid(), 'admin'::app_role));
+WITH CHECK (bucket_id = 'instagram-thumbnails' AND has_role(auth.uid(), 'admin'::public.app_role));
 
 CREATE POLICY "Admins can update instagram thumbnails"
 ON storage.objects FOR UPDATE
 TO authenticated
-USING (bucket_id = 'instagram-thumbnails' AND has_role(auth.uid(), 'admin'::app_role));
+USING (bucket_id = 'instagram-thumbnails' AND has_role(auth.uid(), 'admin'::public.app_role));
 
 CREATE POLICY "Admins can delete instagram thumbnails"
 ON storage.objects FOR DELETE
 TO authenticated
-USING (bucket_id = 'instagram-thumbnails' AND has_role(auth.uid(), 'admin'::app_role));
+USING (bucket_id = 'instagram-thumbnails' AND has_role(auth.uid(), 'admin'::public.app_role));

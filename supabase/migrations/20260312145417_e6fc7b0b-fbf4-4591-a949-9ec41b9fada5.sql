@@ -16,4 +16,4 @@ CREATE POLICY "Anyone can create visit scheduling"
 
 CREATE POLICY "Admins can read visits"
   ON public.visits_scheduling FOR SELECT
-  TO authenticated USING (has_role(auth.uid(), 'admin'::app_role));
+  TO authenticated USING (has_role(auth.uid(), 'admin'::public.app_role));

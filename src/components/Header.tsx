@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ChevronDown, ArrowRight } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -19,8 +19,8 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
 import { buildCondoMenuData } from "@/lib/condoGrouping";
+import { useCondoList } from "@/hooks/useCondoList";
 
 interface HeaderProps {
   variant?: "transparent" | "solid";
@@ -28,7 +28,7 @@ interface HeaderProps {
 
 interface CondoLink {
   name: string;
-  href: string;
+  href?: string;
   image?: string;
 }
 
@@ -58,6 +58,8 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
   const [condoMenuSettings, setCondoMenuSettings] = useState<CondoMenuSettings | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
+  const { condos: allCondos } = useCondoList();
+  const condoMenuData = useMemo(() => buildCondoMenuData(allCondos), [allCondos]);
 
   useEffect(() => {
     const fetchCondoMenu = async () => {
@@ -68,25 +70,11 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
         .maybeSingle();
       
       if (!error && data) {
-        setCondoMenuSettings((data as any).value as CondoMenuSettings);
+        setCondoMenuSettings(data.value as unknown as CondoMenuSettings);
       }
     };
     fetchCondoMenu();
   }, []);
-
-  const { data: condoMenuData } = useQuery({
-    queryKey: ["header-condos"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("condominiums")
-        .select("name")
-        .eq("is_active", true);
-      if (error) throw error;
-      const names = (data || []).map((r: any) => r.name as string).filter(Boolean);
-      return buildCondoMenuData(names);
-    },
-    staleTime: 5 * 60 * 1000,
-  });
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50);
@@ -103,6 +91,12 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
     { label: "Notícias", to: "/blog" },
     { label: "Contato", href: WHATSAPP_URL },
   ];
+
+  const getFeaturedHref = (item: CondoLink) => {
+    if (item.href) return item.href;
+    if (item.name) return `/busca?condominium=${encodeURIComponent(item.name)}`;
+    return "/busca";
+  };
 
   const handleHashClick = (e: React.MouseEvent, hash: string) => {
     e.preventDefault();
@@ -204,7 +198,7 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
                       <p className="text-[10px] tracking-[0.2em] uppercase text-white/40 font-semibold">Destaques</p>
                       <div className="space-y-4 max-h-[460px] overflow-y-auto pr-2 -mr-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-thumb]:rounded-full">
                         {(condoMenuSettings?.featured || []).map((item, idx) => (
-                          <Link key={idx} to={item.href} className="group/item block relative aspect-[16/9] overflow-hidden rounded-sm bg-muted/20">
+                          <Link key={idx} to={getFeaturedHref(item)} className="group/item block relative aspect-[16/9] overflow-hidden rounded-sm bg-muted/20">
                             {item.image && (
                               <img src={item.image} alt={item.name} className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-110 opacity-70" />
                             )}
@@ -266,7 +260,7 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
                         Procurando algo específico?
                       </h4>
                       <p className="text-[10px] text-white/40 leading-relaxed uppercase tracking-wider">
-                        Temos imóveis em mais de 100 condomínios
+                        Temos imóveis em {allCondos.length || "mais de 100"} condomínios
                       </p>
                       <Link 
                         to="/busca" 
@@ -330,7 +324,7 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
                         <p className="text-[10px] tracking-[0.2em] uppercase text-white/40 font-semibold pl-1">Destaques</p>
                         <div className="grid grid-cols-1 gap-3 max-h-[360px] overflow-y-auto pr-2 -mr-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-thumb]:rounded-full">
                           {(condoMenuSettings?.featured || []).map((item, idx) => (
-                            <Link key={idx} to={item.href} onClick={() => setMenuOpen(false)} className="group/item block relative aspect-[21/9] overflow-hidden rounded-sm bg-white/5 border border-white/5">
+                            <Link key={idx} to={getFeaturedHref(item)} onClick={() => setMenuOpen(false)} className="group/item block relative aspect-[21/9] overflow-hidden rounded-sm bg-white/5 border border-white/5">
                               {item.image && (
                                 <img src={item.image} alt={item.name} className="absolute inset-0 w-full h-full object-cover opacity-60" />
                               )}

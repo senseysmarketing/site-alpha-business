@@ -31,6 +31,18 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  fetchAllAdminPropertyRows,
+  isRentalTransaction,
+} from "@/lib/propertyQueries";
+import { matchCondo } from "@/lib/condoMatching";
 
 const ITEMS_PER_PAGE = 20;
 
@@ -42,17 +54,22 @@ type Property = {
   property_type: string;
   transaction_type: string;
   price: number | null;
+  rental_price: number | null;
   status: string | null;
 };
 
-const condominiums = ["Todos", "Residencial 1", "Residencial 2", "Tamboré"];
-const statuses = ["Todos", "Venda", "Locação"];
+const transactionFilters = [
+  { label: "Todos", value: "Todos" },
+  { label: "Venda", value: "venda" },
+  { label: "Locação", value: "locacao" },
+] as const;
 
 const Properties = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [search, setSearch] = useState("");
   const [filterCondo, setFilterCondo] = useState("Todos");
   const [filterStatus, setFilterStatus] = useState("Todos");
+  const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [refreshTick, setRefreshTick] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -63,17 +80,22 @@ const Properties = () => {
 
   useEffect(() => {
     const fetchProperties = async () => {
-      let query = supabase.from("properties").select("id, code, title, condominium, property_type, transaction_type, price, status");
-
-      if (filterCondo !== "Todos") query = query.eq("condominium", filterCondo);
-      if (filterStatus === "Venda") query = query.eq("transaction_type", "venda");
-      if (filterStatus === "Locação") query = query.eq("transaction_type", "locacao");
-
-      const { data } = await query.order("created_at", { ascending: false });
-      setProperties(data ?? []);
+      setLoading(true);
+      try {
+        const data = await fetchAllAdminPropertyRows();
+        setProperties(data);
+      } catch {
+        toast({
+          title: "Erro ao carregar imóveis",
+          description: "Não foi possível listar todos os imóveis do Supabase.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
     };
     fetchProperties();
-  }, [filterCondo, filterStatus, refreshTick]);
+  }, [refreshTick]);
 
   const handleSync = async () => {
     setSyncing(true);
@@ -111,15 +133,40 @@ const Properties = () => {
     }
   };
 
-  const filtered = useMemo(
-    () =>
-      properties.filter(
-        (p) =>
-          p.title.toLowerCase().includes(search.toLowerCase()) ||
-          p.code.toLowerCase().includes(search.toLowerCase())
-      ),
-    [properties, search]
-  );
+  const condominiumOptions = useMemo(() => {
+    const names = new Set(
+      properties
+        .map((p) => p.condominium?.trim())
+        .filter((value): value is string => Boolean(value))
+    );
+    return ["Todos", ...Array.from(names).sort((a, b) => a.localeCompare(b, "pt-BR"))];
+  }, [properties]);
+
+  useEffect(() => {
+    if (filterCondo !== "Todos" && !condominiumOptions.includes(filterCondo)) {
+      setFilterCondo("Todos");
+    }
+  }, [condominiumOptions, filterCondo]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return properties.filter((p) => {
+      const matchesSearch =
+        !q ||
+        p.title.toLowerCase().includes(q) ||
+        p.code.toLowerCase().includes(q);
+      const matchesCondo =
+        filterCondo === "Todos" ||
+        p.condominium === filterCondo ||
+        matchCondo(p.condominium, filterCondo);
+      const matchesTransaction =
+        filterStatus === "Todos" ||
+        (filterStatus === "venda" && p.transaction_type === "venda") ||
+        (filterStatus === "locacao" && isRentalTransaction(p.transaction_type));
+
+      return matchesSearch && matchesCondo && matchesTransaction;
+    });
+  }, [filterCondo, filterStatus, properties, search]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -251,42 +298,32 @@ const Properties = () => {
 
         <div className="flex items-center gap-2">
           <span className="font-[Inter] text-[10px] uppercase tracking-widest text-muted-foreground">Condomínio</span>
-          <div className="flex gap-1.5">
-            {condominiums.map((c) => (
-              <button
-                key={c}
-                onClick={() => setFilterCondo(c)}
-                className={`px-3 py-1.5 rounded-full text-xs font-[Inter] transition-colors border ${
-                  filterCondo === c
-                    ? "bg-foreground text-background border-foreground"
-                    : "bg-white text-muted-foreground border-border/50 hover:border-foreground/30"
-                }`}
-              >
-                {c}
-              </button>
-            ))}
-          </div>
+          <Select value={filterCondo} onValueChange={setFilterCondo}>
+            <SelectTrigger className="h-9 w-[220px] bg-white border-border/50 font-[Inter] text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="max-h-80">
+              {condominiumOptions.map((c) => (
+                <SelectItem key={c} value={c}>{c}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="h-6 w-px bg-border/50" />
 
         <div className="flex items-center gap-2">
           <span className="font-[Inter] text-[10px] uppercase tracking-widest text-muted-foreground">Transação</span>
-          <div className="flex gap-1.5">
-            {statuses.map((s) => (
-              <button
-                key={s}
-                onClick={() => setFilterStatus(s)}
-                className={`px-3 py-1.5 rounded-full text-xs font-[Inter] transition-colors border ${
-                  filterStatus === s
-                    ? "bg-foreground text-background border-foreground"
-                    : "bg-white text-muted-foreground border-border/50 hover:border-foreground/30"
-                }`}
-              >
-                {s}
-              </button>
-            ))}
-          </div>
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger className="h-9 w-[150px] bg-white border-border/50 font-[Inter] text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {transactionFilters.map((item) => (
+                <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -305,7 +342,13 @@ const Properties = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.length === 0 ? (
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-12">
+                  <p className="font-[Inter] text-sm text-muted-foreground">Carregando imóveis...</p>
+                </TableCell>
+              </TableRow>
+            ) : filtered.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="text-center py-12">
                   <p className="font-[Inter] text-sm text-muted-foreground">Nenhum imóvel encontrado</p>
@@ -326,7 +369,9 @@ const Properties = () => {
                       {property.property_type}
                     </Badge>
                   </TableCell>
-                  <TableCell className="font-[Inter] text-sm">{formatPrice(property.price)}</TableCell>
+                  <TableCell className="font-[Inter] text-sm">
+                    {formatPrice(isRentalTransaction(property.transaction_type) ? property.rental_price ?? property.price : property.price)}
+                  </TableCell>
                   <TableCell>
                     <Badge
                       variant={property.status === "ativo" ? "default" : "secondary"}

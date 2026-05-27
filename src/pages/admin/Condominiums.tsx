@@ -22,6 +22,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { LUCIDE_ICON_NAMES, getLucideIcon, normalizeCondoName } from "@/lib/lucideIconMap";
+import { fetchAllPropertyCondoRows } from "@/lib/propertyQueries";
 
 type Highlight = { icon: string; label: string };
 type Condo = {
@@ -127,11 +128,8 @@ const Condominiums = () => {
 
   const handleSyncFromProperties = async () => {
     setSyncing(true);
-    const { data, error } = await supabase
-      .from("properties")
-      .select("condominium")
-      .not("condominium", "is", null);
-    if (error) {
+    const data = await fetchAllPropertyCondoRows().catch(() => null);
+    if (!data) {
       toast({ title: "Erro ao buscar imóveis", variant: "destructive" });
       setSyncing(false);
       return;
@@ -139,8 +137,8 @@ const Condominiums = () => {
     const existingNorm = new Set(items.map((c) => normalizeCondoName(c.name)));
     const seen = new Set<string>();
     const newOnes: { name: string }[] = [];
-    for (const row of data ?? []) {
-      const raw = (row as any).condominium as string | null;
+    for (const row of data) {
+      const raw = row.condominium;
       if (!raw) continue;
       const name = raw.trim().replace(/\s+/g, " ");
       const norm = normalizeCondoName(name);

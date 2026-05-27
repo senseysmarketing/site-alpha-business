@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { fetchAllActivePropertyPriceRows, isRentalTransaction } from "@/lib/propertyQueries";
 
 export interface PriceBounds {
   saleMin: number;
@@ -17,37 +17,50 @@ const DEFAULTS: PriceBounds = {
   loading: true,
 };
 
-const isRental = (tt: string) => tt === "locacao" || tt === "aluguel";
+let cache: PriceBounds | null = null;
+let inflight: Promise<PriceBounds> | null = null;
+
+async function loadPriceBounds(): Promise<PriceBounds> {
+  if (cache) return cache;
+  if (inflight) return inflight;
+
+  inflight = (async () => {
+    const rows = await fetchAllActivePropertyPriceRows().catch(() => null);
+    if (!rows) {
+      cache = { ...DEFAULTS, loading: false };
+      inflight = null;
+      return cache;
+    }
+
+    const sale = rows
+      .filter((p) => !isRentalTransaction(p.transaction_type) && p.price)
+      .map((p) => Number(p.price));
+    const rent = rows
+      .filter((p) => isRentalTransaction(p.transaction_type) && p.rental_price)
+      .map((p) => Number(p.rental_price));
+
+    cache = {
+      saleMin: sale.length ? Math.min(...sale) : DEFAULTS.saleMin,
+      saleMax: sale.length ? Math.max(...sale) : DEFAULTS.saleMax,
+      rentMin: rent.length ? Math.min(...rent) : DEFAULTS.rentMin,
+      rentMax: rent.length ? Math.max(...rent) : DEFAULTS.rentMax,
+      loading: false,
+    };
+    inflight = null;
+    return cache;
+  })();
+
+  return inflight;
+}
 
 export const usePriceBounds = (): PriceBounds => {
-  const [bounds, setBounds] = useState<PriceBounds>(DEFAULTS);
+  const [bounds, setBounds] = useState<PriceBounds>(cache ?? DEFAULTS);
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      const { data, error } = await supabase
-        .from("properties")
-        .select("price, rental_price, transaction_type")
-        .eq("status", "ativo");
-      if (cancelled || error || !data) {
-        setBounds((b) => ({ ...b, loading: false }));
-        return;
-      }
-      const sale = data
-        .filter((p) => !isRental(p.transaction_type) && p.price)
-        .map((p) => Number(p.price));
-      const rent = data
-        .filter((p) => isRental(p.transaction_type) && p.rental_price)
-        .map((p) => Number(p.rental_price));
-
-      setBounds({
-        saleMin: sale.length ? Math.min(...sale) : DEFAULTS.saleMin,
-        saleMax: sale.length ? Math.max(...sale) : DEFAULTS.saleMax,
-        rentMin: rent.length ? Math.min(...rent) : DEFAULTS.rentMin,
-        rentMax: rent.length ? Math.max(...rent) : DEFAULTS.rentMax,
-        loading: false,
-      });
-    })();
+    loadPriceBounds().then((next) => {
+      if (!cancelled) setBounds(next);
+    });
     return () => {
       cancelled = true;
     };

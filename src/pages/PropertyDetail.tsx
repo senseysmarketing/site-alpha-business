@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { MessageCircle, Calendar, FileText, Building2, Wrench, Loader2 } from "lucide-react";
+import { MessageCircle, Calendar, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -10,15 +10,11 @@ import PropertySpecs from "@/components/property/PropertySpecs";
 import PropertySidebar from "@/components/property/PropertySidebar";
 import PropertyNeighborhood from "@/components/property/PropertyNeighborhood";
 import ScheduleVisitModal from "@/components/property/ScheduleVisitModal";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { mockProperties, formatPrice } from "@/data/mockProperties";
+import { formatPrice } from "@/lib/formatters";
 import { toTitleCase } from "@/lib/utils";
 import { normalizeCondoName } from "@/lib/lucideIconMap";
+import { fetchAllPages } from "@/lib/supabasePagination";
+import type { Database } from "@/integrations/supabase/types";
 import type { NeighborhoodHighlight } from "@/components/property/PropertyNeighborhood";
 
 const fadeIn = {
@@ -31,12 +27,21 @@ const fadeIn = {
 const isUUID = (s?: string) =>
   !!s && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
 
+const PLACEHOLDER_IMAGE = "/placeholder.svg";
+const DEFAULT_BROKER = {
+  name: "Rafael Albuquerque",
+  title: "Corretor especialista em Alphaville",
+};
+
+type DbProperty = Database["public"]["Tables"]["properties"]["Row"];
+type DbCondo = Database["public"]["Tables"]["condominiums"]["Row"];
+
 const PropertyDetail = () => {
   const { id } = useParams<{ id: string }>();
   const [scheduleOpen, setScheduleOpen] = useState(false);
-  const [dbProperty, setDbProperty] = useState<any | null>(null);
-  const [dbCondo, setDbCondo] = useState<any | null>(null);
-  const [similarDb, setSimilarDb] = useState<any[]>([]);
+  const [dbProperty, setDbProperty] = useState<DbProperty | null>(null);
+  const [dbCondo, setDbCondo] = useState<DbCondo | null>(null);
+  const [similarDb, setSimilarDb] = useState<DbProperty[]>([]);
   const [loadingDb, setLoadingDb] = useState(isUUID(id));
   const [notFound, setNotFound] = useState(false);
 
@@ -56,6 +61,7 @@ const PropertyDetail = () => {
         .from("properties")
         .select("*")
         .eq("id", id)
+        .eq("status", "ativo")
         .maybeSingle();
       if (cancelled) return;
       if (!data) {
@@ -70,13 +76,15 @@ const PropertyDetail = () => {
 
       // Fetch condominium info by normalized name
       if (data.condominium) {
-        const { data: condos } = await supabase
-          .from("condominiums" as never)
-          .select("*")
-          .eq("is_active", true);
+        const condos = await fetchAllPages<DbCondo>(() =>
+          supabase
+            .from("condominiums")
+            .select("*")
+            .eq("is_active", true)
+        ).catch(() => []);
         if (!cancelled && condos) {
           const target = normalizeCondoName(data.condominium);
-          const match = (condos as any[]).find(
+          const match = condos.find(
             (c) => normalizeCondoName(c.name ?? "") === target,
           );
           setDbCondo(match ?? null);
@@ -101,10 +109,6 @@ const PropertyDetail = () => {
     window.scrollTo(0, 0);
   }, [id]);
 
-  // Only fall back to mock for explicit non-UUID demo IDs
-  const mockMatch = !isUUID(id) ? mockProperties.find((p) => p.id === id) : null;
-  const fallback = mockMatch || mockProperties[0];
-
   // Loading state for real DB fetches
   if (isUUID(id) && loadingDb) {
     return (
@@ -123,7 +127,7 @@ const PropertyDetail = () => {
   }
 
   // Not found state
-  if (isUUID(id) && notFound) {
+  if (!isUUID(id) || notFound || !dbProperty) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
@@ -151,9 +155,12 @@ const PropertyDetail = () => {
   const condoHighlights: NeighborhoodHighlight[] = Array.isArray(dbCondo?.highlights)
     ? (dbCondo!.highlights as NeighborhoodHighlight[])
     : [];
+  const dbImages =
+    dbProperty?.photos && dbProperty.photos.length > 0
+      ? dbProperty.photos
+      : [PLACEHOLDER_IMAGE];
 
-  const property = dbProperty
-    ? {
+  const property = {
         id: dbProperty.id,
         code: dbProperty.code,
         title: dbProperty.title,
@@ -175,29 +182,22 @@ const PropertyDetail = () => {
         suites: dbProperty.bedrooms ?? 0,
         parking: dbProperty.parking_spots ?? 0,
         area_total: dbProperty.area_total ?? 0,
-        photo: dbProperty.photos?.[0] ?? fallback.photo,
-        images: (dbProperty.photos && dbProperty.photos.length > 0) ? dbProperty.photos : fallback.images,
+        photo: dbImages[0],
+        images: dbImages,
         description: dbProperty.description ?? "",
         amenities: dbProperty.engineering_highlights ?? [],
-        broker: fallback.broker,
+        broker: DEFAULT_BROKER,
         neighborhoodInfo: {
           name: condoRegion || dbProperty.neighborhood || dbProperty.city || "",
           description: dbCondo?.description ?? "",
           highlights: condoHighlights,
         },
         video_url: dbProperty.video_url,
-      }
-    : {
-        ...fallback,
-        neighborhoodInfo: {
-          ...fallback.neighborhoodInfo,
-          highlights: [] as NeighborhoodHighlight[],
-        },
       };
 
 
   // Similar: prefer DB results when current property is from DB
-  const similarProperties = dbProperty && similarDb.length > 0
+  const similarProperties = similarDb.length > 0
     ? similarDb.map((p) => ({
         id: p.id,
         code: p.code,
@@ -208,10 +208,10 @@ const PropertyDetail = () => {
         area_total: p.area_total ?? 0,
         suites: p.bedrooms ?? 0,
         parking: p.parking_spots ?? 0,
-        photo: p.photos?.[0],
-        images: p.photos ?? [],
+        photo: p.photos?.[0] || PLACEHOLDER_IMAGE,
+        images: p.photos?.length ? p.photos : [PLACEHOLDER_IMAGE],
       }))
-    : mockProperties.filter((p) => p.id !== property.id).slice(0, 3);
+    : [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -304,72 +304,10 @@ const PropertyDetail = () => {
               </motion.section>
             )}
 
-            {/* Technical Details Accordion — only show for mock/demo properties with curated content */}
-            {!dbProperty && (
-              <motion.section {...fadeIn}>
-                <h2 className="text-display text-2xl md:text-3xl font-light tracking-tight text-foreground mb-6">
-                  Detalhes do Imóvel
-                </h2>
-                <Accordion type="multiple" className="w-full">
-                  <AccordionItem value="docs" className="border-border">
-                    <AccordionTrigger className="text-body text-sm font-medium text-foreground hover:no-underline py-4">
-                      <span className="flex items-center gap-3">
-                        <FileText size={16} strokeWidth={1} className="text-muted-foreground" />
-                        Documentação
-                      </span>
-                    </AccordionTrigger>
-                    <AccordionContent className="text-body text-sm text-muted-foreground leading-relaxed pb-4">
-                      Matrícula atualizada disponível. Imóvel livre de ônus e pendências judiciais. Escritura definitiva em nome do proprietário. Certidões negativas de débitos municipais e federais emitidas.
-                    </AccordionContent>
-                  </AccordionItem>
-
-                  <AccordionItem value="costs" className="border-border">
-                    <AccordionTrigger className="text-body text-sm font-medium text-foreground hover:no-underline py-4">
-                      <span className="flex items-center gap-3">
-                        <Building2 size={16} strokeWidth={1} className="text-muted-foreground" />
-                        IPTU & Condomínio
-                      </span>
-                    </AccordionTrigger>
-                    <AccordionContent className="text-body text-sm text-muted-foreground leading-relaxed pb-4">
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <span>IPTU (2026)</span>
-                          <span className="font-mono text-foreground">R$ 18.500/ano</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Condomínio</span>
-                          <span className="font-mono text-foreground">R$ 3.200/mês</span>
-                        </div>
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-
-                  <AccordionItem value="tech" className="border-border">
-                    <AccordionTrigger className="text-body text-sm font-medium text-foreground hover:no-underline py-4">
-                      <span className="flex items-center gap-3">
-                        <Wrench size={16} strokeWidth={1} className="text-muted-foreground" />
-                        Características Técnicas
-                      </span>
-                    </AccordionTrigger>
-                    <AccordionContent className="text-body text-sm text-muted-foreground leading-relaxed pb-4">
-                      <ul className="space-y-1.5">
-                        <li>• Automação residencial completa</li>
-                        <li>• Ar-condicionado central VRF</li>
-                        <li>• Sistema de som ambiente integrado</li>
-                        <li>• Iluminação cênica programável</li>
-                        <li>• Esquadrias em alumínio com vidro duplo</li>
-                        <li>• Aquecimento solar + boiler a gás</li>
-                      </ul>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
-              </motion.section>
-            )}
-
             <PropertyNeighborhood
               name={property.neighborhoodInfo.name}
               description={property.neighborhoodInfo.description}
-              highlights={(property.neighborhoodInfo as any).highlights ?? []}
+              highlights={property.neighborhoodInfo.highlights}
             />
           </div>
 
@@ -385,6 +323,7 @@ const PropertyDetail = () => {
       </div>
 
       {/* Similar Properties */}
+      {similarProperties.length > 0 && (
       <motion.section {...fadeIn} className="section-padding py-16 border-t border-border max-w-7xl mx-auto">
         <h2 className="text-display text-2xl md:text-3xl font-light tracking-tight text-foreground mb-10">
           Imóveis que você também pode gostar
@@ -438,6 +377,7 @@ const PropertyDetail = () => {
           ))}
         </div>
       </motion.section>
+      )}
 
       <Footer />
 

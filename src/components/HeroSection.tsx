@@ -2,7 +2,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, useMemo } from "react";
 import { ChevronLeft, ChevronRight, Play, Pause } from "lucide-react";
 import { Link } from "react-router-dom";
-import { mockProperties } from "@/data/mockProperties";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 interface HeroSlide {
@@ -75,18 +74,7 @@ const HeroSection = () => {
         ctaHref: s.cta_href || "#",
       }));
     }
-    // Fallback: mockProperties
-    const fallbackTagline = heroSettings?.tagline || DEFAULT_TAGLINE;
-    const fallbackTitle = heroSettings?.headline || "";
-    return mockProperties.slice(0, 3).map((p) => ({
-      id: p.id,
-      tagline: fallbackTagline,
-      title: fallbackTitle || p.title,
-      description: [p.condominium, p.neighborhood].filter(Boolean).join(" · "),
-      image: p.photo || p.images[0],
-      ctaLabel: "Saiba Mais",
-      ctaHref: `/imovel/${p.id}`,
-    }));
+    return [];
   }, [heroSettings]);
 
   const isPaused = isPausedManual || isHoveredContent;

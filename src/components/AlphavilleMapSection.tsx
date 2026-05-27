@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { condoSignature } from "@/lib/condoMatching";
+import { fetchAllActivePropertyCondoRows } from "@/lib/propertyQueries";
+import { useCondoList } from "@/hooks/useCondoList";
 
 const COLLAPSED_LIMIT = 24;
 
@@ -12,39 +14,64 @@ interface CondoAvailability {
   hasAluguel: boolean;
 }
 
+type CondoAvailabilityEntry = CondoAvailability & {
+  displayName: string;
+};
+
 const AlphavilleMapSection = () => {
   const navigate = useNavigate();
+  const { condos: condoNames, loading: condoNamesLoading } = useCondoList();
 
-  const { data: condoMap, isLoading } = useQuery({
+  const { data: availabilityBySignature, isLoading: availabilityLoading } = useQuery({
     queryKey: ["condo-availability-v2"],
     queryFn: async () => {
-      const [{ data: condos, error: e1 }, { data: props, error: e2 }] = await Promise.all([
-        supabase.from("condominiums").select("name").eq("is_active", true).order("name"),
-        supabase.from("properties").select("condominium, transaction_type").eq("status", "ativo").not("condominium", "is", null),
-      ]);
-      if (e1) throw e1;
-      if (e2) throw e2;
+      const props = await fetchAllActivePropertyCondoRows();
+      const availability = new Map<string, CondoAvailabilityEntry>();
 
-      const availability = new Map<string, CondoAvailability>();
-      const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
-      for (const row of props || []) {
+      for (const row of props) {
         if (!row.condominium) continue;
-        const key = norm(row.condominium);
-        const existing = availability.get(key) || { hasVenda: false, hasAluguel: false };
+        const key = condoSignature(row.condominium);
+        if (!key) continue;
+        const existing = availability.get(key) || {
+          hasVenda: false,
+          hasAluguel: false,
+          displayName: row.condominium,
+        };
         if (row.transaction_type === "venda") existing.hasVenda = true;
         if (row.transaction_type === "locacao" || row.transaction_type === "aluguel") existing.hasAluguel = true;
         if (row.transaction_type === "ambos") { existing.hasVenda = true; existing.hasAluguel = true; }
         availability.set(key, existing);
       }
 
-      const map = new Map<string, CondoAvailability>();
-      for (const c of condos || []) {
-        const a = availability.get(norm(c.name));
-        if (a && (a.hasVenda || a.hasAluguel)) map.set(c.name, a);
-      }
-      return map;
+      return availability;
     },
   });
+
+  const condoMap = useMemo(() => {
+    const map = new Map<string, CondoAvailability>();
+    const used = new Set<string>();
+
+    for (const condo of condoNames) {
+      const key = condoSignature(condo);
+      const availability = availabilityBySignature?.get(key);
+      if (!availability || (!availability.hasVenda && !availability.hasAluguel)) continue;
+      map.set(condo, {
+        hasVenda: availability.hasVenda,
+        hasAluguel: availability.hasAluguel,
+      });
+      used.add(key);
+    }
+
+    for (const [key, availability] of availabilityBySignature ?? []) {
+      if (used.has(key) || (!availability.hasVenda && !availability.hasAluguel)) continue;
+      map.set(availability.displayName, {
+        hasVenda: availability.hasVenda,
+        hasAluguel: availability.hasAluguel,
+      });
+    }
+
+    return map;
+  }, [availabilityBySignature, condoNames]);
 
   const [expanded, setExpanded] = useState(false);
 
@@ -53,7 +80,8 @@ const AlphavilleMapSection = () => {
     navigate(`/busca?${params.toString()}`);
   };
 
-  const allCondos = condoMap ? Array.from(condoMap.entries()) : [];
+  const isLoading = condoNamesLoading || availabilityLoading;
+  const allCondos = Array.from(condoMap.entries()).sort((a, b) => a[0].localeCompare(b[0], "pt-BR"));
   const condos = expanded ? allCondos : allCondos.slice(0, COLLAPSED_LIMIT);
   const hasMore = allCondos.length > COLLAPSED_LIMIT;
 

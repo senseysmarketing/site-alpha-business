@@ -293,6 +293,7 @@ const propertyToResult = (p: PropertyRow, reason: string) => ({
   transaction_type: p.transaction_type,
   bedrooms: p.bedrooms,
   bathrooms: p.bathrooms,
+  parking_spots: p.parking_spots,
   area_total: p.area_total,
   photo: p.photos?.[0] || null,
   relevance_reason: reason,
@@ -325,6 +326,26 @@ const deterministicSearch = (
   return scored.slice(0, limit).map((m) => propertyToResult(m.prop, buildReason(m)));
 };
 
+const PROPERTY_SELECT =
+  "id, code, title, description, property_type, transaction_type, condominium, neighborhood, city, address, price, rental_price, bedrooms, bathrooms, parking_spots, area_total, area_built, engineering_highlights, photos, status, is_featured";
+const DB_PAGE_SIZE = 1000;
+
+const fetchActiveProperties = async (supabase: ReturnType<typeof createClient>) => {
+  const rows: PropertyRow[] = [];
+  for (let from = 0; ; from += DB_PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from("properties")
+      .select(PROPERTY_SELECT)
+      .eq("status", "ativo")
+      .range(from, from + DB_PAGE_SIZE - 1);
+
+    if (error) return { data: null, error };
+    rows.push(...((data ?? []) as PropertyRow[]));
+    if (!data || data.length < DB_PAGE_SIZE) break;
+  }
+  return { data: rows, error: null };
+};
+
 // ---------- Handler ----------
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -339,13 +360,7 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { data: properties, error } = await supabase
-      .from("properties")
-      .select(
-        "id, code, title, description, property_type, transaction_type, condominium, neighborhood, city, address, price, rental_price, bedrooms, bathrooms, parking_spots, area_total, area_built, engineering_highlights, photos, status, is_featured",
-      )
-      .eq("status", "ativo")
-      .limit(2000);
+    const { data: properties, error } = await fetchActiveProperties(supabase);
 
     if (error) {
       console.error("DB error:", error);
@@ -355,7 +370,7 @@ serve(async (req) => {
       );
     }
 
-    const safeProperties = (properties || []) as PropertyRow[];
+    const safeProperties = properties || [];
     const filters = parseFilters(q);
 
     // Always run deterministic search — guarantees results work without AI credits.

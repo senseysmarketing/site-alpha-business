@@ -20,18 +20,18 @@ CREATE POLICY "Condominiums are publicly readable"
 CREATE POLICY "Admins can insert condominiums"
   ON public.condominiums FOR INSERT
   TO authenticated
-  WITH CHECK (has_role(auth.uid(), 'admin'::app_role));
+  WITH CHECK (has_role(auth.uid(), 'admin'::public.app_role));
 
 CREATE POLICY "Admins can update condominiums"
   ON public.condominiums FOR UPDATE
   TO authenticated
-  USING (has_role(auth.uid(), 'admin'::app_role))
-  WITH CHECK (has_role(auth.uid(), 'admin'::app_role));
+  USING (has_role(auth.uid(), 'admin'::public.app_role))
+  WITH CHECK (has_role(auth.uid(), 'admin'::public.app_role));
 
 CREATE POLICY "Admins can delete condominiums"
   ON public.condominiums FOR DELETE
   TO authenticated
-  USING (has_role(auth.uid(), 'admin'::app_role));
+  USING (has_role(auth.uid(), 'admin'::public.app_role));
 
 CREATE TRIGGER update_condominiums_updated_at
   BEFORE UPDATE ON public.condominiums

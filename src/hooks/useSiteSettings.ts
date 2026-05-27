@@ -17,7 +17,7 @@ export function useSiteSettings<T = Record<string, unknown>>(key: string) {
       if (error) throw error;
       return (data as { value: T } | null)?.value ?? null;
     },
-    staleTime: 0,
+    staleTime: 5 * 60_000,
   });
 
   const mutation = useMutation({

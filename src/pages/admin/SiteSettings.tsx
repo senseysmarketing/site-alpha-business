@@ -22,6 +22,7 @@ import { Switch } from "@/components/ui/switch";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 import { applyDesignTokens } from "@/lib/colorTokens";
+import { fetchAllPages } from "@/lib/supabasePagination";
 
 // ── Types ──────────────────────────────────────────
 interface HeroSlide {
@@ -683,8 +684,13 @@ const SiteSettings = () => {
   const { data: properties } = useQuery({
     queryKey: ["properties-list-settings"],
     queryFn: async () => {
-      const { data } = await supabase.from("properties").select("id, code, title, photos").order("title");
-      return data ?? [];
+      return fetchAllPages<{ id: string; code: string; title: string; photos: string[] | null }>(() =>
+        supabase
+          .from("properties")
+          .select("id, code, title, photos")
+          .eq("status", "ativo")
+          .order("title")
+      );
     },
   });
 
