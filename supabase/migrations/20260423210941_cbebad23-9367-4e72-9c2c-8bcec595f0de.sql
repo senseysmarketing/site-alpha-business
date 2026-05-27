@@ -17,18 +17,18 @@ CREATE POLICY "Blog categories are publicly readable"
 CREATE POLICY "Admins can insert blog categories"
   ON public.blog_categories FOR INSERT
   TO authenticated
-  WITH CHECK (has_role(auth.uid(), 'admin'::app_role));
+  WITH CHECK (has_role(auth.uid(), 'admin'::public.app_role));
 
 CREATE POLICY "Admins can update blog categories"
   ON public.blog_categories FOR UPDATE
   TO authenticated
-  USING (has_role(auth.uid(), 'admin'::app_role))
-  WITH CHECK (has_role(auth.uid(), 'admin'::app_role));
+  USING (has_role(auth.uid(), 'admin'::public.app_role))
+  WITH CHECK (has_role(auth.uid(), 'admin'::public.app_role));
 
 CREATE POLICY "Admins can delete blog categories"
   ON public.blog_categories FOR DELETE
   TO authenticated
-  USING (has_role(auth.uid(), 'admin'::app_role));
+  USING (has_role(auth.uid(), 'admin'::public.app_role));
 
 CREATE TRIGGER update_blog_categories_updated_at
   BEFORE UPDATE ON public.blog_categories

@@ -56,78 +56,78 @@ drop policy if exists "Admins can insert properties" on public.properties;
 create policy "Admins can insert properties"
   on public.properties for insert
   to authenticated
-  with check (has_role((select auth.uid()), 'admin'::app_role));
+  with check (has_role((select auth.uid()), 'admin'::public.app_role));
 
 drop policy if exists "Admins can update properties" on public.properties;
 create policy "Admins can update properties"
   on public.properties for update
   to authenticated
-  using (has_role((select auth.uid()), 'admin'::app_role))
-  with check (has_role((select auth.uid()), 'admin'::app_role));
+  using (has_role((select auth.uid()), 'admin'::public.app_role))
+  with check (has_role((select auth.uid()), 'admin'::public.app_role));
 
 drop policy if exists "Admins can delete properties" on public.properties;
 create policy "Admins can delete properties"
   on public.properties for delete
   to authenticated
-  using (has_role((select auth.uid()), 'admin'::app_role));
+  using (has_role((select auth.uid()), 'admin'::public.app_role));
 
 drop policy if exists "Admins can insert condominiums" on public.condominiums;
 create policy "Admins can insert condominiums"
   on public.condominiums for insert
   to authenticated
-  with check (has_role((select auth.uid()), 'admin'::app_role));
+  with check (has_role((select auth.uid()), 'admin'::public.app_role));
 
 drop policy if exists "Admins can update condominiums" on public.condominiums;
 create policy "Admins can update condominiums"
   on public.condominiums for update
   to authenticated
-  using (has_role((select auth.uid()), 'admin'::app_role))
-  with check (has_role((select auth.uid()), 'admin'::app_role));
+  using (has_role((select auth.uid()), 'admin'::public.app_role))
+  with check (has_role((select auth.uid()), 'admin'::public.app_role));
 
 drop policy if exists "Admins can delete condominiums" on public.condominiums;
 create policy "Admins can delete condominiums"
   on public.condominiums for delete
   to authenticated
-  using (has_role((select auth.uid()), 'admin'::app_role));
+  using (has_role((select auth.uid()), 'admin'::public.app_role));
 
 drop policy if exists "Admins can insert leads" on public.leads;
 create policy "Admins can insert leads"
   on public.leads for insert
   to authenticated
-  with check (has_role((select auth.uid()), 'admin'::app_role));
+  with check (has_role((select auth.uid()), 'admin'::public.app_role));
 
 drop policy if exists "Admins can update leads" on public.leads;
 create policy "Admins can update leads"
   on public.leads for update
   to authenticated
-  using (has_role((select auth.uid()), 'admin'::app_role))
-  with check (has_role((select auth.uid()), 'admin'::app_role));
+  using (has_role((select auth.uid()), 'admin'::public.app_role))
+  with check (has_role((select auth.uid()), 'admin'::public.app_role));
 
 drop policy if exists "Admins can delete leads" on public.leads;
 create policy "Admins can delete leads"
   on public.leads for delete
   to authenticated
-  using (has_role((select auth.uid()), 'admin'::app_role));
+  using (has_role((select auth.uid()), 'admin'::public.app_role));
 
 drop policy if exists "Admins can manage site_settings" on public.site_settings;
 create policy "Admins can manage site_settings"
   on public.site_settings for all
   to authenticated
-  using (has_role((select auth.uid()), 'admin'::app_role))
-  with check (has_role((select auth.uid()), 'admin'::app_role));
+  using (has_role((select auth.uid()), 'admin'::public.app_role))
+  with check (has_role((select auth.uid()), 'admin'::public.app_role));
 
 drop policy if exists "Admins can read visits" on public.visits_scheduling;
 create policy "Admins can read visits"
   on public.visits_scheduling for select
   to authenticated
-  using (has_role((select auth.uid()), 'admin'::app_role));
+  using (has_role((select auth.uid()), 'admin'::public.app_role));
 
 drop policy if exists "Admins can manage roles" on public.user_roles;
 create policy "Admins can manage roles"
   on public.user_roles for all
   to authenticated
-  using (has_role((select auth.uid()), 'admin'::app_role))
-  with check (has_role((select auth.uid()), 'admin'::app_role));
+  using (has_role((select auth.uid()), 'admin'::public.app_role))
+  with check (has_role((select auth.uid()), 'admin'::public.app_role));
 
 drop policy if exists "Users can read own roles" on public.user_roles;
 create policy "Users can read own roles"
