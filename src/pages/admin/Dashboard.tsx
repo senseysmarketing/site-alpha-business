@@ -34,7 +34,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       const [leadsRes, propsRes, visitsRes, txRes] = await Promise.all([
-        supabase.from("visits_scheduling").select("id", { count: "exact", head: true }),
+        supabase.from("leads").select("id", { count: "exact", head: true }),
         supabase.from("properties").select("id", { count: "exact", head: true }).eq("status", "ativo"),
         supabase.from("visits_scheduling").select("id", { count: "exact", head: true }).eq("visit_date", new Date().toISOString().split("T")[0]),
         supabase.from("transactions").select("sale_value, commission_pct, broker_payout"),

@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import SearchResultsPanel from "./SearchResultsPanel";
 import FilterChips, { type ParsedFilters } from "./search/FilterChips";
 import VoiceWaves from "./search/VoiceWaves";
-import { mockProperties, toSearchResult } from "@/data/mockProperties";
 import { useNavigate } from "react-router-dom";
 import { usePriceBounds, buildPriceOptions } from "@/hooks/usePriceBounds";
 
@@ -46,9 +45,13 @@ const SearchBarSection = () => {
   const [filterMaxPrice, setFilterMaxPrice] = useState("");
   const [filterCondo, setFilterCondo] = useState("");
   const [filterBedrooms, setFilterBedrooms] = useState("");
+  const [filterTransaction, setFilterTransaction] = useState("");
 
   const priceBounds = usePriceBounds();
-  const priceOptions = buildPriceOptions(priceBounds.saleMin, priceBounds.saleMax, false);
+  const isRental = filterTransaction === "locacao" || filterTransaction === "aluguel";
+  const priceOptions = isRental
+    ? buildPriceOptions(priceBounds.rentMin, priceBounds.rentMax, true)
+    : buildPriceOptions(priceBounds.saleMin, priceBounds.saleMax, false);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -97,21 +100,18 @@ const SearchBarSection = () => {
 
   const handleTraditionalSearch = useCallback(() => {
     const params = new URLSearchParams();
-    const queryParts: string[] = [];
-    if (filterType) queryParts.push(filterType);
+    if (filterTransaction) params.set("transactionType", filterTransaction);
+    if (filterType) params.set("propertyType", filterType);
     if (filterBedrooms) {
-      queryParts.push(`${filterBedrooms} suítes`);
       params.set("minBedrooms", filterBedrooms);
     }
     if (filterCondo) {
       params.set("condominium", filterCondo);
-      queryParts.push(filterCondo);
     }
-    if (filterMinPrice) queryParts.push(`acima de ${filterMinPrice}`);
-    if (filterMaxPrice) queryParts.push(`até ${filterMaxPrice}`);
-    if (queryParts.length) params.set("q", queryParts.join(" "));
+    if (filterMinPrice) params.set("minPrice", filterMinPrice);
+    if (filterMaxPrice) params.set("maxPrice", filterMaxPrice);
     navigate(`/busca?${params.toString()}`);
-  }, [filterType, filterMinPrice, filterMaxPrice, filterCondo, filterBedrooms, navigate]);
+  }, [filterTransaction, filterType, filterMinPrice, filterMaxPrice, filterCondo, filterBedrooms, navigate]);
 
   const handleVoice = useCallback(() => {
     if (listening && recognitionRef.current) {
@@ -246,7 +246,17 @@ const SearchBarSection = () => {
             </>
           ) : (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+                <select
+                  value={filterTransaction}
+                  onChange={(e) => setFilterTransaction(e.target.value)}
+                  className={selectClass}
+                >
+                  <option value="">Transação</option>
+                  <option value="venda">Venda</option>
+                  <option value="locacao">Locação</option>
+                </select>
+
                 <select
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value)}

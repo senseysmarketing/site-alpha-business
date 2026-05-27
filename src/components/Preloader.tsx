@@ -10,11 +10,15 @@ const Preloader = ({ onComplete }: PreloaderProps) => {
   const [phase, setPhase] = useState<"drawing" | "expanding" | "done">("drawing");
 
   useEffect(() => {
-    const t1 = setTimeout(() => setPhase("expanding"), 2400);
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const expandAfter = prefersReducedMotion ? 100 : 900;
+    const finishAfter = prefersReducedMotion ? 180 : 1300;
+
+    const t1 = setTimeout(() => setPhase("expanding"), expandAfter);
     const t2 = setTimeout(() => {
       setPhase("done");
       onComplete();
-    }, 3200);
+    }, finishAfter);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [onComplete]);
 

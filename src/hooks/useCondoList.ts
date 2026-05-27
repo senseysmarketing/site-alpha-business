@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { normalizeCondoName } from "@/lib/lucideIconMap";
 import { condoSignature, matchCondo } from "@/lib/condoMatching";
+import { fetchAllActivePropertyCondoRows } from "@/lib/propertyQueries";
+import { fetchAllPages } from "@/lib/supabasePagination";
 
 let cache: string[] | null = null;
 let inflight: Promise<string[]> | null = null;
@@ -33,19 +35,17 @@ async function loadCondos(): Promise<string[]> {
       groups.set(sig, arr);
     };
 
-    const { data: condos } = await supabase
-      .from("condominiums")
-      .select("name, is_active")
-      .eq("is_active", true);
-    condos?.forEach((c: any) => add(c?.name));
+    const condos = await fetchAllPages<{ name: string; is_active: boolean }>(() =>
+      supabase
+        .from("condominiums")
+        .select("name, is_active")
+        .eq("is_active", true)
+        .order("name")
+    ).catch(() => []);
+    condos.forEach((c) => add(c.name));
 
-    const { data: props } = await supabase
-      .from("properties")
-      .select("condominium")
-      .eq("status", "ativo")
-      .not("condominium", "is", null)
-      .limit(1000);
-    props?.forEach((p: any) => add(p?.condominium));
+    const props = await fetchAllActivePropertyCondoRows();
+    props.forEach((p) => add(p.condominium));
 
     const list = [...groups.values()]
       .map((variants) => pickCanonical(variants))

@@ -25,6 +25,11 @@ type SyncConfig = {
   protected_fields: string[];
 };
 
+type ExistingKenloRow = {
+  id: string;
+  code: string;
+} & Record<string, unknown>;
+
 const DEFAULT_CONFIG: SyncConfig = {
   import_sale: true,
   import_rental: true,
@@ -60,6 +65,21 @@ function toInt(value: unknown): number | null {
 function toArray<T>(v: T | T[] | undefined | null): T[] {
   if (v == null) return [];
   return Array.isArray(v) ? v : [v];
+}
+
+async function fetchAllPages<T>(
+  buildQuery: () => { range: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }> },
+  pageSize = 1000,
+): Promise<T[]> {
+  const rows: T[] = [];
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await buildQuery().range(from, from + pageSize - 1);
+    if (error) throw error;
+    const page = data ?? [];
+    rows.push(...page);
+    if (page.length < pageSize) break;
+  }
+  return rows;
 }
 
 function normalizePropertyType(raw: unknown): string {
@@ -278,11 +298,13 @@ Deno.serve(async (req) => {
 
     // Fetch existing kenlo rows for protected fields preservation
     const protectedSelect = ["id", "code", ...config.protected_fields].join(", ");
-    const { data: existingRows } = await admin
-      .from("properties")
-      .select(protectedSelect)
-      .eq("source", "kenlo");
-    const existingMap = new Map((existingRows ?? []).map((r: any) => [r.code, r]));
+    const existingRows = await fetchAllPages<ExistingKenloRow>(() =>
+      admin
+        .from("properties")
+        .select(protectedSelect)
+        .eq("source", "kenlo")
+    );
+    const existingMap = new Map(existingRows.map((r) => [r.code, r]));
 
     let created = 0;
     let updated = 0;
@@ -317,14 +339,13 @@ Deno.serve(async (req) => {
 
     let deactivated = 0;
     if (config.missing_behavior !== "manter" && seenCodes.size > 0) {
-      const seenArr = Array.from(seenCodes);
-      const { data: missingRows } = await admin
-        .from("properties")
-        .select("id, code")
-        .eq("source", "kenlo")
-        .not("code", "in", `(${seenArr.map((c) => `"${c}"`).join(",")})`);
-
-      const missingIds = (missingRows ?? []).map((r: any) => r.id);
+      const kenloRows = await fetchAllPages<{ id: string; code: string }>(() =>
+        admin
+          .from("properties")
+          .select("id, code")
+          .eq("source", "kenlo")
+      );
+      const missingIds = kenloRows.filter((r) => !seenCodes.has(r.code)).map((r) => r.id);
       if (missingIds.length > 0) {
         if (config.missing_behavior === "deletar") {
           const { error } = await admin.from("properties").delete().in("id", missingIds);

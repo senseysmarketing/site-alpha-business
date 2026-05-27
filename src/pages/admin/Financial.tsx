@@ -62,6 +62,7 @@ import {
   AreaChart,
   Area,
 } from "recharts";
+import { fetchAllPages } from "@/lib/supabasePagination";
 
 const COLORS = ["#2A070C", "#6B2D3E", "#A85D6F", "#D4919E", "#E8BDC5"];
 
@@ -121,11 +122,13 @@ const Financial = () => {
     const [txRes, expRes, propRes] = await Promise.all([
       supabase.from("transactions").select("*, properties(title, photos, transaction_type, condominium)"),
       supabase.from("expenses").select("*, properties(title, code)").order("created_at", { ascending: false }),
-      supabase.from("properties").select("id, title, code, photos"),
+      fetchAllPages<{ id: string; title: string; code: string; photos: string[] | null }>(() =>
+        supabase.from("properties").select("id, title, code, photos").order("code")
+      ),
     ]);
     if (txRes.data) setTransactions(txRes.data);
     if (expRes.data) setExpenses(expRes.data);
-    if (propRes.data) setProperties(propRes.data);
+    setProperties(propRes);
   };
 
   // KPIs

@@ -15,6 +15,7 @@ interface PropertyCardProps {
     transaction_type: string;
     bedrooms: number | null;
     bathrooms: number | null;
+    parking_spots?: number | null;
     area_total: number | null;
     photo: string | null;
     relevance_reason: string;
@@ -119,7 +120,7 @@ const PropertyCard = ({ property, isSelected = false, onToggleCompare }: Propert
           <p className="text-body text-sm text-muted-foreground">
             {property.area_total ? `${property.area_total}m²` : "—"}
             &nbsp;-&nbsp; Suítes: {property.bedrooms ?? 0}
-            &nbsp;-&nbsp; Vagas: {property.bathrooms ?? 0}
+            &nbsp;-&nbsp; Vagas: {property.parking_spots ?? 0}
           </p>
 
           {/* Divisor */}

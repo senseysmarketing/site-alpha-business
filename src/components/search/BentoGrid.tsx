@@ -17,6 +17,7 @@ interface SearchResult {
   transaction_type: string;
   bedrooms: number | null;
   bathrooms: number | null;
+  parking_spots?: number | null;
   area_total: number | null;
   photo: string | null;
   relevance_reason: string;

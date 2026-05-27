@@ -20,6 +20,7 @@ interface Property {
   transaction_type: string;
   bedrooms: number | null;
   bathrooms: number | null;
+  parking_spots?: number | null;
   area_total: number | null;
   photo: string | null;
   relevance_reason: string;
@@ -50,7 +51,7 @@ const CompareModal = ({ open, onOpenChange, properties }: CompareModalProps) => 
     { label: "Aluguel", a: formatPrice(a.rental_price), b: formatPrice(b.rental_price), icon: null },
     { label: "Área total", a: a.area_total ? `${a.area_total}m²` : "—", b: b.area_total ? `${b.area_total}m²` : "—", icon: Maximize },
     { label: "Suítes", a: a.bedrooms?.toString() || "—", b: b.bedrooms?.toString() || "—", icon: Bed },
-    { label: "Vagas", a: a.bathrooms?.toString() || "—", b: b.bathrooms?.toString() || "—", icon: Car },
+    { label: "Vagas", a: a.parking_spots?.toString() || "—", b: b.parking_spots?.toString() || "—", icon: Car },
     { label: "Condomínio", a: a.condominium || "—", b: b.condominium || "—", icon: MapPin },
     { label: "Bairro", a: a.neighborhood || "—", b: b.neighborhood || "—", icon: null },
   ];

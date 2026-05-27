@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { mockProperties, formatPrice } from "@/data/mockProperties";
+import { formatPrice } from "@/lib/formatters";
 import { toTitleCase } from "@/lib/utils";
 import useEmblaCarousel from "embla-carousel-react";
 import { useState, useEffect } from "react";
@@ -40,8 +40,9 @@ const NewArrivalsSection = () => {
         const { data, error } = await supabase
           .from("properties")
           .select("*")
-          .in("id", curatedIds);
-        if (error || !data?.length) return null;
+          .in("id", curatedIds)
+          .eq("status", "ativo");
+        if (error || !data?.length) return [];
         // preserve admin-defined order
         const order = new Map(curatedIds.map((id, i) => [id, i]));
         return [...data].sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
@@ -49,20 +50,18 @@ const NewArrivalsSection = () => {
       const { data, error } = await supabase
         .from("properties")
         .select("*")
+        .eq("status", "ativo")
         .not("photos", "is", null)
         .order("created_at", { ascending: false })
         .limit(12);
-      if (error || !data?.length) return null;
+      if (error || !data?.length) return [];
       return data;
     },
   });
 
-  const mockByCode = Object.fromEntries(mockProperties.map((m) => [m.code, m.photo]));
-
-  const properties = dbProperties?.length
-    ? dbProperties.map((p) => ({
+  const properties = dbProperties?.map((p) => ({
         id: p.id,
-        image: p.photos?.[0] || mockByCode[p.code] || "/images/property-1.jpg",
+        image: p.photos?.[0] || "/placeholder.svg",
         title: p.title,
         code: p.code,
         type: p.property_type || "Casa",
@@ -71,19 +70,7 @@ const NewArrivalsSection = () => {
         parking: p.parking_spots || 0,
         price: p.price,
         transaction: p.transaction_type || "Venda",
-      }))
-    : mockProperties.slice(0, 12).map((p) => ({
-        id: p.id,
-        image: p.photo || p.images[0],
-        title: p.title,
-        code: p.code,
-        type: p.property_type || "Casa",
-        area: p.area_total,
-        suites: p.suites,
-        parking: p.parking,
-        price: p.price,
-        transaction: p.transaction_type || "Venda",
-      }));
+      })) ?? [];
 
   useEffect(() => {
     if (!emblaApi) return;
@@ -104,6 +91,8 @@ const NewArrivalsSection = () => {
       emblaApi.off("reInit", onReInit);
     };
   }, [emblaApi]);
+
+  if (properties.length === 0) return null;
 
   return (
     <section className="section-padding">

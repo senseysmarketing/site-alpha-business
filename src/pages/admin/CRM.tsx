@@ -8,6 +8,7 @@ import { LeadCard, type Lead } from "@/components/admin/crm/LeadCard";
 import { LeadDetailSheet } from "@/components/admin/crm/LeadDetailSheet";
 import { NewLeadDialog } from "@/components/admin/crm/NewLeadDialog";
 import { cn } from "@/lib/utils";
+import { fetchAllPages } from "@/lib/supabasePagination";
 
 const STAGES = [
   { key: "novos", label: "Novos" },
@@ -42,8 +43,9 @@ export default function CRM() {
   const { data: properties = [] } = useQuery({
     queryKey: ["properties-list"],
     queryFn: async () => {
-      const { data } = await supabase.from("properties").select("id, title, code").order("code");
-      return data || [];
+      return fetchAllPages<{ id: string; title: string; code: string }>(() =>
+        supabase.from("properties").select("id, title, code").order("code")
+      );
     },
   });
 

@@ -5,16 +5,10 @@ import gsap from "gsap";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { mockProperties } from "@/data/mockProperties";
 import FilterChips, { type ParsedFilters } from "@/components/search/FilterChips";
 import VoiceWaves from "@/components/search/VoiceWaves";
 import { useCondoList } from "@/hooks/useCondoList";
 import { usePriceBounds, buildPriceOptions } from "@/hooks/usePriceBounds";
-
-const mockByCode: Record<string, string> = {};
-mockProperties.forEach((p) => {
-  if (p.photo) mockByCode[p.code] = p.photo;
-});
 
 interface SearchResult {
   id: string;
@@ -28,6 +22,7 @@ interface SearchResult {
   transaction_type: string;
   bedrooms: number | null;
   bathrooms: number | null;
+  parking_spots?: number | null;
   area_total: number | null;
   photo: string | null;
   relevance_reason: string;
@@ -35,7 +30,7 @@ interface SearchResult {
 
 const enrichPhoto = (r: SearchResult): SearchResult => ({
   ...r,
-  photo: r.photo || mockByCode[r.code] || "/images/property-1.jpg",
+  photo: r.photo || "/placeholder.svg",
 });
 
 interface SearchHeroProps {
@@ -138,28 +133,21 @@ const SearchHero = ({ initialQuery, onResults, onLoading, onParsedFilters }: Sea
 
   const handleTraditionalSearch = useCallback(() => {
     const next = new URLSearchParams();
-    const queryParts: string[] = [];
-    if (filterType) queryParts.push(filterType);
+    if (filterType) next.set("propertyType", filterType);
     if (filterBedrooms) {
-      queryParts.push(`${filterBedrooms} suítes`);
       next.set("minBedrooms", filterBedrooms);
     }
     if (filterCondo) {
       next.set("condominium", filterCondo);
-      queryParts.push(filterCondo);
     }
     if (filterTransaction) next.set("transactionType", filterTransaction);
-    if (filterMinPrice) queryParts.push(`acima de ${filterMinPrice}`);
-    if (filterMaxPrice) queryParts.push(`até ${filterMaxPrice}`);
-    if (queryParts.length) next.set("q", queryParts.join(" "));
+    if (filterMinPrice) next.set("minPrice", filterMinPrice);
+    if (filterMaxPrice) next.set("maxPrice", filterMaxPrice);
+
     setSearchParams(next);
-    if (queryParts.length) {
-      handleSearch(queryParts.join(" "));
-    } else {
-      // Sem termos: limpa results para acionar o fallback de "lista completa" do SearchResults
-      onResults([]);
-      onLoading(false);
-    }
+    setParsedFilters(null);
+    onParsedFilters?.(null);
+    onLoading(false);
   }, [
     filterType,
     filterMinPrice,
@@ -168,9 +156,8 @@ const SearchHero = ({ initialQuery, onResults, onLoading, onParsedFilters }: Sea
     filterBedrooms,
     filterTransaction,
     setSearchParams,
-    handleSearch,
-    onResults,
     onLoading,
+    onParsedFilters,
   ]);
 
   const handleVoice = useCallback(() => {

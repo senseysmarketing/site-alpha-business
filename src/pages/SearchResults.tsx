@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { SlidersHorizontal, GitCompareArrows } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -18,9 +19,13 @@ import FilterChips, { type ParsedFilters } from "@/components/search/FilterChips
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { supabase } from "@/integrations/supabase/client";
 import { useCondoList, resolveCanonicalCondo } from "@/hooks/useCondoList";
 import { matchCondo } from "@/lib/condoMatching";
+import {
+  fetchAllActivePropertySearchRows,
+  isRentalTransaction,
+  type ActivePropertySearchRow,
+} from "@/lib/propertyQueries";
 
 const normalize = (s: string) =>
   s
@@ -49,82 +54,121 @@ interface SearchResult {
   relevance_reason: string;
 }
 
-const isRental = (tt: string) => tt === "locacao" || tt === "aluguel";
+const isRental = isRentalTransaction;
+
+const numberParam = (value: string | null) => {
+  if (!value) return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const filtersFromParams = (params: URLSearchParams): Filters => {
+  const minPrice = numberParam(params.get("minPrice"));
+  const maxPrice = numberParam(params.get("maxPrice"));
+  const minArea = numberParam(params.get("minArea"));
+  const maxArea = numberParam(params.get("maxArea"));
+  const minBedrooms = numberParam(params.get("minBedrooms"));
+  const minBathrooms = numberParam(params.get("minBathrooms"));
+  const minParking = numberParam(params.get("minParking"));
+  const txParam = params.get("transactionType");
+  const propertyType = params.get("propertyType");
+  const condoParam = params.get("condominium");
+  const city = params.get("city");
+  const neighborhood = params.get("neighborhood");
+  const onlyFeatured = params.get("featured") === "1";
+
+  return {
+    ...defaultFilters,
+    condominium: condoParam || defaultFilters.condominium,
+    transactionType: (txParam as Filters["transactionType"]) || defaultFilters.transactionType,
+    propertyType: propertyType || defaultFilters.propertyType,
+    minBedrooms: minBedrooms ?? defaultFilters.minBedrooms,
+    minBathrooms: minBathrooms ?? defaultFilters.minBathrooms,
+    minParking: minParking ?? defaultFilters.minParking,
+    priceRange: [
+      minPrice ?? defaultFilters.priceRange[0],
+      maxPrice ?? defaultFilters.priceRange[1],
+    ],
+    areaRange: [
+      minArea ?? defaultFilters.areaRange[0],
+      maxArea ?? defaultFilters.areaRange[1],
+    ],
+    city: city || defaultFilters.city,
+    neighborhood: neighborhood || defaultFilters.neighborhood,
+    onlyFeatured,
+  };
+};
 
 const SearchResults = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const searchParamKey = searchParams.toString();
   const initialQuery = searchParams.get("q") || "";
   const tagParam = searchParams.get("tag") || "";
+  const txParam = searchParams.get("transactionType") || "";
+  const hasUrlPriceRange =
+    searchParams.has("minPrice") || searchParams.has("maxPrice");
+  const hasUrlAreaRange =
+    searchParams.has("minArea") || searchParams.has("maxArea");
+  const filtersFromUrl = useMemo(
+    () => filtersFromParams(new URLSearchParams(searchParamKey)),
+    [searchParamKey]
+  );
 
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(!initialQuery);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [filters, setFilters] = useState<Filters>(() => {
-    const condoParam = searchParams.get("condominium");
-    const txParam = searchParams.get("transactionType");
-    const minBedParam = parseInt(searchParams.get("minBedrooms") || "0", 10);
-    return {
-      ...defaultFilters,
-      condominium: condoParam || defaultFilters.condominium,
-      transactionType: (txParam as Filters["transactionType"]) || defaultFilters.transactionType,
-      minBedrooms: Number.isFinite(minBedParam) ? minBedParam : 0,
-    };
-  });
+  const [filters, setFilters] = useState<Filters>(() => filtersFromUrl);
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [compareOpen, setCompareOpen] = useState(false);
   const [parsedFilters, setParsedFilters] = useState<ParsedFilters | null>(null);
   const [visibleCount, setVisibleCount] = useState(9);
 
-  // When there is no query (e.g. navigation from condo links), load full active list from Supabase.
-  const condoParam = searchParams.get("condominium") || "";
-  const txParam = searchParams.get("transactionType") || "";
+  const {
+    data: activePropertyRows,
+    isFetching: activePropertiesLoading,
+    isError: activePropertiesError,
+  } = useQuery({
+    queryKey: ["active-property-search-rows", txParam || "all"],
+    queryFn: () => fetchAllActivePropertySearchRows(txParam),
+    enabled: !initialQuery,
+  });
+
+  const mapPropertyRow = useCallback((p: ActivePropertySearchRow): SearchResult => ({
+    id: p.id,
+    code: p.code,
+    title: p.title,
+    condominium: p.condominium,
+    neighborhood: p.neighborhood,
+    city: p.city,
+    price: p.price,
+    rental_price: p.rental_price,
+    transaction_type: p.transaction_type,
+    property_type: p.property_type,
+    bedrooms: p.bedrooms,
+    bathrooms: p.bathrooms,
+    parking_spots: p.parking_spots,
+    area_total: p.area_total,
+    is_featured: p.is_featured,
+    photo: p.photos?.[0] ?? null,
+    relevance_reason: "",
+  }), []);
+
+  // When there is no query (e.g. navigation from condo links), use the full active list.
   useEffect(() => {
     if (initialQuery) return;
-    let cancelled = false;
-    (async () => {
-      setLoading(true);
-      let q = supabase
-        .from("properties")
-        .select(
-          "id, code, title, condominium, neighborhood, city, price, rental_price, transaction_type, property_type, bedrooms, bathrooms, parking_spots, area_total, photos, is_featured, created_at"
-        )
-        .eq("status", "ativo");
-      if (txParam === "venda" || txParam === "locacao" || txParam === "aluguel") {
-        q = q.in("transaction_type", txParam === "venda" ? ["venda"] : ["locacao", "aluguel"]);
-      }
-      const { data, error } = await q
-        .order("is_featured", { ascending: false })
-        .order("created_at", { ascending: false });
-      if (cancelled) return;
-      if (!error && data) {
-        setResults(
-          data.map((p: any) => ({
-            id: p.id,
-            code: p.code,
-            title: p.title,
-            condominium: p.condominium,
-            neighborhood: p.neighborhood,
-            city: p.city,
-            price: p.price,
-            rental_price: p.rental_price,
-            transaction_type: p.transaction_type,
-            property_type: p.property_type,
-            bedrooms: p.bedrooms,
-            bathrooms: p.bathrooms,
-            parking_spots: p.parking_spots,
-            area_total: p.area_total,
-            is_featured: p.is_featured,
-            photo: p.photos?.[0] ?? null,
-            relevance_reason: "",
-          }))
-        );
-      }
+    if (activePropertyRows) {
+      setResults(activePropertyRows.map(mapPropertyRow));
       setLoading(false);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [initialQuery, txParam]);
+      return;
+    }
+    setLoading(activePropertiesLoading && !activePropertiesError);
+  }, [
+    activePropertiesError,
+    activePropertiesLoading,
+    activePropertyRows,
+    initialQuery,
+    mapPropertyRow,
+  ]);
 
   const filteredResults = useMemo(() => {
     const tagNorm = tagParam ? normalize(tagParam) : "";
@@ -225,14 +269,24 @@ const SearchResults = () => {
   // Initialize price/area ranges to real bounds once data lands.
   const [boundsInitialized, setBoundsInitialized] = useState(false);
   useEffect(() => {
+    setFilters(filtersFromUrl);
+    setBoundsInitialized(false);
+    setVisibleCount(9);
+  }, [filtersFromUrl]);
+
+  useEffect(() => {
     if (boundsInitialized || results.length === 0) return;
     setFilters((f) => ({
       ...f,
-      priceRange: isRental(f.transactionType) ? bounds.rentRange : bounds.saleRange,
-      areaRange: bounds.areaRange,
+      priceRange: hasUrlPriceRange
+        ? f.priceRange
+        : isRental(f.transactionType)
+          ? bounds.rentRange
+          : bounds.saleRange,
+      areaRange: hasUrlAreaRange ? f.areaRange : bounds.areaRange,
     }));
     setBoundsInitialized(true);
-  }, [bounds, results.length, boundsInitialized]);
+  }, [bounds, results.length, boundsInitialized, hasUrlPriceRange, hasUrlAreaRange]);
 
   // Canonicalize condominium filter coming from URL once the list is loaded.
   useEffect(() => {
@@ -242,6 +296,62 @@ const SearchResults = () => {
       setFilters((f) => ({ ...f, condominium: canonical }));
     }
   }, [allCondos, filters.condominium]);
+
+  const handleApplyFilters = useCallback(
+    (nextFilters: Filters) => {
+      setFilters(nextFilters);
+
+      const next = new URLSearchParams(searchParams);
+      [
+        "transactionType",
+        "propertyType",
+        "minBedrooms",
+        "minBathrooms",
+        "minParking",
+        "minPrice",
+        "maxPrice",
+        "minArea",
+        "maxArea",
+        "condominium",
+        "city",
+        "neighborhood",
+        "featured",
+      ].forEach((key) => next.delete(key));
+
+      if (nextFilters.transactionType !== "all") {
+        next.set("transactionType", nextFilters.transactionType);
+      }
+      if (nextFilters.propertyType !== "all") {
+        next.set("propertyType", nextFilters.propertyType);
+      }
+      if (nextFilters.minBedrooms > 0) next.set("minBedrooms", String(nextFilters.minBedrooms));
+      if (nextFilters.minBathrooms > 0) next.set("minBathrooms", String(nextFilters.minBathrooms));
+      if (nextFilters.minParking > 0) next.set("minParking", String(nextFilters.minParking));
+      if (nextFilters.condominium !== "all") next.set("condominium", nextFilters.condominium);
+      if (nextFilters.city !== "all") next.set("city", nextFilters.city);
+      if (nextFilters.neighborhood !== "all") next.set("neighborhood", nextFilters.neighborhood);
+      if (nextFilters.onlyFeatured) next.set("featured", "1");
+
+      const activePriceBounds = isRental(nextFilters.transactionType)
+        ? bounds.rentRange
+        : bounds.saleRange;
+      if (nextFilters.priceRange[0] > activePriceBounds[0]) {
+        next.set("minPrice", String(nextFilters.priceRange[0]));
+      }
+      if (nextFilters.priceRange[1] < activePriceBounds[1]) {
+        next.set("maxPrice", String(nextFilters.priceRange[1]));
+      }
+      if (nextFilters.areaRange[0] > bounds.areaRange[0]) {
+        next.set("minArea", String(nextFilters.areaRange[0]));
+      }
+      if (nextFilters.areaRange[1] < bounds.areaRange[1]) {
+        next.set("maxArea", String(nextFilters.areaRange[1]));
+      }
+
+      setSearchParams(next, { replace: true });
+    },
+    [bounds, searchParams, setSearchParams]
+  );
 
   const handleToggleCompare = useCallback((id: string) => {
     setCompareIds((prev) => {
@@ -372,7 +482,13 @@ const SearchResults = () => {
               </p>
               <Button
                 variant="ghost"
-                onClick={() => setFilters(defaultFilters)}
+                onClick={() =>
+                  handleApplyFilters({
+                    ...defaultFilters,
+                    priceRange: bounds.saleRange,
+                    areaRange: bounds.areaRange,
+                  })
+                }
                 className="mt-4 text-body text-xs tracking-wider uppercase"
               >
                 Limpar filtros
@@ -401,7 +517,7 @@ const SearchResults = () => {
         open={filtersOpen}
         onOpenChange={setFiltersOpen}
         filters={filters}
-        onApply={setFilters}
+        onApply={handleApplyFilters}
         condominiums={condominiums}
         bounds={bounds}
         matchCount={filteredResults.length}
