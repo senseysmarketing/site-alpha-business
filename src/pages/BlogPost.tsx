@@ -91,11 +91,20 @@ const BlogPost = () => {
       />
 
       <main className="bg-[hsl(30_33%_97%)]">
-        <section className="relative h-[60vh] flex items-end overflow-hidden">
+        <section className="relative h-[60vh] flex items-end overflow-hidden pt-24 md:pt-0">
           <div className="absolute inset-0">
-            <div className="w-full h-full bg-gradient-to-br from-bordeaux to-foreground" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#2A070C]/90 via-[#2A070C]/40 to-transparent" />
+            {post.cover_image ? (
+              <img
+                src={post.cover_image}
+                alt={post.title}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-bordeaux to-foreground" />
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A]/95 via-[#0A0A0A]/55 to-[#0A0A0A]/15" />
           </div>
+
 
           <div className="relative z-10 w-full max-w-3xl mx-auto px-6 md:px-12 pb-16">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
