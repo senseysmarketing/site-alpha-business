@@ -13,8 +13,12 @@ const BlogHero = ({ post }: BlogHeroProps) => {
   return (
     <section className="relative h-[85vh] flex items-end overflow-hidden">
       <div className="absolute inset-0">
-        <div className="w-full h-full bg-gradient-to-br from-bordeaux to-foreground" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#2A070C]/90 via-[#2A070C]/40 to-transparent" />
+        {post.cover_image ? (
+          <img src={post.cover_image} alt={post.title} className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-bordeaux to-foreground" />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A]/95 via-[#0A0A0A]/55 to-[#0A0A0A]/15" />
       </div>
 
       <div className="relative z-10 w-full max-w-7xl mx-auto px-6 md:px-12 lg:px-24 pb-16 md:pb-24">

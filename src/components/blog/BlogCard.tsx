@@ -35,7 +35,15 @@ const BlogCard = ({ post, index, large = false }: BlogCardProps) => {
         onMouseLeave={() => setHovered(false)}
       >
         <div className={`relative overflow-hidden ${large ? "aspect-[16/10]" : "aspect-[4/3]"}`}>
-          <div className="w-full h-full bg-gradient-to-br from-cashmere to-greige transition-transform duration-700 group-hover:scale-105" />
+          {post.cover_image ? (
+            <img
+              src={post.cover_image}
+              alt={post.title}
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-cashmere to-greige transition-transform duration-700 group-hover:scale-105" />
+          )}
           
           {post.is_exclusive && (
             <div className="absolute top-4 left-4 flex items-center gap-1.5 bg-bordeaux/90 text-cashmere px-3 py-1.5 backdrop-blur-sm">
