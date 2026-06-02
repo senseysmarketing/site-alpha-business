@@ -120,7 +120,7 @@ const BlogPost = () => {
                 {categoryLabels[post.category] ?? post.category}
               </span>
 
-              <h1 className="text-display text-3xl md:text-5xl font-light text-cashmere leading-[1.1] mb-4">
+              <h1 className="text-display text-2xl md:text-5xl font-light text-cashmere leading-[1.1] mb-4">
                 {post.title}
               </h1>
 
