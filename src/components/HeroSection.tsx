@@ -190,7 +190,7 @@ const HeroSection = () => {
               <h1
                 className="text-display font-normal text-white !leading-[1.15]"
                 style={{
-                  fontSize: "clamp(1.75rem, 4.2vw + 0.5rem, 3.75rem)",
+                  fontSize: "clamp(1.5rem, 2.2vw + 0.75rem, 3rem)",
                   lineHeight: 1.15,
                 }}
               >
