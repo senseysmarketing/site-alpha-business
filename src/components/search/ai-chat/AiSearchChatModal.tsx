@@ -66,7 +66,7 @@ const AiSearchChatModal = ({ open, onOpenChange }: Props) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl w-[calc(100vw-2rem)] p-0 gap-0 overflow-hidden h-[min(85vh,720px)] flex flex-col bg-background border-border rounded-2xl">
+      <DialogContent hideCloseButton className="max-w-2xl w-[calc(100vw-2rem)] p-0 gap-0 overflow-hidden h-[min(85vh,720px)] flex flex-col bg-background border-border rounded-2xl">
         <DialogTitle className="sr-only">Conversar com Rafa IA</DialogTitle>
 
         {/* Header */}
