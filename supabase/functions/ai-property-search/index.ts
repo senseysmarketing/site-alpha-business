@@ -630,6 +630,24 @@ const handleConverse = async (
     };
   }
 
+  // Deterministic fallback message if LLM didn't produce one
+  if (!assistantMessage) {
+    const parts: string[] = [];
+    if (merged.transactionType) parts.push(merged.transactionType === "venda" ? "para comprar" : "para alugar");
+    if (merged.propertyType) parts.push(merged.propertyType);
+    if (merged.condominium) parts.push(`no ${merged.condominium}`);
+    else if (merged.condominiumGroup) parts.push(`em ${merged.condominiumGroup}`);
+    if (merged.maxPrice) parts.push(`até R$ ${(merged.maxPrice / 1_000_000).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} mi`);
+    const summary = parts.length ? `Entendi: ${parts.join(" ")}. ` : "";
+    const missing: string[] = [];
+    if (!merged.transactionType) missing.push("se é compra ou locação");
+    if (!merged.condominium && !merged.condominiumGroup) missing.push("um condomínio ou região");
+    if (!merged.maxPrice && !merged.minPrice) missing.push("a faixa de preço");
+    assistantMessage = summary + (missing.length
+      ? `Pode me dizer ${missing.slice(0, 2).join(" e ")}?`
+      : "Quer que eu mostre as opções ou prefere refinar mais?");
+  }
+
   return {
     assistantMessage,
     parsedFilters: merged,
