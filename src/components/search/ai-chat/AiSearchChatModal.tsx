@@ -127,6 +127,12 @@ const AiSearchChatModal = ({ open, onOpenChange }: Props) => {
                   onNavigate={() => onOpenChange(false)}
                 />
               )}
+              {m.role === "assistant" && m.breakdown && m.breakdown.length > 0 && (
+                <AiChatBreakdown items={m.breakdown} onNavigate={() => onOpenChange(false)} />
+              )}
+              {m.role === "assistant" && m.links && m.links.length > 0 && (
+                <AiChatLinks links={m.links} onNavigate={() => onOpenChange(false)} />
+              )}
             </div>
           ))}
           {loading && (
