@@ -585,6 +585,11 @@ const applySelectedOption = (state: ConversationState, opt: OptionChip | undefin
       if (n) f.minBedrooms = n;
       break;
     }
+    case "set_min_area": {
+      const n = Number(opt.payload?.minArea ?? opt.value);
+      if (Number.isFinite(n) && n > 0) f.minArea = n;
+      break;
+    }
     case "highlight": {
       const tags = String(opt.value).split(",").map((s) => s.trim()).filter(Boolean);
       f.highlights = Array.from(new Set([...(f.highlights ?? []), ...tags]));
