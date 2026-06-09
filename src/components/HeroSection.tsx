@@ -166,7 +166,7 @@ const HeroSection = () => {
         }}
       >
         <div
-          className="max-w-3xl"
+          className="max-w-xl lg:max-w-2xl xl:max-w-3xl"
           onMouseEnter={() => setIsHoveredContent(true)}
           onMouseLeave={() => setIsHoveredContent(false)}
         >
