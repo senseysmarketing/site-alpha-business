@@ -181,7 +181,11 @@ const parsePropertyType = (message: string): string | null => {
 // =====================================================================
 // Condo resolver
 // =====================================================================
+let condoCache: { list: string[]; at: number } | null = null;
+const CONDO_CACHE_TTL_MS = 10 * 60 * 1000;
+
 const fetchDistinctCondos = async (sb: ReturnType<typeof createClient>): Promise<string[]> => {
+  if (condoCache && Date.now() - condoCache.at < CONDO_CACHE_TTL_MS) return condoCache.list;
   const all: string[] = [];
   for (let from = 0; from < 5000; from += 1000) {
     const { data, error } = await sb
@@ -196,8 +200,11 @@ const fetchDistinctCondos = async (sb: ReturnType<typeof createClient>): Promise
     }
     if (data.length < 1000) break;
   }
-  return Array.from(new Set(all)).sort();
+  const list = Array.from(new Set(all)).sort();
+  condoCache = { list, at: Date.now() };
+  return list;
 };
+
 
 const resolveCondoByNumber = (
   allCondos: string[],
