@@ -41,26 +41,17 @@ interface SearchHeroProps {
   onParsedFilters?: (filters: ParsedFilters | null) => void;
 }
 
-const LIFESTYLE_PILLS = [
-  { label: "Gourmet Assinado", query: "casa com espaço gourmet assinado por arquiteto" },
-  { label: "Automação", query: "casa com automação residencial completa" },
-  { label: "VGV Exclusivo", query: "mansão acima de 5 milhões exclusiva" },
-];
-
 const selectClass =
   "bg-background border border-border rounded-md px-3 py-2.5 text-body text-sm text-foreground outline-none focus:ring-1 focus:ring-primary appearance-none cursor-pointer";
-
 
 const SearchHero = ({ initialQuery, onResults, onLoading, onParsedFilters }: SearchHeroProps) => {
   const { condos: allCondos } = useCondoList();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [query] = useState(initialQuery);
-  const [searching, setSearching] = useState(false);
   const [mode, setMode] = useState<"cognitive" | "traditional">("cognitive");
   const [chatOpen, setChatOpen] = useState(false);
   const heroImageRef = useRef<HTMLDivElement>(null);
 
-  // Traditional filters state — initialized from URL
+  // Traditional filters — initialized from URL
   const [filterType, setFilterType] = useState("");
   const [filterMinPrice, setFilterMinPrice] = useState("");
   const [filterMaxPrice, setFilterMaxPrice] = useState("");
@@ -78,156 +69,48 @@ const SearchHero = ({ initialQuery, onResults, onLoading, onParsedFilters }: Sea
 
   useEffect(() => {
     if (heroImageRef.current) {
-      gsap.fromTo(
-        heroImageRef.current,
-        { scale: 1.15 },
-        { scale: 1, duration: 2.5, ease: "power2.out" }
-      );
+      gsap.fromTo(heroImageRef.current, { scale: 1.15 }, { scale: 1, duration: 2.5, ease: "power2.out" });
     }
   }, []);
 
+  // Backward compat: if a ?q= initial query is present, run legacy search once.
   useEffect(() => {
-    if (initialQuery.trim()) {
-      handleSearch(initialQuery);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const handleSearch = useCallback(
-    async (searchQuery?: string) => {
-      const q = (searchQuery || query).trim();
-      if (!q || q.length < 2) return;
-
-      setSearching(true);
+    const q = (initialQuery || "").trim();
+    if (!q || q.length < 2) return;
+    (async () => {
       onLoading(true);
-      setParsedFilters(null);
       onParsedFilters?.(null);
-
       try {
-        const { data, error } = await supabase.functions.invoke("ai-property-search", {
-          body: { query: q },
-        });
+        const { data, error } = await supabase.functions.invoke("ai-property-search", { body: { query: q } });
         if (error) throw error;
-        if (data?.error) {
-          toast.error(data.error);
-          onResults([]);
-          return;
-        }
-        const results = data?.results || [];
-        const filters = data?.parsed_filters || null;
-        setParsedFilters(filters);
-        onParsedFilters?.(filters);
-        onResults(results.map(enrichPhoto));
-      } catch (err: any) {
+        if (data?.error) { toast.error(data.error); onResults([]); return; }
+        onResults((data?.results || []).map(enrichPhoto));
+      } catch (err) {
         console.error("Search error:", err);
         toast.error("Não foi possível realizar a busca. Tente novamente.");
         onResults([]);
       } finally {
-        setSearching(false);
         onLoading(false);
       }
-    },
-    [query, onResults, onLoading, onParsedFilters]
-  );
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleTraditionalSearch = useCallback(() => {
     const next = new URLSearchParams();
     if (filterType) next.set("propertyType", filterType);
-    if (filterBedrooms) {
-      next.set("minBedrooms", filterBedrooms);
-    }
-    if (filterCondo) {
-      next.set("condominium", filterCondo);
-    }
+    if (filterBedrooms) next.set("minBedrooms", filterBedrooms);
+    if (filterCondo) next.set("condominium", filterCondo);
     if (filterTransaction) next.set("transactionType", filterTransaction);
     if (filterMinPrice) next.set("minPrice", filterMinPrice);
     if (filterMaxPrice) next.set("maxPrice", filterMaxPrice);
-
     setSearchParams(next);
-    setParsedFilters(null);
     onParsedFilters?.(null);
     onLoading(false);
   }, [
-    filterType,
-    filterMinPrice,
-    filterMaxPrice,
-    filterCondo,
-    filterBedrooms,
-    filterTransaction,
-    setSearchParams,
-    onLoading,
-    onParsedFilters,
+    filterType, filterMinPrice, filterMaxPrice, filterCondo, filterBedrooms, filterTransaction,
+    setSearchParams, onLoading, onParsedFilters,
   ]);
-
-  const handleVoice = useCallback(() => {
-    if (listening && recognitionRef.current) {
-      recognitionRef.current.stop();
-      setListening(false);
-      return;
-    }
-
-    if (!("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) {
-      toast.error("Seu navegador não suporta reconhecimento de voz.");
-      return;
-    }
-
-    const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
-    recognition.lang = "pt-BR";
-    recognition.interimResults = true;
-    recognition.continuous = false;
-    recognitionRef.current = recognition;
-
-    let finalTranscript = "";
-
-    recognition.onresult = (e: any) => {
-      let interim = "";
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        const transcript = e.results[i][0].transcript;
-        if (e.results[i].isFinal) {
-          finalTranscript += transcript;
-        } else {
-          interim += transcript;
-        }
-      }
-      setQuery(finalTranscript + interim);
-    };
-
-    recognition.onend = () => {
-      setListening(false);
-      recognitionRef.current = null;
-      if (finalTranscript.trim()) {
-        setQuery(finalTranscript.trim());
-        handleSearch(finalTranscript.trim());
-      }
-    };
-
-    recognition.onerror = (e: any) => {
-      console.error("Speech error:", e.error);
-      setListening(false);
-      recognitionRef.current = null;
-      if (e.error !== "no-speech") {
-        toast.error("Erro no reconhecimento de voz.");
-      }
-    };
-
-    setListening(true);
-    recognition.start();
-  }, [listening, handleSearch]);
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      handleSearch();
-    }
-  };
-
-  const handlePillClick = (pillQuery: string) => {
-    setMode("cognitive");
-    setQuery(pillQuery);
-    handleSearch(pillQuery);
-  };
 
   return (
     <section className="relative bg-background pt-28 md:pt-32 pb-10 md:pb-12 flex items-center justify-center overflow-hidden">
@@ -247,15 +130,12 @@ const SearchHero = ({ initialQuery, onResults, onLoading, onParsedFilters }: Sea
           transition={{ delay: 0.3, duration: 0.7 }}
           className="bg-white border border-border rounded-lg shadow-2xl p-4 md:p-6"
         >
-          {/* Mode toggle */}
           <div className="flex items-center justify-center mb-4">
             <div className="flex items-center gap-1 bg-muted rounded-full p-1">
               <button
                 onClick={() => setMode("cognitive")}
                 className={`text-body text-[10px] tracking-[0.1em] uppercase px-4 py-1.5 rounded-full transition-all ${
-                  mode === "cognitive"
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground"
+                  mode === "cognitive" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
                 }`}
               >
                 Cognitivo
@@ -263,9 +143,7 @@ const SearchHero = ({ initialQuery, onResults, onLoading, onParsedFilters }: Sea
               <button
                 onClick={() => setMode("traditional")}
                 className={`text-body text-[10px] tracking-[0.1em] uppercase px-4 py-1.5 rounded-full transition-all ${
-                  mode === "traditional"
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground"
+                  mode === "traditional" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
                 }`}
               >
                 Busca tradicional
@@ -274,79 +152,24 @@ const SearchHero = ({ initialQuery, onResults, onLoading, onParsedFilters }: Sea
           </div>
 
           {mode === "cognitive" ? (
-            <>
-              <div className="flex items-center gap-2 md:gap-3 border border-border rounded-md px-3 md:px-4 py-2 md:py-2.5">
-                <button
-                  onClick={handleVoice}
-                  className={`p-2 rounded-full transition-all flex-shrink-0 ${
-                    listening
-                      ? "bg-accent text-accent-foreground"
-                      : "hover:bg-muted text-muted-foreground"
-                  }`}
-                  aria-label="Buscar por voz"
-                >
-                  {listening ? <VoiceWaves /> : <Mic size={18} />}
-                </button>
-                <Search size={18} className="text-muted-foreground flex-shrink-0" />
-                <input
-                  type="text"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Descreva o imóvel dos seus sonhos..."
-                  className="flex-1 bg-transparent text-body text-sm text-foreground placeholder:text-muted-foreground outline-none py-2 min-w-0"
-                />
-                <button
-                  onClick={() => handleSearch()}
-                  disabled={searching}
-                  className="bg-primary text-primary-foreground px-4 md:px-6 py-2.5 text-body text-xs tracking-[0.1em] uppercase hover-magnetic disabled:opacity-70 flex items-center gap-2 rounded-md"
-                >
-                  {searching ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
-                  <span className="hidden sm:inline">{searching ? "Buscando..." : "Buscar"}</span>
-                </button>
-              </div>
-
-              {listening && (
-                <p className="text-body text-xs text-muted-foreground text-center mt-2">
-                  Ouvindo...
-                </p>
-              )}
-
-              {parsedFilters && !searching && (
-                <div className="mt-3">
-                  <FilterChips filters={parsedFilters} />
-                </div>
-              )}
-            </>
+            <AiSearchChatButton onClick={() => setChatOpen(true)} variant="hero" />
           ) : (
             <div className="space-y-4">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                <select
-                  value={filterTransaction}
-                  onChange={(e) => setFilterTransaction(e.target.value)}
-                  className={selectClass}
-                >
+                <select value={filterTransaction} onChange={(e) => setFilterTransaction(e.target.value)} className={selectClass}>
                   <option value="">Transação</option>
                   <option value="venda">Venda</option>
                   <option value="locacao">Locação</option>
                 </select>
 
-                <select
-                  value={filterType}
-                  onChange={(e) => setFilterType(e.target.value)}
-                  className={selectClass}
-                >
+                <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className={selectClass}>
                   <option value="">Tipo</option>
                   <option value="casa">Casa</option>
                   <option value="apartamento">Apartamento</option>
                   <option value="terreno">Terreno</option>
                 </select>
 
-                <select
-                  value={filterBedrooms}
-                  onChange={(e) => setFilterBedrooms(e.target.value)}
-                  className={selectClass}
-                >
+                <select value={filterBedrooms} onChange={(e) => setFilterBedrooms(e.target.value)} className={selectClass}>
                   <option value="">Suítes (mínimo)</option>
                   <option value="1">1+</option>
                   <option value="2">2+</option>
@@ -355,42 +178,24 @@ const SearchHero = ({ initialQuery, onResults, onLoading, onParsedFilters }: Sea
                   <option value="5">5+</option>
                 </select>
 
-                <select
-                  value={filterMinPrice}
-                  onChange={(e) => setFilterMinPrice(e.target.value)}
-                  className={selectClass}
-                >
+                <select value={filterMinPrice} onChange={(e) => setFilterMinPrice(e.target.value)} className={selectClass}>
                   <option value="">Preço mínimo</option>
                   {priceOptions.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
+                    <option key={o.value} value={o.value}>{o.label}</option>
                   ))}
                 </select>
 
-                <select
-                  value={filterMaxPrice}
-                  onChange={(e) => setFilterMaxPrice(e.target.value)}
-                  className={selectClass}
-                >
+                <select value={filterMaxPrice} onChange={(e) => setFilterMaxPrice(e.target.value)} className={selectClass}>
                   <option value="">Até</option>
                   {priceOptions.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
+                    <option key={o.value} value={o.value}>{o.label}</option>
                   ))}
                 </select>
 
-                <select
-                  value={filterCondo}
-                  onChange={(e) => setFilterCondo(e.target.value)}
-                  className={`${selectClass} w-full`}
-                >
+                <select value={filterCondo} onChange={(e) => setFilterCondo(e.target.value)} className={`${selectClass} w-full`}>
                   <option value="">Condomínio</option>
                   {allCondos.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
+                    <option key={c} value={c}>{c}</option>
                   ))}
                 </select>
               </div>
@@ -405,26 +210,9 @@ const SearchHero = ({ initialQuery, onResults, onLoading, onParsedFilters }: Sea
             </div>
           )}
         </motion.div>
-
-        {mode === "cognitive" && (
-          <motion.div
-            className="flex items-center justify-center gap-2 mt-4 flex-wrap"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6, duration: 0.8 }}
-          >
-            {LIFESTYLE_PILLS.map((pill) => (
-              <button
-                key={pill.label}
-                onClick={() => handlePillClick(pill.query)}
-                className="text-body text-[10px] md:text-xs tracking-[0.12em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-300 px-3 py-1.5 rounded-full border border-border hover:border-muted-foreground/40 bg-muted/40 hover:bg-muted"
-              >
-                {pill.label}
-              </button>
-            ))}
-          </motion.div>
-        )}
       </div>
+
+      <AiSearchChatModal open={chatOpen} onOpenChange={setChatOpen} />
     </section>
   );
 };
