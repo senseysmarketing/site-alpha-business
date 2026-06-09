@@ -39,7 +39,9 @@ interface ConversationState {
   filters: PropertySearchFilters;
   lastIntent?: string;
   lastMatchCount?: number;
+  refineTurn?: number;
 }
+
 
 interface ConversationMessage {
   role: "user" | "assistant";
