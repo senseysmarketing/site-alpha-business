@@ -1,13 +1,10 @@
 import { motion } from "framer-motion";
-import { Search, Mic, Loader2 } from "lucide-react";
-import React, { useState, useRef, useCallback, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import SearchResultsPanel from "./SearchResultsPanel";
-import FilterChips, { type ParsedFilters } from "./search/FilterChips";
-import VoiceWaves from "./search/VoiceWaves";
+import { Search } from "lucide-react";
+import React, { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePriceBounds, buildPriceOptions } from "@/hooks/usePriceBounds";
+import AiSearchChatButton from "./search/ai-chat/AiSearchChatButton";
+import AiSearchChatModal from "./search/ai-chat/AiSearchChatModal";
 
 interface SearchResult {
   id: string;
