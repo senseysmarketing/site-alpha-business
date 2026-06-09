@@ -354,8 +354,10 @@ const applyHardFilters = (q: any, f: PropertySearchFilters) => {
   }
   if (f.propertyType) query = query.ilike("property_type", `%${f.propertyType}%`);
   if (f.condominium) {
-    // exact match on the resolved canonical condo name (case-insensitive)
-    query = query.ilike("condominium", f.condominium);
+    // accent-insensitive exact match via normalized column (Postgres ilike is accent-sensitive)
+    const condoNorm = norm(f.condominium);
+    console.log("[applyHardFilters] condominium filter", { raw: f.condominium, normalized: condoNorm });
+    query = query.eq("condominium_normalized", condoNorm);
   }
   if (f.city) query = query.ilike("city", `%${f.city}%`);
   if (f.neighborhood) query = query.ilike("neighborhood", `%${f.neighborhood}%`);
