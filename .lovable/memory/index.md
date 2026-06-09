@@ -18,6 +18,7 @@
 - [Footer Standard](mem://features/footer/footer-standard) — Bordeaux layout, institutional info, legal text formatting
 - [Homepage Hero](mem://features/hero/carousel-layout) — Embla carousel, 70vh height, transparent header overlap
 - [Floating Search Bar](mem://features/search/floating-search-bar) — AI vs Traditional toggle, inline results panel
+- [AI Search Chat (Rafa IA)](mem://features/search/ai-chat-modal) — Modal conversacional substitui modo Cognitivo; LLM Gemini + validação Supabase + chips
 - [Search Results Layout](mem://features/search/results-layout) — Magazine style, Bento grid 4/5 cards, cinematic hero
 - [Traditional Search Filters](mem://features/search/traditional-filters) — Select-based filters with URLSearchParams redirect
 - [Search Fallback Strategy](mem://features/search/fallback-strategy) — Local mock data fallback when AI search fails
