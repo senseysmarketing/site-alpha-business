@@ -37,10 +37,16 @@ const TeamSection = () => {
 
   useEffect(() => {
     if (!emblaApi) return;
-    const onSelect = () => setSelectedIndex(emblaApi.selectedScrollSnap());
-    const onInit = () => setSnaps(emblaApi.scrollSnapList());
+    const onSelect = () => {
+      setSelectedIndex(emblaApi.selectedScrollSnap());
+      setCanScrollPrev(emblaApi.canScrollPrev());
+      setCanScrollNext(emblaApi.canScrollNext());
+    };
+    const onInit = () => {
+      setSnaps(emblaApi.scrollSnapList());
+      onSelect();
+    };
     onInit();
-    onSelect();
     emblaApi.on("select", onSelect);
     emblaApi.on("reInit", onInit);
     return () => {
