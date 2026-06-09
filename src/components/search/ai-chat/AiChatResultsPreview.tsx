@@ -1,11 +1,8 @@
 import { Link } from "react-router-dom";
-import type { PropertyResult, PropertySearchFilters } from "./types";
-import { filtersToSearchParams } from "./types";
+import type { PropertyResult } from "./types";
 
 interface Props {
   results: PropertyResult[];
-  filters: PropertySearchFilters;
-  matchCount?: number;
   onNavigate?: () => void;
 }
 
@@ -15,9 +12,9 @@ const fmtBRL = (n: number | null, rental: boolean) => {
   return rental ? `${v}/mês` : v;
 };
 
-const AiChatResultsPreview = ({ results, filters, matchCount, onNavigate }: Props) => {
+const AiChatResultsPreview = ({ results, onNavigate }: Props) => {
   if (!results?.length) return null;
-  const qs = filtersToSearchParams(filters);
+
 
   return (
     <div className="pl-12 space-y-3">
