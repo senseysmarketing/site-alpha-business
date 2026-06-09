@@ -2,6 +2,8 @@ import { motion } from "framer-motion";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import useEmblaCarousel from "embla-carousel-react";
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 
 interface TeamMember {
   name: string;
@@ -23,6 +25,8 @@ const TeamSection = () => {
   const { data: teamData } = useSiteSettings<{ members: TeamMember[] }>("team");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [snaps, setSnaps] = useState<number[]>([]);
+  const [canScrollPrev, setCanScrollPrev] = useState(false);
+  const [canScrollNext, setCanScrollNext] = useState(false);
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: "start",
     containScroll: "trimSnaps",
@@ -33,10 +37,16 @@ const TeamSection = () => {
 
   useEffect(() => {
     if (!emblaApi) return;
-    const onSelect = () => setSelectedIndex(emblaApi.selectedScrollSnap());
-    const onInit = () => setSnaps(emblaApi.scrollSnapList());
+    const onSelect = () => {
+      setSelectedIndex(emblaApi.selectedScrollSnap());
+      setCanScrollPrev(emblaApi.canScrollPrev());
+      setCanScrollNext(emblaApi.canScrollNext());
+    };
+    const onInit = () => {
+      setSnaps(emblaApi.scrollSnapList());
+      onSelect();
+    };
     onInit();
-    onSelect();
     emblaApi.on("select", onSelect);
     emblaApi.on("reInit", onInit);
     return () => {
@@ -61,37 +71,59 @@ const TeamSection = () => {
         </div>
 
 
-        <div className="overflow-hidden" ref={emblaRef}>
-          <div className="flex gap-8">
-            {members.map((member, i) => (
-              <motion.div
-                key={i}
-                className="flex-[0_0_50%] md:flex-[0_0_25%] min-w-0 flex flex-col items-center text-center"
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1, duration: 0.5 }}
-              >
-                <div className="w-32 h-32 md:w-36 md:h-36 rounded-full overflow-hidden mb-4 bg-muted">
-                  {(member.photo ?? member.avatar) ? (
-                    <img
-                      src={member.photo ?? member.avatar}
-                      alt={member.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-muted to-card flex items-center justify-center text-display text-3xl font-light text-muted-foreground">
-                      {member.name.charAt(0)}
-                    </div>
-                  )}
-                </div>
-                <h3 className="text-display text-base font-normal text-foreground mb-1">
-                  {member.name}
-                </h3>
-                <p className="text-body text-sm text-muted-foreground">{member.role}</p>
-              </motion.div>
-            ))}
+        <div className="relative">
+          <div className="overflow-hidden" ref={emblaRef}>
+            <div className="flex gap-8">
+              {members.map((member, i) => (
+                <motion.div
+                  key={i}
+                  className="flex-[0_0_50%] md:flex-[0_0_25%] min-w-0 flex flex-col items-center text-center"
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1, duration: 0.5 }}
+                >
+                  <div className="w-32 h-32 md:w-36 md:h-36 rounded-full overflow-hidden mb-4 bg-muted">
+                    {(member.photo ?? member.avatar) ? (
+                      <img
+                        src={member.photo ?? member.avatar}
+                        alt={member.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-muted to-card flex items-center justify-center text-display text-3xl font-light text-muted-foreground">
+                        {member.name.charAt(0)}
+                      </div>
+                    )}
+                  </div>
+                  <h3 className="text-display text-base font-normal text-foreground mb-1">
+                    {member.name}
+                  </h3>
+                  <p className="text-body text-sm text-muted-foreground">{member.role}</p>
+                </motion.div>
+              ))}
+            </div>
           </div>
+          <Button
+            variant="outline"
+            size="icon"
+            className="hidden md:flex absolute -left-4 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full"
+            onClick={() => emblaApi?.scrollPrev()}
+            disabled={!canScrollPrev}
+            aria-label="Anterior"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="hidden md:flex absolute -right-4 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full"
+            onClick={() => emblaApi?.scrollNext()}
+            disabled={!canScrollNext}
+            aria-label="Próximo"
+          >
+            <ArrowRight className="h-4 w-4" />
+          </Button>
         </div>
 
         {snaps.length > 1 && (
