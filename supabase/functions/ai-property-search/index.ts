@@ -149,10 +149,43 @@ const findCondoNumber = (message: string): { group: string; number: number } | n
   return null;
 };
 
+// Detect group reference without a number (e.g. "no tamboré", "em alphaville")
+const findCondoGroup = (message: string): string | null => {
+  const n = norm(message);
+  const m = n.match(/\b(tambore|alphaville|residencial)\b/);
+  return m ? m[1] : null;
+};
+
+// Deterministic intent extraction (transaction + property type)
+const parseTransaction = (message: string): "venda" | "locacao" | null => {
+  const n = norm(message);
+  if (/\b(alug|loca|locacao|arrend)/.test(n)) return "locacao";
+  if (/\b(comprar|comprando|compra|vender|venda|adquirir)/.test(n)) return "venda";
+  return null;
+};
+
+const PROPERTY_TYPES: { re: RegExp; value: string }[] = [
+  { re: /\b(apartamento|apto|aptos|apartamentos)\b/i, value: "apartamento" },
+  { re: /\b(cobertura|coberturas)\b/i, value: "cobertura" },
+  { re: /\b(sobrado|sobrados)\b/i, value: "sobrado" },
+  { re: /\b(terreno|terrenos|lote|lotes)\b/i, value: "terreno" },
+  { re: /\b(casa|casas)\b/i, value: "casa" },
+];
+
+const parsePropertyType = (message: string): string | null => {
+  for (const { re, value } of PROPERTY_TYPES) if (re.test(message)) return value;
+  return null;
+};
+
+
 // =====================================================================
 // Condo resolver
 // =====================================================================
+let condoCache: { list: string[]; at: number } | null = null;
+const CONDO_CACHE_TTL_MS = 10 * 60 * 1000;
+
 const fetchDistinctCondos = async (sb: ReturnType<typeof createClient>): Promise<string[]> => {
+  if (condoCache && Date.now() - condoCache.at < CONDO_CACHE_TTL_MS) return condoCache.list;
   const all: string[] = [];
   for (let from = 0; from < 5000; from += 1000) {
     const { data, error } = await sb
@@ -167,8 +200,11 @@ const fetchDistinctCondos = async (sb: ReturnType<typeof createClient>): Promise
     }
     if (data.length < 1000) break;
   }
-  return Array.from(new Set(all)).sort();
+  const list = Array.from(new Set(all)).sort();
+  condoCache = { list, at: Date.now() };
+  return list;
 };
+
 
 const resolveCondoByNumber = (
   allCondos: string[],
@@ -321,13 +357,21 @@ Responda SEMPRE em JSON estrito com este schema:
 }
 `.trim();
 
+interface LLMResult {
+  data?: any;
+  status?: "ok" | "rate_limited" | "credits_exhausted" | "no_key" | "error";
+}
+
 const callLLM = async (
   message: string,
   currentFilters: PropertySearchFilters,
   history: ConversationMessage[],
   condos: string[],
-): Promise<any | null> => {
-  if (!LOVABLE_API_KEY) return null;
+): Promise<LLMResult> => {
+  if (!LOVABLE_API_KEY) {
+    console.error("LOVABLE_API_KEY missing in ai-property-search");
+    return { status: "no_key" };
+  }
   try {
     const messages = [
       { role: "system", content: buildSystemPrompt(condos, currentFilters) },
@@ -347,18 +391,27 @@ const callLLM = async (
       }),
     });
     if (!res.ok) {
-      console.error("LLM error", res.status, await res.text());
-      return null;
+      const txt = await res.text();
+      console.error("LLM error", res.status, txt);
+      if (res.status === 429) return { status: "rate_limited" };
+      if (res.status === 402) return { status: "credits_exhausted" };
+      return { status: "error" };
     }
     const data = await res.json();
     const content = data?.choices?.[0]?.message?.content;
-    if (!content) return null;
-    return JSON.parse(content);
+    if (!content) return { status: "error" };
+    try {
+      return { data: JSON.parse(content), status: "ok" };
+    } catch (e) {
+      console.error("LLM JSON parse error", e, content);
+      return { status: "error" };
+    }
   } catch (e) {
     console.error("LLM exception", e);
-    return null;
+    return { status: "error" };
   }
 };
+
 
 // =====================================================================
 // Conversation pipeline
@@ -426,24 +479,35 @@ const handleConverse = async (
     };
   }
 
-  // 2) Deterministic parsing (price + condo number)
+  // 2) Deterministic parsing (price, transaction, property type, condo)
   const det: PropertySearchFilters = {};
   const priceParse = parsePrice(message);
   if (priceParse.minPrice) det.minPrice = priceParse.minPrice;
   if (priceParse.maxPrice) det.maxPrice = priceParse.maxPrice;
+
+  const tx = parseTransaction(message);
+  if (tx) det.transactionType = tx;
+  const pt = parsePropertyType(message);
+  if (pt) det.propertyType = pt;
 
   const allCondos = await fetchDistinctCondos(sb);
   const condoNum = findCondoNumber(message);
   if (condoNum) {
     const resolved = resolveCondoByNumber(allCondos, condoNum.group, condoNum.number);
     if (resolved) det.condominium = resolved;
+  } else {
+    const group = findCondoGroup(message);
+    if (group) {
+      const groupLabel = group === "tambore" ? "Tamboré" : group.charAt(0).toUpperCase() + group.slice(1);
+      det.condominiumGroup = groupLabel;
+    }
   }
 
   // Ambiguous price (e.g. "até 900")
   if (priceParse.ambiguousValue) {
     return {
       assistantMessage: `Quando você diz **${priceParse.ambiguousValue}**, quer dizer R$ ${priceParse.ambiguousValue} mil ou R$ ${priceParse.ambiguousValue} milhões?`,
-      parsedFilters: current,
+      parsedFilters: mergeFilters(current, det),
       suggestedOptions: [
         { label: `R$ ${priceParse.ambiguousValue} mil`, value: String(priceParse.ambiguousValue * 1000), kind: "price_max" },
         { label: `R$ ${priceParse.ambiguousValue} milhões`, value: String(priceParse.ambiguousValue * 1_000_000), kind: "price_max" },
@@ -454,20 +518,42 @@ const handleConverse = async (
   }
 
   // 3) LLM enrichment
-  const llm = await callLLM(message, mergeFilters(current, det), history, allCondos);
+  const llmResult = await callLLM(message, mergeFilters(current, det), history, allCondos);
+  const llm = llmResult.data;
   let merged = mergeFilters(current, det);
-  let assistantMessage = "Entendi. Pode me contar um pouco mais?";
+  let assistantMessage = "";
   let suggestedOptions: OptionChip[] = defaultStartChips();
   let nextAction: "ask" | "confirm" | "show" = "ask";
   let clarificationType: string | null = null;
 
   if (llm) {
     if (llm.parsedFilters) merged = mergeFilters(merged, llm.parsedFilters as PropertySearchFilters);
-    if (typeof llm.assistantMessage === "string") assistantMessage = llm.assistantMessage;
-    if (Array.isArray(llm.suggestedOptions)) suggestedOptions = llm.suggestedOptions;
+    if (typeof llm.assistantMessage === "string" && llm.assistantMessage.trim()) {
+      assistantMessage = llm.assistantMessage.trim();
+    }
+    if (Array.isArray(llm.suggestedOptions) && llm.suggestedOptions.length) {
+      suggestedOptions = llm.suggestedOptions;
+    }
     if (llm.nextAction) nextAction = llm.nextAction;
     if (llm.clarificationType) clarificationType = llm.clarificationType;
+  } else if (llmResult.status === "credits_exhausted") {
+    return {
+      assistantMessage:
+        "Estou sem créditos de IA no momento. Você pode usar a **busca tradicional** pelo botão ao lado, ou tentar novamente em alguns minutos.",
+      parsedFilters: merged,
+      suggestedOptions: defaultStartChips(),
+      nextAction: "ask",
+    };
+  } else if (llmResult.status === "rate_limited") {
+    return {
+      assistantMessage:
+        "Muitas pessoas conversando comigo agora. Pode tentar em alguns segundos? Enquanto isso, me conta o que procura.",
+      parsedFilters: merged,
+      suggestedOptions: defaultStartChips(),
+      nextAction: "ask",
+    };
   }
+
 
   // 4) Resolve condominium ambiguity (e.g. "Tamboré" sem número)
   if (!merged.condominium && merged.condominiumGroup) {
@@ -542,6 +628,24 @@ const handleConverse = async (
       clarificationType: "narrow",
       nextAction: "ask",
     };
+  }
+
+  // Deterministic fallback message if LLM didn't produce one
+  if (!assistantMessage) {
+    const parts: string[] = [];
+    if (merged.transactionType) parts.push(merged.transactionType === "venda" ? "para comprar" : "para alugar");
+    if (merged.propertyType) parts.push(merged.propertyType);
+    if (merged.condominium) parts.push(`no ${merged.condominium}`);
+    else if (merged.condominiumGroup) parts.push(`em ${merged.condominiumGroup}`);
+    if (merged.maxPrice) parts.push(`até R$ ${(merged.maxPrice / 1_000_000).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} mi`);
+    const summary = parts.length ? `Entendi: ${parts.join(" ")}. ` : "";
+    const missing: string[] = [];
+    if (!merged.transactionType) missing.push("se é compra ou locação");
+    if (!merged.condominium && !merged.condominiumGroup) missing.push("um condomínio ou região");
+    if (!merged.maxPrice && !merged.minPrice) missing.push("a faixa de preço");
+    assistantMessage = summary + (missing.length
+      ? `Pode me dizer ${missing.slice(0, 2).join(" e ")}?`
+      : "Quer que eu mostre as opções ou prefere refinar mais?");
   }
 
   return {
