@@ -15,10 +15,19 @@ export interface PropertySearchFilters {
   highlights?: string[];
 }
 
+export interface ConversationState {
+  filters: PropertySearchFilters;
+  lastIntent?: string;
+  lastMatchCount?: number;
+}
+
 export interface OptionChip {
   label: string;
   value: string;
   kind: string;
+  action?: string;
+  payload?: Record<string, unknown>;
+  url?: string;
 }
 
 export interface PropertyResult {
@@ -39,15 +48,42 @@ export interface PropertyResult {
   relevance_reason: string;
 }
 
+export interface ConversationLink {
+  label: string;
+  url: string;
+  type: "search" | "property" | "whatsapp";
+}
+
+export interface CondominiumBreakdownItem {
+  label: string;
+  condominium: string;
+  count: number;
+  minPrice?: number | null;
+  maxPrice?: number | null;
+  url?: string;
+}
+
+export type ResponseType =
+  | "text"
+  | "clarification"
+  | "results_preview"
+  | "search_link"
+  | "property_detail"
+  | "no_results_explanation"
+  | "condominium_breakdown";
+
 export interface ConversationResponse {
   assistantMessage: string;
+  responseType?: ResponseType;
   parsedFilters: PropertySearchFilters;
+  updatedState?: ConversationState;
   suggestedOptions?: OptionChip[];
   matchCount?: number;
   needsClarification?: boolean;
   clarificationType?: string | null;
-  showResults?: boolean;
   resultsPreview?: PropertyResult[];
+  links?: ConversationLink[];
+  breakdown?: CondominiumBreakdownItem[];
   nextAction?: "ask" | "confirm" | "show";
 }
 
@@ -58,6 +94,9 @@ export interface ChatMessage {
   options?: OptionChip[];
   preview?: PropertyResult[];
   matchCount?: number;
+  links?: ConversationLink[];
+  breakdown?: CondominiumBreakdownItem[];
+  responseType?: ResponseType;
 }
 
 export function filtersToSearchParams(f: PropertySearchFilters): string {
