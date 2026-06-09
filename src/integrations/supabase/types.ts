@@ -98,6 +98,33 @@ export type Database = {
         }
         Relationships: []
       }
+      condominium_aliases: {
+        Row: {
+          alias_normalized: string
+          alias_text: string
+          canonical_name: string
+          canonical_normalized: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          alias_normalized: string
+          alias_text: string
+          canonical_name: string
+          canonical_normalized: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          alias_normalized?: string
+          alias_text?: string
+          canonical_name?: string
+          canonical_normalized?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: []
+      }
       condominiums: {
         Row: {
           city: string | null
@@ -332,6 +359,7 @@ export type Database = {
           city: string | null
           code: string
           condominium: string | null
+          condominium_normalized: string | null
           created_at: string | null
           description: string | null
           engineering_highlights: string[] | null
@@ -361,6 +389,7 @@ export type Database = {
           city?: string | null
           code: string
           condominium?: string | null
+          condominium_normalized?: string | null
           created_at?: string | null
           description?: string | null
           engineering_highlights?: string[] | null
@@ -390,6 +419,7 @@ export type Database = {
           city?: string | null
           code?: string
           condominium?: string | null
+          condominium_normalized?: string | null
           created_at?: string | null
           description?: string | null
           engineering_highlights?: string[] | null
@@ -639,6 +669,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      normalize_search_text: { Args: { input: string }; Returns: string }
     }
     Enums: {
       app_role:

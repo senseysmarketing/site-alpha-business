@@ -1,8 +1,9 @@
-// AlphaBusiness - AI Property Search (Conversational)
-// Endpoints (single function, action-based):
-//   { query: string }                                            -> legacy text search (kept)
-//   { action: "converse", message, currentFilters?, history? }   -> conversational pipeline
-//   { action: "search", filters, limit? }                        -> final filtered search
+// AlphaBusiness - AI Property Search (Conversational v2)
+// Actions:
+//   { action: "converse", message, currentFilters?, history? }     -> v1 (backward compat)
+//   { action: "converse_v2", message, currentState?, selectedOption?, history? }
+//   { action: "search", filters, limit? }
+//   { query: string }                                              -> legacy free text
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -15,12 +16,14 @@ const corsHeaders = {
 // =====================================================================
 // Types
 // =====================================================================
+type SB = ReturnType<typeof createClient>;
+
 interface PropertySearchFilters {
   code?: string | null;
   transactionType?: "venda" | "locacao" | null;
   propertyType?: string | null;
-  condominium?: string | null;       // resolved exact name
-  condominiumGroup?: string | null;  // ambiguous group (e.g. "Tamboré")
+  condominium?: string | null;
+  condominiumGroup?: string | null;
   city?: string | null;
   neighborhood?: string | null;
   minBedrooms?: number | null;
@@ -32,6 +35,12 @@ interface PropertySearchFilters {
   highlights?: string[];
 }
 
+interface ConversationState {
+  filters: PropertySearchFilters;
+  lastIntent?: string;
+  lastMatchCount?: number;
+}
+
 interface ConversationMessage {
   role: "user" | "assistant";
   content: string;
@@ -40,7 +49,10 @@ interface ConversationMessage {
 interface OptionChip {
   label: string;
   value: string;
-  kind: string; // "transaction" | "condominium" | "price" | "bedrooms" | "highlight" | "confirm"
+  kind: string;
+  action?: string;
+  payload?: Record<string, unknown>;
+  url?: string;
 }
 
 interface PropertyResult {
@@ -61,6 +73,35 @@ interface PropertyResult {
   relevance_reason: string;
 }
 
+interface ConversationLink {
+  label: string;
+  url: string;
+  type: "search" | "property" | "whatsapp";
+}
+
+interface CondominiumBreakdownItem {
+  label: string;
+  condominium: string;
+  count: number;
+  minPrice?: number | null;
+  maxPrice?: number | null;
+  url?: string;
+}
+
+type Intent =
+  | "greeting"
+  | "small_talk"
+  | "new_search"
+  | "update_filter"
+  | "broaden_search"
+  | "show_results"
+  | "show_property"
+  | "ask_availability"
+  | "ask_no_results_reason"
+  | "ask_condominium_breakdown"
+  | "ask_property_detail"
+  | "reset_search";
+
 // =====================================================================
 // Utils
 // =====================================================================
@@ -73,8 +114,34 @@ const norm = (s: unknown) =>
     .replace(/\s+/g, " ")
     .trim();
 
+const fmtBRL = (n: number | null | undefined) =>
+  typeof n === "number"
+    ? n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 })
+    : "Sob consulta";
+
+const filtersToQS = (f: PropertySearchFilters): string => {
+  const p = new URLSearchParams();
+  if (f.transactionType) p.set("transactionType", f.transactionType);
+  if (f.propertyType) p.set("propertyType", f.propertyType);
+  if (f.condominium) p.set("condominium", f.condominium);
+  if (f.city) p.set("city", f.city);
+  if (f.neighborhood) p.set("neighborhood", f.neighborhood);
+  if (f.minBedrooms) p.set("minBedrooms", String(f.minBedrooms));
+  if (f.minBathrooms) p.set("minBathrooms", String(f.minBathrooms));
+  if (f.minParking) p.set("minParking", String(f.minParking));
+  if (f.minArea) p.set("minArea", String(f.minArea));
+  if (f.minPrice) p.set("minPrice", String(f.minPrice));
+  if (f.maxPrice) p.set("maxPrice", String(f.maxPrice));
+  return p.toString();
+};
+
+const buildSearchUrl = (f: PropertySearchFilters): string => {
+  const qs = filtersToQS(f);
+  return qs ? `/busca?${qs}` : "/busca";
+};
+
 // =====================================================================
-// Deterministic parsing (code, price, condo with number)
+// Parsing (deterministic)
 // =====================================================================
 const CODE_REGEX = /\b([A-Z]{2,3}\d{3,6})\b/i;
 
@@ -106,7 +173,7 @@ const parseMoneyToken = (raw: string): number | null => {
 interface PriceParseResult {
   minPrice?: number;
   maxPrice?: number;
-  ambiguousValue?: number; // when unit is missing
+  ambiguousValue?: number;
 }
 
 const parsePrice = (message: string): PriceParseResult => {
@@ -141,7 +208,6 @@ const parsePrice = (message: string): PriceParseResult => {
   return {};
 };
 
-// Match exact "Tamboré N" without confusing 1 vs 10/11
 const findCondoNumber = (message: string): { group: string; number: number } | null => {
   const n = norm(message);
   const m = n.match(/\b(tambore|alphaville|residencial)\s+(\d{1,2})\b/);
@@ -149,14 +215,12 @@ const findCondoNumber = (message: string): { group: string; number: number } | n
   return null;
 };
 
-// Detect group reference without a number (e.g. "no tamboré", "em alphaville")
 const findCondoGroup = (message: string): string | null => {
   const n = norm(message);
   const m = n.match(/\b(tambore|alphaville|residencial)\b/);
   return m ? m[1] : null;
 };
 
-// Deterministic intent extraction (transaction + property type)
 const parseTransaction = (message: string): "venda" | "locacao" | null => {
   const n = norm(message);
   if (/\b(alug|loca|locacao|arrend)/.test(n)) return "locacao";
@@ -177,66 +241,111 @@ const parsePropertyType = (message: string): string | null => {
   return null;
 };
 
+const parseBedrooms = (message: string): number | null => {
+  const n = norm(message);
+  const m = n.match(/(\d{1,2})\s*(suites?|quartos?|dormitorios?|dorms?)/);
+  if (m) return parseInt(m[1], 10);
+  return null;
+};
+
+const HIGHLIGHT_KEYWORDS: Record<string, string[]> = {
+  piscina: ["piscina"],
+  gourmet: ["gourmet", "churrasqueira"],
+  jardim: ["jardim", "quintal"],
+  vista: ["vista"],
+  reformado: ["reformado", "reformada", "novo", "nova"],
+  mobiliado: ["mobiliado", "mobiliada"],
+};
+
+const parseHighlights = (message: string): string[] => {
+  const n = norm(message);
+  const out: string[] = [];
+  for (const [key, words] of Object.entries(HIGHLIGHT_KEYWORDS)) {
+    if (words.some((w) => n.includes(w))) out.push(key);
+  }
+  return out;
+};
 
 // =====================================================================
-// Condo resolver
+// Condo resolver (using condominium_normalized + aliases)
 // =====================================================================
-let condoCache: { list: string[]; at: number } | null = null;
-const CONDO_CACHE_TTL_MS = 10 * 60 * 1000;
+let condoCache: { list: { name: string; normalized: string }[]; at: number } | null = null;
+const CONDO_CACHE_TTL_MS = 5 * 60 * 1000;
 
-const fetchDistinctCondos = async (sb: ReturnType<typeof createClient>): Promise<string[]> => {
+const fetchDistinctCondos = async (sb: SB) => {
   if (condoCache && Date.now() - condoCache.at < CONDO_CACHE_TTL_MS) return condoCache.list;
-  const all: string[] = [];
+  const map = new Map<string, string>();
   for (let from = 0; from < 5000; from += 1000) {
     const { data, error } = await sb
       .from("properties")
-      .select("condominium")
+      .select("condominium, condominium_normalized")
       .eq("status", "ativo")
       .not("condominium", "is", null)
       .range(from, from + 999);
     if (error || !data || data.length === 0) break;
-    for (const r of data as { condominium: string | null }[]) {
-      if (r.condominium) all.push(r.condominium);
+    for (const r of data as { condominium: string | null; condominium_normalized: string | null }[]) {
+      if (r.condominium && !map.has(r.condominium)) {
+        map.set(r.condominium, r.condominium_normalized ?? norm(r.condominium));
+      }
     }
     if (data.length < 1000) break;
   }
-  const list = Array.from(new Set(all)).sort();
+  const list = Array.from(map.entries()).map(([name, normalized]) => ({ name, normalized })).sort((a, b) => a.name.localeCompare(b.name));
   condoCache = { list, at: Date.now() };
   return list;
 };
 
-
-const resolveCondoByNumber = (
-  allCondos: string[],
-  group: string,
-  number: number,
-): string | null => {
-  const groupN = norm(group);
-  const matches = allCondos.filter((c) => {
-    const cn = norm(c);
-    if (!cn.includes(groupN)) return false;
-    // require exact number boundary
-    const re = new RegExp(`\\b${number}\\b`);
-    return re.test(cn);
-  });
-  return matches[0] ?? null;
+let aliasCache: { map: Map<string, string>; at: number } | null = null;
+const fetchAliases = async (sb: SB): Promise<Map<string, string>> => {
+  if (aliasCache && Date.now() - aliasCache.at < CONDO_CACHE_TTL_MS) return aliasCache.map;
+  const { data } = await sb.from("condominium_aliases").select("alias_normalized, canonical_normalized");
+  const map = new Map<string, string>();
+  if (data) {
+    for (const r of data as { alias_normalized: string; canonical_normalized: string }[]) {
+      map.set(r.alias_normalized, r.canonical_normalized);
+    }
+  }
+  aliasCache = { map, at: Date.now() };
+  return map;
 };
 
-const findCondosByGroup = (allCondos: string[], group: string): string[] => {
+// Resolve "Tamboré 2" → real condominium name in DB, never confusing with 10/11
+const resolveCondoByNumber = async (
+  sb: SB,
+  group: string,
+  number: number,
+): Promise<string | null> => {
+  const condos = await fetchDistinctCondos(sb);
+  const aliases = await fetchAliases(sb);
   const groupN = norm(group);
-  return allCondos.filter((c) => norm(c).includes(groupN));
+  const queryNorm = `${groupN} ${number}`;
+  const canonical = aliases.get(queryNorm);
+  const numRe = new RegExp(`(^|\\s)${number}(\\s|$)`);
+
+  // 1) exact match against canonical from aliases table
+  if (canonical) {
+    const match = condos.find((c) => c.normalized === canonical);
+    if (match) return match.name;
+  }
+  // 2) name contains the group AND the exact number as a token
+  const direct = condos.find((c) => c.normalized.includes(groupN) && numRe.test(c.normalized));
+  if (direct) return direct.name;
+  return null;
+};
+
+const findCondosByGroup = async (sb: SB, group: string): Promise<string[]> => {
+  const condos = await fetchDistinctCondos(sb);
+  const groupN = norm(group);
+  return condos.filter((c) => c.normalized.includes(groupN)).map((c) => c.name);
 };
 
 // =====================================================================
 // Supabase query builders
 // =====================================================================
 const PROP_SELECT =
-  "id, code, title, condominium, neighborhood, city, price, rental_price, transaction_type, property_type, bedrooms, bathrooms, parking_spots, area_total, photos, is_featured, engineering_highlights, created_at";
+  "id, code, title, condominium, condominium_normalized, neighborhood, city, price, rental_price, transaction_type, property_type, bedrooms, bathrooms, parking_spots, area_total, photos, is_featured, engineering_highlights, created_at";
 
-const applyHardFilters = (
-  q: ReturnType<ReturnType<typeof createClient>["from"]>,
-  f: PropertySearchFilters,
-) => {
+const applyHardFilters = (q: any, f: PropertySearchFilters) => {
   let query = q.eq("status", "ativo");
   if (f.code) query = query.ilike("code", f.code);
   if (f.transactionType) {
@@ -244,7 +353,10 @@ const applyHardFilters = (
     else query = query.eq("transaction_type", f.transactionType);
   }
   if (f.propertyType) query = query.ilike("property_type", `%${f.propertyType}%`);
-  if (f.condominium) query = query.ilike("condominium", f.condominium);
+  if (f.condominium) {
+    // exact match on the resolved canonical condo name (case-insensitive)
+    query = query.ilike("condominium", f.condominium);
+  }
   if (f.city) query = query.ilike("city", `%${f.city}%`);
   if (f.neighborhood) query = query.ilike("neighborhood", `%${f.neighborhood}%`);
   if (f.minBedrooms) query = query.gte("bedrooms", f.minBedrooms);
@@ -257,10 +369,7 @@ const applyHardFilters = (
   return query;
 };
 
-const countMatches = async (
-  sb: ReturnType<typeof createClient>,
-  f: PropertySearchFilters,
-): Promise<number> => {
+const countMatches = async (sb: SB, f: PropertySearchFilters): Promise<number> => {
   let q = sb.from("properties").select("id", { count: "exact", head: true });
   q = applyHardFilters(q, f);
   const { count, error } = await q;
@@ -268,17 +377,30 @@ const countMatches = async (
   return count ?? 0;
 };
 
-const fetchTopMatches = async (
-  sb: ReturnType<typeof createClient>,
-  f: PropertySearchFilters,
-  limit: number,
-): Promise<PropertyResult[]> => {
+const mapRow = (p: any): PropertyResult => ({
+  id: p.id,
+  code: p.code,
+  title: p.title,
+  condominium: p.condominium,
+  neighborhood: p.neighborhood,
+  city: p.city,
+  price: p.price,
+  rental_price: p.rental_price,
+  transaction_type: p.transaction_type,
+  bedrooms: p.bedrooms,
+  bathrooms: p.bathrooms,
+  parking_spots: p.parking_spots,
+  area_total: p.area_total,
+  photo: (p.photos && p.photos[0]) || null,
+  relevance_reason: p.condominium ?? p.neighborhood ?? "Compatível com sua busca",
+});
+
+const fetchTopMatches = async (sb: SB, f: PropertySearchFilters, limit: number): Promise<PropertyResult[]> => {
   let q = sb.from("properties").select(PROP_SELECT);
   q = applyHardFilters(q, f);
   q = q.order("is_featured", { ascending: false }).order("created_at", { ascending: false }).limit(limit);
   const { data, error } = await q;
   if (error || !data) return [];
-  // Optional in-memory boost by highlight tokens
   const scored = (data as any[]).map((p) => {
     let bonus = 0;
     const hl = (p.engineering_highlights ?? []) as string[];
@@ -292,383 +414,562 @@ const fetchTopMatches = async (
     return { p, bonus };
   });
   scored.sort((a, b) => b.bonus - a.bonus);
-  return scored.map(({ p }) => ({
-    id: p.id,
-    code: p.code,
-    title: p.title,
-    condominium: p.condominium,
-    neighborhood: p.neighborhood,
-    city: p.city,
-    price: p.price,
-    rental_price: p.rental_price,
-    transaction_type: p.transaction_type,
-    bedrooms: p.bedrooms,
-    bathrooms: p.bathrooms,
-    parking_spots: p.parking_spots,
-    area_total: p.area_total,
-    photo: (p.photos && p.photos[0]) || null,
-    relevance_reason: p.condominium ?? p.neighborhood ?? "Compatível com sua busca",
-  }));
+  return scored.map(({ p }) => mapRow(p));
+};
+
+const getPropertyByCode = async (sb: SB, code: string): Promise<PropertyResult | null> => {
+  const { data } = await sb.from("properties").select(PROP_SELECT).ilike("code", code).eq("status", "ativo").limit(1);
+  if (!data || !data.length) return null;
+  return mapRow(data[0]);
+};
+
+const getCondominiumBreakdown = async (
+  sb: SB,
+  baseFilters: PropertySearchFilters,
+  groupHint?: string | null,
+): Promise<CondominiumBreakdownItem[]> => {
+  const filtersNoCond: PropertySearchFilters = { ...baseFilters, condominium: null, condominiumGroup: null };
+  let q = sb.from("properties").select("condominium, condominium_normalized, price, rental_price").limit(2000);
+  q = applyHardFilters(q, filtersNoCond);
+  if (groupHint) {
+    q = q.ilike("condominium_normalized", `%${norm(groupHint)}%`);
+  }
+  const { data } = await q;
+  if (!data) return [];
+  const groups = new Map<string, { count: number; min: number | null; max: number | null }>();
+  for (const r of data as any[]) {
+    if (!r.condominium) continue;
+    const key = r.condominium as string;
+    const isRental = baseFilters.transactionType === "locacao";
+    const price = isRental ? r.rental_price : r.price;
+    const g = groups.get(key) ?? { count: 0, min: null, max: null };
+    g.count++;
+    if (typeof price === "number") {
+      g.min = g.min === null ? price : Math.min(g.min, price);
+      g.max = g.max === null ? price : Math.max(g.max, price);
+    }
+    groups.set(key, g);
+  }
+  return Array.from(groups.entries())
+    .map(([condominium, v]) => ({
+      label: condominium,
+      condominium,
+      count: v.count,
+      minPrice: v.min,
+      maxPrice: v.max,
+      url: buildSearchUrl({ ...baseFilters, condominium }),
+    }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 8);
 };
 
 // =====================================================================
-// LLM (Lovable AI Gateway, Gemini)
+// Intent detection (rules-first, cheap)
 // =====================================================================
-const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+const detectIntent = (message: string, state: ConversationState): Intent => {
+  const n = norm(message);
+  if (!n) return "small_talk";
+  if (extractCode(message)) return "show_property";
+  if (/^(reiniciar|recomecar|comecar de novo|reset|nova busca)/.test(n)) return "reset_search";
 
-const buildSystemPrompt = (condos: string[], currentFilters: PropertySearchFilters) => `
-Você é o Rafa IA, consultor digital de imóveis de alto padrão da AlphaBusiness em Alphaville/Tamboré (Brasil).
-Sua missão NÃO é mostrar imóveis na primeira mensagem. É CONVERSAR para refinar a busca:
-- Interpretar a mensagem livre do usuário em português.
-- Extrair e ATUALIZAR filtros estruturados (mantenha os filtros atuais e adicione/altere o necessário).
-- Resolver ambiguidades fazendo UMA pergunta curta e objetiva por vez.
-- Sugerir 3-5 botões rápidos (chips) relevantes ao próximo passo.
-- Se faltar pelo menos uma definição clara (transação, condomínio OU faixa de preço), faça pergunta de refinamento.
-- NUNCA invente imóveis. Não cite códigos.
-- Tom: caloroso, consultivo, conciso (máx. 2 frases curtas).
+  if (/^(oi|ola|bom dia|boa tarde|boa noite|hey|hello)$/.test(n)) return "greeting";
+  if (/^(obrigad|valeu|tchau|ate mais)/.test(n)) return "small_talk";
 
-Condomínios reais no banco (use apenas estes nomes em "condominium"; "Tamboré 1" ≠ "Tamboré 10"):
-${condos.slice(0, 80).join(" | ")}
-
-Filtros atuais já preenchidos:
-${JSON.stringify(currentFilters)}
-
-Responda SEMPRE em JSON estrito com este schema:
-{
-  "assistantMessage": string,
-  "parsedFilters": {
-    "transactionType": "venda"|"locacao"|null,
-    "propertyType": string|null,
-    "condominium": string|null,
-    "condominiumGroup": string|null,
-    "city": string|null,
-    "neighborhood": string|null,
-    "minBedrooms": number|null,
-    "minBathrooms": number|null,
-    "minParking": number|null,
-    "minArea": number|null,
-    "minPrice": number|null,
-    "maxPrice": number|null,
-    "highlights": string[]
-  },
-  "suggestedOptions": [{"label": string, "value": string, "kind": string}],
-  "nextAction": "ask" | "confirm" | "show",
-  "clarificationType": "transaction"|"condominium_number"|"price_unit"|"broaden"|"narrow"|null
-}
-`.trim();
-
-interface LLMResult {
-  data?: any;
-  status?: "ok" | "rate_limited" | "credits_exhausted" | "no_key" | "error";
-}
-
-const callLLM = async (
-  message: string,
-  currentFilters: PropertySearchFilters,
-  history: ConversationMessage[],
-  condos: string[],
-): Promise<LLMResult> => {
-  if (!LOVABLE_API_KEY) {
-    console.error("LOVABLE_API_KEY missing in ai-property-search");
-    return { status: "no_key" };
+  if (/(me mostre|me mostra|mostra|me mande|me passa|mostrar|ver opcoes|ver os imoveis|ver imoveis|ver resultados|ver tudo|me indica)/.test(n)) {
+    return "show_results";
   }
-  try {
-    const messages = [
-      { role: "system", content: buildSystemPrompt(condos, currentFilters) },
-      ...history.slice(-6).map((m) => ({ role: m.role, content: m.content })),
-      { role: "user", content: message },
-    ];
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages,
-        response_format: { type: "json_object" },
-      }),
-    });
-    if (!res.ok) {
-      const txt = await res.text();
-      console.error("LLM error", res.status, txt);
-      if (res.status === 429) return { status: "rate_limited" };
-      if (res.status === 402) return { status: "credits_exhausted" };
-      return { status: "error" };
-    }
-    const data = await res.json();
-    const content = data?.choices?.[0]?.message?.content;
-    if (!content) return { status: "error" };
-    try {
-      return { data: JSON.parse(content), status: "ok" };
-    } catch (e) {
-      console.error("LLM JSON parse error", e, content);
-      return { status: "error" };
-    }
-  } catch (e) {
-    console.error("LLM exception", e);
-    return { status: "error" };
+  if (/(quais condominios|quais bairros|breakdown|quais opcoes de condominio|quais regioes|onde tem)/.test(n)) {
+    return "ask_condominium_breakdown";
   }
+  if (/(nao tem|tem alguma|tem algo|tem casa|tem imovel|tem opcao|existe|disponivel|por que)/.test(n)) {
+    return "ask_no_results_reason";
+  }
+  if (/(amplia|ampliar|aumenta|considera|considere|tambem|alternativ)/.test(n)) {
+    return "broaden_search";
+  }
+  if (/(quero|gostaria|procuro|buscando|preciso|estou olhando|estou querendo)/.test(n)) {
+    return "new_search";
+  }
+  // anything containing a recognizable filter token = update_filter
+  if (
+    parseTransaction(message) ||
+    parsePropertyType(message) ||
+    findCondoGroup(message) ||
+    parseBedrooms(message) ||
+    Object.keys(parsePrice(message)).length > 0 ||
+    parseHighlights(message).length > 0
+  ) {
+    return state.lastIntent === "new_search" ? "update_filter" : "new_search";
+  }
+  return "small_talk";
 };
 
-
 // =====================================================================
-// Conversation pipeline
+// Filter merging + state hydration
 // =====================================================================
-const mergeFilters = (
-  base: PropertySearchFilters,
-  add: PropertySearchFilters,
-): PropertySearchFilters => {
+const mergeFilters = (base: PropertySearchFilters, add: PropertySearchFilters): PropertySearchFilters => {
   const out: PropertySearchFilters = { ...base };
   for (const k of Object.keys(add) as (keyof PropertySearchFilters)[]) {
-    const v = add[k];
+    const v = (add as any)[k];
     if (v === null || v === undefined) continue;
-    if (Array.isArray(v) && v.length === 0) continue;
-    // @ts-ignore
-    out[k] = v;
+    if (Array.isArray(v)) {
+      if (v.length === 0) continue;
+      const existing = Array.isArray((out as any)[k]) ? ((out as any)[k] as string[]) : [];
+      (out as any)[k] = Array.from(new Set([...existing, ...v]));
+      continue;
+    }
+    (out as any)[k] = v;
   }
   return out;
 };
 
-const handleConverse = async (
-  sb: ReturnType<typeof createClient>,
-  body: { message: string; currentFilters?: PropertySearchFilters; history?: ConversationMessage[] },
-) => {
+const hydrateState = (raw: any): ConversationState => {
+  if (raw && typeof raw === "object" && raw.filters) {
+    return {
+      filters: { highlights: [], ...(raw.filters as PropertySearchFilters) },
+      lastIntent: raw.lastIntent,
+      lastMatchCount: typeof raw.lastMatchCount === "number" ? raw.lastMatchCount : undefined,
+    };
+  }
+  return { filters: { highlights: [] } };
+};
+
+// =====================================================================
+// Selected option (chip with structured action)
+// =====================================================================
+const applySelectedOption = (state: ConversationState, opt: OptionChip | undefined) => {
+  if (!opt) return;
+  const f = state.filters;
+  switch (opt.action ?? opt.kind) {
+    case "broaden_price": {
+      const m = opt.payload?.maxPrice;
+      if (typeof m === "number") f.maxPrice = m;
+      else if (typeof f.maxPrice === "number") f.maxPrice = Math.round(f.maxPrice * 1.5);
+      break;
+    }
+    case "set_max_price": {
+      const m = opt.payload?.maxPrice;
+      if (typeof m === "number") f.maxPrice = m;
+      break;
+    }
+    case "set_condominium":
+    case "condominium": {
+      const c = (opt.payload?.condominium as string) ?? opt.value;
+      if (c) {
+        f.condominium = c;
+        f.condominiumGroup = null;
+      }
+      break;
+    }
+    case "any_condo":
+    case "clear_condominium": {
+      f.condominium = null;
+      f.condominiumGroup = null;
+      break;
+    }
+    case "set_transaction":
+    case "transaction": {
+      if (opt.value === "venda" || opt.value === "locacao") f.transactionType = opt.value;
+      break;
+    }
+    case "set_property_type":
+    case "propertyType": {
+      if (opt.value) f.propertyType = opt.value;
+      break;
+    }
+    case "set_bedrooms":
+    case "bedrooms": {
+      const n = parseInt(opt.value, 10);
+      if (n) f.minBedrooms = n;
+      break;
+    }
+    case "highlight": {
+      const tags = String(opt.value).split(",").map((s) => s.trim()).filter(Boolean);
+      f.highlights = Array.from(new Set([...(f.highlights ?? []), ...tags]));
+      break;
+    }
+  }
+};
+
+// =====================================================================
+// Response builder
+// =====================================================================
+interface BuildResponseArgs {
+  intent: Intent;
+  state: ConversationState;
+  matchCount?: number;
+  preview?: PropertyResult[];
+  breakdown?: CondominiumBreakdownItem[];
+  property?: PropertyResult | null;
+  groupOptions?: string[];
+  ambiguousPrice?: number;
+}
+
+const defaultStartChips = (): OptionChip[] => [
+  { label: "Quero comprar", value: "venda", kind: "transaction", action: "set_transaction" },
+  { label: "Quero alugar", value: "locacao", kind: "transaction", action: "set_transaction" },
+  { label: "Tenho um código", value: "code", kind: "code" },
+];
+
+const summarizeFilters = (f: PropertySearchFilters): string => {
+  const parts: string[] = [];
+  if (f.transactionType) parts.push(f.transactionType === "venda" ? "compra" : "locação");
+  if (f.propertyType) parts.push(f.propertyType);
+  if (f.condominium) parts.push(`no ${f.condominium}`);
+  else if (f.condominiumGroup) parts.push(`em ${f.condominiumGroup}`);
+  if (f.minBedrooms) parts.push(`${f.minBedrooms}+ suítes`);
+  if (f.maxPrice) parts.push(`até ${fmtBRL(f.maxPrice)}`);
+  if (f.minPrice) parts.push(`acima de ${fmtBRL(f.minPrice)}`);
+  return parts.join(", ");
+};
+
+const formatPriceCompact = (n: number) => {
+  if (n >= 1_000_000) return `R$ ${(n / 1_000_000).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} mi`;
+  if (n >= 1_000) return `R$ ${Math.round(n / 1_000)} mil`;
+  return fmtBRL(n);
+};
+
+// =====================================================================
+// Conversation handler v2
+// =====================================================================
+const handleConverseV2 = async (sb: SB, body: any) => {
   const message = String(body.message ?? "").trim();
-  const current: PropertySearchFilters = body.currentFilters ?? { highlights: [] };
-  const history = Array.isArray(body.history) ? body.history : [];
+  const state = hydrateState(body.currentState ?? { filters: body.currentFilters ?? { highlights: [] } });
+  const selectedOption: OptionChip | undefined = body.selectedOption;
 
-  // 1) Code shortcut
-  const code = extractCode(message);
-  if (code) {
-    const { data } = await sb
-      .from("properties")
-      .select(PROP_SELECT)
-      .ilike("code", code)
-      .eq("status", "ativo")
-      .limit(1);
-    if (data && data.length > 0) {
-      const p = data[0] as any;
-      const result: PropertyResult = {
-        id: p.id, code: p.code, title: p.title, condominium: p.condominium,
-        neighborhood: p.neighborhood, city: p.city, price: p.price,
-        rental_price: p.rental_price, transaction_type: p.transaction_type,
-        bedrooms: p.bedrooms, bathrooms: p.bathrooms, parking_spots: p.parking_spots,
-        area_total: p.area_total, photo: (p.photos && p.photos[0]) || null,
-        relevance_reason: `Código exato ${p.code}`,
-      };
+  // 1) Apply structured chip first
+  applySelectedOption(state, selectedOption);
+
+  // 2) Detect intent
+  let intent = detectIntent(message, state);
+
+  // Code shortcut overrides everything
+  if (intent === "show_property") {
+    const code = extractCode(message)!;
+    const prop = await getPropertyByCode(sb, code);
+    if (prop) {
+      state.filters.code = prop.code;
+      state.lastIntent = intent;
+      return buildPropertyResponse(prop, state);
+    }
+    return {
+      assistantMessage: `Não localizei o código **${code}** no estoque ativo. Quer me contar o que procura?`,
+      responseType: "text" as const,
+      parsedFilters: state.filters,
+      updatedState: state,
+      suggestedOptions: defaultStartChips(),
+      nextAction: "ask" as const,
+    };
+  }
+
+  if (intent === "greeting") {
+    return {
+      assistantMessage: "Olá! Como posso te ajudar a encontrar o imóvel ideal em Alphaville/Tamboré hoje?",
+      responseType: "text" as const,
+      parsedFilters: state.filters,
+      updatedState: state,
+      suggestedOptions: defaultStartChips(),
+      nextAction: "ask" as const,
+    };
+  }
+
+  // 3) Extract filters when intent allows
+  if (intent === "new_search" || intent === "update_filter" || intent === "broaden_search" || intent === "ask_availability" || intent === "ask_no_results_reason" || intent === "ask_condominium_breakdown") {
+    const det: PropertySearchFilters = {};
+    const price = parsePrice(message);
+    if (price.maxPrice) det.maxPrice = price.maxPrice;
+    if (price.minPrice) det.minPrice = price.minPrice;
+
+    if (price.ambiguousValue) {
       return {
-        assistantMessage: `Encontrei o imóvel **${p.code}**${p.condominium ? ` no ${p.condominium}` : ""}. Quer ver os detalhes?`,
-        parsedFilters: { ...current, code: p.code },
+        assistantMessage: `Quando você diz **${price.ambiguousValue}**, quer dizer R$ ${price.ambiguousValue} mil ou R$ ${price.ambiguousValue} milhões?`,
+        responseType: "clarification" as const,
+        parsedFilters: state.filters,
+        updatedState: state,
         suggestedOptions: [
-          { label: "Ver detalhes", value: "view", kind: "navigate" },
-          { label: "Nova busca", value: "reset", kind: "reset" },
+          { label: `R$ ${price.ambiguousValue} mil`, value: String(price.ambiguousValue * 1000), kind: "action", action: "set_max_price", payload: { maxPrice: price.ambiguousValue * 1000 } },
+          { label: `R$ ${price.ambiguousValue} milhões`, value: String(price.ambiguousValue * 1_000_000), kind: "action", action: "set_max_price", payload: { maxPrice: price.ambiguousValue * 1_000_000 } },
         ],
-        matchCount: 1,
-        showResults: true,
-        resultsPreview: [result],
-        nextAction: "show",
+        clarificationType: "price_unit",
+        nextAction: "ask" as const,
       };
     }
-    return {
-      assistantMessage: `Não localizei o código **${code}** no nosso estoque ativo. Quer me contar o que procura?`,
-      parsedFilters: current,
-      suggestedOptions: defaultStartChips(),
-      nextAction: "ask",
-    };
-  }
 
-  // 2) Deterministic parsing (price, transaction, property type, condo)
-  const det: PropertySearchFilters = {};
-  const priceParse = parsePrice(message);
-  if (priceParse.minPrice) det.minPrice = priceParse.minPrice;
-  if (priceParse.maxPrice) det.maxPrice = priceParse.maxPrice;
+    const tx = parseTransaction(message);
+    if (tx) det.transactionType = tx;
+    const pt = parsePropertyType(message);
+    if (pt) det.propertyType = pt;
+    const beds = parseBedrooms(message);
+    if (beds) det.minBedrooms = beds;
+    const hls = parseHighlights(message);
+    if (hls.length) det.highlights = hls;
 
-  const tx = parseTransaction(message);
-  if (tx) det.transactionType = tx;
-  const pt = parsePropertyType(message);
-  if (pt) det.propertyType = pt;
-
-  const allCondos = await fetchDistinctCondos(sb);
-  const condoNum = findCondoNumber(message);
-  if (condoNum) {
-    const resolved = resolveCondoByNumber(allCondos, condoNum.group, condoNum.number);
-    if (resolved) det.condominium = resolved;
-  } else {
-    const group = findCondoGroup(message);
-    if (group) {
-      const groupLabel = group === "tambore" ? "Tamboré" : group.charAt(0).toUpperCase() + group.slice(1);
-      det.condominiumGroup = groupLabel;
+    const condoNum = findCondoNumber(message);
+    if (condoNum) {
+      const resolved = await resolveCondoByNumber(sb, condoNum.group, condoNum.number);
+      if (resolved) {
+        det.condominium = resolved;
+        det.condominiumGroup = null;
+      } else {
+        const groupLabel = condoNum.group === "tambore" ? "Tamboré" : condoNum.group;
+        det.condominiumGroup = `${groupLabel.charAt(0).toUpperCase()}${groupLabel.slice(1)} ${condoNum.number}`;
+      }
+    } else {
+      const group = findCondoGroup(message);
+      if (group && !state.filters.condominium) {
+        det.condominiumGroup = group === "tambore" ? "Tamboré" : group.charAt(0).toUpperCase() + group.slice(1);
+      }
     }
+
+    state.filters = mergeFilters(state.filters, det);
   }
 
-  // Ambiguous price (e.g. "até 900")
-  if (priceParse.ambiguousValue) {
-    return {
-      assistantMessage: `Quando você diz **${priceParse.ambiguousValue}**, quer dizer R$ ${priceParse.ambiguousValue} mil ou R$ ${priceParse.ambiguousValue} milhões?`,
-      parsedFilters: mergeFilters(current, det),
-      suggestedOptions: [
-        { label: `R$ ${priceParse.ambiguousValue} mil`, value: String(priceParse.ambiguousValue * 1000), kind: "price_max" },
-        { label: `R$ ${priceParse.ambiguousValue} milhões`, value: String(priceParse.ambiguousValue * 1_000_000), kind: "price_max" },
-      ],
-      clarificationType: "price_unit",
-      nextAction: "ask",
-    };
-  }
-
-  // 3) LLM enrichment
-  const llmResult = await callLLM(message, mergeFilters(current, det), history, allCondos);
-  const llm = llmResult.data;
-  let merged = mergeFilters(current, det);
-  let assistantMessage = "";
-  let suggestedOptions: OptionChip[] = defaultStartChips();
-  let nextAction: "ask" | "confirm" | "show" = "ask";
-  let clarificationType: string | null = null;
-
-  if (llm) {
-    if (llm.parsedFilters) merged = mergeFilters(merged, llm.parsedFilters as PropertySearchFilters);
-    if (typeof llm.assistantMessage === "string" && llm.assistantMessage.trim()) {
-      assistantMessage = llm.assistantMessage.trim();
-    }
-    if (Array.isArray(llm.suggestedOptions) && llm.suggestedOptions.length) {
-      suggestedOptions = llm.suggestedOptions;
-    }
-    if (llm.nextAction) nextAction = llm.nextAction;
-    if (llm.clarificationType) clarificationType = llm.clarificationType;
-  } else if (llmResult.status === "credits_exhausted") {
-    return {
-      assistantMessage:
-        "Estou sem créditos de IA no momento. Você pode usar a **busca tradicional** pelo botão ao lado, ou tentar novamente em alguns minutos.",
-      parsedFilters: merged,
-      suggestedOptions: defaultStartChips(),
-      nextAction: "ask",
-    };
-  } else if (llmResult.status === "rate_limited") {
-    return {
-      assistantMessage:
-        "Muitas pessoas conversando comigo agora. Pode tentar em alguns segundos? Enquanto isso, me conta o que procura.",
-      parsedFilters: merged,
-      suggestedOptions: defaultStartChips(),
-      nextAction: "ask",
-    };
-  }
-
-
-  // 4) Resolve condominium ambiguity (e.g. "Tamboré" sem número)
-  if (!merged.condominium && merged.condominiumGroup) {
-    const options = findCondosByGroup(allCondos, merged.condominiumGroup);
-    if (options.length > 1) {
+  // 4) Ambiguous condo group → ask
+  if (!state.filters.condominium && state.filters.condominiumGroup) {
+    const opts = await findCondosByGroup(sb, state.filters.condominiumGroup);
+    if (opts.length > 1) {
+      state.lastIntent = intent;
       return {
-        assistantMessage: `Existem várias opções em **${merged.condominiumGroup}**. Tem alguma preferência?`,
-        parsedFilters: merged,
+        assistantMessage: `Existem várias opções em **${state.filters.condominiumGroup}**. Tem alguma preferência?`,
+        responseType: "clarification" as const,
+        parsedFilters: state.filters,
+        updatedState: state,
         suggestedOptions: [
-          ...options.slice(0, 6).map((c) => ({ label: c, value: c, kind: "condominium" })),
-          { label: "Me mostre opções", value: "all", kind: "condominium_any" },
+          ...opts.slice(0, 6).map((c) => ({
+            label: c,
+            value: c,
+            kind: "condominium",
+            action: "set_condominium",
+            payload: { condominium: c },
+          } as OptionChip)),
+          { label: "Me mostre opções", value: "all", kind: "action", action: "show_group_results" } as OptionChip,
         ],
         clarificationType: "condominium_number",
-        nextAction: "ask",
+        nextAction: "ask" as const,
       };
     }
-    if (options.length === 1) merged.condominium = options[0];
+    if (opts.length === 1) state.filters.condominium = opts[0];
   }
 
-  // 5) Count and decide
-  const hasAnyFilter = Object.entries(merged).some(([k, v]) => {
+  // 5) Decide based on intent + data
+  const hasFilter = Object.entries(state.filters).some(([k, v]) => {
     if (k === "highlights") return Array.isArray(v) && (v as string[]).length > 0;
     return v !== null && v !== undefined && v !== "";
   });
 
-  let matchCount: number | undefined;
-  if (hasAnyFilter) matchCount = await countMatches(sb, merged);
-
-  if (matchCount === 0) {
+  if (!hasFilter && (intent === "small_talk" || intent === "new_search")) {
     return {
-      assistantMessage: `Com esse filtro encontrei poucas opções. Quer que eu amplie o valor, considere apartamentos ou veja condomínios parecidos?`,
-      parsedFilters: merged,
-      suggestedOptions: [
-        { label: "Ampliar preço", value: "broaden_price", kind: "refine" },
-        { label: "Outros condomínios", value: "any_condo", kind: "refine" },
-        { label: "Considerar apartamentos", value: "apartamento", kind: "propertyType" },
-      ],
-      matchCount,
-      clarificationType: "broaden",
-      nextAction: "ask",
+      assistantMessage: "Posso te ajudar! Me conta: você quer **comprar** ou **alugar**? Tem algum condomínio ou faixa de preço em mente?",
+      responseType: "text" as const,
+      parsedFilters: state.filters,
+      updatedState: state,
+      suggestedOptions: defaultStartChips(),
+      nextAction: "ask" as const,
     };
   }
 
-  if (nextAction === "show" && matchCount && matchCount > 0 && matchCount <= 60) {
-    const preview = await fetchTopMatches(sb, merged, 4);
+  const matchCount = hasFilter ? await countMatches(sb, state.filters) : 0;
+  state.lastMatchCount = matchCount;
+  state.lastIntent = intent;
+
+  // 5a) Show results explicitly
+  if (intent === "show_results" || intent === "broaden_search" || intent === "update_filter" || intent === "new_search" || intent === "ask_availability") {
+    if (matchCount === 0) {
+      return await buildNoResultsResponse(sb, state, intent);
+    }
+    if (matchCount > 60) {
+      return buildNarrowDownResponse(state, matchCount);
+    }
+    const preview = await fetchTopMatches(sb, state.filters, 4);
+    return buildResultsResponse(state, matchCount, preview);
+  }
+
+  if (intent === "ask_condominium_breakdown") {
+    const breakdown = await getCondominiumBreakdown(sb, state.filters, state.filters.condominiumGroup ?? null);
     return {
-      assistantMessage: `Encontrei **${matchCount}** ${matchCount === 1 ? "imóvel" : "imóveis"} que combinam com você. Quer ver todos ou refinar mais?`,
-      parsedFilters: merged,
-      suggestedOptions: [
-        { label: "Ver todos os resultados", value: "show_all", kind: "navigate" },
-        { label: "Refinar busca", value: "refine", kind: "refine" },
-      ],
+      assistantMessage: breakdown.length
+        ? `Veja a disponibilidade por condomínio (${summarizeFilters(state.filters) || "sem filtros adicionais"}):`
+        : "Não encontrei condomínios com esses filtros. Posso ampliar a busca?",
+      responseType: "condominium_breakdown" as const,
+      parsedFilters: state.filters,
+      updatedState: state,
+      breakdown,
+      suggestedOptions: breakdown.slice(0, 4).map((b) => ({
+        label: `${b.condominium} (${b.count})`,
+        value: b.condominium,
+        kind: "condominium",
+        action: "set_condominium",
+        payload: { condominium: b.condominium },
+      })),
       matchCount,
-      showResults: true,
-      resultsPreview: preview,
-      nextAction: "show",
+      nextAction: "ask" as const,
     };
   }
 
-  if (matchCount && matchCount > 60) {
-    return {
-      assistantMessage: `Encontrei cerca de **${matchCount}** imóveis. Para te mostrar opções mais certeiras, prefere filtrar por condomínio, metragem, suítes ou estilo do imóvel?`,
-      parsedFilters: merged,
-      suggestedOptions: [
-        { label: "Escolher condomínio", value: "condo", kind: "refine" },
-        { label: "Definir metragem", value: "area", kind: "refine" },
-        { label: "Mais suítes", value: "bedrooms", kind: "refine" },
-        { label: "Piscina/Gourmet", value: "piscina,gourmet", kind: "highlight" },
-        { label: "Ver resultados agora", value: "show_all", kind: "navigate" },
-      ],
-      matchCount,
-      clarificationType: "narrow",
-      nextAction: "ask",
-    };
+  if (intent === "ask_no_results_reason") {
+    if (matchCount > 0) {
+      const preview = await fetchTopMatches(sb, state.filters, 4);
+      return {
+        ...buildResultsResponse(state, matchCount, preview),
+        assistantMessage: `Sim! Encontrei **${matchCount}** ${matchCount === 1 ? "imóvel" : "imóveis"} com ${summarizeFilters(state.filters) || "esses filtros"}.`,
+      };
+    }
+    return await buildNoResultsResponse(sb, state, intent);
   }
 
-  // Deterministic fallback message if LLM didn't produce one
-  if (!assistantMessage) {
-    const parts: string[] = [];
-    if (merged.transactionType) parts.push(merged.transactionType === "venda" ? "para comprar" : "para alugar");
-    if (merged.propertyType) parts.push(merged.propertyType);
-    if (merged.condominium) parts.push(`no ${merged.condominium}`);
-    else if (merged.condominiumGroup) parts.push(`em ${merged.condominiumGroup}`);
-    if (merged.maxPrice) parts.push(`até R$ ${(merged.maxPrice / 1_000_000).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} mi`);
-    const summary = parts.length ? `Entendi: ${parts.join(" ")}. ` : "";
-    const missing: string[] = [];
-    if (!merged.transactionType) missing.push("se é compra ou locação");
-    if (!merged.condominium && !merged.condominiumGroup) missing.push("um condomínio ou região");
-    if (!merged.maxPrice && !merged.minPrice) missing.push("a faixa de preço");
-    assistantMessage = summary + (missing.length
-      ? `Pode me dizer ${missing.slice(0, 2).join(" e ")}?`
-      : "Quer que eu mostre as opções ou prefere refinar mais?");
-  }
-
+  // Default: summarize filters and ask next step
   return {
-    assistantMessage,
-    parsedFilters: merged,
-    suggestedOptions,
+    assistantMessage: `Entendi: ${summarizeFilters(state.filters) || "vou te ajudar"}. ${matchCount > 0 ? `Encontrei **${matchCount}** ${matchCount === 1 ? "imóvel" : "imóveis"}.` : ""} Quer ver os resultados ou refinar mais?`,
+    responseType: "text" as const,
+    parsedFilters: state.filters,
+    updatedState: state,
+    suggestedOptions: [
+      { label: "Ver resultados", value: "show_all", kind: "action", action: "show_results" },
+      { label: "Refinar", value: "refine", kind: "refine" },
+    ],
     matchCount,
-    clarificationType,
-    nextAction,
+    links: matchCount > 0 ? [{ label: "Abrir busca completa", url: buildSearchUrl(state.filters), type: "search" as const }] : undefined,
+    nextAction: "ask" as const,
   };
 };
 
-const defaultStartChips = (): OptionChip[] => [
-  { label: "Comprar", value: "venda", kind: "transaction" },
-  { label: "Alugar", value: "locacao", kind: "transaction" },
-  { label: "Tenho um código", value: "code", kind: "code" },
-];
+const buildPropertyResponse = (prop: PropertyResult, state: ConversationState) => {
+  const rental = prop.transaction_type === "locacao" || prop.transaction_type === "aluguel";
+  const price = rental ? prop.rental_price : prop.price;
+  const priceText = price ? `${fmtBRL(price)}${rental ? "/mês" : ""}` : "Sob consulta";
+  return {
+    assistantMessage: `Encontrei o imóvel **${prop.code}**${prop.condominium ? ` no ${prop.condominium}` : ""} por ${priceText}. Quer ver os detalhes?`,
+    responseType: "property_detail" as const,
+    parsedFilters: state.filters,
+    updatedState: state,
+    matchCount: 1,
+    resultsPreview: [prop],
+    links: [{ label: "Ver detalhes do imóvel", url: `/imovel/${prop.id}`, type: "property" as const }],
+    suggestedOptions: [
+      { label: "Ver detalhes", value: "view", kind: "navigate", url: `/imovel/${prop.id}` },
+      { label: "Nova busca", value: "reset", kind: "reset" },
+    ],
+    nextAction: "show" as const,
+  };
+};
+
+const buildResultsResponse = (state: ConversationState, matchCount: number, preview: PropertyResult[]) => ({
+  assistantMessage: `Encontrei **${matchCount}** ${matchCount === 1 ? "imóvel" : "imóveis"} com ${summarizeFilters(state.filters) || "esses filtros"}. ${matchCount === 1 ? "Veja abaixo:" : "Aqui vão alguns destaques:"}`,
+  responseType: "results_preview" as const,
+  parsedFilters: state.filters,
+  updatedState: state,
+  matchCount,
+  resultsPreview: preview,
+  links: [{ label: matchCount > preview.length ? `Ver todos os ${matchCount} resultados` : "Abrir busca completa", url: buildSearchUrl(state.filters), type: "search" as const }],
+  suggestedOptions: [
+    { label: "Ver todos os resultados", value: "show_all", kind: "navigate", url: buildSearchUrl(state.filters) },
+    { label: "Refinar busca", value: "refine", kind: "refine" },
+  ],
+  nextAction: "show" as const,
+});
+
+const buildNarrowDownResponse = (state: ConversationState, matchCount: number) => ({
+  assistantMessage: `Encontrei cerca de **${matchCount}** imóveis com ${summarizeFilters(state.filters)}. Para mostrar opções mais certeiras, prefere filtrar por condomínio, metragem, suítes ou estilo?`,
+  responseType: "text" as const,
+  parsedFilters: state.filters,
+  updatedState: state,
+  suggestedOptions: [
+    { label: "Escolher condomínio", value: "condo", kind: "refine" },
+    { label: "Definir metragem", value: "area", kind: "refine" },
+    { label: "Mais suítes", value: "bedrooms", kind: "refine" },
+    { label: "Piscina/Gourmet", value: "piscina,gourmet", kind: "highlight", action: "highlight" },
+    { label: "Ver resultados agora", value: "show_all", kind: "navigate", url: buildSearchUrl(state.filters) },
+  ],
+  matchCount,
+  clarificationType: "narrow",
+  nextAction: "ask" as const,
+});
+
+const buildNoResultsResponse = async (sb: SB, state: ConversationState, intent: Intent) => {
+  const f = state.filters;
+  // Build alternatives by relaxing one filter at a time
+  const alternatives: ConversationLink[] = [];
+  const altOptions: OptionChip[] = [];
+
+  // 1) Try same condo without price
+  if (f.condominium && f.maxPrice) {
+    const noPrice = { ...f, maxPrice: null, minPrice: null };
+    const c = await countMatches(sb, noPrice);
+    if (c > 0) {
+      alternatives.push({ label: `${c} imóve${c === 1 ? "l" : "is"} no ${f.condominium} sem limite de preço`, url: buildSearchUrl(noPrice), type: "search" });
+      altOptions.push({ label: `Remover preço (${c})`, value: "rm_price", kind: "action", action: "set_max_price", payload: { maxPrice: null } });
+    }
+  }
+  // 2) Try sibling condos in the same group (e.g. all Tamboré)
+  if (f.condominium) {
+    const groupHint = norm(f.condominium).split(" ")[0]; // "tambore"
+    if (groupHint) {
+      const breakdown = await getCondominiumBreakdown(sb, { ...f, condominium: null }, groupHint);
+      const others = breakdown.filter((b) => b.condominium !== f.condominium).slice(0, 4);
+      for (const o of others) {
+        alternatives.push({ label: `${o.condominium} — ${o.count} imóve${o.count === 1 ? "l" : "is"}`, url: o.url!, type: "search" });
+        altOptions.push({ label: o.condominium, value: o.condominium, kind: "condominium", action: "set_condominium", payload: { condominium: o.condominium } });
+      }
+    }
+  }
+  // 3) Try apartments if user asked for casa
+  if (f.propertyType === "casa") {
+    const apt = { ...f, propertyType: "apartamento" };
+    const c = await countMatches(sb, apt);
+    if (c > 0) {
+      alternatives.push({ label: `${c} apartamento${c === 1 ? "" : "s"} com filtros parecidos`, url: buildSearchUrl(apt), type: "search" });
+      altOptions.push({ label: `Considerar apartamentos (${c})`, value: "apartamento", kind: "propertyType", action: "set_property_type" });
+    }
+  }
+  // 4) Try wider price
+  if (f.maxPrice) {
+    const wider = { ...f, maxPrice: Math.round(f.maxPrice * 1.5) };
+    const c = await countMatches(sb, wider);
+    if (c > 0) {
+      altOptions.push({
+        label: `Ampliar até ${formatPriceCompact(wider.maxPrice!)} (${c})`,
+        value: String(wider.maxPrice),
+        kind: "action",
+        action: "broaden_price",
+        payload: { maxPrice: wider.maxPrice },
+      });
+    }
+  }
+
+  const filterSummary = summarizeFilters(f) || "sem filtros";
+  return {
+    assistantMessage: alternatives.length
+      ? `Não encontrei imóveis com **${filterSummary}** no momento. Algumas alternativas:`
+      : `Não encontrei imóveis com **${filterSummary}** no momento. Quer ajustar algum filtro?`,
+    responseType: "no_results_explanation" as const,
+    parsedFilters: f,
+    updatedState: state,
+    matchCount: 0,
+    links: alternatives,
+    suggestedOptions: altOptions.length ? altOptions : [
+      { label: "Ampliar preço", value: "broaden_price", kind: "action", action: "broaden_price" },
+      { label: "Outros condomínios", value: "any_condo", kind: "action", action: "clear_condominium" },
+      { label: "Considerar apartamentos", value: "apartamento", kind: "propertyType", action: "set_property_type" },
+    ],
+    clarificationType: "broaden",
+    nextAction: "ask" as const,
+  };
+};
 
 // =====================================================================
-// Legacy text search (kept for backward compatibility)
+// Backward-compat: v1 wrapper
 // =====================================================================
-const legacySearch = async (sb: ReturnType<typeof createClient>, query: string) => {
-  // Use the same filter pipeline by treating query as a free text → very small heuristic
+const handleConverse = async (sb: SB, body: any) => {
+  return await handleConverseV2(sb, {
+    ...body,
+    currentState: { filters: body.currentFilters ?? { highlights: [] } },
+  });
+};
+
+// =====================================================================
+// Legacy text search
+// =====================================================================
+const legacySearch = async (sb: SB, query: string) => {
   const code = extractCode(query);
   const f: PropertySearchFilters = {};
   if (code) f.code = code;
@@ -678,10 +979,9 @@ const legacySearch = async (sb: ReturnType<typeof createClient>, query: string) 
   if (/\b(alug|loca)/i.test(query)) f.transactionType = "locacao";
   else if (/\b(vend|comprar)/i.test(query)) f.transactionType = "venda";
 
-  const allCondos = await fetchDistinctCondos(sb);
   const condoNum = findCondoNumber(query);
   if (condoNum) {
-    const resolved = resolveCondoByNumber(allCondos, condoNum.group, condoNum.number);
+    const resolved = await resolveCondoByNumber(sb, condoNum.group, condoNum.number);
     if (resolved) f.condominium = resolved;
   }
   const results = await fetchTopMatches(sb, f, 24);
@@ -701,11 +1001,14 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
+    if (body?.action === "converse_v2") {
+      const result = await handleConverseV2(supabase, body);
+      return new Response(JSON.stringify(result), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     if (body?.action === "converse") {
       const result = await handleConverse(supabase, body);
-      return new Response(JSON.stringify(result), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(JSON.stringify(result), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     if (body?.action === "search") {
@@ -717,17 +1020,14 @@ serve(async (req) => {
       });
     }
 
-    // Legacy
     const q = typeof body?.query === "string" ? body.query : "";
     const out = await legacySearch(supabase, q);
-    return new Response(JSON.stringify(out), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(JSON.stringify(out), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     console.error("ai-property-search error:", e);
-    return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
