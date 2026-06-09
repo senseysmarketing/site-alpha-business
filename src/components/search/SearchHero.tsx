@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Search, Mic, Loader2 } from "lucide-react";
+import { Search } from "lucide-react";
 import gsap from "gsap";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import FilterChips, { type ParsedFilters } from "@/components/search/FilterChips";
-import VoiceWaves from "@/components/search/VoiceWaves";
+import type { ParsedFilters } from "@/components/search/FilterChips";
 import { useCondoList } from "@/hooks/useCondoList";
 import { usePriceBounds, buildPriceOptions } from "@/hooks/usePriceBounds";
+import AiSearchChatButton from "@/components/search/ai-chat/AiSearchChatButton";
+import AiSearchChatModal from "@/components/search/ai-chat/AiSearchChatModal";
 
 interface SearchResult {
   id: string;
@@ -53,13 +54,11 @@ const selectClass =
 const SearchHero = ({ initialQuery, onResults, onLoading, onParsedFilters }: SearchHeroProps) => {
   const { condos: allCondos } = useCondoList();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [query, setQuery] = useState(initialQuery);
-  const [listening, setListening] = useState(false);
+  const [query] = useState(initialQuery);
   const [searching, setSearching] = useState(false);
-  const [parsedFilters, setParsedFilters] = useState<ParsedFilters | null>(null);
   const [mode, setMode] = useState<"cognitive" | "traditional">("cognitive");
+  const [chatOpen, setChatOpen] = useState(false);
   const heroImageRef = useRef<HTMLDivElement>(null);
-  const recognitionRef = useRef<any>(null);
 
   // Traditional filters state — initialized from URL
   const [filterType, setFilterType] = useState("");
