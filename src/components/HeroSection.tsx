@@ -261,8 +261,8 @@ const HeroSection = () => {
           </button>
 
           {/* Desktop controls — progress bars + play/pause */}
-          <div className="hidden md:flex absolute bottom-24 md:bottom-28 left-1/2 -translate-x-1/2 z-20 items-center gap-4">
-            <div className="flex gap-2">
+          <div className="hidden md:flex absolute bottom-14 md:bottom-16 left-1/2 -translate-x-1/2 z-20 items-center gap-3">
+            <div className="flex gap-1.5">
               {slides.map((_, i) => {
                 const fill = i < activeIndex ? 100 : i === activeIndex ? progress : 0;
                 return (
@@ -270,7 +270,7 @@ const HeroSection = () => {
                     key={i}
                     onClick={() => goTo(i)}
                     aria-label={`Ir para slide ${i + 1}`}
-                    className="relative w-20 h-[2px] bg-white/25 rounded-full overflow-hidden"
+                    className="relative w-14 h-[2px] bg-white/25 rounded-full overflow-hidden"
                   >
                     <div
                       className="absolute inset-y-0 left-0 bg-white rounded-full"
@@ -283,14 +283,14 @@ const HeroSection = () => {
             <button
               onClick={() => setIsPausedManual((p) => !p)}
               aria-label={isPausedManual ? "Retomar" : "Pausar"}
-              className="w-9 h-9 flex items-center justify-center text-white bg-white/10 backdrop-blur-md border border-white/20 rounded-full hover:bg-white/20 transition-colors"
+              className="w-7 h-7 flex items-center justify-center text-white bg-white/10 backdrop-blur-md border border-white/20 rounded-full hover:bg-white/20 transition-colors"
             >
-              {isPaused ? <Play size={14} strokeWidth={1.25} /> : <Pause size={14} strokeWidth={1.25} />}
+              {isPaused ? <Play size={11} strokeWidth={1.25} /> : <Pause size={11} strokeWidth={1.25} />}
             </button>
           </div>
 
           {/* Mobile — single ultra-thin progress line */}
-          <div className="md:hidden absolute bottom-32 left-6 right-6 z-20 h-px bg-white/20 rounded-full">
+          <div className="md:hidden absolute bottom-20 left-6 right-6 z-20 h-px bg-white/20 rounded-full">
             <div
               className="h-full bg-white rounded-full"
               style={{
