@@ -153,6 +153,7 @@ const SearchHero = ({ initialQuery, onResults, onLoading, onParsedFilters }: Sea
                   Cognitivo
                 </button>
               </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 <select value={filterTransaction} onChange={(e) => setFilterTransaction(e.target.value)} className={selectClass}>
                   <option value="">Transação</option>
                   <option value="venda">Venda</option>
