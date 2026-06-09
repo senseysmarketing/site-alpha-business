@@ -74,7 +74,7 @@ const InstitutionalSection = () => {
               {displayPosts.map((post, i) => (
                 <CarouselItem
                   key={i}
-                  className="pl-4 basis-[80%] sm:basis-1/2 md:basis-1/3"
+                  className="pl-4 basis-[46%] sm:basis-1/2 md:basis-1/3 lg:basis-1/4"
                 >
                   <motion.a
                     href={post.url || fallbackUrl}
