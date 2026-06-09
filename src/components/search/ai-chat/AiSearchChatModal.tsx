@@ -7,6 +7,8 @@ import AiChatMessage from "./AiChatMessage";
 import AiChatOptionChips from "./AiChatOptionChips";
 import AiChatFiltersSummary from "./AiChatFiltersSummary";
 import AiChatResultsPreview from "./AiChatResultsPreview";
+import AiChatLinks from "./AiChatLinks";
+import AiChatBreakdown from "./AiChatBreakdown";
 import { useAiSearchChat } from "./useAiSearchChat";
 import { filtersToSearchParams, type OptionChip, type PropertySearchFilters } from "./types";
 
@@ -42,9 +44,12 @@ const AiSearchChatModal = ({ open, onOpenChange }: Props) => {
   };
 
   const handleOption = (opt: OptionChip) => {
-    if (opt.kind === "navigate" && (opt.value === "show_all" || opt.value === "view")) {
-      const qs = filtersToSearchParams(filters);
-      navigate(`/busca${qs ? `?${qs}` : ""}`);
+    if (opt.kind === "navigate") {
+      const url = opt.url ?? (() => {
+        const qs = filtersToSearchParams(filters);
+        return `/busca${qs ? `?${qs}` : ""}`;
+      })();
+      navigate(url);
       onOpenChange(false);
       return;
     }
@@ -52,7 +57,7 @@ const AiSearchChatModal = ({ open, onOpenChange }: Props) => {
       reset();
       return;
     }
-    void send(opt.label);
+    void send({ message: opt.label, selectedOption: opt });
   };
 
   const handleRemoveFilter = (key: keyof PropertySearchFilters) => {
