@@ -52,18 +52,25 @@ export function useAiSearchChat() {
           history: historyForApi,
         },
       });
-      if (error) throw error;
-      const r = data as ConversationResponse;
-      if (r?.parsedFilters) setFilters(r.parsedFilters);
+      if (error) {
+        console.error("ai-property-search invoke error:", error, "data:", data);
+        throw error;
+      }
+      const r = (data ?? {}) as Partial<ConversationResponse> & { error?: string };
+      if (r.error) console.error("ai-property-search error payload:", r.error);
+      if (r.parsedFilters) setFilters(r.parsedFilters);
+      const fallback = r.error
+        ? "Tive um problema técnico ao processar sua mensagem. Pode tentar de novo?"
+        : "Pode me contar um pouco mais? Ex: tipo do imóvel, condomínio ou faixa de preço.";
       setMessages((m) => [
         ...m,
         {
           id: uid(),
           role: "assistant",
-          content: r?.assistantMessage ?? "Pode reformular?",
-          options: r?.suggestedOptions,
-          preview: r?.showResults ? r?.resultsPreview : undefined,
-          matchCount: r?.matchCount,
+          content: r.assistantMessage?.trim() ? r.assistantMessage : fallback,
+          options: r.suggestedOptions,
+          preview: r.showResults ? r.resultsPreview : undefined,
+          matchCount: r.matchCount,
         },
       ]);
     } catch (e) {
