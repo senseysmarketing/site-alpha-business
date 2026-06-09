@@ -108,8 +108,8 @@ const InstitutionalSection = () => {
             <CarouselNext className="hidden md:flex -right-4" />
           </Carousel>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[0, 1, 2].map((i) => (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {[0, 1, 2, 3].map((i) => (
               <motion.div
                 key={i}
                 className="aspect-[4/5] bg-gradient-to-br from-muted to-card rounded-lg"
