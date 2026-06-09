@@ -149,6 +149,35 @@ const findCondoNumber = (message: string): { group: string; number: number } | n
   return null;
 };
 
+// Detect group reference without a number (e.g. "no tamboré", "em alphaville")
+const findCondoGroup = (message: string): string | null => {
+  const n = norm(message);
+  const m = n.match(/\b(tambore|alphaville|residencial)\b/);
+  return m ? m[1] : null;
+};
+
+// Deterministic intent extraction (transaction + property type)
+const parseTransaction = (message: string): "venda" | "locacao" | null => {
+  const n = norm(message);
+  if (/\b(alug|loca|locacao|arrend)/.test(n)) return "locacao";
+  if (/\b(comprar|comprando|compra|vender|venda|adquirir)/.test(n)) return "venda";
+  return null;
+};
+
+const PROPERTY_TYPES: { re: RegExp; value: string }[] = [
+  { re: /\b(apartamento|apto|aptos|apartamentos)\b/i, value: "apartamento" },
+  { re: /\b(cobertura|coberturas)\b/i, value: "cobertura" },
+  { re: /\b(sobrado|sobrados)\b/i, value: "sobrado" },
+  { re: /\b(terreno|terrenos|lote|lotes)\b/i, value: "terreno" },
+  { re: /\b(casa|casas)\b/i, value: "casa" },
+];
+
+const parsePropertyType = (message: string): string | null => {
+  for (const { re, value } of PROPERTY_TYPES) if (re.test(message)) return value;
+  return null;
+};
+
+
 // =====================================================================
 // Condo resolver
 // =====================================================================
