@@ -951,9 +951,23 @@ const handleConverseV2 = async (sb: SB, body: any) => {
     return await buildNoResultsResponse(sb, state, intent);
   }
 
-  // Default: summarize filters and ask next step
+  // Default: summarize filters and ask next step (varied microcopy to avoid loop)
+  const summary = summarizeFilters(state.filters);
+  const countTxt = matchCount > 0 ? `**${matchCount}** ${matchCount === 1 ? "imóvel" : "imóveis"}` : "";
+  const variants = matchCount > 0
+    ? [
+        `Atualizei os filtros — agora são ${countTxt}${summary ? ` (${summary})` : ""}. Quer ver ou seguir refinando?`,
+        `Pronto, ${countTxt} no radar${summary ? ` para ${summary}` : ""}. Posso mostrar ou afinar mais.`,
+        `Tenho ${countTxt} assim. Vamos abrir os resultados?`,
+      ]
+    : [
+        `Não achei nada com ${summary || "esses filtros"}. Quer ampliar a faixa ou trocar de tipo?`,
+        `Zero matches para ${summary || "esse perfil"}. Posso relaxar algum filtro?`,
+      ];
+  const variant = variants[(state.refineTurn ?? 0) % variants.length];
+  state.refineTurn = (state.refineTurn ?? 0) + 1;
   return {
-    assistantMessage: `Entendi: ${summarizeFilters(state.filters) || "vou te ajudar"}. ${matchCount > 0 ? `Encontrei **${matchCount}** ${matchCount === 1 ? "imóvel" : "imóveis"}.` : ""} Quer ver os resultados ou refinar mais?`,
+    assistantMessage: variant,
     responseType: "text" as const,
     parsedFilters: state.filters,
     updatedState: state,
@@ -966,6 +980,7 @@ const handleConverseV2 = async (sb: SB, body: any) => {
     nextAction: "ask" as const,
   };
 };
+
 
 const buildPropertyResponse = (prop: PropertyResult, state: ConversationState) => {
   const rental = prop.transaction_type === "locacao" || prop.transaction_type === "aluguel";
