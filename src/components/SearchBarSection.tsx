@@ -48,34 +48,29 @@ const SearchBarSection = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.9, duration: 0.7 }}
         >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-            <h3 className="text-display text-base md:text-xl font-light text-foreground whitespace-nowrap text-center sm:text-left">
-              Encontre seu imóvel com o <strong>Rafa IA</strong>
-            </h3>
-            <div className="flex items-center gap-1 bg-muted rounded-full p-1 w-full sm:w-auto">
-              <button
-                onClick={() => setMode("cognitive")}
-                className={`flex-1 sm:flex-none text-body text-[10px] tracking-[0.1em] uppercase px-4 py-1.5 rounded-full transition-all ${
-                  mode === "cognitive" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
-                }`}
-              >
-                Cognitivo
-              </button>
-              <button
-                onClick={() => setMode("traditional")}
-                className={`flex-1 sm:flex-none text-body text-[10px] tracking-[0.1em] uppercase px-4 py-1.5 rounded-full transition-all ${
-                  mode === "traditional" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
-                }`}
-              >
-                Tradicional
-              </button>
-            </div>
-          </div>
-
           {mode === "cognitive" ? (
-            <AiSearchChatButton onClick={() => setChatOpen(true)} variant="hero" />
+            <AiSearchChatButton
+              onClick={() => setChatOpen(true)}
+              variant="hero"
+              extraAction={
+                <button
+                  onClick={(e) => { e.stopPropagation(); setMode("traditional"); }}
+                  className="hidden sm:inline-flex text-body text-[10px] tracking-[0.1em] uppercase px-4 py-1.5 rounded-full bg-muted text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+                >
+                  Tradicional
+                </button>
+              }
+            />
           ) : (
             <div className="space-y-4">
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setMode("cognitive")}
+                  className="text-body text-[10px] tracking-[0.1em] uppercase px-4 py-1.5 rounded-full bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Cognitivo
+                </button>
+              </div>
               <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
                 <select value={filterTransaction} onChange={(e) => setFilterTransaction(e.target.value)} className={selectClass}>
                   <option value="">Transação</option>
