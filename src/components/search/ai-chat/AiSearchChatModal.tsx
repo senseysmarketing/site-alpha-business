@@ -122,8 +122,6 @@ const AiSearchChatModal = ({ open, onOpenChange }: Props) => {
               {m.role === "assistant" && m.preview && m.preview.length > 0 && (
                 <AiChatResultsPreview
                   results={m.preview}
-                  filters={filters}
-                  matchCount={m.matchCount}
                   onNavigate={() => onOpenChange(false)}
                 />
               )}
