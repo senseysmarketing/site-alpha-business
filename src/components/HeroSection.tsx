@@ -166,7 +166,7 @@ const HeroSection = () => {
         }}
       >
         <div
-          className="max-w-3xl"
+          className="max-w-xl lg:max-w-2xl xl:max-w-3xl"
           onMouseEnter={() => setIsHoveredContent(true)}
           onMouseLeave={() => setIsHoveredContent(false)}
         >
@@ -190,7 +190,7 @@ const HeroSection = () => {
               <h1
                 className="text-display font-normal text-white !leading-[1.15]"
                 style={{
-                  fontSize: "clamp(1.75rem, 4.2vw + 0.5rem, 3.75rem)",
+                  fontSize: "clamp(1.5rem, 2.2vw + 0.75rem, 3rem)",
                   lineHeight: 1.15,
                 }}
               >
@@ -199,7 +199,7 @@ const HeroSection = () => {
               {current.description && (
                 <p
                   className="mt-4 text-white/70 max-w-xl"
-                  style={{ fontSize: "clamp(0.875rem, 0.4vw + 0.75rem, 1rem)" }}
+                  style={{ fontSize: "clamp(0.8125rem, 0.3vw + 0.75rem, 0.95rem)" }}
                 >
                   {current.description}
                 </p>
