@@ -199,7 +199,7 @@ const HeroSection = () => {
               {current.description && (
                 <p
                   className="mt-4 text-white/70 max-w-xl"
-                  style={{ fontSize: "clamp(0.875rem, 0.4vw + 0.75rem, 1rem)" }}
+                  style={{ fontSize: "clamp(0.8125rem, 0.3vw + 0.75rem, 0.95rem)" }}
                 >
                   {current.description}
                 </p>
