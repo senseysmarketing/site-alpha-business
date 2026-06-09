@@ -647,8 +647,15 @@ const handleConverseV2 = async (sb: SB, body: any) => {
   // 1) Apply structured chip first
   applySelectedOption(state, selectedOption);
 
+  // 1b) Refine chips → respond contextually instead of falling through to default summary
+  if (selectedOption && (selectedOption.kind === "refine" || selectedOption.action === "refine")) {
+    const refineResp = await handleRefineChip(sb, state, selectedOption);
+    if (refineResp) return refineResp;
+  }
+
   // 2) Detect intent
   let intent = detectIntent(message, state);
+
 
   // Code shortcut overrides everything
   if (intent === "show_property") {
