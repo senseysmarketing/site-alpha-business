@@ -55,13 +55,6 @@ const AiChatResultsPreview = ({ results, filters, matchCount, onNavigate }: Prop
           );
         })}
       </div>
-      <Link
-        to={`/busca${qs ? `?${qs}` : ""}`}
-        onClick={onNavigate}
-        className="block w-full text-center bg-foreground text-background rounded-md py-2.5 text-body text-xs tracking-[0.1em] uppercase hover:opacity-90 transition-opacity"
-      >
-        Ver {matchCount && matchCount > results.length ? `todos os ${matchCount} resultados` : "resultados completos"}
-      </Link>
     </div>
   );
 };
