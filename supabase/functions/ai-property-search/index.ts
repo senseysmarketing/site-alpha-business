@@ -357,13 +357,21 @@ Responda SEMPRE em JSON estrito com este schema:
 }
 `.trim();
 
+interface LLMResult {
+  data?: any;
+  status?: "ok" | "rate_limited" | "credits_exhausted" | "no_key" | "error";
+}
+
 const callLLM = async (
   message: string,
   currentFilters: PropertySearchFilters,
   history: ConversationMessage[],
   condos: string[],
-): Promise<any | null> => {
-  if (!LOVABLE_API_KEY) return null;
+): Promise<LLMResult> => {
+  if (!LOVABLE_API_KEY) {
+    console.error("LOVABLE_API_KEY missing in ai-property-search");
+    return { status: "no_key" };
+  }
   try {
     const messages = [
       { role: "system", content: buildSystemPrompt(condos, currentFilters) },
@@ -383,18 +391,27 @@ const callLLM = async (
       }),
     });
     if (!res.ok) {
-      console.error("LLM error", res.status, await res.text());
-      return null;
+      const txt = await res.text();
+      console.error("LLM error", res.status, txt);
+      if (res.status === 429) return { status: "rate_limited" };
+      if (res.status === 402) return { status: "credits_exhausted" };
+      return { status: "error" };
     }
     const data = await res.json();
     const content = data?.choices?.[0]?.message?.content;
-    if (!content) return null;
-    return JSON.parse(content);
+    if (!content) return { status: "error" };
+    try {
+      return { data: JSON.parse(content), status: "ok" };
+    } catch (e) {
+      console.error("LLM JSON parse error", e, content);
+      return { status: "error" };
+    }
   } catch (e) {
     console.error("LLM exception", e);
-    return null;
+    return { status: "error" };
   }
 };
+
 
 // =====================================================================
 // Conversation pipeline
