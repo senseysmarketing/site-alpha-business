@@ -39,7 +39,9 @@ interface ConversationState {
   filters: PropertySearchFilters;
   lastIntent?: string;
   lastMatchCount?: number;
+  refineTurn?: number;
 }
+
 
 interface ConversationMessage {
   role: "user" | "assistant";
@@ -585,6 +587,11 @@ const applySelectedOption = (state: ConversationState, opt: OptionChip | undefin
       if (n) f.minBedrooms = n;
       break;
     }
+    case "set_min_area": {
+      const n = Number(opt.payload?.minArea ?? opt.value);
+      if (Number.isFinite(n) && n > 0) f.minArea = n;
+      break;
+    }
     case "highlight": {
       const tags = String(opt.value).split(",").map((s) => s.trim()).filter(Boolean);
       f.highlights = Array.from(new Set([...(f.highlights ?? []), ...tags]));
@@ -632,8 +639,126 @@ const formatPriceCompact = (n: number) => {
 };
 
 // =====================================================================
+// Refine chip handler — contextual responses so the chat doesn't loop
+// =====================================================================
+const REFINE_INTRO_POOL = [
+  "Beleza, vamos afinar.",
+  "Show, podemos refinar mais.",
+  "Perfeito, vou estreitar a busca.",
+  "Ok, bora deixar mais certeiro.",
+];
+const pickIntro = (state: ConversationState) => {
+  const n = (state.refineTurn ?? 0) % REFINE_INTRO_POOL.length;
+  state.refineTurn = (state.refineTurn ?? 0) + 1;
+  return REFINE_INTRO_POOL[n];
+};
+
+const handleRefineChip = async (sb: SB, state: ConversationState, opt: OptionChip) => {
+  const intro = pickIntro(state);
+  const v = opt.value;
+
+  // Escolher condomínio → real breakdown the user can tap
+  if (v === "condo") {
+    const breakdown = await getCondominiumBreakdown(
+      sb,
+      { ...state.filters, condominium: null },
+      state.filters.condominiumGroup ?? null,
+    );
+    if (!breakdown.length) {
+      return {
+        assistantMessage: `${intro} Não encontrei condomínios com esses filtros — quer ampliar a faixa de preço ou trocar o tipo de imóvel?`,
+        responseType: "text" as const,
+        parsedFilters: state.filters,
+        updatedState: state,
+        suggestedOptions: [
+          { label: "Ampliar preço", value: "broaden_price", kind: "action", action: "broaden_price" } as OptionChip,
+          { label: "Considerar apartamentos", value: "apartamento", kind: "propertyType", action: "set_property_type" } as OptionChip,
+        ],
+        nextAction: "ask" as const,
+      };
+    }
+    return {
+      assistantMessage: `${intro} Veja a disponibilidade por condomínio dentro do seu filtro. Toque em um para focar:`,
+      responseType: "condominium_breakdown" as const,
+      parsedFilters: state.filters,
+      updatedState: state,
+      breakdown,
+      suggestedOptions: [
+        ...breakdown.slice(0, 6).map((b) => ({
+          label: `${b.condominium} (${b.count})`,
+          value: b.condominium,
+          kind: "condominium",
+          action: "set_condominium",
+          payload: { condominium: b.condominium },
+        } as OptionChip)),
+        { label: "Qualquer condomínio", value: "any", kind: "action", action: "clear_condominium" } as OptionChip,
+      ],
+      nextAction: "ask" as const,
+    };
+  }
+
+  // Definir metragem → ask area with concrete chips
+  if (v === "area") {
+    return {
+      assistantMessage: `${intro} A partir de quantos m² faz sentido pra você?`,
+      responseType: "text" as const,
+      parsedFilters: state.filters,
+      updatedState: state,
+      suggestedOptions: [
+        { label: "300 m²+", value: "300", kind: "action", action: "set_min_area", payload: { minArea: 300 } } as OptionChip,
+        { label: "500 m²+", value: "500", kind: "action", action: "set_min_area", payload: { minArea: 500 } } as OptionChip,
+        { label: "800 m²+", value: "800", kind: "action", action: "set_min_area", payload: { minArea: 800 } } as OptionChip,
+        { label: "1.000 m²+", value: "1000", kind: "action", action: "set_min_area", payload: { minArea: 1000 } } as OptionChip,
+      ],
+      nextAction: "ask" as const,
+    };
+  }
+
+  // Mais suítes → ask bedrooms with concrete chips
+  if (v === "bedrooms") {
+    return {
+      assistantMessage: `${intro} Quantas suítes no mínimo?`,
+      responseType: "text" as const,
+      parsedFilters: state.filters,
+      updatedState: state,
+      suggestedOptions: [
+        { label: "3+", value: "3", kind: "action", action: "set_bedrooms" } as OptionChip,
+        { label: "4+", value: "4", kind: "action", action: "set_bedrooms" } as OptionChip,
+        { label: "5+", value: "5", kind: "action", action: "set_bedrooms" } as OptionChip,
+        { label: "6+", value: "6", kind: "action", action: "set_bedrooms" } as OptionChip,
+      ],
+      nextAction: "ask" as const,
+    };
+  }
+
+  // Generic "Refinar" / "Refinar busca" → show the refinement palette w/ fresh microcopy
+  if (v === "refine") {
+    const matchCount = await countMatches(sb, state.filters);
+    state.lastMatchCount = matchCount;
+    return {
+      assistantMessage: `${intro} ${matchCount > 0 ? `Temos **${matchCount}** ${matchCount === 1 ? "imóvel" : "imóveis"} no radar.` : ""} O que pesa mais pra você agora?`,
+      responseType: "text" as const,
+      parsedFilters: state.filters,
+      updatedState: state,
+      matchCount,
+      suggestedOptions: [
+        { label: "Escolher condomínio", value: "condo", kind: "refine" } as OptionChip,
+        { label: "Definir metragem", value: "area", kind: "refine" } as OptionChip,
+        { label: "Mais suítes", value: "bedrooms", kind: "refine" } as OptionChip,
+        { label: "Piscina/Gourmet", value: "piscina,gourmet", kind: "highlight", action: "highlight" } as OptionChip,
+        { label: "Ver resultados agora", value: "show_all", kind: "navigate", url: buildSearchUrl(state.filters) } as OptionChip,
+      ],
+      nextAction: "ask" as const,
+    };
+  }
+
+  return null;
+};
+
+// =====================================================================
 // Conversation handler v2
 // =====================================================================
+
 const handleConverseV2 = async (sb: SB, body: any) => {
   const message = String(body.message ?? "").trim();
   const state = hydrateState(body.currentState ?? { filters: body.currentFilters ?? { highlights: [] } });
@@ -642,8 +767,15 @@ const handleConverseV2 = async (sb: SB, body: any) => {
   // 1) Apply structured chip first
   applySelectedOption(state, selectedOption);
 
+  // 1b) Refine chips → respond contextually instead of falling through to default summary
+  if (selectedOption && (selectedOption.kind === "refine" || selectedOption.action === "refine")) {
+    const refineResp = await handleRefineChip(sb, state, selectedOption);
+    if (refineResp) return refineResp;
+  }
+
   // 2) Detect intent
   let intent = detectIntent(message, state);
+
 
   // Code shortcut overrides everything
   if (intent === "show_property") {
@@ -819,9 +951,23 @@ const handleConverseV2 = async (sb: SB, body: any) => {
     return await buildNoResultsResponse(sb, state, intent);
   }
 
-  // Default: summarize filters and ask next step
+  // Default: summarize filters and ask next step (varied microcopy to avoid loop)
+  const summary = summarizeFilters(state.filters);
+  const countTxt = matchCount > 0 ? `**${matchCount}** ${matchCount === 1 ? "imóvel" : "imóveis"}` : "";
+  const variants = matchCount > 0
+    ? [
+        `Atualizei os filtros — agora são ${countTxt}${summary ? ` (${summary})` : ""}. Quer ver ou seguir refinando?`,
+        `Pronto, ${countTxt} no radar${summary ? ` para ${summary}` : ""}. Posso mostrar ou afinar mais.`,
+        `Tenho ${countTxt} assim. Vamos abrir os resultados?`,
+      ]
+    : [
+        `Não achei nada com ${summary || "esses filtros"}. Quer ampliar a faixa ou trocar de tipo?`,
+        `Zero matches para ${summary || "esse perfil"}. Posso relaxar algum filtro?`,
+      ];
+  const variant = variants[(state.refineTurn ?? 0) % variants.length];
+  state.refineTurn = (state.refineTurn ?? 0) + 1;
   return {
-    assistantMessage: `Entendi: ${summarizeFilters(state.filters) || "vou te ajudar"}. ${matchCount > 0 ? `Encontrei **${matchCount}** ${matchCount === 1 ? "imóvel" : "imóveis"}.` : ""} Quer ver os resultados ou refinar mais?`,
+    assistantMessage: variant,
     responseType: "text" as const,
     parsedFilters: state.filters,
     updatedState: state,
@@ -834,6 +980,7 @@ const handleConverseV2 = async (sb: SB, body: any) => {
     nextAction: "ask" as const,
   };
 };
+
 
 const buildPropertyResponse = (prop: PropertyResult, state: ConversationState) => {
   const rental = prop.transaction_type === "locacao" || prop.transaction_type === "aluguel";
