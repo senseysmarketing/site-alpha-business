@@ -2,6 +2,8 @@ import { motion } from "framer-motion";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import useEmblaCarousel from "embla-carousel-react";
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 
 interface TeamMember {
   name: string;
