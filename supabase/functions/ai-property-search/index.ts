@@ -479,24 +479,35 @@ const handleConverse = async (
     };
   }
 
-  // 2) Deterministic parsing (price + condo number)
+  // 2) Deterministic parsing (price, transaction, property type, condo)
   const det: PropertySearchFilters = {};
   const priceParse = parsePrice(message);
   if (priceParse.minPrice) det.minPrice = priceParse.minPrice;
   if (priceParse.maxPrice) det.maxPrice = priceParse.maxPrice;
+
+  const tx = parseTransaction(message);
+  if (tx) det.transactionType = tx;
+  const pt = parsePropertyType(message);
+  if (pt) det.propertyType = pt;
 
   const allCondos = await fetchDistinctCondos(sb);
   const condoNum = findCondoNumber(message);
   if (condoNum) {
     const resolved = resolveCondoByNumber(allCondos, condoNum.group, condoNum.number);
     if (resolved) det.condominium = resolved;
+  } else {
+    const group = findCondoGroup(message);
+    if (group) {
+      const groupLabel = group === "tambore" ? "Tamboré" : group.charAt(0).toUpperCase() + group.slice(1);
+      det.condominiumGroup = groupLabel;
+    }
   }
 
   // Ambiguous price (e.g. "até 900")
   if (priceParse.ambiguousValue) {
     return {
       assistantMessage: `Quando você diz **${priceParse.ambiguousValue}**, quer dizer R$ ${priceParse.ambiguousValue} mil ou R$ ${priceParse.ambiguousValue} milhões?`,
-      parsedFilters: current,
+      parsedFilters: mergeFilters(current, det),
       suggestedOptions: [
         { label: `R$ ${priceParse.ambiguousValue} mil`, value: String(priceParse.ambiguousValue * 1000), kind: "price_max" },
         { label: `R$ ${priceParse.ambiguousValue} milhões`, value: String(priceParse.ambiguousValue * 1_000_000), kind: "price_max" },
@@ -507,20 +518,42 @@ const handleConverse = async (
   }
 
   // 3) LLM enrichment
-  const llm = await callLLM(message, mergeFilters(current, det), history, allCondos);
+  const llmResult = await callLLM(message, mergeFilters(current, det), history, allCondos);
+  const llm = llmResult.data;
   let merged = mergeFilters(current, det);
-  let assistantMessage = "Entendi. Pode me contar um pouco mais?";
+  let assistantMessage = "";
   let suggestedOptions: OptionChip[] = defaultStartChips();
   let nextAction: "ask" | "confirm" | "show" = "ask";
   let clarificationType: string | null = null;
 
   if (llm) {
     if (llm.parsedFilters) merged = mergeFilters(merged, llm.parsedFilters as PropertySearchFilters);
-    if (typeof llm.assistantMessage === "string") assistantMessage = llm.assistantMessage;
-    if (Array.isArray(llm.suggestedOptions)) suggestedOptions = llm.suggestedOptions;
+    if (typeof llm.assistantMessage === "string" && llm.assistantMessage.trim()) {
+      assistantMessage = llm.assistantMessage.trim();
+    }
+    if (Array.isArray(llm.suggestedOptions) && llm.suggestedOptions.length) {
+      suggestedOptions = llm.suggestedOptions;
+    }
     if (llm.nextAction) nextAction = llm.nextAction;
     if (llm.clarificationType) clarificationType = llm.clarificationType;
+  } else if (llmResult.status === "credits_exhausted") {
+    return {
+      assistantMessage:
+        "Estou sem créditos de IA no momento. Você pode usar a **busca tradicional** pelo botão ao lado, ou tentar novamente em alguns minutos.",
+      parsedFilters: merged,
+      suggestedOptions: defaultStartChips(),
+      nextAction: "ask",
+    };
+  } else if (llmResult.status === "rate_limited") {
+    return {
+      assistantMessage:
+        "Muitas pessoas conversando comigo agora. Pode tentar em alguns segundos? Enquanto isso, me conta o que procura.",
+      parsedFilters: merged,
+      suggestedOptions: defaultStartChips(),
+      nextAction: "ask",
+    };
   }
+
 
   // 4) Resolve condominium ambiguity (e.g. "Tamboré" sem número)
   if (!merged.condominium && merged.condominiumGroup) {
