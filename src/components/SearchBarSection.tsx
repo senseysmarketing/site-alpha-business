@@ -43,7 +43,7 @@ const SearchBarSection = () => {
     <section className="relative z-20 px-6 md:px-12 lg:px-24 -mt-10 mb-8">
       <div className="max-w-4xl mx-auto">
         <motion.div
-          className="bg-background rounded-lg shadow-xl p-4 md:p-8"
+          className="bg-background rounded-lg shadow-xl p-3 sm:p-6 md:p-8"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.9, duration: 0.7 }}
@@ -55,12 +55,13 @@ const SearchBarSection = () => {
               extraAction={
                 <button
                   onClick={(e) => { e.stopPropagation(); setMode("traditional"); }}
-                  className="hidden sm:inline-flex text-body text-[10px] tracking-[0.1em] uppercase px-4 py-1.5 rounded-full bg-muted text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+                  className="inline-flex text-body text-[10px] tracking-[0.1em] uppercase px-3 sm:px-4 py-1.5 rounded-full bg-muted text-muted-foreground hover:text-foreground transition-colors flex-shrink-0 whitespace-nowrap"
                 >
                   Tradicional
                 </button>
               }
             />
+
           ) : (
             <div className="space-y-4">
               <div className="flex justify-end">
