@@ -1136,20 +1136,36 @@ const handleConverseV2 = async (sb: SB, body: any) => {
   // Default: summarize filters and ask next step (varied microcopy to avoid loop)
   const summary = summarizeFilters(state.filters);
   const countTxt = matchCount > 0 ? `**${matchCount}** ${matchCount === 1 ? "imóvel" : "imóveis"}` : "";
-  const variants = matchCount > 0
-    ? [
-        `Atualizei os filtros — agora são ${countTxt}${summary ? ` (${summary})` : ""}. Quer ver ou seguir refinando?`,
-        `Pronto, ${countTxt} no radar${summary ? ` para ${summary}` : ""}. Posso mostrar ou afinar mais.`,
-        `Tenho ${countTxt} assim. Vamos abrir os resultados?`,
-      ]
-    : [
-        `Não achei nada com ${summary || "esses filtros"}. Quer ampliar a faixa ou trocar de tipo?`,
-        `Zero matches para ${summary || "esse perfil"}. Posso relaxar algum filtro?`,
-      ];
-  const variant = variants[(state.refineTurn ?? 0) % variants.length];
-  state.refineTurn = (state.refineTurn ?? 0) + 1;
+  const sig = filtersSignature(state.filters);
+  const filtersUnchanged = state.lastFiltersSig === sig;
+  state.lastFiltersSig = sig;
+  const llmReply: string | undefined = (body as any)._llmReplyHint;
+
+  let assistantMessage: string;
+  if (llmReply) {
+    assistantMessage = llmReply;
+  } else if (filtersUnchanged) {
+    // Não mudou nada — não repetir o resumo, ir direto pro próximo passo
+    assistantMessage = matchCount > 0
+      ? `Posso abrir os ${countTxt} ou prefere afinar mais algum critério (condomínio, metragem, suítes)?`
+      : `Ainda sem matches. Quer relaxar algum filtro?`;
+  } else {
+    const variants = matchCount > 0
+      ? [
+          `Atualizei os filtros — agora são ${countTxt}${summary ? ` (${summary})` : ""}. Quer ver ou seguir refinando?`,
+          `Pronto, ${countTxt} no radar${summary ? ` para ${summary}` : ""}. Posso mostrar ou afinar mais.`,
+          `Tenho ${countTxt} assim. Vamos abrir os resultados?`,
+        ]
+      : [
+          `Não achei nada com ${summary || "esses filtros"}. Quer ampliar a faixa ou trocar de tipo?`,
+          `Zero matches para ${summary || "esse perfil"}. Posso relaxar algum filtro?`,
+        ];
+    assistantMessage = variants[(state.refineTurn ?? 0) % variants.length];
+    state.refineTurn = (state.refineTurn ?? 0) + 1;
+  }
+
   return {
-    assistantMessage: variant,
+    assistantMessage,
     responseType: "text" as const,
     parsedFilters: state.filters,
     updatedState: state,
