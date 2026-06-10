@@ -726,8 +726,9 @@ const handleRefineChip = async (sb: SB, state: ConversationState, opt: OptionChi
 
   // Definir metragem → ask area with concrete chips
   if (v === "area") {
+    state.pendingRefine = "area";
     return {
-      assistantMessage: `${intro} A partir de quantos m² faz sentido pra você?`,
+      assistantMessage: `${intro} A partir de quantos m² faz sentido pra você? Pode digitar livremente também (ex: "750 metros").`,
       responseType: "text" as const,
       parsedFilters: state.filters,
       updatedState: state,
@@ -743,8 +744,9 @@ const handleRefineChip = async (sb: SB, state: ConversationState, opt: OptionChi
 
   // Mais suítes → ask bedrooms with concrete chips
   if (v === "bedrooms") {
+    state.pendingRefine = "bedrooms";
     return {
-      assistantMessage: `${intro} Quantas suítes no mínimo?`,
+      assistantMessage: `${intro} Quantas suítes no mínimo? (pode digitar um número também)`,
       responseType: "text" as const,
       parsedFilters: state.filters,
       updatedState: state,
