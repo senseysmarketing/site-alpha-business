@@ -252,6 +252,29 @@ const parseBedrooms = (message: string): number | null => {
   return null;
 };
 
+const AREA_UNIT_RE = /(m2|m²|metros?\s*quadrados?|metros?)\b/i;
+const parseArea = (message: string, opts?: { pending?: boolean }): number | null => {
+  const n = norm(message);
+  // "X metros", "X m²", "X metros quadrados"
+  const m1 = n.match(/(\d{2,5})\s*(?:m2|metros? quadrados?|metros?)\b/);
+  if (m1) return parseInt(m1[1], 10);
+  // "a partir de N", "no mínimo N", "acima de N", "pelo menos N" (com unidade)
+  const m2 = n.match(/(?:a partir de|no minimo|acima de|pelo menos|min(?:imo)?(?:\s+de)?)\s+(\d{2,5})\s*(?:m2|metros? quadrados?|metros?)\b/);
+  if (m2) return parseInt(m2[1], 10);
+  // pending refine de área: aceita número puro (ex: "750")
+  if (opts?.pending) {
+    const m3 = n.match(/^\s*(\d{2,5})\s*$/);
+    if (m3) {
+      const v = parseInt(m3[1], 10);
+      if (v >= 30) return v;
+    }
+  }
+  return null;
+};
+
+const stripAreaTokens = (message: string): string =>
+  message.replace(/(\d{2,5})\s*(?:m2|m²|metros? quadrados?|metros?)\b/gi, " ");
+
 const HIGHLIGHT_KEYWORDS: Record<string, string[]> = {
   piscina: ["piscina"],
   gourmet: ["gourmet", "churrasqueira"],
