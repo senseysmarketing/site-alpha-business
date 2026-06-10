@@ -1890,7 +1890,7 @@ const summarizeFiltersV3 = (f: PropertySearchFilters): string => {
   if (f.minArea) parts.push(`a partir de ${f.minArea}m²`);
   if (f.maxPrice) parts.push(`até ${fmtBRL(f.maxPrice)}`);
   if (f.minPrice) parts.push(`acima de ${fmtBRL(f.minPrice)}`);
-  if (f.keywords && f.keywords.length) parts.push(`com ${f.keywords.join(", ")}`);
+  if (f.keywords && f.keywords.length) parts.push(`destaque para ${f.keywords.join(", ")}`);
   if (f.excludedPropertyTypes && f.excludedPropertyTypes.length)
     parts.push(`sem ${f.excludedPropertyTypes.join("/")}`);
   return parts.join(", ");
