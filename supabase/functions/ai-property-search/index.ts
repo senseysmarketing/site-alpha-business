@@ -525,7 +525,9 @@ const detectIntent = (message: string, state: ConversationState): Intent => {
     parsePropertyType(message) ||
     findCondoGroup(message) ||
     parseBedrooms(message) ||
-    Object.keys(parsePrice(message)).length > 0 ||
+    parseArea(message) !== null ||
+    (state.pendingRefine === "area" && parseArea(message, { pending: true }) !== null) ||
+    Object.keys(parsePrice(stripAreaTokens(message))).length > 0 ||
     parseHighlights(message).length > 0
   ) {
     return state.lastIntent === "new_search" ? "update_filter" : "new_search";
