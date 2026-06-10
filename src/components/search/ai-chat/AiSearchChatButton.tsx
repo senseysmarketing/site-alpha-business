@@ -27,14 +27,14 @@ const AiSearchChatButton = ({ onClick, variant = "hero", extraAction }: Props) =
   }
 
   return (
-    <div className="group w-full flex items-center gap-3 sm:gap-4 border border-border rounded-lg p-4 hover:border-foreground/30 hover:shadow-md transition-all text-left bg-background">
-      <button onClick={onClick} className="flex items-center gap-4 flex-1 min-w-0 text-left">
-        <img src={rafaAvatar} alt="Rafa IA" width={56} height={56} className="w-14 h-14 rounded-full object-cover bg-muted flex-shrink-0" />
+    <div className="group w-full flex items-center gap-2 sm:gap-4 border border-border rounded-lg p-3 sm:p-4 hover:border-foreground/30 hover:shadow-md transition-all text-left bg-background">
+      <button onClick={onClick} className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0 text-left">
+        <img src={rafaAvatar} alt="Rafa IA" width={56} height={56} className="w-11 h-11 sm:w-14 sm:h-14 rounded-full object-cover bg-muted flex-shrink-0" />
         <div className="flex-1 min-w-0">
-          <p className="text-display text-base md:text-lg text-foreground font-light leading-tight">
+          <p className="text-display text-sm sm:text-lg text-foreground font-light leading-tight">
             Converse com o <strong className="font-medium">Rafa IA</strong>
           </p>
-          <p className="text-body text-xs md:text-sm text-muted-foreground mt-0.5">
+          <p className="text-body text-[11px] sm:text-sm text-muted-foreground mt-0.5 line-clamp-2 sm:line-clamp-none">
             Seu consultor digital — encontra o imóvel ideal por conversa
           </p>
         </div>
