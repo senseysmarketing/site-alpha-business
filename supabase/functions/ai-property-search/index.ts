@@ -40,6 +40,8 @@ interface ConversationState {
   lastIntent?: string;
   lastMatchCount?: number;
   refineTurn?: number;
+  pendingRefine?: "area" | "bedrooms" | "price" | null;
+  lastFiltersSig?: string;
 }
 
 
@@ -249,6 +251,29 @@ const parseBedrooms = (message: string): number | null => {
   if (m) return parseInt(m[1], 10);
   return null;
 };
+
+const AREA_UNIT_RE = /(m2|m²|metros?\s*quadrados?|metros?)\b/i;
+const parseArea = (message: string, opts?: { pending?: boolean }): number | null => {
+  const n = norm(message);
+  // "X metros", "X m²", "X metros quadrados"
+  const m1 = n.match(/(\d{2,5})\s*(?:m2|metros? quadrados?|metros?)\b/);
+  if (m1) return parseInt(m1[1], 10);
+  // "a partir de N", "no mínimo N", "acima de N", "pelo menos N" (com unidade)
+  const m2 = n.match(/(?:a partir de|no minimo|acima de|pelo menos|min(?:imo)?(?:\s+de)?)\s+(\d{2,5})\s*(?:m2|metros? quadrados?|metros?)\b/);
+  if (m2) return parseInt(m2[1], 10);
+  // pending refine de área: aceita número puro (ex: "750")
+  if (opts?.pending) {
+    const m3 = n.match(/^\s*(\d{2,5})\s*$/);
+    if (m3) {
+      const v = parseInt(m3[1], 10);
+      if (v >= 30) return v;
+    }
+  }
+  return null;
+};
+
+const stripAreaTokens = (message: string): string =>
+  message.replace(/(\d{2,5})\s*(?:m2|m²|metros? quadrados?|metros?)\b/gi, " ");
 
 const HIGHLIGHT_KEYWORDS: Record<string, string[]> = {
   piscina: ["piscina"],
@@ -500,7 +525,9 @@ const detectIntent = (message: string, state: ConversationState): Intent => {
     parsePropertyType(message) ||
     findCondoGroup(message) ||
     parseBedrooms(message) ||
-    Object.keys(parsePrice(message)).length > 0 ||
+    parseArea(message) !== null ||
+    (state.pendingRefine === "area" && parseArea(message, { pending: true }) !== null) ||
+    Object.keys(parsePrice(stripAreaTokens(message))).length > 0 ||
     parseHighlights(message).length > 0
   ) {
     return state.lastIntent === "new_search" ? "update_filter" : "new_search";
@@ -533,9 +560,26 @@ const hydrateState = (raw: any): ConversationState => {
       filters: { highlights: [], ...(raw.filters as PropertySearchFilters) },
       lastIntent: raw.lastIntent,
       lastMatchCount: typeof raw.lastMatchCount === "number" ? raw.lastMatchCount : undefined,
+      refineTurn: typeof raw.refineTurn === "number" ? raw.refineTurn : 0,
+      pendingRefine: raw.pendingRefine ?? null,
+      lastFiltersSig: typeof raw.lastFiltersSig === "string" ? raw.lastFiltersSig : undefined,
     };
   }
   return { filters: { highlights: [] } };
+};
+
+const filtersSignature = (f: PropertySearchFilters): string => {
+  return JSON.stringify({
+    t: f.transactionType ?? null,
+    p: f.propertyType ?? null,
+    c: f.condominium ?? null,
+    cg: f.condominiumGroup ?? null,
+    mb: f.minBedrooms ?? null,
+    ma: f.minArea ?? null,
+    mn: f.minPrice ?? null,
+    mx: f.maxPrice ?? null,
+    h: (f.highlights ?? []).slice().sort(),
+  });
 };
 
 // =====================================================================
@@ -584,12 +628,18 @@ const applySelectedOption = (state: ConversationState, opt: OptionChip | undefin
     case "set_bedrooms":
     case "bedrooms": {
       const n = parseInt(opt.value, 10);
-      if (n) f.minBedrooms = n;
+      if (n) {
+        f.minBedrooms = n;
+        if (state.pendingRefine === "bedrooms") state.pendingRefine = null;
+      }
       break;
     }
     case "set_min_area": {
       const n = Number(opt.payload?.minArea ?? opt.value);
-      if (Number.isFinite(n) && n > 0) f.minArea = n;
+      if (Number.isFinite(n) && n > 0) {
+        f.minArea = n;
+        if (state.pendingRefine === "area") state.pendingRefine = null;
+      }
       break;
     }
     case "highlight": {
@@ -699,8 +749,9 @@ const handleRefineChip = async (sb: SB, state: ConversationState, opt: OptionChi
 
   // Definir metragem → ask area with concrete chips
   if (v === "area") {
+    state.pendingRefine = "area";
     return {
-      assistantMessage: `${intro} A partir de quantos m² faz sentido pra você?`,
+      assistantMessage: `${intro} A partir de quantos m² faz sentido pra você? Pode digitar livremente também (ex: "750 metros").`,
       responseType: "text" as const,
       parsedFilters: state.filters,
       updatedState: state,
@@ -716,8 +767,9 @@ const handleRefineChip = async (sb: SB, state: ConversationState, opt: OptionChi
 
   // Mais suítes → ask bedrooms with concrete chips
   if (v === "bedrooms") {
+    state.pendingRefine = "bedrooms";
     return {
-      assistantMessage: `${intro} Quantas suítes no mínimo?`,
+      assistantMessage: `${intro} Quantas suítes no mínimo? (pode digitar um número também)`,
       responseType: "text" as const,
       parsedFilters: state.filters,
       updatedState: state,
@@ -753,6 +805,107 @@ const handleRefineChip = async (sb: SB, state: ConversationState, opt: OptionChi
   }
 
   return null;
+};
+
+// =====================================================================
+// LLM interpretation layer (Lovable AI Gateway / Gemini)
+// Roda como fallback quando o pipeline determinístico não pegou filtros.
+// =====================================================================
+interface LLMInterpretation {
+  filters: Partial<PropertySearchFilters>;
+  intent?: Intent;
+  reply?: string;
+}
+
+const LLM_TIMEOUT_MS = 6000;
+
+const interpretWithLLM = async (
+  sb: SB,
+  message: string,
+  state: ConversationState,
+  history: ConversationMessage[] | undefined,
+): Promise<LLMInterpretation | null> => {
+  const apiKey = Deno.env.get("LOVABLE_API_KEY");
+  if (!apiKey) return null;
+  try {
+    const condos = await fetchDistinctCondos(sb).catch(() => [] as { name: string }[]);
+    const condoSample = condos.slice(0, 60).map((c) => c.name).join(", ");
+    const recentHistory = (history ?? []).slice(-6)
+      .map((m) => `${m.role === "user" ? "U" : "A"}: ${m.content}`)
+      .join("\n");
+
+    const system = `Você é um interpretador de mensagens para uma busca de imóveis de luxo em Alphaville/Tamboré. Sua única tarefa é traduzir a mensagem do usuário em um JSON com os filtros que ele quer aplicar. NUNCA invente filtros que o usuário não pediu.
+
+Filtros disponíveis (todos opcionais):
+- transactionType: "venda" | "locacao"
+- propertyType: "casa" | "apartamento" | "cobertura" | "sobrado" | "terreno"
+- condominium: string EXATA de uma das opções listadas
+- condominiumGroup: "Tamboré" | "Alphaville" | "Residencial" (use quando o usuário cita o grupo sem número)
+- minBedrooms: número
+- minArea: número (em m²)
+- minPrice: número (em R$)
+- maxPrice: número (em R$)
+- highlights: array com qualquer combinação de ["piscina","gourmet","jardim","vista","reformado","mobiliado"]
+
+Intents válidas: new_search, update_filter, show_results, broaden_search, ask_condominium_breakdown, small_talk, greeting.
+
+Condomínios reais no estoque (use o nome exato se reconhecer): ${condoSample}
+
+Estado atual dos filtros: ${JSON.stringify(state.filters)}
+
+Histórico recente:
+${recentHistory || "(vazio)"}
+
+Responda APENAS com JSON válido no formato:
+{"filters": {...}, "intent": "...", "reply": "frase curta opcional em português"}`;
+
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), LLM_TIMEOUT_MS);
+
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      signal: ctrl.signal,
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        temperature: 0.2,
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: message },
+        ],
+      }),
+    });
+    clearTimeout(t);
+    if (!res.ok) {
+      console.error("[interpretWithLLM] gateway status", res.status);
+      return null;
+    }
+    const data = await res.json();
+    const content = data?.choices?.[0]?.message?.content;
+    if (!content) return null;
+    const parsed = JSON.parse(content);
+    const out: LLMInterpretation = { filters: {} };
+    const f = parsed.filters ?? {};
+    if (f.transactionType === "venda" || f.transactionType === "locacao") out.filters.transactionType = f.transactionType;
+    if (typeof f.propertyType === "string") out.filters.propertyType = f.propertyType;
+    if (typeof f.condominium === "string") out.filters.condominium = f.condominium;
+    if (typeof f.condominiumGroup === "string") out.filters.condominiumGroup = f.condominiumGroup;
+    if (typeof f.minBedrooms === "number") out.filters.minBedrooms = f.minBedrooms;
+    if (typeof f.minArea === "number") out.filters.minArea = f.minArea;
+    if (typeof f.minPrice === "number") out.filters.minPrice = f.minPrice;
+    if (typeof f.maxPrice === "number") out.filters.maxPrice = f.maxPrice;
+    if (Array.isArray(f.highlights)) out.filters.highlights = f.highlights.filter((x: unknown) => typeof x === "string");
+    if (typeof parsed.intent === "string") out.intent = parsed.intent as Intent;
+    if (typeof parsed.reply === "string") out.reply = parsed.reply.trim().slice(0, 240);
+    return out;
+  } catch (e) {
+    console.error("[interpretWithLLM] error", e);
+    return null;
+  }
 };
 
 // =====================================================================
@@ -810,11 +963,18 @@ const handleConverseV2 = async (sb: SB, body: any) => {
   // 3) Extract filters when intent allows
   if (intent === "new_search" || intent === "update_filter" || intent === "broaden_search" || intent === "ask_availability" || intent === "ask_no_results_reason" || intent === "ask_condominium_breakdown") {
     const det: PropertySearchFilters = {};
-    const price = parsePrice(message);
+
+    // Área primeiro (evita que "700 metros" seja confundido com R$ 700)
+    const area = parseArea(message, { pending: state.pendingRefine === "area" });
+    if (area) det.minArea = area;
+
+    // Preço calculado sobre mensagem sem tokens de área
+    const priceSource = area ? stripAreaTokens(message) : message;
+    const price = parsePrice(priceSource);
     if (price.maxPrice) det.maxPrice = price.maxPrice;
     if (price.minPrice) det.minPrice = price.minPrice;
 
-    if (price.ambiguousValue) {
+    if (price.ambiguousValue && !area) {
       return {
         assistantMessage: `Quando você diz **${price.ambiguousValue}**, quer dizer R$ ${price.ambiguousValue} mil ou R$ ${price.ambiguousValue} milhões?`,
         responseType: "clarification" as const,
@@ -835,6 +995,14 @@ const handleConverseV2 = async (sb: SB, body: any) => {
     if (pt) det.propertyType = pt;
     const beds = parseBedrooms(message);
     if (beds) det.minBedrooms = beds;
+    // pending refine bedrooms: aceita número puro pequeno
+    if (!beds && state.pendingRefine === "bedrooms") {
+      const m = norm(message).match(/^\s*(\d{1,2})\s*\+?\s*$/);
+      if (m) {
+        const n = parseInt(m[1], 10);
+        if (n >= 1 && n <= 15) det.minBedrooms = n;
+      }
+    }
     const hls = parseHighlights(message);
     if (hls.length) det.highlights = hls;
 
@@ -855,7 +1023,21 @@ const handleConverseV2 = async (sb: SB, body: any) => {
       }
     }
 
+    // Se o pipeline determinístico não pegou nada, tenta interpretação por LLM
+    const detHasAny = Object.values(det).some((v) => v !== null && v !== undefined && (!Array.isArray(v) || v.length > 0));
+    if (!detHasAny && norm(message).split(" ").length >= 2) {
+      const llm = await interpretWithLLM(sb, message, state, body.history as ConversationMessage[] | undefined);
+      if (llm) {
+        Object.assign(det, llm.filters);
+        if (llm.intent) intent = llm.intent;
+        (body as any)._llmReplyHint = llm.reply;
+      }
+    }
+
     state.filters = mergeFilters(state.filters, det);
+    // limpa pendingRefine se o filtro alvo foi setado
+    if (state.pendingRefine === "area" && det.minArea) state.pendingRefine = null;
+    if (state.pendingRefine === "bedrooms" && det.minBedrooms) state.pendingRefine = null;
   }
 
   // 4) Ambiguous condo group → ask
@@ -954,20 +1136,36 @@ const handleConverseV2 = async (sb: SB, body: any) => {
   // Default: summarize filters and ask next step (varied microcopy to avoid loop)
   const summary = summarizeFilters(state.filters);
   const countTxt = matchCount > 0 ? `**${matchCount}** ${matchCount === 1 ? "imóvel" : "imóveis"}` : "";
-  const variants = matchCount > 0
-    ? [
-        `Atualizei os filtros — agora são ${countTxt}${summary ? ` (${summary})` : ""}. Quer ver ou seguir refinando?`,
-        `Pronto, ${countTxt} no radar${summary ? ` para ${summary}` : ""}. Posso mostrar ou afinar mais.`,
-        `Tenho ${countTxt} assim. Vamos abrir os resultados?`,
-      ]
-    : [
-        `Não achei nada com ${summary || "esses filtros"}. Quer ampliar a faixa ou trocar de tipo?`,
-        `Zero matches para ${summary || "esse perfil"}. Posso relaxar algum filtro?`,
-      ];
-  const variant = variants[(state.refineTurn ?? 0) % variants.length];
-  state.refineTurn = (state.refineTurn ?? 0) + 1;
+  const sig = filtersSignature(state.filters);
+  const filtersUnchanged = state.lastFiltersSig === sig;
+  state.lastFiltersSig = sig;
+  const llmReply: string | undefined = (body as any)._llmReplyHint;
+
+  let assistantMessage: string;
+  if (llmReply) {
+    assistantMessage = llmReply;
+  } else if (filtersUnchanged) {
+    // Não mudou nada — não repetir o resumo, ir direto pro próximo passo
+    assistantMessage = matchCount > 0
+      ? `Posso abrir os ${countTxt} ou prefere afinar mais algum critério (condomínio, metragem, suítes)?`
+      : `Ainda sem matches. Quer relaxar algum filtro?`;
+  } else {
+    const variants = matchCount > 0
+      ? [
+          `Atualizei os filtros — agora são ${countTxt}${summary ? ` (${summary})` : ""}. Quer ver ou seguir refinando?`,
+          `Pronto, ${countTxt} no radar${summary ? ` para ${summary}` : ""}. Posso mostrar ou afinar mais.`,
+          `Tenho ${countTxt} assim. Vamos abrir os resultados?`,
+        ]
+      : [
+          `Não achei nada com ${summary || "esses filtros"}. Quer ampliar a faixa ou trocar de tipo?`,
+          `Zero matches para ${summary || "esse perfil"}. Posso relaxar algum filtro?`,
+        ];
+    assistantMessage = variants[(state.refineTurn ?? 0) % variants.length];
+    state.refineTurn = (state.refineTurn ?? 0) + 1;
+  }
+
   return {
-    assistantMessage: variant,
+    assistantMessage,
     responseType: "text" as const,
     parsedFilters: state.filters,
     updatedState: state,
