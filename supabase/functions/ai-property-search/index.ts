@@ -1757,6 +1757,7 @@ Responda APENAS JSON válido no schema descrito acima.`;
     const content = data?.choices?.[0]?.message?.content;
     if (!content) return null;
     const parsed = JSON.parse(content) as IntentPatch;
+    console.log("[extractSearchIntentV3] message=", message, "patch=", JSON.stringify(parsed));
     return parsed;
   } catch (e) {
     console.error("[extractSearchIntentV3] error", e);
