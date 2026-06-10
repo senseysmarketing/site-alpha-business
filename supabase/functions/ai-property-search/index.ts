@@ -1756,9 +1756,42 @@ Responda APENAS JSON válido no schema descrito acima.`;
     const data = await res.json();
     const content = data?.choices?.[0]?.message?.content;
     if (!content) return null;
-    const parsed = JSON.parse(content) as IntentPatch;
-    console.log("[extractSearchIntentV3] message=", message, "patch=", JSON.stringify(parsed));
-    return parsed;
+    const raw = JSON.parse(content);
+    // Tolerate both shapes: { filters_patch: {...}, ... } and a flat object with
+    // filter fields at the root (Gemini frequently flattens it). Move any
+    // unknown-but-known filter keys into filters_patch.
+    const FILTER_KEYS = [
+      "transactionType","propertyType","condominium","condominiumGroup",
+      "neighborhood","city","minBedrooms","minBathrooms","minParking",
+      "minArea","minPrice","maxPrice",
+    ];
+    const patch: IntentPatch = {
+      filters_patch: { ...(raw.filters_patch ?? {}) },
+      condominium_query: raw.condominium_query ?? null,
+      keywords_add: Array.isArray(raw.keywords_add) ? raw.keywords_add : [],
+      keywords_remove: Array.isArray(raw.keywords_remove) ? raw.keywords_remove : [],
+      excluded_add: Array.isArray(raw.excluded_add) ? raw.excluded_add : [],
+      excluded_remove: Array.isArray(raw.excluded_remove) ? raw.excluded_remove : [],
+      reset: raw.reset === true,
+      show_results: raw.show_results === true,
+      reply: typeof raw.reply === "string" ? raw.reply : undefined,
+      intent: typeof raw.intent === "string" ? raw.intent : undefined,
+    };
+    for (const k of FILTER_KEYS) {
+      if (raw[k] !== undefined && (patch.filters_patch as any)[k] === undefined) {
+        (patch.filters_patch as any)[k] = raw[k];
+      }
+    }
+    // Some models nest under `filters` instead of `filters_patch`
+    if (raw.filters && typeof raw.filters === "object") {
+      for (const k of FILTER_KEYS) {
+        if ((raw.filters as any)[k] !== undefined && (patch.filters_patch as any)[k] === undefined) {
+          (patch.filters_patch as any)[k] = (raw.filters as any)[k];
+        }
+      }
+    }
+    console.log("[extractSearchIntentV3] message=", message, "raw=", JSON.stringify(raw), "patch=", JSON.stringify(patch));
+    return patch;
   } catch (e) {
     console.error("[extractSearchIntentV3] error", e);
     return null;
