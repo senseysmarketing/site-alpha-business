@@ -837,11 +837,18 @@ const handleConverseV2 = async (sb: SB, body: any) => {
   // 3) Extract filters when intent allows
   if (intent === "new_search" || intent === "update_filter" || intent === "broaden_search" || intent === "ask_availability" || intent === "ask_no_results_reason" || intent === "ask_condominium_breakdown") {
     const det: PropertySearchFilters = {};
-    const price = parsePrice(message);
+
+    // Área primeiro (evita que "700 metros" seja confundido com R$ 700)
+    const area = parseArea(message, { pending: state.pendingRefine === "area" });
+    if (area) det.minArea = area;
+
+    // Preço calculado sobre mensagem sem tokens de área
+    const priceSource = area ? stripAreaTokens(message) : message;
+    const price = parsePrice(priceSource);
     if (price.maxPrice) det.maxPrice = price.maxPrice;
     if (price.minPrice) det.minPrice = price.minPrice;
 
-    if (price.ambiguousValue) {
+    if (price.ambiguousValue && !area) {
       return {
         assistantMessage: `Quando você diz **${price.ambiguousValue}**, quer dizer R$ ${price.ambiguousValue} mil ou R$ ${price.ambiguousValue} milhões?`,
         responseType: "clarification" as const,
@@ -862,6 +869,14 @@ const handleConverseV2 = async (sb: SB, body: any) => {
     if (pt) det.propertyType = pt;
     const beds = parseBedrooms(message);
     if (beds) det.minBedrooms = beds;
+    // pending refine bedrooms: aceita número puro pequeno
+    if (!beds && state.pendingRefine === "bedrooms") {
+      const m = norm(message).match(/^\s*(\d{1,2})\s*\+?\s*$/);
+      if (m) {
+        const n = parseInt(m[1], 10);
+        if (n >= 1 && n <= 15) det.minBedrooms = n;
+      }
+    }
     const hls = parseHighlights(message);
     if (hls.length) det.highlights = hls;
 
@@ -882,7 +897,21 @@ const handleConverseV2 = async (sb: SB, body: any) => {
       }
     }
 
+    // Se o pipeline determinístico não pegou nada, tenta interpretação por LLM
+    const detHasAny = Object.values(det).some((v) => v !== null && v !== undefined && (!Array.isArray(v) || v.length > 0));
+    if (!detHasAny && norm(message).split(" ").length >= 2) {
+      const llm = await interpretWithLLM(sb, message, state, body.history as ConversationMessage[] | undefined);
+      if (llm) {
+        Object.assign(det, llm.filters);
+        if (llm.intent) intent = llm.intent;
+        (body as any)._llmReplyHint = llm.reply;
+      }
+    }
+
     state.filters = mergeFilters(state.filters, det);
+    // limpa pendingRefine se o filtro alvo foi setado
+    if (state.pendingRefine === "area" && det.minArea) state.pendingRefine = null;
+    if (state.pendingRefine === "bedrooms" && det.minBedrooms) state.pendingRefine = null;
   }
 
   // 4) Ambiguous condo group → ask
