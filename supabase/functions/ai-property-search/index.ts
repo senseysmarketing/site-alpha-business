@@ -40,6 +40,8 @@ interface ConversationState {
   lastIntent?: string;
   lastMatchCount?: number;
   refineTurn?: number;
+  pendingRefine?: "area" | "bedrooms" | "price" | null;
+  lastFiltersSig?: string;
 }
 
 
