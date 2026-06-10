@@ -33,6 +33,11 @@ interface PropertySearchFilters {
   minPrice?: number | null;
   maxPrice?: number | null;
   highlights?: string[];
+  // v3 additions: free-text keywords searched across all textual fields,
+  // and property types the user wants to exclude ("tirar apartamentos").
+  keywords?: string[];
+  excludedPropertyTypes?: string[];
+  lastDidYouMean?: { term: string; suggestion: string } | null;
 }
 
 interface ConversationState {
