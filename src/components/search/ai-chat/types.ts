@@ -13,6 +13,10 @@ export interface PropertySearchFilters {
   minPrice?: number | null;
   maxPrice?: number | null;
   highlights?: string[];
+  // v3 additions
+  keywords?: string[];
+  excludedPropertyTypes?: string[];
+  lastDidYouMean?: { term: string; suggestion: string } | null;
 }
 
 export interface ConversationState {
