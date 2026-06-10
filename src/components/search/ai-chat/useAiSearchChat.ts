@@ -58,9 +58,10 @@ export function useAiSearchChat() {
       try {
         const { data, error } = await supabase.functions.invoke("ai-property-search", {
           body: {
-            action: "converse_v2",
+            action: "converse_v3",
             message,
             selectedOption,
+            conversation_state: stateRef.current.filters,
             currentState: stateRef.current,
             history: historyForApi,
           },
