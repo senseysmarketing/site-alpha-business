@@ -611,12 +611,18 @@ const applySelectedOption = (state: ConversationState, opt: OptionChip | undefin
     case "set_bedrooms":
     case "bedrooms": {
       const n = parseInt(opt.value, 10);
-      if (n) f.minBedrooms = n;
+      if (n) {
+        f.minBedrooms = n;
+        if (state.pendingRefine === "bedrooms") state.pendingRefine = null;
+      }
       break;
     }
     case "set_min_area": {
       const n = Number(opt.payload?.minArea ?? opt.value);
-      if (Number.isFinite(n) && n > 0) f.minArea = n;
+      if (Number.isFinite(n) && n > 0) {
+        f.minArea = n;
+        if (state.pendingRefine === "area") state.pendingRefine = null;
+      }
       break;
     }
     case "highlight": {
