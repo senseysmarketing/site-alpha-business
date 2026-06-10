@@ -128,7 +128,7 @@ const SearchHero = ({ initialQuery, onResults, onLoading, onParsedFilters }: Sea
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.7 }}
-          className="bg-white border border-border rounded-lg shadow-2xl p-4 md:p-6"
+          className="bg-white border border-border rounded-lg shadow-2xl p-3 sm:p-6"
         >
           {mode === "cognitive" ? (
             <AiSearchChatButton
@@ -137,12 +137,13 @@ const SearchHero = ({ initialQuery, onResults, onLoading, onParsedFilters }: Sea
               extraAction={
                 <button
                   onClick={(e) => { e.stopPropagation(); setMode("traditional"); }}
-                  className="hidden sm:inline-flex text-body text-[10px] tracking-[0.1em] uppercase px-4 py-1.5 rounded-full bg-muted text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+                  className="inline-flex text-body text-[10px] tracking-[0.1em] uppercase px-3 sm:px-4 py-1.5 rounded-full bg-muted text-muted-foreground hover:text-foreground transition-colors flex-shrink-0 whitespace-nowrap"
                 >
-                  Busca tradicional
+                  Tradicional
                 </button>
               }
             />
+
           ) : (
             <div className="space-y-4">
               <div className="flex justify-end">
