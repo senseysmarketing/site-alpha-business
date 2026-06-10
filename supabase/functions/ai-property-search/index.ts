@@ -808,6 +808,107 @@ const handleRefineChip = async (sb: SB, state: ConversationState, opt: OptionChi
 };
 
 // =====================================================================
+// LLM interpretation layer (Lovable AI Gateway / Gemini)
+// Roda como fallback quando o pipeline determinístico não pegou filtros.
+// =====================================================================
+interface LLMInterpretation {
+  filters: Partial<PropertySearchFilters>;
+  intent?: Intent;
+  reply?: string;
+}
+
+const LLM_TIMEOUT_MS = 6000;
+
+const interpretWithLLM = async (
+  sb: SB,
+  message: string,
+  state: ConversationState,
+  history: ConversationMessage[] | undefined,
+): Promise<LLMInterpretation | null> => {
+  const apiKey = Deno.env.get("LOVABLE_API_KEY");
+  if (!apiKey) return null;
+  try {
+    const condos = await fetchDistinctCondos(sb).catch(() => [] as { name: string }[]);
+    const condoSample = condos.slice(0, 60).map((c) => c.name).join(", ");
+    const recentHistory = (history ?? []).slice(-6)
+      .map((m) => `${m.role === "user" ? "U" : "A"}: ${m.content}`)
+      .join("\n");
+
+    const system = `Você é um interpretador de mensagens para uma busca de imóveis de luxo em Alphaville/Tamboré. Sua única tarefa é traduzir a mensagem do usuário em um JSON com os filtros que ele quer aplicar. NUNCA invente filtros que o usuário não pediu.
+
+Filtros disponíveis (todos opcionais):
+- transactionType: "venda" | "locacao"
+- propertyType: "casa" | "apartamento" | "cobertura" | "sobrado" | "terreno"
+- condominium: string EXATA de uma das opções listadas
+- condominiumGroup: "Tamboré" | "Alphaville" | "Residencial" (use quando o usuário cita o grupo sem número)
+- minBedrooms: número
+- minArea: número (em m²)
+- minPrice: número (em R$)
+- maxPrice: número (em R$)
+- highlights: array com qualquer combinação de ["piscina","gourmet","jardim","vista","reformado","mobiliado"]
+
+Intents válidas: new_search, update_filter, show_results, broaden_search, ask_condominium_breakdown, small_talk, greeting.
+
+Condomínios reais no estoque (use o nome exato se reconhecer): ${condoSample}
+
+Estado atual dos filtros: ${JSON.stringify(state.filters)}
+
+Histórico recente:
+${recentHistory || "(vazio)"}
+
+Responda APENAS com JSON válido no formato:
+{"filters": {...}, "intent": "...", "reply": "frase curta opcional em português"}`;
+
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), LLM_TIMEOUT_MS);
+
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      signal: ctrl.signal,
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        temperature: 0.2,
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: message },
+        ],
+      }),
+    });
+    clearTimeout(t);
+    if (!res.ok) {
+      console.error("[interpretWithLLM] gateway status", res.status);
+      return null;
+    }
+    const data = await res.json();
+    const content = data?.choices?.[0]?.message?.content;
+    if (!content) return null;
+    const parsed = JSON.parse(content);
+    const out: LLMInterpretation = { filters: {} };
+    const f = parsed.filters ?? {};
+    if (f.transactionType === "venda" || f.transactionType === "locacao") out.filters.transactionType = f.transactionType;
+    if (typeof f.propertyType === "string") out.filters.propertyType = f.propertyType;
+    if (typeof f.condominium === "string") out.filters.condominium = f.condominium;
+    if (typeof f.condominiumGroup === "string") out.filters.condominiumGroup = f.condominiumGroup;
+    if (typeof f.minBedrooms === "number") out.filters.minBedrooms = f.minBedrooms;
+    if (typeof f.minArea === "number") out.filters.minArea = f.minArea;
+    if (typeof f.minPrice === "number") out.filters.minPrice = f.minPrice;
+    if (typeof f.maxPrice === "number") out.filters.maxPrice = f.maxPrice;
+    if (Array.isArray(f.highlights)) out.filters.highlights = f.highlights.filter((x: unknown) => typeof x === "string");
+    if (typeof parsed.intent === "string") out.intent = parsed.intent as Intent;
+    if (typeof parsed.reply === "string") out.reply = parsed.reply.trim().slice(0, 240);
+    return out;
+  } catch (e) {
+    console.error("[interpretWithLLM] error", e);
+    return null;
+  }
+};
+
+// =====================================================================
 // Conversation handler v2
 // =====================================================================
 
