@@ -560,9 +560,26 @@ const hydrateState = (raw: any): ConversationState => {
       filters: { highlights: [], ...(raw.filters as PropertySearchFilters) },
       lastIntent: raw.lastIntent,
       lastMatchCount: typeof raw.lastMatchCount === "number" ? raw.lastMatchCount : undefined,
+      refineTurn: typeof raw.refineTurn === "number" ? raw.refineTurn : 0,
+      pendingRefine: raw.pendingRefine ?? null,
+      lastFiltersSig: typeof raw.lastFiltersSig === "string" ? raw.lastFiltersSig : undefined,
     };
   }
   return { filters: { highlights: [] } };
+};
+
+const filtersSignature = (f: PropertySearchFilters): string => {
+  return JSON.stringify({
+    t: f.transactionType ?? null,
+    p: f.propertyType ?? null,
+    c: f.condominium ?? null,
+    cg: f.condominiumGroup ?? null,
+    mb: f.minBedrooms ?? null,
+    ma: f.minArea ?? null,
+    mn: f.minPrice ?? null,
+    mx: f.maxPrice ?? null,
+    h: (f.highlights ?? []).slice().sort(),
+  });
 };
 
 // =====================================================================
