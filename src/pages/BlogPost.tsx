@@ -106,7 +106,7 @@ const BlogPost = () => {
           </div>
 
 
-          <div className="relative z-10 w-full max-w-3xl mx-auto px-6 md:px-12 pb-16">
+          <div className="relative z-10 w-full max-w-3xl mx-auto px-6 md:px-12 py-12 md:py-16">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
               <Link
                 to="/blog"
