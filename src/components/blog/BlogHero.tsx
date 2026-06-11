@@ -32,7 +32,8 @@ const BlogHero = ({ post }: BlogHeroProps) => {
         </motion.span>
 
         <motion.h1
-          className="text-display text-4xl md:text-6xl lg:text-7xl font-light text-cashmere max-w-4xl leading-[1.1] mb-6"
+          className="text-display font-light text-cashmere max-w-4xl !leading-[1.15] mb-6"
+          style={{ fontSize: "clamp(1.75rem, 2.6vw + 0.85rem, 3.75rem)", lineHeight: 1.15 }}
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.1 }}
@@ -42,7 +43,8 @@ const BlogHero = ({ post }: BlogHeroProps) => {
 
         {post.subtitle && (
           <motion.p
-            className="text-body text-lg md:text-xl text-cashmere/60 max-w-2xl mb-8"
+            className="text-body text-cashmere/60 max-w-2xl mb-8"
+            style={{ fontSize: "clamp(0.95rem, 0.5vw + 0.85rem, 1.25rem)" }}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
