@@ -51,13 +51,30 @@ type NavItem = {
 
 const WHATSAPP_URL = "https://wa.me/5511993116849";
 
+const SALE_TYPES: { label: string; propertyType?: string }[] = [
+  { label: "Casa", propertyType: "casa" },
+  { label: "Apartamento", propertyType: "apartamento" },
+  { label: "Cobertura", propertyType: "cobertura" },
+  { label: "Sobrado", propertyType: "sobrado" },
+  { label: "Terreno", propertyType: "terreno" },
+  { label: "Sala Comercial", propertyType: "sala_comercial" },
+];
+
+const buildSaleHref = (propertyType?: string) =>
+  propertyType
+    ? `/busca?transactionType=venda&propertyType=${propertyType}`
+    : `/busca?transactionType=venda`;
+
 const Header = ({ variant = "transparent" }: HeaderProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [advertiseOpen, setAdvertiseOpen] = useState(false);
   const [condoMenuSettings, setCondoMenuSettings] = useState<CondoMenuSettings | null>(null);
-  const [condoMenuValue, setCondoMenuValue] = useState("");
-  const closeCondoMenu = () => setCondoMenuValue("");
+  const [navMenuValue, setNavMenuValue] = useState("");
+  const closeNavMenu = () => setNavMenuValue("");
+  const condoMenuValue = navMenuValue;
+  const setCondoMenuValue = setNavMenuValue;
+  const closeCondoMenu = closeNavMenu;
   const location = useLocation();
   const navigate = useNavigate();
   const { condos: allCondos } = useCondoList();
