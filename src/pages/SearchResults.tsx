@@ -14,7 +14,7 @@ import AdvancedFiltersDrawer, {
   defaultFilters,
 } from "@/components/search/AdvancedFiltersDrawer";
 import CompareModal from "@/components/search/CompareModal";
-import ConciergeSidebar from "@/components/search/ConciergeSidebar";
+
 import FilterChips, { type ParsedFilters } from "@/components/search/FilterChips";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -365,15 +365,6 @@ const SearchResults = () => {
     return compareIds.map((id) => results.find((r) => r.id === id)).filter(Boolean) as SearchResult[];
   }, [compareIds, results]);
 
-  const conciergeSuggestions = useMemo(() => {
-    return results.slice(-3).map((r) => ({
-      id: r.id,
-      title: r.title,
-      photo: r.photo,
-      condominium: r.condominium,
-      price: r.price,
-    }));
-  }, [results]);
 
   return (
     <motion.div
@@ -507,11 +498,6 @@ const SearchResults = () => {
       </section>
 
       <Footer />
-
-      <ConciergeSidebar
-        suggestions={conciergeSuggestions}
-        visible={!loading && results.length > 3}
-      />
 
       <AdvancedFiltersDrawer
         open={filtersOpen}
