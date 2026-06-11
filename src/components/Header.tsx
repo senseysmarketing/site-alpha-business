@@ -335,9 +335,6 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
               </NavigationMenuItem>
             </NavigationMenuList>
           </NavigationMenu>
-
-          {renderNavLink({ label: "Notícias", to: "/blog" }, desktopClass)}
-          {renderNavLink({ label: "Contato", hash: "contato" }, desktopClass)}
         </nav>
 
         <div className="hidden lg:flex items-center">
