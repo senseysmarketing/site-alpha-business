@@ -24,6 +24,26 @@ const AiSearchChatModal = ({ open, onOpenChange }: Props) => {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const baseRef = useRef("");
+
+  const { isSupported: micSupported, isRecording, start: startMic, stop: stopMic } = useSpeechRecognition({
+    onTranscript: ({ interim, final }) => {
+      const base = baseRef.current;
+      const combined = (base + " " + final + " " + interim).replace(/\s+/g, " ").trimStart();
+      setInput(combined);
+      if (final) baseRef.current = (base + " " + final).replace(/\s+/g, " ").trimStart();
+    },
+  });
+
+  const toggleMic = () => {
+    if (isRecording) {
+      stopMic();
+    } else {
+      baseRef.current = input ? input.trim() + " " : "";
+      void startMic();
+    }
+  };
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (open) {
