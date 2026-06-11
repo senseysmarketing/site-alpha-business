@@ -63,6 +63,7 @@ export function buildCondoMenuData(rawNames: string[]): CondoMenuData {
   const baseBuckets = new Map<string, Entry[]>();
   for (const e of entries) {
     if (e.baseKey == null) continue;
+    if (UNGROUPED_NORMALIZED_BASES.has(e.baseKey)) continue;
     if (!baseBuckets.has(e.baseKey)) baseBuckets.set(e.baseKey, []);
     baseBuckets.get(e.baseKey)!.push(e);
   }
