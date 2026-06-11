@@ -1,3 +1,5 @@
+const UNGROUPED_NORMALIZED_BASES = new Set<string>(["valville", "residencial"]);
+
 export interface CondoGroupItem {
   label: string; // display label (e.g., "1" for grouped, full name for singles)
   full: string;  // full canonical name to use in query (?condo=...)
