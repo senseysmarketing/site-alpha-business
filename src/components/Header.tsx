@@ -56,6 +56,8 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
   const [scrolled, setScrolled] = useState(false);
   const [advertiseOpen, setAdvertiseOpen] = useState(false);
   const [condoMenuSettings, setCondoMenuSettings] = useState<CondoMenuSettings | null>(null);
+  const [condoMenuValue, setCondoMenuValue] = useState("");
+  const closeCondoMenu = () => setCondoMenuValue("");
   const location = useLocation();
   const navigate = useNavigate();
   const { condos: allCondos } = useCondoList();
