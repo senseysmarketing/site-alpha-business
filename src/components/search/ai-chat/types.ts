@@ -74,7 +74,8 @@ export type ResponseType =
   | "search_link"
   | "property_detail"
   | "no_results_explanation"
-  | "condominium_breakdown";
+  | "condominium_breakdown"
+  | "handoff";
 
 export interface ConversationResponse {
   assistantMessage: string;
