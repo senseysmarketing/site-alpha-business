@@ -51,13 +51,30 @@ type NavItem = {
 
 const WHATSAPP_URL = "https://wa.me/5511993116849";
 
+const SALE_TYPES: { label: string; propertyType?: string }[] = [
+  { label: "Casa", propertyType: "casa" },
+  { label: "Apartamento", propertyType: "apartamento" },
+  { label: "Cobertura", propertyType: "cobertura" },
+  { label: "Sobrado", propertyType: "sobrado" },
+  { label: "Terreno", propertyType: "terreno" },
+  { label: "Sala Comercial", propertyType: "sala_comercial" },
+];
+
+const buildSaleHref = (propertyType?: string) =>
+  propertyType
+    ? `/busca?transactionType=venda&propertyType=${propertyType}`
+    : `/busca?transactionType=venda`;
+
 const Header = ({ variant = "transparent" }: HeaderProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [advertiseOpen, setAdvertiseOpen] = useState(false);
   const [condoMenuSettings, setCondoMenuSettings] = useState<CondoMenuSettings | null>(null);
-  const [condoMenuValue, setCondoMenuValue] = useState("");
-  const closeCondoMenu = () => setCondoMenuValue("");
+  const [navMenuValue, setNavMenuValue] = useState("");
+  const closeNavMenu = () => setNavMenuValue("");
+  const condoMenuValue = navMenuValue;
+  const setCondoMenuValue = setNavMenuValue;
+  const closeCondoMenu = closeNavMenu;
   const location = useLocation();
   const navigate = useNavigate();
   const { condos: allCondos } = useCondoList();
@@ -184,11 +201,43 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
         </Link>
 
         <nav className="hidden lg:flex items-center gap-6 xl:gap-8">
-          {renderNavLink({ label: "Venda", to: "/busca?transactionType=venda" }, desktopClass)}
-          {renderNavLink({ label: "Locação", to: "/busca?transactionType=locacao" }, desktopClass)}
-          
-          <NavigationMenu className="static max-w-none" value={condoMenuValue} onValueChange={setCondoMenuValue}>
-            <NavigationMenuList>
+          <NavigationMenu className="static max-w-none" value={navMenuValue} onValueChange={setNavMenuValue}>
+            <NavigationMenuList className="gap-6 xl:gap-8">
+              <NavigationMenuItem value="venda">
+                <NavigationMenuTrigger className="bg-transparent hover:bg-transparent focus:bg-transparent data-[state=open]:bg-transparent p-0 h-auto border-none shadow-none group">
+                  <span className={desktopClass}>Venda</span>
+                </NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <div className="w-[280px] bg-[#1f1f1f] p-6 text-white shadow-2xl flex flex-col gap-4">
+                    <p className="text-[10px] tracking-[0.2em] uppercase text-white/40 font-semibold">Por Tipo</p>
+                    <div className="flex flex-col">
+                      {SALE_TYPES.map((t) => (
+                        <Link
+                          key={t.label}
+                          to={buildSaleHref(t.propertyType)}
+                          onClick={closeNavMenu}
+                          className="text-[11px] tracking-wider uppercase text-white/60 hover:text-white transition-colors py-2 border-b border-white/5 last:border-b-0"
+                        >
+                          {t.label}
+                        </Link>
+                      ))}
+                    </div>
+                    <Link
+                      to={buildSaleHref()}
+                      onClick={closeNavMenu}
+                      className="mt-2 inline-flex items-center justify-between text-[10px] uppercase tracking-widest text-white/80 hover:text-white transition-colors group/all"
+                    >
+                      <span>Ver todos à venda</span>
+                      <ArrowRight className="h-3.5 w-3.5 text-white/40 group-hover/all:text-white transition-colors" />
+                    </Link>
+                  </div>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
+
+              <NavigationMenuItem>
+                {renderNavLink({ label: "Locação", to: "/busca?transactionType=locacao" }, desktopClass)}
+              </NavigationMenuItem>
+
               <NavigationMenuItem value="condos">
                 <NavigationMenuTrigger className="bg-transparent hover:bg-transparent focus:bg-transparent data-[state=open]:bg-transparent p-0 h-auto border-none shadow-none group">
                   <span className={desktopClass}>Condomínios</span>
@@ -277,11 +326,15 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
                   </div>
                 </NavigationMenuContent>
               </NavigationMenuItem>
+
+              <NavigationMenuItem>
+                {renderNavLink({ label: "Notícias", to: "/blog" }, desktopClass)}
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                {renderNavLink({ label: "Contato", hash: "contato" }, desktopClass)}
+              </NavigationMenuItem>
             </NavigationMenuList>
           </NavigationMenu>
-
-          {renderNavLink({ label: "Notícias", to: "/blog" }, desktopClass)}
-          {renderNavLink({ label: "Contato", hash: "contato" }, desktopClass)}
         </nav>
 
         <div className="hidden lg:flex items-center">
@@ -312,7 +365,35 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
             transition={{ duration: 0.3, ease: "easeInOut" }}
           >
             <nav className="flex flex-col px-6 py-6 pb-20 gap-4">
-            {renderNavLink({ label: "Venda", to: "/busca?transactionType=venda" }, mobileClass)}
+            {/* Mobile Venda */}
+            <Accordion type="single" collapsible className="w-full">
+              <AccordionItem value="venda" className="border-none">
+                <AccordionTrigger className="font-normal text-sm tracking-[0.1em] uppercase text-white/70 hover:text-white hover:no-underline !py-2 transition-colors text-left [&>svg]:text-white/40" style={{ fontFamily: "'Roboto', sans-serif" }}>
+                  Venda
+                </AccordionTrigger>
+                <AccordionContent className="pb-4">
+                  <div className="flex flex-col pl-1">
+                    {SALE_TYPES.map((t) => (
+                      <Link
+                        key={t.label}
+                        to={buildSaleHref(t.propertyType)}
+                        onClick={() => setMenuOpen(false)}
+                        className="text-[11px] tracking-wider uppercase text-white/60 hover:text-white transition-colors py-2 border-b border-white/5"
+                      >
+                        {t.label}
+                      </Link>
+                    ))}
+                    <Link
+                      to={buildSaleHref()}
+                      onClick={() => setMenuOpen(false)}
+                      className="text-[10px] uppercase tracking-widest text-white/80 hover:text-white transition-colors pt-3"
+                    >
+                      Ver todos à venda →
+                    </Link>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
             {renderNavLink({ label: "Locação", to: "/busca?transactionType=locacao" }, mobileClass)}
             
             {/* Mobile Condos */}
