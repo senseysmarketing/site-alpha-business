@@ -200,7 +200,7 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
                       <p className="text-[10px] tracking-[0.2em] uppercase text-white/40 font-semibold">Destaques</p>
                       <div className="space-y-4 max-h-[460px] overflow-y-auto pr-2 -mr-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-thumb]:rounded-full">
                         {(condoMenuSettings?.featured || []).map((item, idx) => (
-                          <Link key={idx} to={getFeaturedHref(item)} className="group/item block relative aspect-[16/9] overflow-hidden rounded-sm bg-muted/20">
+                          <Link key={idx} to={getFeaturedHref(item)} onClick={closeCondoMenu} className="group/item block relative aspect-[16/9] overflow-hidden rounded-sm bg-muted/20">
                             {item.image && (
                               <img src={item.image} alt={item.name} className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-110 opacity-70" />
                             )}
