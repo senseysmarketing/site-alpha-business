@@ -4,11 +4,24 @@ import rafaAvatar from "@/assets/rafa-avatar.png";
 
 interface Props {
   onClick: () => void;
-  variant?: "hero" | "compact";
+  variant?: "hero" | "compact" | "pill";
   extraAction?: ReactNode;
 }
 
 const AiSearchChatButton = ({ onClick, variant = "hero", extraAction }: Props) => {
+  if (variant === "pill") {
+    return (
+      <button
+        onClick={onClick}
+        className="inline-flex items-center gap-2 bg-primary text-primary-foreground rounded-full pl-1 pr-4 py-1 text-body text-xs tracking-[0.1em] uppercase hover:opacity-90 transition-opacity"
+      >
+        <img src={rafaAvatar} alt="" width={28} height={28} className="w-7 h-7 rounded-full object-cover bg-muted" />
+        <Sparkles size={12} />
+        Rafa IA
+      </button>
+    );
+  }
+
   if (variant === "compact") {
     return (
       <div className="w-full flex items-center gap-3 border border-border rounded-md px-3 py-2.5 hover:border-foreground/30 transition-colors text-left bg-background">
