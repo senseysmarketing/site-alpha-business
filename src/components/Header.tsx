@@ -225,6 +225,7 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
                                 <Link
                                   key={it.full}
                                   to={`/busca?condominium=${encodeURIComponent(it.full)}`}
+                                  onClick={closeCondoMenu}
                                   className="min-w-[28px] h-7 px-2 inline-flex items-center justify-center rounded-full border border-white/10 text-[11px] text-white/60 hover:text-white hover:border-white/30 transition-colors"
                                 >
                                   {it.label}
