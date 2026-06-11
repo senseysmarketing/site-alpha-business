@@ -326,6 +326,13 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
                   </div>
                 </NavigationMenuContent>
               </NavigationMenuItem>
+
+              <NavigationMenuItem>
+                {renderNavLink({ label: "Notícias", to: "/blog" }, desktopClass)}
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                {renderNavLink({ label: "Contato", hash: "contato" }, desktopClass)}
+              </NavigationMenuItem>
             </NavigationMenuList>
           </NavigationMenu>
 
