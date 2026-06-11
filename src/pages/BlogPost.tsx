@@ -120,12 +120,20 @@ const BlogPost = () => {
                 {categoryLabels[post.category] ?? post.category}
               </span>
 
-              <h1 className="text-display text-2xl md:text-5xl font-light text-cashmere leading-[1.1] mb-4">
+              <h1
+                className="text-display font-light text-cashmere !leading-[1.15] mb-4"
+                style={{ fontSize: "clamp(1.6rem, 2.2vw + 0.8rem, 3rem)", lineHeight: 1.15 }}
+              >
                 {post.title}
               </h1>
 
               {post.subtitle && (
-                <p className="text-body text-lg text-cashmere/60 mb-6">{post.subtitle}</p>
+                <p
+                  className="text-body text-cashmere/60 mb-6"
+                  style={{ fontSize: "clamp(0.95rem, 0.4vw + 0.85rem, 1.125rem)" }}
+                >
+                  {post.subtitle}
+                </p>
               )}
 
               <div className="flex items-center gap-4 text-cashmere/40">
