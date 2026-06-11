@@ -1,12 +1,12 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { SlidersHorizontal, GitCompareArrows } from "lucide-react";
+import { GitCompareArrows } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import SearchHero from "@/components/search/SearchHero";
+import SearchHero, { type SortBy } from "@/components/search/SearchHero";
 import BentoGrid from "@/components/search/BentoGrid";
 import AdvancedFiltersDrawer, {
   type Filters,
