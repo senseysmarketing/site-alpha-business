@@ -211,16 +211,16 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
                   <div className="w-[280px] bg-[#1f1f1f] p-6 text-white shadow-2xl flex flex-col gap-4">
                     <p className="text-[10px] tracking-[0.2em] uppercase text-white/40 font-semibold">Por Tipo</p>
                     <div className="flex flex-col">
-                      {SALE_TYPES.map((t) => (
-                        <Link
-                          key={t.label}
-                          to={buildSaleHref(t.propertyType)}
-                          onClick={closeNavMenu}
-                          className="text-[11px] tracking-wider uppercase text-white/60 hover:text-white transition-colors py-2 border-b border-white/5 last:border-b-0"
-                        >
-                          {t.label}
-                        </Link>
-                      ))}
+                    {SALE_TYPES.map((t) => (
+                      <Link
+                        key={t.label}
+                        to={buildSaleHref(t.propertyType)}
+                        onClick={closeNavMenu}
+                        className="text-[11px] tracking-wider normal-case text-white/60 hover:text-white transition-colors py-2 border-b border-white/5 last:border-b-0"
+                      >
+                        {t.label}
+                      </Link>
+                    ))}
                     </div>
                     <Link
                       to={buildSaleHref()}
@@ -378,7 +378,7 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
                         key={t.label}
                         to={buildSaleHref(t.propertyType)}
                         onClick={() => setMenuOpen(false)}
-                        className="text-[11px] tracking-wider uppercase text-white/60 hover:text-white transition-colors py-2 border-b border-white/5"
+                        className="text-[11px] tracking-wider normal-case text-white/60 hover:text-white transition-colors py-2 border-b border-white/5"
                       >
                         {t.label}
                       </Link>
