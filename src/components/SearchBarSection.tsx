@@ -139,7 +139,7 @@ const SearchBarSection = () => {
               </div>
 
               {/* Linha 3 — Filtros secundários */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-1 border-t border-border/40">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <input
                   type="text"
                   value={filterCondo}
