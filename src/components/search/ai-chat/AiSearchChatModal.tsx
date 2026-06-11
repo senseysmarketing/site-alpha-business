@@ -164,22 +164,50 @@ const AiSearchChatModal = ({ open, onOpenChange }: Props) => {
         {/* Filters summary + Composer */}
         <form onSubmit={handleSubmit} className="px-5 pb-4 pt-2 border-t border-border bg-background">
           <AiChatFiltersSummary filters={filters} onRemove={handleRemoveFilter} />
+          {isRecording && (
+            <div className="flex items-center gap-2 mt-2 mb-1 text-xs text-destructive">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-destructive" />
+              </span>
+              <span className="italic">Ouvindo... fale agora, o texto aparece na barra.</span>
+            </div>
+          )}
           <div className="flex items-end gap-2 mt-2 border border-border rounded-2xl px-3 py-2 bg-background focus-within:border-foreground/40 transition-colors">
             <textarea
               ref={inputRef}
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => { setInput(e.target.value); baseRef.current = e.target.value ? e.target.value + " " : ""; }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
                   handleSubmit();
                 }
               }}
-              placeholder="Descreva o imóvel ideal ou responda..."
+              placeholder={isRecording ? "Ouvindo sua voz..." : "Descreva o imóvel ideal ou responda..."}
               rows={1}
               className="flex-1 bg-transparent resize-none outline-none text-body text-sm text-foreground placeholder:text-muted-foreground max-h-32 py-1.5"
               disabled={loading}
             />
+            {micSupported && (
+              <button
+                type="button"
+                onClick={toggleMic}
+                disabled={loading}
+                className={`relative p-2 rounded-full flex-shrink-0 transition-colors ${
+                  isRecording
+                    ? "bg-destructive/10 text-destructive hover:bg-destructive/20"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                }`}
+                aria-label={isRecording ? "Parar gravação" : "Gravar áudio"}
+                title={isRecording ? "Parar gravação" : "Gravar áudio"}
+              >
+                {isRecording ? <Square size={16} fill="currentColor" /> : <Mic size={16} />}
+                {isRecording && (
+                  <span className="absolute inset-0 rounded-full animate-ping bg-destructive/30" />
+                )}
+              </button>
+            )}
             <button
               type="submit"
               disabled={loading || !input.trim()}
