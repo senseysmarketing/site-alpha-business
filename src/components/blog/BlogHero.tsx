@@ -11,7 +11,7 @@ interface BlogHeroProps {
 const BlogHero = ({ post }: BlogHeroProps) => {
   const { labelOf } = useBlogCategories();
   return (
-    <section className="relative h-[85vh] flex items-end overflow-hidden">
+    <section className="relative min-h-[60vh] md:min-h-[68vh] flex items-center overflow-hidden">
       <div className="absolute inset-0">
         {post.cover_image ? (
           <img src={post.cover_image} alt={post.title} className="w-full h-full object-cover" />
