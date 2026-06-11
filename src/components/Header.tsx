@@ -378,7 +378,7 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
                         key={t.label}
                         to={buildSaleHref(t.propertyType)}
                         onClick={() => setMenuOpen(false)}
-                        className="text-[11px] tracking-wider uppercase text-white/60 hover:text-white transition-colors py-2 border-b border-white/5"
+                        className="text-[11px] tracking-wider normal-case text-white/60 hover:text-white transition-colors py-2 border-b border-white/5"
                       >
                         {t.label}
                       </Link>
