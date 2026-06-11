@@ -56,6 +56,8 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
   const [scrolled, setScrolled] = useState(false);
   const [advertiseOpen, setAdvertiseOpen] = useState(false);
   const [condoMenuSettings, setCondoMenuSettings] = useState<CondoMenuSettings | null>(null);
+  const [condoMenuValue, setCondoMenuValue] = useState("");
+  const closeCondoMenu = () => setCondoMenuValue("");
   const location = useLocation();
   const navigate = useNavigate();
   const { condos: allCondos } = useCondoList();
@@ -185,9 +187,9 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
           {renderNavLink({ label: "Venda", to: "/busca?transactionType=venda" }, desktopClass)}
           {renderNavLink({ label: "Locação", to: "/busca?transactionType=locacao" }, desktopClass)}
           
-          <NavigationMenu className="static max-w-none">
+          <NavigationMenu className="static max-w-none" value={condoMenuValue} onValueChange={setCondoMenuValue}>
             <NavigationMenuList>
-              <NavigationMenuItem>
+              <NavigationMenuItem value="condos">
                 <NavigationMenuTrigger className="bg-transparent hover:bg-transparent focus:bg-transparent data-[state=open]:bg-transparent p-0 h-auto border-none shadow-none group">
                   <span className={desktopClass}>Condomínios</span>
                 </NavigationMenuTrigger>
@@ -198,7 +200,7 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
                       <p className="text-[10px] tracking-[0.2em] uppercase text-white/40 font-semibold">Destaques</p>
                       <div className="space-y-4 max-h-[460px] overflow-y-auto pr-2 -mr-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-thumb]:rounded-full">
                         {(condoMenuSettings?.featured || []).map((item, idx) => (
-                          <Link key={idx} to={getFeaturedHref(item)} className="group/item block relative aspect-[16/9] overflow-hidden rounded-sm bg-muted/20">
+                          <Link key={idx} to={getFeaturedHref(item)} onClick={closeCondoMenu} className="group/item block relative aspect-[16/9] overflow-hidden rounded-sm bg-muted/20">
                             {item.image && (
                               <img src={item.image} alt={item.name} className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-110 opacity-70" />
                             )}
@@ -223,6 +225,7 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
                                 <Link
                                   key={it.full}
                                   to={`/busca?condominium=${encodeURIComponent(it.full)}`}
+                                  onClick={closeCondoMenu}
                                   className="min-w-[28px] h-7 px-2 inline-flex items-center justify-center rounded-full border border-white/10 text-[11px] text-white/60 hover:text-white hover:border-white/30 transition-colors"
                                 >
                                   {it.label}
@@ -239,6 +242,7 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
                                 <Link
                                   key={it.full}
                                   to={`/busca?condominium=${encodeURIComponent(it.full)}`}
+                                  onClick={closeCondoMenu}
                                   className="text-[11px] text-white/50 hover:text-white transition-colors"
                                 >
                                   {it.label}
@@ -264,6 +268,7 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
                       </p>
                       <Link 
                         to="/busca" 
+                        onClick={closeCondoMenu}
                         className="mt-4 px-6 py-2.5 bg-white text-black text-[10px] uppercase tracking-widest font-semibold rounded-full hover:bg-white/90 transition-colors"
                       >
                         Ver todos imóveis
