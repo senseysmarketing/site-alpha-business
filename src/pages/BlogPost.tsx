@@ -91,7 +91,7 @@ const BlogPost = () => {
       />
 
       <main className="bg-[hsl(30_33%_97%)]">
-        <section className="relative h-[60vh] flex items-end overflow-hidden pt-24 md:pt-0">
+        <section className="relative h-[60vh] flex items-end overflow-hidden pt-28 md:pt-32">
           <div className="absolute inset-0">
             {post.cover_image ? (
               <img
