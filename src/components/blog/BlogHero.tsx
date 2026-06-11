@@ -11,7 +11,7 @@ interface BlogHeroProps {
 const BlogHero = ({ post }: BlogHeroProps) => {
   const { labelOf } = useBlogCategories();
   return (
-    <section className="relative h-[85vh] flex items-end overflow-hidden">
+    <section className="relative min-h-[60vh] md:min-h-[68vh] flex items-center overflow-hidden">
       <div className="absolute inset-0">
         {post.cover_image ? (
           <img src={post.cover_image} alt={post.title} className="w-full h-full object-cover" />
@@ -21,7 +21,7 @@ const BlogHero = ({ post }: BlogHeroProps) => {
         <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A]/95 via-[#0A0A0A]/55 to-[#0A0A0A]/15" />
       </div>
 
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-6 md:px-12 lg:px-24 pb-16 md:pb-24">
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-6 md:px-12 lg:px-24 py-16 md:py-20">
         <motion.span
           className="inline-block text-body text-xs tracking-[0.3em] uppercase text-cashmere/70 mb-4"
           initial={{ opacity: 0, y: 20 }}
