@@ -1,15 +1,13 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, type ReactNode } from "react";
 import { motion } from "framer-motion";
-import { Search } from "lucide-react";
-import gsap from "gsap";
+import { Search, SlidersHorizontal } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { ParsedFilters } from "@/components/search/FilterChips";
-import { useCondoList } from "@/hooks/useCondoList";
-import { usePriceBounds, buildPriceOptions } from "@/hooks/usePriceBounds";
 import AiSearchChatButton from "@/components/search/ai-chat/AiSearchChatButton";
 import AiSearchChatModal from "@/components/search/ai-chat/AiSearchChatModal";
+import { useState } from "react";
 
 interface SearchResult {
   id: string;
@@ -34,44 +32,115 @@ const enrichPhoto = (r: SearchResult): SearchResult => ({
   photo: r.photo || "/placeholder.svg",
 });
 
+export type SortBy = "relevance" | "price_asc" | "price_desc" | "area_desc" | "alpha" | "recent";
+
 interface SearchHeroProps {
   initialQuery: string;
   onResults: (results: SearchResult[]) => void;
   onLoading: (loading: boolean) => void;
   onParsedFilters?: (filters: ParsedFilters | null) => void;
+  totalCount: number;
+  localQuery: string;
+  onLocalQueryChange: (value: string) => void;
+  sortBy: SortBy;
+  onSortChange: (value: SortBy) => void;
+  onOpenFilters: () => void;
+  chips?: ReactNode;
 }
 
+const formatBRL = (value: number) => {
+  if (value >= 1_000_000) {
+    const m = value / 1_000_000;
+    return `R$ ${m % 1 === 0 ? m.toFixed(0) : m.toFixed(1).replace(".", ",")} mi`;
+  }
+  if (value >= 1_000) return `R$ ${(value / 1_000).toFixed(0)} mil`;
+  return `R$ ${value}`;
+};
+
+const propertyTypeLabel: Record<string, string> = {
+  casa: "Casas",
+  apartamento: "Apartamentos",
+  terreno: "Terrenos",
+  cobertura: "Coberturas",
+  sobrado: "Sobrados",
+};
+
+const buildTitle = (params: URLSearchParams, initialQuery: string): { title: string; subtitle: string } => {
+  const condo = params.get("condominium");
+  const q = (params.get("q") || initialQuery || "").trim();
+  const propertyType = params.get("propertyType");
+  const transactionType = params.get("transactionType");
+  const minBedrooms = params.get("minBedrooms");
+  const minPrice = params.get("minPrice");
+  const maxPrice = params.get("maxPrice");
+  const tag = params.get("tag");
+
+  if (condo) {
+    return {
+      title: `Imóveis no ${condo}`,
+      subtitle: "Seleção atual de imóveis disponíveis neste condomínio",
+    };
+  }
+
+  if (q) {
+    return {
+      title: `Resultados para "${q}"`,
+      subtitle: "Imóveis encontrados a partir da sua busca",
+    };
+  }
+
+  if (tag) {
+    return {
+      title: `Estilo de vida · ${tag}`,
+      subtitle: "Imóveis selecionados para este estilo de vida",
+    };
+  }
+
+  const hasAnyFilter = propertyType || transactionType || minBedrooms || minPrice || maxPrice;
+  if (hasAnyFilter) {
+    const noun = propertyType ? (propertyTypeLabel[propertyType] || "Imóveis") : "Imóveis";
+    const tx =
+      transactionType === "locacao" || transactionType === "aluguel"
+        ? "para locação"
+        : transactionType === "venda"
+          ? "para venda"
+          : "";
+    const priceParts: string[] = [];
+    if (minPrice) priceParts.push(`a partir de ${formatBRL(Number(minPrice))}`);
+    if (maxPrice) priceParts.push(`até ${formatBRL(Number(maxPrice))}`);
+    const beds = minBedrooms ? `com ${minBedrooms}+ suítes` : "";
+    const pieces = [noun, tx, priceParts.join(" "), beds].filter(Boolean);
+    return {
+      title: pieces.join(" "),
+      subtitle: "Resultados filtrados conforme seus critérios",
+    };
+  }
+
+  return {
+    title: "Todos os imóveis disponíveis",
+    subtitle: "Explore a coleção completa de oportunidades exclusivas",
+  };
+};
+
 const selectClass =
-  "bg-background border border-border rounded-md px-3 py-2.5 text-body text-sm text-foreground outline-none focus:ring-1 focus:ring-primary appearance-none cursor-pointer";
+  "bg-background border border-border rounded-full px-4 py-2 text-body text-xs tracking-wider uppercase text-foreground outline-none focus:ring-1 focus:ring-primary appearance-none cursor-pointer pr-8";
 
-const SearchHero = ({ initialQuery, onResults, onLoading, onParsedFilters }: SearchHeroProps) => {
-  const { condos: allCondos } = useCondoList();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [mode, setMode] = useState<"cognitive" | "traditional">("cognitive");
+const SearchHero = ({
+  initialQuery,
+  onResults,
+  onLoading,
+  onParsedFilters,
+  totalCount,
+  localQuery,
+  onLocalQueryChange,
+  sortBy,
+  onSortChange,
+  onOpenFilters,
+  chips,
+}: SearchHeroProps) => {
+  const [searchParams] = useSearchParams();
   const [chatOpen, setChatOpen] = useState(false);
-  const heroImageRef = useRef<HTMLDivElement>(null);
-
-  // Traditional filters — initialized from URL
-  const [filterType, setFilterType] = useState("");
-  const [filterMinPrice, setFilterMinPrice] = useState("");
-  const [filterMaxPrice, setFilterMaxPrice] = useState("");
-  const [filterCondo, setFilterCondo] = useState(() => searchParams.get("condominium") || "");
-  const [filterBedrooms, setFilterBedrooms] = useState("");
-  const [filterTransaction, setFilterTransaction] = useState(
-    () => searchParams.get("transactionType") || ""
-  );
-
-  const priceBounds = usePriceBounds();
-  const rental = filterTransaction === "locacao" || filterTransaction === "aluguel";
-  const priceOptions = rental
-    ? buildPriceOptions(priceBounds.rentMin, priceBounds.rentMax, true)
-    : buildPriceOptions(priceBounds.saleMin, priceBounds.saleMax, false);
-
-  useEffect(() => {
-    if (heroImageRef.current) {
-      gsap.fromTo(heroImageRef.current, { scale: 1.15 }, { scale: 1, duration: 2.5, ease: "power2.out" });
-    }
-  }, []);
+  const { title, subtitle } = buildTitle(searchParams, initialQuery);
 
   // Backward compat: if a ?q= initial query is present, run legacy search once.
   useEffect(() => {
@@ -96,118 +165,71 @@ const SearchHero = ({ initialQuery, onResults, onLoading, onParsedFilters }: Sea
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleTraditionalSearch = useCallback(() => {
-    const next = new URLSearchParams();
-    if (filterType) next.set("propertyType", filterType);
-    if (filterBedrooms) next.set("minBedrooms", filterBedrooms);
-    if (filterCondo) next.set("condominium", filterCondo);
-    if (filterTransaction) next.set("transactionType", filterTransaction);
-    if (filterMinPrice) next.set("minPrice", filterMinPrice);
-    if (filterMaxPrice) next.set("maxPrice", filterMaxPrice);
-    setSearchParams(next);
-    onParsedFilters?.(null);
-    onLoading(false);
-  }, [
-    filterType, filterMinPrice, filterMaxPrice, filterCondo, filterBedrooms, filterTransaction,
-    setSearchParams, onLoading, onParsedFilters,
-  ]);
-
   return (
-    <section className="relative bg-background pt-28 md:pt-32 pb-10 md:pb-12 flex items-center justify-center overflow-hidden">
-      <div className="relative z-10 w-full max-w-3xl mx-auto px-4 md:px-6">
-        <motion.h1
-          className="text-display text-2xl md:text-3xl font-light text-foreground text-center mb-6 tracking-wide"
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-        >
-          Alpha Concierge
-        </motion.h1>
-
+    <section className="relative bg-background pt-24 md:pt-28 pb-4 md:pb-6">
+      <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-16">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.7 }}
-          className="bg-white border border-border rounded-lg shadow-2xl p-3 sm:p-6"
+          transition={{ duration: 0.5 }}
         >
-          {mode === "cognitive" ? (
-            <AiSearchChatButton
-              onClick={() => setChatOpen(true)}
-              variant="hero"
-              extraAction={
-                <button
-                  onClick={(e) => { e.stopPropagation(); setMode("traditional"); }}
-                  className="inline-flex text-body text-[10px] tracking-[0.1em] uppercase px-3 sm:px-4 py-1.5 rounded-full bg-muted text-muted-foreground hover:text-foreground transition-colors flex-shrink-0 whitespace-nowrap"
-                >
-                  Tradicional
-                </button>
-              }
-            />
+          <p className="text-body text-[10px] tracking-[0.25em] uppercase text-muted-foreground mb-3">
+            Busca · Resultados
+          </p>
+          <h1 className="text-display text-2xl md:text-3xl font-light text-foreground leading-tight">
+            {title}
+          </h1>
+          <p className="text-body text-sm text-muted-foreground mt-2">
+            {totalCount > 0
+              ? `${totalCount} ${totalCount === 1 ? "imóvel encontrado" : "imóveis encontrados"} · ${subtitle}`
+              : subtitle}
+          </p>
 
-          ) : (
-            <div className="space-y-4">
-              <div className="flex justify-end">
-                <button
-                  onClick={() => setMode("cognitive")}
-                  className="text-body text-[10px] tracking-[0.1em] uppercase px-4 py-1.5 rounded-full bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Cognitivo
-                </button>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                <select value={filterTransaction} onChange={(e) => setFilterTransaction(e.target.value)} className={selectClass}>
-                  <option value="">Transação</option>
-                  <option value="venda">Venda</option>
-                  <option value="locacao">Locação</option>
-                </select>
+          {chips && <div className="mt-4">{chips}</div>}
 
-                <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className={selectClass}>
-                  <option value="">Tipo</option>
-                  <option value="casa">Casa</option>
-                  <option value="apartamento">Apartamento</option>
-                  <option value="terreno">Terreno</option>
-                </select>
-
-                <select value={filterBedrooms} onChange={(e) => setFilterBedrooms(e.target.value)} className={selectClass}>
-                  <option value="">Suítes (mínimo)</option>
-                  <option value="1">1+</option>
-                  <option value="2">2+</option>
-                  <option value="3">3+</option>
-                  <option value="4">4+</option>
-                  <option value="5">5+</option>
-                </select>
-
-                <select value={filterMinPrice} onChange={(e) => setFilterMinPrice(e.target.value)} className={selectClass}>
-                  <option value="">Preço mínimo</option>
-                  {priceOptions.map((o) => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
-                </select>
-
-                <select value={filterMaxPrice} onChange={(e) => setFilterMaxPrice(e.target.value)} className={selectClass}>
-                  <option value="">Até</option>
-                  {priceOptions.map((o) => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
-                </select>
-
-                <select value={filterCondo} onChange={(e) => setFilterCondo(e.target.value)} className={`${selectClass} w-full`}>
-                  <option value="">Condomínio</option>
-                  {allCondos.map((c) => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-              </div>
-
-              <button
-                onClick={handleTraditionalSearch}
-                className="w-full bg-primary text-primary-foreground py-3 text-body text-xs tracking-[0.15em] uppercase hover-magnetic flex items-center justify-center gap-2 rounded-md"
-              >
-                <Search size={14} />
-                Buscar imóveis
-              </button>
+          {/* Controls row */}
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <div className="relative flex-1 min-w-[220px] max-w-md">
+              <Search
+                size={14}
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+              />
+              <input
+                type="text"
+                value={localQuery}
+                onChange={(e) => onLocalQueryChange(e.target.value)}
+                placeholder="Filtrar nesta lista..."
+                className="w-full bg-background border border-border rounded-full pl-10 pr-4 py-2 text-body text-sm text-foreground outline-none focus:ring-1 focus:ring-primary"
+              />
             </div>
-          )}
+
+            <div className="relative">
+              <select
+                value={sortBy}
+                onChange={(e) => onSortChange(e.target.value as SortBy)}
+                className={selectClass}
+              >
+                <option value="relevance">Ordenar: Relevância</option>
+                <option value="price_asc">Menor preço</option>
+                <option value="price_desc">Maior preço</option>
+                <option value="area_desc">Maior área</option>
+                <option value="alpha">A → Z</option>
+                <option value="recent">Mais recentes</option>
+              </select>
+            </div>
+
+            <button
+              onClick={onOpenFilters}
+              className="inline-flex items-center gap-2 border border-border rounded-full px-4 py-2 text-body text-xs tracking-wider uppercase text-foreground hover:bg-muted transition-colors"
+            >
+              <SlidersHorizontal size={14} />
+              Filtros
+            </button>
+
+            <div className="ml-auto">
+              <AiSearchChatButton variant="pill" onClick={() => setChatOpen(true)} />
+            </div>
+          </div>
         </motion.div>
       </div>
 
