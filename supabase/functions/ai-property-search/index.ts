@@ -128,6 +128,93 @@ const fmtBRL = (n: number | null | undefined) =>
     ? n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 })
     : "Sob consulta";
 
+// =====================================================================
+// Consultive layer (handoff + show-results decision)
+// =====================================================================
+const WHATSAPP_NUMBER = "5511993116849";
+const WHATSAPP_BASE = `https://wa.me/${WHATSAPP_NUMBER}`;
+
+const HANDOFF_TERMS = [
+  "humano", "atendente", "atendimento", "corretor", "corretora",
+  "consultor", "consultora", "especialista", "whatsapp", "wpp", "zap",
+  "telefone", "ligacao", "ligar", "me chama", "me chame",
+  "falar com alguem", "falar com uma pessoa", "falar com pessoa",
+  "quero atendimento", "nao achei", "nao encontrei", "nao resolveu",
+  "prefiro falar com alguem", "fala com humano", "atendimento humano",
+];
+
+const detectHandoffIntent = (message: string): boolean => {
+  const n = norm(message);
+  if (!n) return false;
+  return HANDOFF_TERMS.some((t) => n.includes(t));
+};
+
+const SHOW_RESULTS_TERMS = [
+  "me mostra", "me mostre", "mostra ai", "mostrar", "quero ver", "ver imove",
+  "ver opcoes", "ver opcao", "ver resultado", "ver os resultado",
+  "manda", "mande", "quais imove", "quais opcoes", "resultados", "opcoes",
+  "me indique", "me indica", "recomenda", "recomende", "melhores",
+  "mostra agora", "ver agora", "ver tudo", "ver todos",
+];
+
+const hasQualifiedSearchState = (f: PropertySearchFilters): boolean => {
+  if (!f.transactionType) return false;
+  return !!(f.condominium || f.condominiumGroup || f.propertyType || f.maxPrice || f.minPrice);
+};
+
+const shouldShowResultsV3 = (args: {
+  message: string;
+  patch: IntentPatch | null;
+  selectedOption?: OptionChip;
+  state: PropertySearchFilters;
+  matchCount: number;
+}): boolean => {
+  const { message, patch, selectedOption, state, matchCount } = args;
+  if (matchCount <= 0) return false;
+  if (patch?.show_results === true) return true;
+  if ((patch as any)?.intent === "show_results") return true;
+  const opt = selectedOption;
+  if (opt) {
+    if (opt.action === "show_results") return true;
+    if (opt.kind === "navigate") return true;
+    if (opt.value === "show_all") return true;
+  }
+  const n = norm(message);
+  if (n && SHOW_RESULTS_TERMS.some((t) => n.includes(t))) return true;
+  if (matchCount === 1 && hasQualifiedSearchState(state)) return true;
+  return false;
+};
+
+const buildWhatsAppUrl = (state: PropertySearchFilters, message: string): string => {
+  const summary = summarizeFiltersV3(state);
+  const last = (message ?? "").trim();
+  const lines = [
+    "Olá! Vim pela busca com IA do site AlphaBusiness.",
+    summary ? `Estou procurando: ${summary}.` : "",
+    last ? `Última mensagem: "${last.slice(0, 220)}"` : "",
+  ].filter(Boolean);
+  const text = lines.join("\n").slice(0, 600);
+  return `${WHATSAPP_BASE}?text=${encodeURIComponent(text)}`;
+};
+
+const buildHandoffResponse = (state: PropertySearchFilters, message: string) => {
+  const url = buildWhatsAppUrl(state, message);
+  return {
+    assistantMessage:
+      "Claro! Vou te conectar com um consultor da **AlphaBusiness** no WhatsApp. Ele segue com seu atendimento personalizado a partir daqui.",
+    responseType: "handoff" as const,
+    conversation_state: state,
+    updatedState: { filters: state } as ConversationState,
+    parsedFilters: state,
+    links: [{ label: "Falar com consultor pelo WhatsApp", url, type: "whatsapp" as const }],
+    suggestedOptions: [
+      { label: "Ajustar filtros", value: "refine", kind: "action", action: "refine" },
+      { label: "Nova busca", value: "reset", kind: "reset" },
+    ] as OptionChip[],
+    nextAction: "ask" as const,
+  };
+};
+
 const filtersToQS = (f: PropertySearchFilters): string => {
   const p = new URLSearchParams();
   if (f.transactionType) p.set("transactionType", f.transactionType);
@@ -852,7 +939,7 @@ Filtros disponíveis (todos opcionais):
 - maxPrice: número (em R$)
 - highlights: array com qualquer combinação de ["piscina","gourmet","jardim","vista","reformado","mobiliado"]
 
-Intents válidas: new_search, update_filter, show_results, broaden_search, ask_condominium_breakdown, small_talk, greeting.
+Intents válidas: new_search, update_filter, show_results, broaden_search, ask_condominium_breakdown, small_talk, greeting, handoff.
 
 Condomínios reais no estoque (use o nome exato se reconhecer): ${condoSample}
 
@@ -1697,7 +1784,15 @@ const extractSearchIntentV3 = async (
       .map((m) => `${m.role === "user" ? "U" : "A"}: ${m.content}`)
       .join("\n");
 
-    const system = `Você é o agente de busca imobiliária do AlphaBusiness em Alphaville/Tamboré. Sua função é INTERPRETAR a mensagem do usuário e devolver um PATCH JSON que atualiza os filtros da conversa. Você NÃO inventa imóveis e NÃO devolve listas de imóveis — só interpreta intenção.
+    const system = `Você é o **Rafa IA**, consultor digital imobiliário da **AlphaBusiness**, especialista em Alphaville/Tamboré. Sua função é INTERPRETAR a mensagem do usuário, conduzir a conversa de forma consultiva e devolver um PATCH JSON que atualiza os filtros da busca. Você NÃO inventa imóveis, valores, disponibilidade ou características — apenas interpreta intenção.
+
+Postura consultiva:
+- Aja como consultor humano: entenda o perfil antes de mostrar opções.
+- NÃO marque show_results=true apenas porque há filtros ou resultados encontrados.
+- Quando o usuário só adiciona/refina filtros, marque intent="update_filter" e responda com pergunta útil ou confirmação curta — sem forçar exibição.
+- Marque show_results=true APENAS se o usuário pedir explicitamente para ver/mostrar/recomendar imóveis, opções, resultados, cards ou destaques ("me mostra", "quero ver", "manda opções", "ver resultados", "quais imóveis tem", "me indique os melhores").
+- Se o usuário pedir humano/corretor/consultor/atendimento/WhatsApp ou demonstrar frustração ("não achei", "não resolveu"), marque intent="handoff".
+- Termos como piscina, neo clássica, área gourmet, vista, mobiliado, varanda, sacada, terraço, alto padrão, luxo → keywords_add (busca textual).
 
 Filtros disponíveis (todos opcionais, números puros sem unidade):
 - transactionType: "venda" | "locacao"
@@ -2013,8 +2108,14 @@ const handleConverseV3 = async (sb: SB, body: any) => {
   const message = String(body.message ?? "").trim();
   const incoming = body.conversation_state ?? body.currentState?.filters ?? body.currentState ?? {};
   let state = sanitizeFiltersV3(incoming);
-  state = applySelectedChipV3(state, body.selectedOption as OptionChip | undefined);
+  const selectedOption = body.selectedOption as OptionChip | undefined;
+  state = applySelectedChipV3(state, selectedOption);
   const history = body.history as ConversationMessage[] | undefined;
+
+  // 0) Deterministic handoff — before any search
+  if (message && detectHandoffIntent(message)) {
+    return buildHandoffResponse(state, message);
+  }
 
   // 1) Code shortcut
   const code = extractCode(message);
@@ -2041,6 +2142,11 @@ const handleConverseV3 = async (sb: SB, body: any) => {
     state = applyPatchV3(state, patch, entries);
   }
 
+  // 2.1) LLM-detected handoff intent
+  if ((patch as any)?.intent === "handoff") {
+    return buildHandoffResponse(state, message);
+  }
+
   // 3) Did-you-mean — ask confirmation before applying
   if (state.lastDidYouMean) {
     const dym = state.lastDidYouMean;
@@ -2061,7 +2167,6 @@ const handleConverseV3 = async (sb: SB, body: any) => {
         nextAction: "ask" as const,
       };
     }
-    // unknown condo
     return {
       assistantMessage: `Não localizei nenhum condomínio chamado **${dym.term}** no nosso estoque ativo. Quer me passar outro nome ou seguir sem esse filtro?`,
       responseType: "clarification" as const,
@@ -2079,43 +2184,98 @@ const handleConverseV3 = async (sb: SB, body: any) => {
   const ranked = filterAndRankV3(rows, state);
   const matchCount = ranked.length;
   const preview = ranked.slice(0, 4).map((m) => rowToResult(m.row));
-
-  // 5) Compose message
   const summary = summarizeFiltersV3(state);
-  let assistantMessage = (patch?.reply ?? "").trim();
-  if (!assistantMessage) {
-    if (matchCount === 0) {
-      assistantMessage = summary
-        ? `Não encontrei imóveis com ${summary} no estoque ativo. Quer ajustar algum critério?`
-        : `Me conta o que você procura: comprar ou alugar? Algum condomínio, faixa de preço ou tipo de imóvel?`;
-    } else if (matchCount === 1) {
-      assistantMessage = `Encontrei **1 imóvel** com ${summary || "esses critérios"}.`;
-    } else {
-      const more = matchCount > 4 ? " Aqui vão os destaques:" : "";
-      assistantMessage = `Encontrei **${matchCount} imóveis** com ${summary || "esses critérios"}.${more}`;
-    }
+  const suggestedOptions = buildDynamicSuggestionsV3(state, matchCount, ranked);
+
+  // 5a) No results — consultive response + WhatsApp handoff option
+  if (matchCount === 0) {
+    const assistantMessage = (patch?.reply ?? "").trim() || (summary
+      ? `Não encontrei imóveis exatamente com **${summary}** no estoque ativo. Posso ajustar os filtros com você ou te direcionar para um consultor da AlphaBusiness verificar opções fora do site.`
+      : `Me conta um pouco mais sobre o que você procura: comprar ou alugar? Algum condomínio, faixa de preço ou tipo de imóvel?`);
+    const whatsappUrl = buildWhatsAppUrl(state, message);
+    const noResultsChips: OptionChip[] = [
+      ...suggestedOptions,
+      { label: "Falar com consultor", value: "handoff", kind: "handoff", action: "handoff" },
+      { label: "Nova busca", value: "reset", kind: "reset" },
+    ];
+    return {
+      assistantMessage,
+      responseType: "no_results_explanation" as const,
+      conversation_state: state,
+      updatedState: { filters: state } as ConversationState,
+      parsedFilters: state,
+      matchCount,
+      total_matches: matchCount,
+      suggestedOptions: noResultsChips,
+      suggestions: noResultsChips.map((s) => s.label),
+      links: [{ label: "Falar com consultor pelo WhatsApp", url: whatsappUrl, type: "whatsapp" as const }],
+      nextAction: "ask" as const,
+    };
   }
 
-  const suggestedOptions = buildDynamicSuggestionsV3(state, matchCount, ranked);
+  // 5b) Decide whether to actually show property cards
+  const showResults = shouldShowResultsV3({
+    message,
+    patch,
+    selectedOption,
+    state,
+    matchCount,
+  });
+
+  if (showResults) {
+    const assistantMessage = (patch?.reply ?? "").trim() || (matchCount === 1
+      ? `Encontrei **1 imóvel** com ${summary || "esses critérios"}.`
+      : `Aqui estão os imóveis mais compatíveis com ${summary || "sua busca"}.`);
+    return {
+      assistantMessage,
+      responseType: "results_preview" as const,
+      conversation_state: state,
+      updatedState: { filters: state } as ConversationState,
+      parsedFilters: state,
+      matchCount,
+      total_matches: matchCount,
+      resultsPreview: preview,
+      suggestedOptions,
+      suggestions: suggestedOptions.map((s) => s.label),
+      links: [{ label: "Abrir busca completa", url: buildSearchUrl(state), type: "search" as const }],
+      nextAction: "show" as const,
+    };
+  }
+
+  // 5c) Consultive turn — update filters, ask next useful question, do NOT show cards
+  let assistantMessage = (patch?.reply ?? "").trim();
+  if (!assistantMessage) {
+    const missingHint: string[] = [];
+    if (!state.transactionType) missingHint.push("se é compra ou locação");
+    else if (!state.propertyType && !state.condominium && !state.condominiumGroup) missingHint.push("tipo de imóvel ou condomínio");
+    else if (!state.maxPrice && !state.minPrice) missingHint.push("uma faixa de valor");
+    else if (!state.minBedrooms) missingHint.push("quantas suítes");
+    const ask = missingHint.length
+      ? `Quer me contar ${missingHint[0]}, ou prefere que eu já te mostre os imóveis?`
+      : `Quer que eu mostre as opções agora ou prefere refinar mais um critério?`;
+    assistantMessage = summary
+      ? `Filtrei **${summary}**. Encontrei **${matchCount}** ${matchCount === 1 ? "opção compatível" : "opções compatíveis"}. ${ask}`
+      : `Posso te ajudar a refinar a busca. ${ask}`;
+  }
+
+  const consultiveChips: OptionChip[] = [
+    { label: matchCount === 1 ? "Ver imóvel" : `Ver os ${Math.min(matchCount, 50)} resultados`, value: "show_results", kind: "action", action: "show_results" },
+    ...suggestedOptions.filter((c) => c.value !== "show_all"),
+  ];
 
   return {
     assistantMessage,
-    responseType: (matchCount > 0 ? "results_preview" : "no_results_explanation") as const,
-    // v3 canonical state field:
+    responseType: "text" as const,
     conversation_state: state,
-    // legacy compat for the existing front-end hook (state.filters):
     updatedState: { filters: state } as ConversationState,
     parsedFilters: state,
     matchCount,
     total_matches: matchCount,
-    resultsPreview: preview,
-    suggestedOptions,
-    suggestions: suggestedOptions.map((s) => s.label),
-    links:
-      matchCount > 0
-        ? [{ label: "Abrir busca completa", url: buildSearchUrl(state), type: "search" as const }]
-        : undefined,
-    nextAction: (matchCount > 0 ? "show" : "ask") as "show" | "ask",
+    // No resultsPreview — consultive turn
+    suggestedOptions: consultiveChips,
+    suggestions: consultiveChips.map((s) => s.label),
+    links: [{ label: "Abrir busca completa", url: buildSearchUrl(state), type: "search" as const }],
+    nextAction: "ask" as const,
   };
 };
 
