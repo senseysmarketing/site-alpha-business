@@ -268,6 +268,7 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
                       </p>
                       <Link 
                         to="/busca" 
+                        onClick={closeCondoMenu}
                         className="mt-4 px-6 py-2.5 bg-white text-black text-[10px] uppercase tracking-widest font-semibold rounded-full hover:bg-white/90 transition-colors"
                       >
                         Ver todos imóveis
