@@ -1,3 +1,5 @@
+const UNGROUPED_NORMALIZED_BASES = new Set<string>(["valville", "residencial"]);
+
 export interface CondoGroupItem {
   label: string; // display label (e.g., "1" for grouped, full name for singles)
   full: string;  // full canonical name to use in query (?condo=...)
@@ -61,6 +63,7 @@ export function buildCondoMenuData(rawNames: string[]): CondoMenuData {
   const baseBuckets = new Map<string, Entry[]>();
   for (const e of entries) {
     if (e.baseKey == null) continue;
+    if (UNGROUPED_NORMALIZED_BASES.has(e.baseKey)) continue;
     if (!baseBuckets.has(e.baseKey)) baseBuckets.set(e.baseKey, []);
     baseBuckets.get(e.baseKey)!.push(e);
   }
