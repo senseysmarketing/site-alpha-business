@@ -196,8 +196,8 @@ const AiSearchChatModal = ({ open, onOpenChange }: Props) => {
                 disabled={loading}
                 className={`relative p-2 rounded-full flex-shrink-0 transition-colors ${
                   isRecording
-                    ? "bg-destructive/10 text-destructive hover:bg-destructive/20"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    : "bg-muted text-foreground hover:bg-muted/80"
                 }`}
                 aria-label={isRecording ? "Parar gravação" : "Gravar áudio"}
                 title={isRecording ? "Parar gravação" : "Gravar áudio"}
