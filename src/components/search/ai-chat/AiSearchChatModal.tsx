@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { Send, RotateCcw, X, Loader2 } from "lucide-react";
+import { Send, RotateCcw, X, Loader2, Mic, Square } from "lucide-react";
+import { useSpeechRecognition } from "./useSpeechRecognition";
 import { useNavigate } from "react-router-dom";
 import rafaAvatar from "@/assets/rafa-avatar.png";
 import AiChatMessage from "./AiChatMessage";
