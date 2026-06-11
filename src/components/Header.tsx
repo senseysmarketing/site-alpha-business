@@ -201,8 +201,44 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
         </Link>
 
         <nav className="hidden lg:flex items-center gap-6 xl:gap-8">
-          {renderNavLink({ label: "Venda", to: "/busca?transactionType=venda" }, desktopClass)}
-          {renderNavLink({ label: "Locação", to: "/busca?transactionType=locacao" }, desktopClass)}
+          <NavigationMenu className="static max-w-none" value={navMenuValue} onValueChange={setNavMenuValue}>
+            <NavigationMenuList className="gap-6 xl:gap-8">
+              <NavigationMenuItem value="venda">
+                <NavigationMenuTrigger className="bg-transparent hover:bg-transparent focus:bg-transparent data-[state=open]:bg-transparent p-0 h-auto border-none shadow-none group">
+                  <span className={desktopClass}>Venda</span>
+                </NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <div className="w-[280px] bg-[#1f1f1f] p-6 text-white shadow-2xl flex flex-col gap-4">
+                    <p className="text-[10px] tracking-[0.2em] uppercase text-white/40 font-semibold">Por Tipo</p>
+                    <div className="flex flex-col">
+                      {SALE_TYPES.map((t) => (
+                        <Link
+                          key={t.label}
+                          to={buildSaleHref(t.propertyType)}
+                          onClick={closeNavMenu}
+                          className="text-[11px] tracking-wider uppercase text-white/60 hover:text-white transition-colors py-2 border-b border-white/5 last:border-b-0"
+                        >
+                          {t.label}
+                        </Link>
+                      ))}
+                    </div>
+                    <Link
+                      to={buildSaleHref()}
+                      onClick={closeNavMenu}
+                      className="mt-2 inline-flex items-center justify-between text-[10px] uppercase tracking-widest text-white/80 hover:text-white transition-colors group/all"
+                    >
+                      <span>Ver todos à venda</span>
+                      <ArrowRight className="h-3.5 w-3.5 text-white/40 group-hover/all:text-white transition-colors" />
+                    </Link>
+                  </div>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
+
+              <NavigationMenuItem>
+                {renderNavLink({ label: "Locação", to: "/busca?transactionType=locacao" }, desktopClass)}
+              </NavigationMenuItem>
+
+              <NavigationMenuItem value="condos">
           
           <NavigationMenu className="static max-w-none" value={condoMenuValue} onValueChange={setCondoMenuValue}>
             <NavigationMenuList>
