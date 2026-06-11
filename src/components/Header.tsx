@@ -187,9 +187,9 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
           {renderNavLink({ label: "Venda", to: "/busca?transactionType=venda" }, desktopClass)}
           {renderNavLink({ label: "Locação", to: "/busca?transactionType=locacao" }, desktopClass)}
           
-          <NavigationMenu className="static max-w-none">
+          <NavigationMenu className="static max-w-none" value={condoMenuValue} onValueChange={setCondoMenuValue}>
             <NavigationMenuList>
-              <NavigationMenuItem>
+              <NavigationMenuItem value="condos">
                 <NavigationMenuTrigger className="bg-transparent hover:bg-transparent focus:bg-transparent data-[state=open]:bg-transparent p-0 h-auto border-none shadow-none group">
                   <span className={desktopClass}>Condomínios</span>
                 </NavigationMenuTrigger>
