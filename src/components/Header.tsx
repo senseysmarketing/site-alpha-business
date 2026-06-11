@@ -365,7 +365,35 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
             transition={{ duration: 0.3, ease: "easeInOut" }}
           >
             <nav className="flex flex-col px-6 py-6 pb-20 gap-4">
-            {renderNavLink({ label: "Venda", to: "/busca?transactionType=venda" }, mobileClass)}
+            {/* Mobile Venda */}
+            <Accordion type="single" collapsible className="w-full">
+              <AccordionItem value="venda" className="border-none">
+                <AccordionTrigger className="font-normal text-sm tracking-[0.1em] uppercase text-white/70 hover:text-white hover:no-underline !py-2 transition-colors text-left [&>svg]:text-white/40" style={{ fontFamily: "'Roboto', sans-serif" }}>
+                  Venda
+                </AccordionTrigger>
+                <AccordionContent className="pb-4">
+                  <div className="flex flex-col pl-1">
+                    {SALE_TYPES.map((t) => (
+                      <Link
+                        key={t.label}
+                        to={buildSaleHref(t.propertyType)}
+                        onClick={() => setMenuOpen(false)}
+                        className="text-[11px] tracking-wider uppercase text-white/60 hover:text-white transition-colors py-2 border-b border-white/5"
+                      >
+                        {t.label}
+                      </Link>
+                    ))}
+                    <Link
+                      to={buildSaleHref()}
+                      onClick={() => setMenuOpen(false)}
+                      className="text-[10px] uppercase tracking-widest text-white/80 hover:text-white transition-colors pt-3"
+                    >
+                      Ver todos à venda →
+                    </Link>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
             {renderNavLink({ label: "Locação", to: "/busca?transactionType=locacao" }, mobileClass)}
             
             {/* Mobile Condos */}
