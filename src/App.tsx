@@ -95,6 +95,7 @@ const App = () => (
         <BrowserRouter>
           <SiteGate>
             <AnimatedRoutes />
+            <FloatingWhatsApp />
           </SiteGate>
         </BrowserRouter>
       </TooltipProvider>
