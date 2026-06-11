@@ -203,13 +203,47 @@ const SearchResults = () => {
       }
       return true;
     });
-    // Priorize properties with photos to avoid empty placeholder cards.
-    return [...filtered].sort((a, b) => {
-      const photoA = a.photo ? 1 : 0;
-      const photoB = b.photo ? 1 : 0;
-      return photoB - photoA;
-    });
-  }, [results, filters, tagParam]);
+
+    const lq = normalize(localQuery);
+    const searched = lq
+      ? filtered.filter((r) => {
+          const hay = [r.title, r.code, r.condominium, r.neighborhood, r.city]
+            .filter(Boolean)
+            .map((s) => normalize(s as string))
+            .join(" | ");
+          return hay.includes(lq);
+        })
+      : filtered;
+
+    const priceOf = (r: SearchResult) =>
+      (isRental(r.transaction_type) ? r.rental_price : r.price) ?? 0;
+
+    const sorted = [...searched];
+    switch (sortBy) {
+      case "price_asc":
+        sorted.sort((a, b) => priceOf(a) - priceOf(b));
+        break;
+      case "price_desc":
+        sorted.sort((a, b) => priceOf(b) - priceOf(a));
+        break;
+      case "area_desc":
+        sorted.sort((a, b) => (b.area_total || 0) - (a.area_total || 0));
+        break;
+      case "alpha":
+        sorted.sort((a, b) => (a.title || "").localeCompare(b.title || "", "pt-BR"));
+        break;
+      case "recent":
+        sorted.sort((a, b) => (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0));
+        break;
+      default:
+        sorted.sort((a, b) => {
+          const photoA = a.photo ? 1 : 0;
+          const photoB = b.photo ? 1 : 0;
+          return photoB - photoA;
+        });
+    }
+    return sorted;
+  }, [results, filters, tagParam, localQuery, sortBy]);
 
   // Reset pagination whenever the filtered set changes.
   useEffect(() => {
