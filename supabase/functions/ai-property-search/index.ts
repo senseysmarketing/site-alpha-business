@@ -128,6 +128,93 @@ const fmtBRL = (n: number | null | undefined) =>
     ? n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 })
     : "Sob consulta";
 
+// =====================================================================
+// Consultive layer (handoff + show-results decision)
+// =====================================================================
+const WHATSAPP_NUMBER = "5511993116849";
+const WHATSAPP_BASE = `https://wa.me/${WHATSAPP_NUMBER}`;
+
+const HANDOFF_TERMS = [
+  "humano", "atendente", "atendimento", "corretor", "corretora",
+  "consultor", "consultora", "especialista", "whatsapp", "wpp", "zap",
+  "telefone", "ligacao", "ligar", "me chama", "me chame",
+  "falar com alguem", "falar com uma pessoa", "falar com pessoa",
+  "quero atendimento", "nao achei", "nao encontrei", "nao resolveu",
+  "prefiro falar com alguem", "fala com humano", "atendimento humano",
+];
+
+const detectHandoffIntent = (message: string): boolean => {
+  const n = norm(message);
+  if (!n) return false;
+  return HANDOFF_TERMS.some((t) => n.includes(t));
+};
+
+const SHOW_RESULTS_TERMS = [
+  "me mostra", "me mostre", "mostra ai", "mostrar", "quero ver", "ver imove",
+  "ver opcoes", "ver opcao", "ver resultado", "ver os resultado",
+  "manda", "mande", "quais imove", "quais opcoes", "resultados", "opcoes",
+  "me indique", "me indica", "recomenda", "recomende", "melhores",
+  "mostra agora", "ver agora", "ver tudo", "ver todos",
+];
+
+const hasQualifiedSearchState = (f: PropertySearchFilters): boolean => {
+  if (!f.transactionType) return false;
+  return !!(f.condominium || f.condominiumGroup || f.propertyType || f.maxPrice || f.minPrice);
+};
+
+const shouldShowResultsV3 = (args: {
+  message: string;
+  patch: IntentPatch | null;
+  selectedOption?: OptionChip;
+  state: PropertySearchFilters;
+  matchCount: number;
+}): boolean => {
+  const { message, patch, selectedOption, state, matchCount } = args;
+  if (matchCount <= 0) return false;
+  if (patch?.show_results === true) return true;
+  if ((patch as any)?.intent === "show_results") return true;
+  const opt = selectedOption;
+  if (opt) {
+    if (opt.action === "show_results") return true;
+    if (opt.kind === "navigate") return true;
+    if (opt.value === "show_all") return true;
+  }
+  const n = norm(message);
+  if (n && SHOW_RESULTS_TERMS.some((t) => n.includes(t))) return true;
+  if (matchCount === 1 && hasQualifiedSearchState(state)) return true;
+  return false;
+};
+
+const buildWhatsAppUrl = (state: PropertySearchFilters, message: string): string => {
+  const summary = summarizeFiltersV3(state);
+  const last = (message ?? "").trim();
+  const lines = [
+    "Olá! Vim pela busca com IA do site AlphaBusiness.",
+    summary ? `Estou procurando: ${summary}.` : "",
+    last ? `Última mensagem: "${last.slice(0, 220)}"` : "",
+  ].filter(Boolean);
+  const text = lines.join("\n").slice(0, 600);
+  return `${WHATSAPP_BASE}?text=${encodeURIComponent(text)}`;
+};
+
+const buildHandoffResponse = (state: PropertySearchFilters, message: string) => {
+  const url = buildWhatsAppUrl(state, message);
+  return {
+    assistantMessage:
+      "Claro! Vou te conectar com um consultor da **AlphaBusiness** no WhatsApp. Ele segue com seu atendimento personalizado a partir daqui.",
+    responseType: "handoff" as const,
+    conversation_state: state,
+    updatedState: { filters: state } as ConversationState,
+    parsedFilters: state,
+    links: [{ label: "Falar com consultor pelo WhatsApp", url, type: "whatsapp" as const }],
+    suggestedOptions: [
+      { label: "Ajustar filtros", value: "refine", kind: "action", action: "refine" },
+      { label: "Nova busca", value: "reset", kind: "reset" },
+    ] as OptionChip[],
+    nextAction: "ask" as const,
+  };
+};
+
 const filtersToQS = (f: PropertySearchFilters): string => {
   const p = new URLSearchParams();
   if (f.transactionType) p.set("transactionType", f.transactionType);
