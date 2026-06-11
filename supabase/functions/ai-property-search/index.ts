@@ -939,7 +939,7 @@ Filtros disponíveis (todos opcionais):
 - maxPrice: número (em R$)
 - highlights: array com qualquer combinação de ["piscina","gourmet","jardim","vista","reformado","mobiliado"]
 
-Intents válidas: new_search, update_filter, show_results, broaden_search, ask_condominium_breakdown, small_talk, greeting.
+Intents válidas: new_search, update_filter, show_results, broaden_search, ask_condominium_breakdown, small_talk, greeting, handoff.
 
 Condomínios reais no estoque (use o nome exato se reconhecer): ${condoSample}
 
