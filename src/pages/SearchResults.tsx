@@ -1,12 +1,12 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { SlidersHorizontal, GitCompareArrows } from "lucide-react";
+import { GitCompareArrows } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import SearchHero from "@/components/search/SearchHero";
+import SearchHero, { type SortBy } from "@/components/search/SearchHero";
 import BentoGrid from "@/components/search/BentoGrid";
 import AdvancedFiltersDrawer, {
   type Filters,
@@ -122,6 +122,8 @@ const SearchResults = () => {
   const [compareOpen, setCompareOpen] = useState(false);
   const [parsedFilters, setParsedFilters] = useState<ParsedFilters | null>(null);
   const [visibleCount, setVisibleCount] = useState(9);
+  const [localQuery, setLocalQuery] = useState("");
+  const [sortBy, setSortBy] = useState<SortBy>("relevance");
 
   const {
     data: activePropertyRows,
@@ -201,13 +203,47 @@ const SearchResults = () => {
       }
       return true;
     });
-    // Priorize properties with photos to avoid empty placeholder cards.
-    return [...filtered].sort((a, b) => {
-      const photoA = a.photo ? 1 : 0;
-      const photoB = b.photo ? 1 : 0;
-      return photoB - photoA;
-    });
-  }, [results, filters, tagParam]);
+
+    const lq = normalize(localQuery);
+    const searched = lq
+      ? filtered.filter((r) => {
+          const hay = [r.title, r.code, r.condominium, r.neighborhood, r.city]
+            .filter(Boolean)
+            .map((s) => normalize(s as string))
+            .join(" | ");
+          return hay.includes(lq);
+        })
+      : filtered;
+
+    const priceOf = (r: SearchResult) =>
+      (isRental(r.transaction_type) ? r.rental_price : r.price) ?? 0;
+
+    const sorted = [...searched];
+    switch (sortBy) {
+      case "price_asc":
+        sorted.sort((a, b) => priceOf(a) - priceOf(b));
+        break;
+      case "price_desc":
+        sorted.sort((a, b) => priceOf(b) - priceOf(a));
+        break;
+      case "area_desc":
+        sorted.sort((a, b) => (b.area_total || 0) - (a.area_total || 0));
+        break;
+      case "alpha":
+        sorted.sort((a, b) => (a.title || "").localeCompare(b.title || "", "pt-BR"));
+        break;
+      case "recent":
+        sorted.sort((a, b) => (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0));
+        break;
+      default:
+        sorted.sort((a, b) => {
+          const photoA = a.photo ? 1 : 0;
+          const photoB = b.photo ? 1 : 0;
+          return photoB - photoA;
+        });
+    }
+    return sorted;
+  }, [results, filters, tagParam, localQuery, sortBy]);
 
   // Reset pagination whenever the filtered set changes.
   useEffect(() => {
@@ -381,23 +417,16 @@ const SearchResults = () => {
         onResults={setResults}
         onLoading={setLoading}
         onParsedFilters={setParsedFilters}
-      />
-
-      <section className="pt-6 md:pt-8 pb-16 md:pb-24">
-        <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-16">
-          {/* Toolbar */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-4 flex-wrap">
-              {!loading && results.length > 0 && (
-                <p className="text-body text-xs tracking-[0.15em] uppercase text-muted-foreground">
-                  {hasMore
-                    ? `Exibindo ${visibleResults.length} de ${filteredResults.length} resultados`
-                    : `${filteredResults.length} ${filteredResults.length === 1 ? "resultado" : "resultados"}`}
-                </p>
-              )}
-              {parsedFilters && !loading && (
-                <FilterChips filters={parsedFilters} />
-              )}
+        totalCount={filteredResults.length}
+        localQuery={localQuery}
+        onLocalQueryChange={setLocalQuery}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+        onOpenFilters={() => setFiltersOpen(true)}
+        chips={
+          (parsedFilters && !loading) || (tagParam && !loading) ? (
+            <div className="flex items-center gap-3 flex-wrap">
+              {parsedFilters && !loading && <FilterChips filters={parsedFilters} />}
               {tagParam && !loading && (
                 <Badge
                   variant="outline"
@@ -412,29 +441,25 @@ const SearchResults = () => {
                 </Badge>
               )}
             </div>
-            <div className="flex items-center gap-3">
-              {compareIds.length === 2 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCompareOpen(true)}
-                  className="text-body text-xs tracking-wider uppercase gap-2"
-                >
-                  <GitCompareArrows size={14} />
-                  Comparar ({compareIds.length})
-                </Button>
-              )}
+          ) : null
+        }
+      />
+
+      <section className="pt-2 md:pt-4 pb-16 md:pb-24">
+        <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-16">
+          {compareIds.length === 2 && (
+            <div className="flex justify-end mb-4">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setFiltersOpen(true)}
-                className="text-body text-xs tracking-wider uppercase gap-2"
+                onClick={() => setCompareOpen(true)}
+                className="text-body text-xs tracking-wider uppercase gap-2 rounded-full"
               >
-                <SlidersHorizontal size={14} />
-                Filtros
+                <GitCompareArrows size={14} />
+                Comparar ({compareIds.length})
               </Button>
             </div>
-          </div>
+          )}
 
           {loading && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
