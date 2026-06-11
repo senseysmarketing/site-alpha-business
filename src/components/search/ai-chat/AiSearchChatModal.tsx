@@ -43,7 +43,6 @@ const AiSearchChatModal = ({ open, onOpenChange }: Props) => {
       void startMic();
     }
   };
-  const navigate = useNavigate();
 
   useEffect(() => {
     if (open) {
