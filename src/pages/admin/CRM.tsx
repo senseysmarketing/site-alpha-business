@@ -1,12 +1,13 @@
 import { useState, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { Bell, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { LeadCard, type Lead } from "@/components/admin/crm/LeadCard";
 import { LeadDetailSheet } from "@/components/admin/crm/LeadDetailSheet";
 import { NewLeadDialog } from "@/components/admin/crm/NewLeadDialog";
+import { LeadNotificationSettingsDialog } from "@/components/admin/crm/LeadNotificationSettingsDialog";
 import { cn } from "@/lib/utils";
 import { fetchAllPages } from "@/lib/supabasePagination";
 
