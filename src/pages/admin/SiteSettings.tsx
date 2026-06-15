@@ -23,6 +23,10 @@ import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 import { applyDesignTokens } from "@/lib/colorTokens";
 import { fetchAllPages } from "@/lib/supabasePagination";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
+import { SortableContext, arrayMove, rectSortingStrategy, useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 // ── Types ──────────────────────────────────────────
 interface HeroSlide {
