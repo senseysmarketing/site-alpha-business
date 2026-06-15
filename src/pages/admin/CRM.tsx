@@ -185,6 +185,8 @@ export default function CRM() {
         defaultStage={newLeadStage || "novos"}
         properties={properties}
       />
+
+      <LeadNotificationSettingsDialog open={notifyOpen} onOpenChange={setNotifyOpen} />
     </div>
   );
 }
