@@ -108,6 +108,15 @@ export default function CRM() {
             {leads.length} leads no pipeline
           </p>
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setNotifyOpen(true)}
+          className="font-[Inter]"
+        >
+          <Bell className="h-4 w-4 mr-2" />
+          Notificações
+        </Button>
       </div>
 
       <div className="flex gap-4 overflow-x-auto pb-4">
