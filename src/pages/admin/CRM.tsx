@@ -1,12 +1,13 @@
 import { useState, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { Bell, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { LeadCard, type Lead } from "@/components/admin/crm/LeadCard";
 import { LeadDetailSheet } from "@/components/admin/crm/LeadDetailSheet";
 import { NewLeadDialog } from "@/components/admin/crm/NewLeadDialog";
+import { LeadNotificationSettingsDialog } from "@/components/admin/crm/LeadNotificationSettingsDialog";
 import { cn } from "@/lib/utils";
 import { fetchAllPages } from "@/lib/supabasePagination";
 
@@ -27,6 +28,7 @@ export default function CRM() {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [newLeadStage, setNewLeadStage] = useState<string | null>(null);
+  const [notifyOpen, setNotifyOpen] = useState(false);
 
   const { data: leads = [] } = useQuery({
     queryKey: ["leads"],
@@ -106,6 +108,15 @@ export default function CRM() {
             {leads.length} leads no pipeline
           </p>
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setNotifyOpen(true)}
+          className="font-[Inter]"
+        >
+          <Bell className="h-4 w-4 mr-2" />
+          Notificações
+        </Button>
       </div>
 
       <div className="flex gap-4 overflow-x-auto pb-4">
@@ -174,6 +185,8 @@ export default function CRM() {
         defaultStage={newLeadStage || "novos"}
         properties={properties}
       />
+
+      <LeadNotificationSettingsDialog open={notifyOpen} onOpenChange={setNotifyOpen} />
     </div>
   );
 }
