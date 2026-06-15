@@ -732,14 +732,14 @@ const SiteSettings = () => {
   // ── Instagram Posts ──
   interface InstaPostForm { url: string; thumbnail: string; status: 'pending' | 'success' | 'failed' }
   const instaPosts = useSiteSettings<{ posts: InstaPostForm[] }>("instagram_posts");
-  const emptyInstaSlots: InstaPostForm[] = Array.from({ length: 6 }, () => ({ url: "", thumbnail: "", status: "pending" as const }));
+  const emptyInstaSlots: InstaPostForm[] = Array.from({ length: 12 }, () => ({ url: "", thumbnail: "", status: "pending" as const }));
   const [instaForm, setInstaForm] = useState<InstaPostForm[]>(emptyInstaSlots);
   const [scrapingInsta, setScrapingInsta] = useState(false);
 
   useEffect(() => {
     if (instaPosts.data?.posts) {
       const loaded = instaPosts.data.posts;
-      setInstaForm(Array.from({ length: 6 }, (_, i) => loaded[i] || { url: "", thumbnail: "", status: "pending" }));
+      setInstaForm(Array.from({ length: 12 }, (_, i) => loaded[i] || { url: "", thumbnail: "", status: "pending" }));
     }
   }, [instaPosts.data]);
 
