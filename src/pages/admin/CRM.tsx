@@ -28,6 +28,7 @@ export default function CRM() {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [newLeadStage, setNewLeadStage] = useState<string | null>(null);
+  const [notifyOpen, setNotifyOpen] = useState(false);
 
   const { data: leads = [] } = useQuery({
     queryKey: ["leads"],
