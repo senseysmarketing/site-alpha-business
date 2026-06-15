@@ -271,7 +271,7 @@ Deno.serve(async (req) => {
     const html = buildHtml({ lead: lead!, property, config });
 
     const fromAddress =
-      Deno.env.get("RESEND_FROM_EMAIL") ?? "AlphaBusiness <onboarding@resend.dev>";
+      Deno.env.get("RESEND_FROM_EMAIL") ?? "AlphaBusiness <leads@rafaelalbuquerque.com.br>";
 
     const resp = await fetch("https://api.resend.com/emails", {
       method: "POST",
