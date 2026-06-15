@@ -1372,58 +1372,29 @@ const SiteSettings = () => {
           {/* Block 7: Instagram Posts */}
           <SettingsBlock title="Destaques Social" onSave={handleSaveInsta} isSaving={instaPosts.isSaving || scrapingInsta}>
             <p className="font-[Inter] text-xs text-muted-foreground -mt-2 mb-1">
-              Insira as URLs de até 6 postagens do Instagram. A thumbnail será capturada automaticamente.
+              Insira as URLs de até 12 postagens do Instagram. Arraste para reordenar — a ordem é refletida no carrossel do site.
             </p>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-xs text-muted-foreground gap-1.5 mb-3"
-              onClick={handleReloadThumbnails}
-              disabled={scrapingInsta}
-            >
-              {scrapingInsta ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
-              Recarregar Thumbnails
-            </Button>
-            <div className="grid grid-cols-2 gap-4">
-              {instaForm.map((post, i) => (
-                <div key={i} className="border border-border/30 rounded-sm p-3 space-y-2">
-                  <Label className="font-[Inter] text-xs text-muted-foreground">Post {i + 1}</Label>
-                  <Input
-                    value={post.url}
-                    onChange={(e) => updateInstaField(i, "url", e.target.value)}
-                    placeholder="https://www.instagram.com/p/..."
-                    className="h-9 text-sm border-border/50"
-                  />
-                  <div className="flex items-center gap-2">
-                    {post.thumbnail ? (
-                      <>
-                        <img src={post.thumbnail} alt="" className="w-12 h-12 object-cover rounded-sm border border-border/30" />
-                        <Badge variant="outline" className="text-[10px] gap-1 border-emerald-200 text-emerald-700 bg-emerald-50">
-                          <CheckCircle2 className="h-3 w-3" /> Capturado
-                        </Badge>
-                      </>
-                    ) : post.url.trim() && post.status === "failed" ? (
-                      <Badge variant="outline" className="text-[10px] gap-1 border-red-200 text-red-700 bg-red-50">
-                        <AlertCircle className="h-3 w-3" /> Falhou — envie manualmente
-                      </Badge>
-                    ) : post.url.trim() ? (
-                      <Badge variant="outline" className="text-[10px] gap-1 border-amber-200 text-amber-700 bg-amber-50">
-                        <Loader2 className="h-3 w-3" /> Pendente
-                      </Badge>
-                    ) : null}
-                  </div>
-                  {post.url.trim() && post.status === "failed" && !post.thumbnail && (
-                    <PhotoDrop
-                      label="Subir Imagem Manualmente"
-                      value={post.thumbnail}
-                      onUpload={(url) => {
-                        setInstaForm((prev) => prev.map((p, idx) => idx === i ? { ...p, thumbnail: url, status: "success" as const } : p));
-                      }}
-                    />
-                  )}
-                </div>
-              ))}
+            <div className="flex items-center justify-between mb-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs text-muted-foreground gap-1.5"
+                onClick={handleReloadThumbnails}
+                disabled={scrapingInsta}
+              >
+                {scrapingInsta ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+                Recarregar Thumbnails
+              </Button>
+              <Badge variant="outline" className="text-[10px] border-border/50 text-muted-foreground">
+                {instaForm.filter((p) => p.url.trim()).length}/12 preenchidos
+              </Badge>
             </div>
+            <InstaPostsEditor
+              posts={instaForm}
+              onReorder={(from, to) => setInstaForm((prev) => arrayMove(prev, from, to))}
+              onChangeUrl={(i, val) => updateInstaField(i, "url", val)}
+              onManualThumb={(i, url) => setInstaForm((prev) => prev.map((p, idx) => idx === i ? { ...p, thumbnail: url, status: "success" as const } : p))}
+            />
           </SettingsBlock>
 
           {/* Block 8: Footer */}
