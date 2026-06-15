@@ -23,6 +23,10 @@ import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 import { applyDesignTokens } from "@/lib/colorTokens";
 import { fetchAllPages } from "@/lib/supabasePagination";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
+import { SortableContext, arrayMove, rectSortingStrategy, useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 // ── Types ──────────────────────────────────────────
 interface HeroSlide {
@@ -529,6 +533,134 @@ function PropertyMultiSelect({
   );
 }
 
+// ── Instagram Posts Editor (Tabs + Drag-to-Reorder) ──
+interface InstaPostFormItem { url: string; thumbnail: string; status: 'pending' | 'success' | 'failed' }
+
+function SortableInstaCard({
+  post, index, onChangeUrl, onManualThumb,
+}: {
+  post: InstaPostFormItem;
+  index: number;
+  onChangeUrl: (i: number, val: string) => void;
+  onManualThumb: (i: number, url: string) => void;
+}) {
+  const id = `insta-${index}`;
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+  return (
+    <div ref={setNodeRef} style={style} className="border border-border/30 rounded-sm p-3 space-y-2 bg-background">
+      <div className="flex items-center justify-between">
+        <Label className="font-[Inter] text-xs text-muted-foreground">Post {index + 1}</Label>
+        <button
+          type="button"
+          className="cursor-grab active:cursor-grabbing touch-none p-1 -m-1 text-muted-foreground/50 hover:text-muted-foreground"
+          {...attributes}
+          {...listeners}
+          aria-label="Arrastar para reordenar"
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+      </div>
+      <Input
+        value={post.url}
+        onChange={(e) => onChangeUrl(index, e.target.value)}
+        placeholder="https://www.instagram.com/p/..."
+        className="h-9 text-sm border-border/50"
+      />
+      <div className="flex items-center gap-2">
+        {post.thumbnail ? (
+          <>
+            <img src={post.thumbnail} alt="" className="w-12 h-12 object-cover rounded-sm border border-border/30" />
+            <Badge variant="outline" className="text-[10px] gap-1 border-emerald-200 text-emerald-700 bg-emerald-50">
+              <CheckCircle2 className="h-3 w-3" /> Capturado
+            </Badge>
+          </>
+        ) : post.url.trim() && post.status === "failed" ? (
+          <Badge variant="outline" className="text-[10px] gap-1 border-red-200 text-red-700 bg-red-50">
+            <AlertCircle className="h-3 w-3" /> Falhou — envie manualmente
+          </Badge>
+        ) : post.url.trim() ? (
+          <Badge variant="outline" className="text-[10px] gap-1 border-amber-200 text-amber-700 bg-amber-50">
+            <Loader2 className="h-3 w-3" /> Pendente
+          </Badge>
+        ) : null}
+      </div>
+      {post.url.trim() && post.status === "failed" && !post.thumbnail && (
+        <PhotoDrop
+          label="Subir Imagem Manualmente"
+          value={post.thumbnail}
+          onUpload={(url) => onManualThumb(index, url)}
+        />
+      )}
+    </div>
+  );
+}
+
+function InstaPostsEditor({
+  posts, onReorder, onChangeUrl, onManualThumb,
+}: {
+  posts: InstaPostFormItem[];
+  onReorder: (from: number, to: number) => void;
+  onChangeUrl: (i: number, val: string) => void;
+  onManualThumb: (i: number, url: string) => void;
+}) {
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  const handleDragEnd = (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    const from = Number(String(active.id).replace("insta-", ""));
+    const to = Number(String(over.id).replace("insta-", ""));
+    if (Number.isFinite(from) && Number.isFinite(to)) onReorder(from, to);
+  };
+
+  const pages: Array<{ value: string; label: string; start: number; end: number }> = [
+    { value: "1-6", label: "Posts 1–6", start: 0, end: 6 },
+    { value: "7-12", label: "Posts 7–12", start: 6, end: 12 },
+  ];
+
+  const filledInRange = (start: number, end: number) =>
+    posts.slice(start, end).filter((p) => p.url.trim()).length;
+
+  return (
+    <Tabs defaultValue="1-6" className="w-full">
+      <TabsList className="grid grid-cols-2 w-full max-w-xs mb-3">
+        {pages.map((p) => (
+          <TabsTrigger key={p.value} value={p.value} className="text-xs gap-1.5">
+            {p.label}
+            <span className="text-[10px] text-muted-foreground">({filledInRange(p.start, p.end)})</span>
+          </TabsTrigger>
+        ))}
+      </TabsList>
+      {pages.map((p) => {
+        const ids = posts.slice(p.start, p.end).map((_, i) => `insta-${p.start + i}`);
+        return (
+          <TabsContent key={p.value} value={p.value} className="mt-0">
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={ids} strategy={rectSortingStrategy}>
+                <div className="grid grid-cols-2 gap-4">
+                  {posts.slice(p.start, p.end).map((post, i) => (
+                    <SortableInstaCard
+                      key={p.start + i}
+                      post={post}
+                      index={p.start + i}
+                      onChangeUrl={onChangeUrl}
+                      onManualThumb={onManualThumb}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+          </TabsContent>
+        );
+      })}
+    </Tabs>
+  );
+}
+
 // ── Main page ──────────────────────────────────────
 const SiteSettings = () => {
   const { user } = useAuth();
@@ -728,14 +860,14 @@ const SiteSettings = () => {
   // ── Instagram Posts ──
   interface InstaPostForm { url: string; thumbnail: string; status: 'pending' | 'success' | 'failed' }
   const instaPosts = useSiteSettings<{ posts: InstaPostForm[] }>("instagram_posts");
-  const emptyInstaSlots: InstaPostForm[] = Array.from({ length: 6 }, () => ({ url: "", thumbnail: "", status: "pending" as const }));
+  const emptyInstaSlots: InstaPostForm[] = Array.from({ length: 12 }, () => ({ url: "", thumbnail: "", status: "pending" as const }));
   const [instaForm, setInstaForm] = useState<InstaPostForm[]>(emptyInstaSlots);
   const [scrapingInsta, setScrapingInsta] = useState(false);
 
   useEffect(() => {
     if (instaPosts.data?.posts) {
       const loaded = instaPosts.data.posts;
-      setInstaForm(Array.from({ length: 6 }, (_, i) => loaded[i] || { url: "", thumbnail: "", status: "pending" }));
+      setInstaForm(Array.from({ length: 12 }, (_, i) => loaded[i] || { url: "", thumbnail: "", status: "pending" }));
     }
   }, [instaPosts.data]);
 
@@ -1368,58 +1500,29 @@ const SiteSettings = () => {
           {/* Block 7: Instagram Posts */}
           <SettingsBlock title="Destaques Social" onSave={handleSaveInsta} isSaving={instaPosts.isSaving || scrapingInsta}>
             <p className="font-[Inter] text-xs text-muted-foreground -mt-2 mb-1">
-              Insira as URLs de até 6 postagens do Instagram. A thumbnail será capturada automaticamente.
+              Insira as URLs de até 12 postagens do Instagram. Arraste para reordenar — a ordem é refletida no carrossel do site.
             </p>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-xs text-muted-foreground gap-1.5 mb-3"
-              onClick={handleReloadThumbnails}
-              disabled={scrapingInsta}
-            >
-              {scrapingInsta ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
-              Recarregar Thumbnails
-            </Button>
-            <div className="grid grid-cols-2 gap-4">
-              {instaForm.map((post, i) => (
-                <div key={i} className="border border-border/30 rounded-sm p-3 space-y-2">
-                  <Label className="font-[Inter] text-xs text-muted-foreground">Post {i + 1}</Label>
-                  <Input
-                    value={post.url}
-                    onChange={(e) => updateInstaField(i, "url", e.target.value)}
-                    placeholder="https://www.instagram.com/p/..."
-                    className="h-9 text-sm border-border/50"
-                  />
-                  <div className="flex items-center gap-2">
-                    {post.thumbnail ? (
-                      <>
-                        <img src={post.thumbnail} alt="" className="w-12 h-12 object-cover rounded-sm border border-border/30" />
-                        <Badge variant="outline" className="text-[10px] gap-1 border-emerald-200 text-emerald-700 bg-emerald-50">
-                          <CheckCircle2 className="h-3 w-3" /> Capturado
-                        </Badge>
-                      </>
-                    ) : post.url.trim() && post.status === "failed" ? (
-                      <Badge variant="outline" className="text-[10px] gap-1 border-red-200 text-red-700 bg-red-50">
-                        <AlertCircle className="h-3 w-3" /> Falhou — envie manualmente
-                      </Badge>
-                    ) : post.url.trim() ? (
-                      <Badge variant="outline" className="text-[10px] gap-1 border-amber-200 text-amber-700 bg-amber-50">
-                        <Loader2 className="h-3 w-3" /> Pendente
-                      </Badge>
-                    ) : null}
-                  </div>
-                  {post.url.trim() && post.status === "failed" && !post.thumbnail && (
-                    <PhotoDrop
-                      label="Subir Imagem Manualmente"
-                      value={post.thumbnail}
-                      onUpload={(url) => {
-                        setInstaForm((prev) => prev.map((p, idx) => idx === i ? { ...p, thumbnail: url, status: "success" as const } : p));
-                      }}
-                    />
-                  )}
-                </div>
-              ))}
+            <div className="flex items-center justify-between mb-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs text-muted-foreground gap-1.5"
+                onClick={handleReloadThumbnails}
+                disabled={scrapingInsta}
+              >
+                {scrapingInsta ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+                Recarregar Thumbnails
+              </Button>
+              <Badge variant="outline" className="text-[10px] border-border/50 text-muted-foreground">
+                {instaForm.filter((p) => p.url.trim()).length}/12 preenchidos
+              </Badge>
             </div>
+            <InstaPostsEditor
+              posts={instaForm}
+              onReorder={(from, to) => setInstaForm((prev) => arrayMove(prev, from, to))}
+              onChangeUrl={(i, val) => updateInstaField(i, "url", val)}
+              onManualThumb={(i, url) => setInstaForm((prev) => prev.map((p, idx) => idx === i ? { ...p, thumbnail: url, status: "success" as const } : p))}
+            />
           </SettingsBlock>
 
           {/* Block 8: Footer */}
