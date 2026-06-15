@@ -3,7 +3,8 @@ import { motion } from "framer-motion";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { CheckCircle } from "lucide-react";
-import contactImage from "@/assets/private-collection.jpg";
+import contactImageAsset from "@/assets/contact-house.jpg.asset.json";
+const contactImage = contactImageAsset.url;
 
 const ContactSection = () => {
   const [formData, setFormData] = useState({
