@@ -1,17 +1,21 @@
-## Mostrar capa nas matérias da /blog
+## Problema
 
-Atualmente o hero e os cards do blog ignoram `cover_image` e mostram apenas gradientes/placeholders bordeaux/cashmere. Vou conectar a imagem real, mantendo fallback para matérias sem capa.
+No microfone do Rafa IA (modal de busca), ao iniciar uma nova gravação o texto da transcrição anterior é preservado e o novo áudio é **anexado** ao texto existente (em `AiSearchChatModal.tsx`, `toggleMic` faz `baseRef.current = input ? input.trim() + " " : ""`).
 
-### 1. `src/components/blog/BlogHero.tsx`
-- Quando `post.cover_image` existe, renderizar `<img src={post.cover_image}>` como fundo absoluto (`object-cover w-full h-full`).
-- Manter o gradiente bordeaux→foreground como fallback quando não houver capa.
-- Trocar o overlay atual por um gradiente escuro de baixo para cima (`from-[#0A0A0A]/95 via-[#0A0A0A]/55 to-[#0A0A0A]/15`) para preservar legibilidade do título/subtítulo/meta (mesmo padrão usado em `BlogPost.tsx`).
+## Mudança
 
-### 2. `src/components/blog/BlogCard.tsx`
-- Quando `post.cover_image` existe, renderizar `<img>` em vez do gradiente cashmere→greige, mantendo o `group-hover:scale-105`, `aspect-[16/10]`/`aspect-[4/3]` e o badge "Exclusivo".
-- Sem capa: continuar com o gradiente cashmere→greige atual como placeholder.
+Arquivo: `src/components/search/ai-chat/AiSearchChatModal.tsx` (função `toggleMic`)
 
-### Fora do escopo
-- Sem mudanças no schema, hooks, queries ou nos componentes admin/editor.
-- `BlogBentoGrid` não muda (só compõe os cards).
-- Página `BlogPost` já foi ajustada anteriormente — não será tocada.
+Ao **iniciar** uma nova gravação:
+- Zerar `baseRef.current = ""`
+- Zerar `setInput("")`
+- Então chamar `startMic()`
+
+Comportamento ao **parar**: permanece igual (apenas `stopMic()`), preservando o texto recém-transcrito para o usuário enviar ou editar.
+
+Resultado: cada nova gravação começa do zero, descartando a transcrição anterior. O usuário ainda pode digitar manualmente entre gravações (esse texto será descartado se ele clicar no microfone novamente — comportamento aceitável e esperado, já que o botão de mic indica "regravar").
+
+## Fora de escopo
+
+- Nenhuma mudança no `useSpeechRecognition.ts`.
+- Nenhuma mudança em outros campos com microfone (ex.: `BlogFilters`).
