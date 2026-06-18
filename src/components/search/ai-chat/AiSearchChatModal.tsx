@@ -39,7 +39,8 @@ const AiSearchChatModal = ({ open, onOpenChange }: Props) => {
     if (isRecording) {
       stopMic();
     } else {
-      baseRef.current = input ? input.trim() + " " : "";
+      baseRef.current = "";
+      setInput("");
       void startMic();
     }
   };
