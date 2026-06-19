@@ -351,7 +351,7 @@ interface PriceParseResult {
 }
 
 const parsePrice = (message: string): PriceParseResult => {
-  const q = message.toLowerCase();
+  const q = numeralizePtBr(message).toLowerCase();
   const between = q.match(
     /entre\s+([\d.,]+\s*(?:milhoes|milhao|milhões|milhão|mi|milh|mil|k|e\s+meio|meio)?)\s+(?:e|a|até|ate)\s+([\d.,]+\s*(?:milhoes|milhao|milhões|milhão|mi|milh|mil|k|e\s+meio|meio)?)/i,
   );
