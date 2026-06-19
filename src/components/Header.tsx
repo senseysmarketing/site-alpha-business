@@ -55,7 +55,6 @@ const SALE_TYPES: { label: string; propertyType?: string }[] = [
   { label: "Casa", propertyType: "casa" },
   { label: "Apartamento", propertyType: "apartamento" },
   { label: "Cobertura", propertyType: "cobertura" },
-  { label: "Sobrado", propertyType: "sobrado" },
   { label: "Terreno", propertyType: "terreno" },
   { label: "Sala Comercial", propertyType: "sala_comercial" },
 ];
