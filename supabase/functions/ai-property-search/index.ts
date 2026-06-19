@@ -1083,7 +1083,7 @@ Responda APENAS com JSON válido no formato:
 // =====================================================================
 
 const handleConverseV2 = async (sb: SB, body: any) => {
-  const message = String(body.message ?? "").trim();
+  const message = numeralizePtBr(String(body.message ?? "").trim());
   const state = hydrateState(body.currentState ?? { filters: body.currentFilters ?? { highlights: [] } });
   const selectedOption: OptionChip | undefined = body.selectedOption;
 
