@@ -383,7 +383,7 @@ const parsePrice = (message: string): PriceParseResult => {
 };
 
 const findCondoNumber = (message: string): { group: string; number: number } | null => {
-  const n = norm(message);
+  const n = norm(numeralizePtBr(message));
   const m = n.match(/\b(tambore|alphaville|residencial)\s+(\d{1,2})\b/);
   if (m) return { group: m[1], number: parseInt(m[2], 10) };
   return null;
