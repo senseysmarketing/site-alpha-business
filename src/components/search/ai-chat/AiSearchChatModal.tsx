@@ -58,8 +58,10 @@ const AiSearchChatModal = ({ open, onOpenChange }: Props) => {
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!input.trim()) return;
+    if (isRecording) stopMic();
     const value = input;
     setInput("");
+    baseRef.current = "";
     void send(value);
     inputRef.current?.focus();
   };
