@@ -123,6 +123,84 @@ const norm = (s: unknown) =>
     .replace(/\s+/g, " ")
     .trim();
 
+// ---- Numerais por extenso (pt-BR) -> dígitos ----
+const NUM_UNIT: Record<string, number> = { um: 1, uma: 1, dois: 2, duas: 2, tres: 3, quatro: 4, cinco: 5, seis: 6, sete: 7, oito: 8, nove: 9 };
+const NUM_TEEN: Record<string, number> = { dez: 10, onze: 11, doze: 12, treze: 13, quatorze: 14, catorze: 14, quinze: 15, dezesseis: 16, dezasseis: 16, dezessete: 17, dezassete: 17, dezoito: 18, dezenove: 19, dezanove: 19 };
+const NUM_TENS: Record<string, number> = { vinte: 20, trinta: 30, quarenta: 40, cinquenta: 50, sessenta: 60, setenta: 70, oitenta: 80, noventa: 90 };
+const NUM_HUND: Record<string, number> = { cem: 100, cento: 100, duzentos: 200, duzentas: 200, trezentos: 300, trezentas: 300, quatrocentos: 400, quatrocentas: 400, quinhentos: 500, quinhentas: 500, seiscentos: 600, seiscentas: 600, setecentos: 700, setecentas: 700, oitocentos: 800, oitocentas: 800, novecentos: 900, novecentas: 900 };
+const NUM_SCALE_THOUSAND = new Set(["mil"]);
+const NUM_SCALE_MILLION = new Set(["milhao", "milhoes"]);
+const NUM_HALF = new Set(["meio", "meia"]);
+
+const stripAccentsLower = (s: string) =>
+  s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z]/g, "");
+
+const isNumWord = (w: string): boolean =>
+  w in NUM_UNIT || w in NUM_TEEN || w in NUM_TENS || w in NUM_HUND ||
+  NUM_SCALE_THOUSAND.has(w) || NUM_SCALE_MILLION.has(w) || NUM_HALF.has(w);
+
+const parseNumRun = (words: string[]): number => {
+  let result = 0;
+  let current = 0;
+  for (const w of words) {
+    if (w === "e") continue;
+    if (w in NUM_UNIT) current += NUM_UNIT[w];
+    else if (w in NUM_TEEN) current += NUM_TEEN[w];
+    else if (w in NUM_TENS) current += NUM_TENS[w];
+    else if (w in NUM_HUND) current += NUM_HUND[w];
+    else if (NUM_HALF.has(w)) current += 0.5;
+    else if (NUM_SCALE_THOUSAND.has(w)) {
+      current = (current || 1) * 1000;
+      result += current;
+      current = 0;
+    } else if (NUM_SCALE_MILLION.has(w)) {
+      current = (current || 1) * 1000000;
+      result += current;
+      current = 0;
+    }
+  }
+  return Math.round(result + current);
+};
+
+const numeralizePtBr = (text: string): string => {
+  if (!text) return text;
+  const tokens: { raw: string; start: number; end: number }[] = [];
+  const re = /\S+/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    tokens.push({ raw: m[0], start: m.index, end: m.index + m[0].length });
+  }
+  const out: string[] = [];
+  let lastEnd = 0;
+  let i = 0;
+  while (i < tokens.length) {
+    const w = stripAccentsLower(tokens[i].raw);
+    if (isNumWord(w)) {
+      const runWords: string[] = [];
+      let j = i;
+      while (j < tokens.length) {
+        const ww = stripAccentsLower(tokens[j].raw);
+        if (isNumWord(ww)) {
+          runWords.push(ww);
+          j++;
+        } else if (ww === "e" && j + 1 < tokens.length && isNumWord(stripAccentsLower(tokens[j + 1].raw))) {
+          runWords.push("e");
+          j++;
+        } else break;
+      }
+      const value = parseNumRun(runWords);
+      out.push(text.slice(lastEnd, tokens[i].start));
+      out.push(String(value));
+      lastEnd = tokens[j - 1].end;
+      i = j;
+    } else {
+      i++;
+    }
+  }
+  out.push(text.slice(lastEnd));
+  return out.join("");
+};
+
 const fmtBRL = (n: number | null | undefined) =>
   typeof n === "number"
     ? n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 })
@@ -273,7 +351,7 @@ interface PriceParseResult {
 }
 
 const parsePrice = (message: string): PriceParseResult => {
-  const q = message.toLowerCase();
+  const q = numeralizePtBr(message).toLowerCase();
   const between = q.match(
     /entre\s+([\d.,]+\s*(?:milhoes|milhao|milhões|milhão|mi|milh|mil|k|e\s+meio|meio)?)\s+(?:e|a|até|ate)\s+([\d.,]+\s*(?:milhoes|milhao|milhões|milhão|mi|milh|mil|k|e\s+meio|meio)?)/i,
   );
@@ -305,7 +383,7 @@ const parsePrice = (message: string): PriceParseResult => {
 };
 
 const findCondoNumber = (message: string): { group: string; number: number } | null => {
-  const n = norm(message);
+  const n = norm(numeralizePtBr(message));
   const m = n.match(/\b(tambore|alphaville|residencial)\s+(\d{1,2})\b/);
   if (m) return { group: m[1], number: parseInt(m[2], 10) };
   return null;
@@ -338,7 +416,7 @@ const parsePropertyType = (message: string): string | null => {
 };
 
 const parseBedrooms = (message: string): number | null => {
-  const n = norm(message);
+  const n = norm(numeralizePtBr(message));
   const m = n.match(/(\d{1,2})\s*(suites?|quartos?|dormitorios?|dorms?)/);
   if (m) return parseInt(m[1], 10);
   return null;
@@ -346,7 +424,7 @@ const parseBedrooms = (message: string): number | null => {
 
 const AREA_UNIT_RE = /(m2|m²|metros?\s*quadrados?|metros?)\b/i;
 const parseArea = (message: string, opts?: { pending?: boolean }): number | null => {
-  const n = norm(message);
+  const n = norm(numeralizePtBr(message));
   // "X metros", "X m²", "X metros quadrados"
   const m1 = n.match(/(\d{2,5})\s*(?:m2|metros? quadrados?|metros?)\b/);
   if (m1) return parseInt(m1[1], 10);
@@ -1005,7 +1083,7 @@ Responda APENAS com JSON válido no formato:
 // =====================================================================
 
 const handleConverseV2 = async (sb: SB, body: any) => {
-  const message = String(body.message ?? "").trim();
+  const message = numeralizePtBr(String(body.message ?? "").trim());
   const state = hydrateState(body.currentState ?? { filters: body.currentFilters ?? { highlights: [] } });
   const selectedOption: OptionChip | undefined = body.selectedOption;
 
@@ -2105,7 +2183,7 @@ const applySelectedChipV3 = (
 };
 
 const handleConverseV3 = async (sb: SB, body: any) => {
-  const message = String(body.message ?? "").trim();
+  const message = numeralizePtBr(String(body.message ?? "").trim());
   const incoming = body.conversation_state ?? body.currentState?.filters ?? body.currentState ?? {};
   let state = sanitizeFiltersV3(incoming);
   const selectedOption = body.selectedOption as OptionChip | undefined;
