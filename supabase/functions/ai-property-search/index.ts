@@ -2183,7 +2183,7 @@ const applySelectedChipV3 = (
 };
 
 const handleConverseV3 = async (sb: SB, body: any) => {
-  const message = String(body.message ?? "").trim();
+  const message = numeralizePtBr(String(body.message ?? "").trim());
   const incoming = body.conversation_state ?? body.currentState?.filters ?? body.currentState ?? {};
   let state = sanitizeFiltersV3(incoming);
   const selectedOption = body.selectedOption as OptionChip | undefined;
