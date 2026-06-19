@@ -416,7 +416,7 @@ const parsePropertyType = (message: string): string | null => {
 };
 
 const parseBedrooms = (message: string): number | null => {
-  const n = norm(message);
+  const n = norm(numeralizePtBr(message));
   const m = n.match(/(\d{1,2})\s*(suites?|quartos?|dormitorios?|dorms?)/);
   if (m) return parseInt(m[1], 10);
   return null;
@@ -424,7 +424,7 @@ const parseBedrooms = (message: string): number | null => {
 
 const AREA_UNIT_RE = /(m2|m²|metros?\s*quadrados?|metros?)\b/i;
 const parseArea = (message: string, opts?: { pending?: boolean }): number | null => {
-  const n = norm(message);
+  const n = norm(numeralizePtBr(message));
   // "X metros", "X m²", "X metros quadrados"
   const m1 = n.match(/(\d{2,5})\s*(?:m2|metros? quadrados?|metros?)\b/);
   if (m1) return parseInt(m1[1], 10);
