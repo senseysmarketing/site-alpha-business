@@ -1764,7 +1764,7 @@ const filterAndRankV3 = (rows: PropRow[], f: PropertySearchFilters): ScoredMatch
     }
     if (f.neighborhood && !norm(r.neighborhood ?? "").includes(norm(f.neighborhood))) continue;
     if (f.city && !norm(r.city ?? "").includes(norm(f.city))) continue;
-    if (f.address && !norm(r.address ?? "").includes(norm(f.address))) continue;
+    if (f.address && !r.searchable.includes(norm(f.address))) continue;
     if (f.minBedrooms && (r.bedrooms ?? 0) < f.minBedrooms) continue;
     if (f.minBathrooms && (r.bathrooms ?? 0) < f.minBathrooms) continue;
     if (f.minParking && (r.parking_spots ?? 0) < f.minParking) continue;
