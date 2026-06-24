@@ -17,3 +17,8 @@ type: feature
 **Navegação**: chip `kind: "navigate"` (value `show_all` ou `view`) ou botão "Ver resultados completos" do `AiChatResultsPreview` → `/busca?<URLSearchParams>` derivado de `PropertySearchFilters` via `filtersToSearchParams()`. `SearchResults.tsx` já lê esses params.
 
 **Markdown**: mensagens do assistente renderizam Markdown via `react-markdown` (negrito em `**...**`).
+
+**Geo / Região (v3.1)**: além de `condominium`/`condominiumGroup`, o filtro tem `neighborhood`, `city` e **`address`** (ilike no endereço completo). Pré-LLM em `handleConverseV3`:
+- `detectRegion()` casa termos como "granja viana", "raposo tavares", "km 26", "cotia" → `address`; e "santana de parnaiba"/"barueri" → `city`. Cobre os imóveis cuja localização real só está no campo `address` (ex.: CG0001/CG0002 cadastrados como Alphaville mas com endereço em Granja Viana).
+- `detectAmbiguousArea()` identifica "alphaville" ou "tamboré" SOZINHOS (sem número e sem outro condomínio citado) e responde com clarification chips: **"Toda a região de X"** (`set_condominium_group`) + top 6 condomínios numerados do grupo. Evita assumir bairro vs condomínio.
+- LLM recebe instrução explícita de não recusar buscas fora de Alphaville/Tamboré, usar `address_query` para macro-regiões/ruas, e devolver `intent: "clarify_region"` (sem filtros) quando o usuário cita "alphaville"/"tamboré" sem número.
