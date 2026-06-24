@@ -18,6 +18,8 @@ const AiChatFiltersSummary = ({ filters, onRemove }: Props) => {
   if (filters.propertyType) chips.push({ key: "propertyType", label: filters.propertyType });
   if (filters.condominium) chips.push({ key: "condominium", label: filters.condominium });
   if (filters.neighborhood) chips.push({ key: "neighborhood", label: filters.neighborhood });
+  if (filters.city) chips.push({ key: "city", label: filters.city });
+  if (filters.address) chips.push({ key: "address", label: `região: ${filters.address}` });
   if (filters.minBedrooms) chips.push({ key: "minBedrooms", label: `${filters.minBedrooms}+ suítes` });
   if (filters.minParking) chips.push({ key: "minParking", label: `${filters.minParking}+ vagas` });
   if (filters.minArea) chips.push({ key: "minArea", label: `${filters.minArea}m²+` });
