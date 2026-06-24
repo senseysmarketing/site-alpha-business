@@ -2208,7 +2208,42 @@ const applySelectedChipV3 = (
   return f;
 };
 
-const handleConverseV3 = async (sb: SB, body: any) => {
+// ----- Macro-region detection (pre-LLM) -----
+// Regiões/macro-bairros que NÃO são condomínios fechados mas aparecem
+// no campo `address` dos imóveis. Casamos via normalização antes do LLM.
+const REGION_TERMS: { match: string; kind: "address" | "city"; value: string; label: string }[] = [
+  { match: "granja viana", kind: "address", value: "granja viana", label: "Granja Viana" },
+  { match: "raposo tavares", kind: "address", value: "raposo tavares", label: "Raposo Tavares" },
+  { match: "km 26", kind: "address", value: "km 26", label: "Km 26 (Raposo Tavares)" },
+  { match: "cotia", kind: "address", value: "cotia", label: "Cotia" },
+  { match: "santana de parnaiba", kind: "city", value: "Santana de Parnaíba", label: "Santana de Parnaíba" },
+  { match: "barueri", kind: "city", value: "Barueri", label: "Barueri" },
+];
+
+const detectRegion = (message: string) => {
+  const n = norm(message);
+  if (!n) return null;
+  for (const r of REGION_TERMS) {
+    if (n.includes(r.match)) return r;
+  }
+  return null;
+};
+
+// Detecta menção AMBÍGUA a "alphaville" ou "tambore" sozinhos (sem número e
+// sem outra palavra que identifique um condomínio específico).
+const detectAmbiguousArea = (message: string): "alphaville" | "tambore" | null => {
+  const n = norm(message);
+  if (!n) return null;
+  const hasNumber = /\b\d{1,2}\b/.test(n);
+  if (hasNumber) return null;
+  // Se também citou outro condomínio específico (ex.: "burle marx"), não é ambíguo.
+  if (/(burle marx|genesis|villa solaia|melville|valville|alpha conde|alpha sitio|18 do forte|campos do conde|gramercy|myra|oiapoque|splendore|canvas|atria|essencia|parati|mont blanc|jardins tambore|oka mamore|alpha vita|ereditá|eredita|itahye|itahyê)/.test(n)) return null;
+  if (/\balphaville\b/.test(n)) return "alphaville";
+  if (/\btambore\b/.test(n)) return "tambore";
+  return null;
+};
+
+
   const message = numeralizePtBr(String(body.message ?? "").trim());
   const incoming = body.conversation_state ?? body.currentState?.filters ?? body.currentState ?? {};
   let state = sanitizeFiltersV3(incoming);
