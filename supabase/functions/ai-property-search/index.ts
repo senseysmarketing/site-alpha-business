@@ -559,6 +559,7 @@ const applyHardFilters = (q: any, f: PropertySearchFilters) => {
   }
   if (f.city) query = query.ilike("city", `%${f.city}%`);
   if (f.neighborhood) query = query.ilike("neighborhood", `%${f.neighborhood}%`);
+  if (f.address) query = query.ilike("address", `%${f.address}%`);
   if (f.minBedrooms) query = query.gte("bedrooms", f.minBedrooms);
   if (f.minBathrooms) query = query.gte("bathrooms", f.minBathrooms);
   if (f.minParking) query = query.gte("parking_spots", f.minParking);
