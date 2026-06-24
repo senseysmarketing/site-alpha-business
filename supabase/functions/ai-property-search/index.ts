@@ -26,6 +26,7 @@ interface PropertySearchFilters {
   condominiumGroup?: string | null;
   city?: string | null;
   neighborhood?: string | null;
+  address?: string | null; // free-text region/street match (ex: "granja viana", "alameda araguaia")
   minBedrooms?: number | null;
   minBathrooms?: number | null;
   minParking?: number | null;
@@ -300,6 +301,7 @@ const filtersToQS = (f: PropertySearchFilters): string => {
   if (f.condominium) p.set("condominium", f.condominium);
   if (f.city) p.set("city", f.city);
   if (f.neighborhood) p.set("neighborhood", f.neighborhood);
+  if (f.address) p.set("address", f.address);
   if (f.minBedrooms) p.set("minBedrooms", String(f.minBedrooms));
   if (f.minBathrooms) p.set("minBathrooms", String(f.minBathrooms));
   if (f.minParking) p.set("minParking", String(f.minParking));
@@ -558,6 +560,7 @@ const applyHardFilters = (q: any, f: PropertySearchFilters) => {
   }
   if (f.city) query = query.ilike("city", `%${f.city}%`);
   if (f.neighborhood) query = query.ilike("neighborhood", `%${f.neighborhood}%`);
+  if (f.address) query = query.ilike("address", `%${f.address}%`);
   if (f.minBedrooms) query = query.gte("bedrooms", f.minBedrooms);
   if (f.minBathrooms) query = query.gte("bathrooms", f.minBathrooms);
   if (f.minParking) query = query.gte("parking_spots", f.minParking);
@@ -1761,6 +1764,7 @@ const filterAndRankV3 = (rows: PropRow[], f: PropertySearchFilters): ScoredMatch
     }
     if (f.neighborhood && !norm(r.neighborhood ?? "").includes(norm(f.neighborhood))) continue;
     if (f.city && !norm(r.city ?? "").includes(norm(f.city))) continue;
+    if (f.address && !r.searchable.includes(norm(f.address))) continue;
     if (f.minBedrooms && (r.bedrooms ?? 0) < f.minBedrooms) continue;
     if (f.minBathrooms && (r.bathrooms ?? 0) < f.minBathrooms) continue;
     if (f.minParking && (r.parking_spots ?? 0) < f.minParking) continue;
@@ -1836,6 +1840,7 @@ const rowToResult = (r: PropRow): PropertyResult => ({
 interface IntentPatch {
   filters_patch?: Partial<PropertySearchFilters>;
   condominium_query?: string | null;
+  address_query?: string | null;
   keywords_add?: string[];
   keywords_remove?: string[];
   excluded_add?: string[];
@@ -1862,7 +1867,7 @@ const extractSearchIntentV3 = async (
       .map((m) => `${m.role === "user" ? "U" : "A"}: ${m.content}`)
       .join("\n");
 
-    const system = `Você é o **Rafa IA**, consultor digital imobiliário da **AlphaBusiness**, especialista em Alphaville/Tamboré. Sua função é INTERPRETAR a mensagem do usuário, conduzir a conversa de forma consultiva e devolver um PATCH JSON que atualiza os filtros da busca. Você NÃO inventa imóveis, valores, disponibilidade ou características — apenas interpreta intenção.
+    const system = `Você é o **Rafa IA**, consultor digital imobiliário da **AlphaBusiness**, especialista em imóveis de alto padrão na região metropolitana de São Paulo — com forte atuação em Alphaville, Tamboré, Granja Viana, Cotia, Barueri e Santana de Parnaíba. NÃO recuse buscas em outras regiões: se o usuário mencionar um bairro/rua/cidade que aparece nos imóveis cadastrados, busque normalmente usando o campo address/neighborhood/city. Sua função é INTERPRETAR a mensagem do usuário, conduzir a conversa de forma consultiva e devolver um PATCH JSON que atualiza os filtros da busca. Você NÃO inventa imóveis, valores, disponibilidade ou características — apenas interpreta intenção.
 
 Postura consultiva:
 - Aja como consultor humano: entenda o perfil antes de mostrar opções.
@@ -1876,10 +1881,13 @@ Filtros disponíveis (todos opcionais, números puros sem unidade):
 - transactionType: "venda" | "locacao"
 - propertyType: "casa" | "apartamento" | "cobertura" | "sobrado" | "terreno"
 - condominium (string EXATA da lista, se reconhecer; caso contrário use condominium_query)
+- neighborhood: bairro/sub-região no cadastro (ex.: "Alphaville 1", "Tamboré 2", "Burle Marx")
+- city: cidade (ex.: "Barueri", "Santana de Parnaíba")
 - minBedrooms, minBathrooms, minParking, minArea, minPrice, maxPrice
 
 Campos extras:
 - condominium_query: nome solto do condomínio quando você não tem certeza da grafia — eu mesmo resolvo via fuzzy match
+- address_query: trecho de rua/região/macro-bairro que NÃO é um condomínio fechado nem aparece na lista de neighborhoods (ex.: "granja viana", "raposo tavares", "alameda araguaia", "km 26", "cotia"). É um ilike no endereço completo.
 - keywords_add: palavras-chave textuais a adicionar ao filtro (ex: "piscina", "neo classica", "vista", "varanda", "gourmet")
 - keywords_remove: palavras-chave a remover ("tirar piscina")
 - excluded_add: tipos a excluir ("tirar apartamentos" → ["apartamento"])
@@ -1895,10 +1903,15 @@ Regras críticas:
 4. Valores monetários sempre em reais inteiros (3 milhões → 3000000).
 5. "casa neo clássica" → filters_patch.propertyType="casa" + keywords_add=["neo classica"].
 6. "tirar piscina" → keywords_remove=["piscina"]. "limpar" → reset=true.
+7. **DESAMBIGUAÇÃO BAIRRO vs CONDOMÍNIO**: Os termos "Alphaville" e "Tamboré" SOZINHOS (sem número e sem outro condomínio citado) são AMBÍGUOS: podem significar a região como um todo OU um condomínio numerado específico. NESTE CASO, devolva APENAS o reply pedindo a clarificação ("Você quer ver imóveis da região de Alphaville como um todo ou de um condomínio específico, ex.: Alphaville 1, 2, 3…?"), com filters_patch vazio, e intent="clarify_region". NÃO tente adivinhar.
+8. Com número ("alphaville 1", "tamboré 2") use condominium normalmente.
+9. "granja viana", "raposo tavares", "km 26", "cotia" → use address_query (NÃO condominium).
 
 Exemplos:
-- Mensagem "casa no alphaville 1" → { filters_patch: { propertyType: "casa", condominium: "Alphaville 1" } } — NÃO devolver minBedrooms, NÃO devolver transactionType.
-- Mensagem "alphaville 1" (sem mais nada) → { filters_patch: { condominium: "Alphaville 1" } } — só o condomínio.
+- Mensagem "casa no alphaville 1" → { filters_patch: { propertyType: "casa", condominium: "Alphaville 1" } }.
+- Mensagem "alphaville 1" (sem mais nada) → { filters_patch: { condominium: "Alphaville 1" } }.
+- Mensagem "imóveis em alphaville" → { filters_patch: {}, intent: "clarify_region", reply: "Quer ver toda a região de Alphaville ou um condomínio específico (Alphaville 1, 2, 3…)?" }.
+- Mensagem "quero imoveis na granja viana" → { filters_patch: {}, address_query: "granja viana", reply: "Achei imóveis na Granja Viana. Você quer comprar ou alugar?" }.
 - Mensagem "até 5 milhões" → { filters_patch: { maxPrice: 5000000 } }.
 
 
@@ -1941,12 +1954,13 @@ Responda APENAS JSON válido no schema descrito acima.`;
     // unknown-but-known filter keys into filters_patch.
     const FILTER_KEYS = [
       "transactionType","propertyType","condominium","condominiumGroup",
-      "neighborhood","city","minBedrooms","minBathrooms","minParking",
+      "neighborhood","city","address","minBedrooms","minBathrooms","minParking",
       "minArea","minPrice","maxPrice",
     ];
     const patch: IntentPatch = {
       filters_patch: { ...(raw.filters_patch ?? {}) },
       condominium_query: raw.condominium_query ?? null,
+      address_query: typeof raw.address_query === "string" ? raw.address_query : null,
       keywords_add: Array.isArray(raw.keywords_add) ? raw.keywords_add : [],
       keywords_remove: Array.isArray(raw.keywords_remove) ? raw.keywords_remove : [],
       excluded_add: Array.isArray(raw.excluded_add) ? raw.excluded_add : [],
@@ -2009,7 +2023,7 @@ const applyPatchV3 = (
   };
   const fp = patch.filters_patch ?? {};
   const directKeys: (keyof PropertySearchFilters)[] = [
-    "transactionType", "propertyType", "neighborhood", "city",
+    "transactionType", "propertyType", "neighborhood", "city", "address",
     "minBedrooms", "minBathrooms", "minParking", "minArea", "minPrice", "maxPrice",
   ];
   for (const k of directKeys) {
@@ -2018,6 +2032,10 @@ const applyPatchV3 = (
       if (v === null) (next as any)[k] = null;
       else if (v !== undefined) (next as any)[k] = v;
     }
+  }
+  // address_query (free-text region/street) — only set if not already provided in filters_patch
+  if (patch.address_query && next.address == null) {
+    next.address = patch.address_query.trim();
   }
 
   // Condominium resolution
@@ -2065,6 +2083,8 @@ const summarizeFiltersV3 = (f: PropertySearchFilters): string => {
   if (f.condominium) parts.push(`no ${f.condominium}`);
   else if (f.condominiumGroup) parts.push(`em ${f.condominiumGroup}`);
   if (f.neighborhood) parts.push(`bairro ${f.neighborhood}`);
+  if (f.city) parts.push(`em ${f.city}`);
+  if (f.address) parts.push(`região ${f.address}`);
   if (f.minBedrooms) parts.push(`${f.minBedrooms}+ suítes`);
   if (f.minArea) parts.push(`a partir de ${f.minArea}m²`);
   if (f.maxPrice) parts.push(`até ${fmtBRL(f.maxPrice)}`);
@@ -2148,6 +2168,12 @@ const applySelectedChipV3 = (
       if (c) { f.condominium = c; f.condominiumGroup = null; f.lastDidYouMean = null; }
       break;
     }
+    case "set_condominium_group":
+    case "condominium_group": {
+      const g = (opt.payload?.condominiumGroup as string) ?? opt.value;
+      if (g) { f.condominiumGroup = g; f.condominium = null; f.lastDidYouMean = null; }
+      break;
+    }
     case "any_condo":
     case "clear_condominium":
       f.condominium = null; f.condominiumGroup = null; break;
@@ -2186,6 +2212,41 @@ const applySelectedChipV3 = (
     }
   }
   return f;
+};
+
+// ----- Macro-region detection (pre-LLM) -----
+// Regiões/macro-bairros que NÃO são condomínios fechados mas aparecem
+// no campo `address` dos imóveis. Casamos via normalização antes do LLM.
+const REGION_TERMS: { match: string; kind: "address" | "city"; value: string; label: string }[] = [
+  { match: "granja viana", kind: "address", value: "granja viana", label: "Granja Viana" },
+  { match: "raposo tavares", kind: "address", value: "raposo tavares", label: "Raposo Tavares" },
+  { match: "km 26", kind: "address", value: "km 26", label: "Km 26 (Raposo Tavares)" },
+  { match: "cotia", kind: "address", value: "cotia", label: "Cotia" },
+  { match: "santana de parnaiba", kind: "city", value: "Santana de Parnaíba", label: "Santana de Parnaíba" },
+  { match: "barueri", kind: "city", value: "Barueri", label: "Barueri" },
+];
+
+const detectRegion = (message: string) => {
+  const n = norm(message);
+  if (!n) return null;
+  for (const r of REGION_TERMS) {
+    if (n.includes(r.match)) return r;
+  }
+  return null;
+};
+
+// Detecta menção AMBÍGUA a "alphaville" ou "tambore" sozinhos (sem número e
+// sem outra palavra que identifique um condomínio específico).
+const detectAmbiguousArea = (message: string): "alphaville" | "tambore" | null => {
+  const n = norm(message);
+  if (!n) return null;
+  const hasNumber = /\b\d{1,2}\b/.test(n);
+  if (hasNumber) return null;
+  // Se também citou outro condomínio específico (ex.: "burle marx"), não é ambíguo.
+  if (/(burle marx|genesis|villa solaia|melville|valville|alpha conde|alpha sitio|18 do forte|campos do conde|gramercy|myra|oiapoque|splendore|canvas|atria|essencia|parati|mont blanc|jardins tambore|oka mamore|alpha vita|ereditá|eredita|itahye|itahyê)/.test(n)) return null;
+  if (/\balphaville\b/.test(n)) return "alphaville";
+  if (/\btambore\b/.test(n)) return "tambore";
+  return null;
 };
 
 const handleConverseV3 = async (sb: SB, body: any) => {
@@ -2235,6 +2296,72 @@ const handleConverseV3 = async (sb: SB, body: any) => {
       }
     }
   }
+
+  // 1.6) Deterministic macro-region detection (pre-LLM).
+  // Aplica filtros de region/city quando o usuário cita um termo geográfico
+  // conhecido que não é condomínio fechado (ex.: "granja viana", "cotia").
+  if (message && !forcedCondo) {
+    const region = detectRegion(message);
+    if (region) {
+      if (region.kind === "address") state.address = region.value;
+      else if (region.kind === "city") state.city = region.value;
+      console.log("[handleConverseV3] region detected", region);
+    }
+  }
+
+  // 1.7) Desambiguação "alphaville" / "tamboré" sozinhos — bairro vs condomínio.
+  // Só dispara quando ainda não há condomínio fixado E o usuário não está
+  // refinando outro filtro existente.
+  if (
+    message &&
+    !forcedCondo &&
+    !state.condominium &&
+    !state.condominiumGroup &&
+    !selectedOption
+  ) {
+    const area = detectAmbiguousArea(message);
+    if (area) {
+      const groupLabel = area === "tambore" ? "Tamboré" : "Alphaville";
+      // top condos do grupo, ordenados pelo número
+      const groupCondos = entries
+        .filter((e) => e.normalized.startsWith(area + " "))
+        .map((e) => e.canonical)
+        .sort((a, b) => {
+          const na = parseInt(a.replace(/\D+/g, ""), 10) || 99;
+          const nb = parseInt(b.replace(/\D+/g, ""), 10) || 99;
+          return na - nb;
+        })
+        .slice(0, 6);
+      const chips: OptionChip[] = [
+        {
+          label: `Toda a região de ${groupLabel}`,
+          value: groupLabel,
+          kind: "action",
+          action: "set_condominium_group",
+          payload: { condominiumGroup: groupLabel },
+        },
+        ...groupCondos.map((name) => ({
+          label: name,
+          value: name,
+          kind: "condominium",
+          action: "set_condominium",
+          payload: { condominium: name } as Record<string, unknown>,
+        })),
+        { label: "Nova busca", value: "reset", kind: "reset" },
+      ];
+      return {
+        assistantMessage: `Só pra confirmar: quando você fala em **${groupLabel}**, está pensando na **região como um todo** (vários condomínios) ou em um **condomínio específico** (${groupLabel} 1, 2, 3…)? Assim eu te mostro exatamente o que faz sentido.`,
+        responseType: "clarification" as const,
+        conversation_state: state,
+        updatedState: { filters: state } as ConversationState,
+        parsedFilters: state,
+        suggestedOptions: chips,
+        suggestions: chips.map((c) => c.label),
+        nextAction: "ask" as const,
+      };
+    }
+  }
+
 
   // 2) LLM intent extraction (if there's an actual user message to interpret)
   let patch: IntentPatch | null = null;

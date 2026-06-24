@@ -6,6 +6,7 @@ export interface PropertySearchFilters {
   condominiumGroup?: string | null;
   city?: string | null;
   neighborhood?: string | null;
+  address?: string | null;
   minBedrooms?: number | null;
   minBathrooms?: number | null;
   minParking?: number | null;
@@ -111,6 +112,7 @@ export function filtersToSearchParams(f: PropertySearchFilters): string {
   if (f.condominium) p.set("condominium", f.condominium);
   if (f.city) p.set("city", f.city);
   if (f.neighborhood) p.set("neighborhood", f.neighborhood);
+  if (f.address) p.set("address", f.address);
   if (f.minBedrooms) p.set("minBedrooms", String(f.minBedrooms));
   if (f.minBathrooms) p.set("minBathrooms", String(f.minBathrooms));
   if (f.minParking) p.set("minParking", String(f.minParking));
