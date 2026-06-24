@@ -2211,14 +2211,68 @@ const handleConverseV3 = async (sb: SB, body: any) => {
 
   const [rows, entries] = await Promise.all([loadActiveProperties(sb), loadCondoIndex(sb)]);
 
+  // 1.5) Deterministic condo+number resolution (pre-LLM).
+  // Garante que "alphaville 1", "alphaville um", "tambore dois" etc.
+  // sempre fixem o condomínio canônico, sem depender do LLM.
+  let forcedCondo: string | null = null;
+  if (message) {
+    const cn = findCondoNumber(message);
+    if (cn) {
+      const candidate = `${cn.group} ${cn.number}`;
+      const resolved = resolveCondominium(candidate, entries);
+      if (resolved && resolved.confidence === "high") {
+        forcedCondo = resolved.entry.canonical;
+        state.condominium = forcedCondo;
+        state.condominiumGroup = null;
+        state.lastDidYouMean = null;
+        console.log("[handleConverseV3] forcedCondo via findCondoNumber", { candidate, forcedCondo });
+      }
+    }
+  }
+
   // 2) LLM intent extraction (if there's an actual user message to interpret)
   let patch: IntentPatch | null = null;
   if (message) {
     patch = await extractSearchIntentV3(sb, message, state, history);
   }
   if (patch) {
+    const before = { ...state };
     state = applyPatchV3(state, patch, entries);
+    // Guard: LLM não pode inventar filtros numéricos/transação sem evidência textual.
+    const rawLower = stripAccentsLower(message).replace(/[^a-z0-9\s]/g, " ");
+    const hasDigit = /\d/.test(message);
+    const mentionsTransaction = /(venda|vender|comprar|compra|adquirir|alug|loca|arrend)/.test(rawLower);
+    const mentionsBedrooms = /(suite|quarto|dormitorio|dorm)/.test(rawLower);
+    const mentionsPrice = /(preco|valor|reais|milhao|milhoes|mil|r\$)/.test(rawLower);
+    const mentionsArea = /(metro|m2|area)/.test(rawLower);
+    if (!hasDigit && !mentionsBedrooms && before.minBedrooms == null && state.minBedrooms != null) {
+      console.log("[handleConverseV3] dropping invented minBedrooms", state.minBedrooms);
+      state.minBedrooms = before.minBedrooms ?? null;
+    }
+    if (!hasDigit && !mentionsPrice && before.minPrice == null && state.minPrice != null) {
+      console.log("[handleConverseV3] dropping invented minPrice", state.minPrice);
+      state.minPrice = before.minPrice ?? null;
+    }
+    if (!hasDigit && !mentionsPrice && before.maxPrice == null && state.maxPrice != null) {
+      console.log("[handleConverseV3] dropping invented maxPrice", state.maxPrice);
+      state.maxPrice = before.maxPrice ?? null;
+    }
+    if (!hasDigit && !mentionsArea && before.minArea == null && state.minArea != null) {
+      console.log("[handleConverseV3] dropping invented minArea", state.minArea);
+      state.minArea = before.minArea ?? null;
+    }
+    if (!mentionsTransaction && before.transactionType == null && state.transactionType != null) {
+      console.log("[handleConverseV3] dropping invented transactionType", state.transactionType);
+      state.transactionType = before.transactionType ?? null;
+    }
+    if (forcedCondo) {
+      // LLM não pode sobrescrever o condomínio resolvido deterministicamente.
+      state.condominium = forcedCondo;
+      state.condominiumGroup = null;
+      state.lastDidYouMean = null;
+    }
   }
+
 
   // 2.1) LLM-detected handoff intent
   if ((patch as any)?.intent === "handoff") {
