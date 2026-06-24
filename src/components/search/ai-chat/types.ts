@@ -6,6 +6,7 @@ export interface PropertySearchFilters {
   condominiumGroup?: string | null;
   city?: string | null;
   neighborhood?: string | null;
+  address?: string | null;
   minBedrooms?: number | null;
   minBathrooms?: number | null;
   minParking?: number | null;
