@@ -6,7 +6,7 @@ import { toTitleCase } from "@/lib/utils";
 import useEmblaCarousel from "embla-carousel-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const NewArrivalsSection = () => {
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -15,7 +15,7 @@ const NewArrivalsSection = () => {
   const [canScrollNext, setCanScrollNext] = useState(false);
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: "start",
-    slidesToScroll: 1,
+    slidesToScroll: "auto",
     containScroll: "trimSnaps",
   });
 
@@ -102,12 +102,36 @@ const NewArrivalsSection = () => {
           <h2 className="text-display text-2xl md:text-3xl font-normal text-foreground">
             Nossas propriedades especiais em Alphaville, Tamboré e Santana de Parnaiba
           </h2>
-          <Link
-            to="/busca"
-            className="text-body text-sm text-foreground/70 hover:text-primary transition-colors whitespace-nowrap"
-          >
-            Ver todos
-          </Link>
+          <div className="flex items-center gap-4">
+            <div className="hidden md:flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-10 w-10 rounded-full"
+                onClick={() => emblaApi?.scrollPrev()}
+                disabled={!canScrollPrev}
+                aria-label="Anterior"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-10 w-10 rounded-full"
+                onClick={() => emblaApi?.scrollNext()}
+                disabled={!canScrollNext}
+                aria-label="Próximo"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </Button>
+            </div>
+            <Link
+              to="/busca"
+              className="text-body text-sm text-foreground/70 hover:text-primary transition-colors whitespace-nowrap"
+            >
+              Ver todos
+            </Link>
+          </div>
         </div>
 
         {/* Carrossel */}
@@ -178,26 +202,6 @@ const NewArrivalsSection = () => {
             ))}
           </div>
           </div>
-          <Button
-            variant="outline"
-            size="icon"
-            className="hidden md:flex absolute -left-4 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full"
-            onClick={() => emblaApi?.scrollPrev()}
-            disabled={!canScrollPrev}
-            aria-label="Anterior"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            className="hidden md:flex absolute -right-4 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full"
-            onClick={() => emblaApi?.scrollNext()}
-            disabled={!canScrollNext}
-            aria-label="Próximo"
-          >
-            <ArrowRight className="h-4 w-4" />
-          </Button>
         </div>
 
         {/* Dots */}
