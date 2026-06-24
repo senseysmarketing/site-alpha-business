@@ -3,7 +3,7 @@ import { useSiteSettings } from "@/hooks/useSiteSettings";
 import useEmblaCarousel from "embla-carousel-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface TeamMember {
   name: string;
@@ -30,7 +30,7 @@ const TeamSection = () => {
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: "start",
     containScroll: "trimSnaps",
-    slidesToScroll: 1,
+    slidesToScroll: "auto",
   });
 
   const members = teamData?.members?.length ? teamData.members : defaultTeam;
@@ -58,7 +58,7 @@ const TeamSection = () => {
   return (
     <section className="section-padding">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-10">
+        <div className="flex items-center justify-between gap-6 mb-10">
           <motion.h2
             className="text-display text-2xl md:text-3xl font-normal text-foreground"
             initial={{ opacity: 0, y: 20 }}
@@ -68,6 +68,28 @@ const TeamSection = () => {
           >
             Nossa Equipe
           </motion.h2>
+          <div className="hidden md:flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-10 w-10 rounded-full"
+              onClick={() => emblaApi?.scrollPrev()}
+              disabled={!canScrollPrev}
+              aria-label="Anterior"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-10 w-10 rounded-full"
+              onClick={() => emblaApi?.scrollNext()}
+              disabled={!canScrollNext}
+              aria-label="Próximo"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
 
 
@@ -104,26 +126,6 @@ const TeamSection = () => {
               ))}
             </div>
           </div>
-          <Button
-            variant="outline"
-            size="icon"
-            className="hidden md:flex absolute -left-4 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full"
-            onClick={() => emblaApi?.scrollPrev()}
-            disabled={!canScrollPrev}
-            aria-label="Anterior"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            className="hidden md:flex absolute -right-4 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full"
-            onClick={() => emblaApi?.scrollNext()}
-            disabled={!canScrollNext}
-            aria-label="Próximo"
-          >
-            <ArrowRight className="h-4 w-4" />
-          </Button>
         </div>
 
         {snaps.length > 1 && (
