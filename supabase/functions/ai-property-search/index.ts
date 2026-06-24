@@ -2321,6 +2321,8 @@ const handleConverseV3 = async (sb: SB, body: any) => {
   // 4) Filter + rank
   const ranked = filterAndRankV3(rows, state);
   const matchCount = ranked.length;
+  console.log("[handleConverseV3] final", { message, forcedCondo, state, matchCount });
+
   const preview = ranked.slice(0, 4).map((m) => rowToResult(m.row));
   const summary = summarizeFiltersV3(state);
   const suggestedOptions = buildDynamicSuggestionsV3(state, matchCount, ranked);
