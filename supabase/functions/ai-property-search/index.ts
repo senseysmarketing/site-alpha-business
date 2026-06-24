@@ -1839,6 +1839,7 @@ const rowToResult = (r: PropRow): PropertyResult => ({
 interface IntentPatch {
   filters_patch?: Partial<PropertySearchFilters>;
   condominium_query?: string | null;
+  address_query?: string | null;
   keywords_add?: string[];
   keywords_remove?: string[];
   excluded_add?: string[];
