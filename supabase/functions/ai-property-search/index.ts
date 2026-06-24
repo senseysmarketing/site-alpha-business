@@ -2022,7 +2022,7 @@ const applyPatchV3 = (
   };
   const fp = patch.filters_patch ?? {};
   const directKeys: (keyof PropertySearchFilters)[] = [
-    "transactionType", "propertyType", "neighborhood", "city",
+    "transactionType", "propertyType", "neighborhood", "city", "address",
     "minBedrooms", "minBathrooms", "minParking", "minArea", "minPrice", "maxPrice",
   ];
   for (const k of directKeys) {
@@ -2031,6 +2031,10 @@ const applyPatchV3 = (
       if (v === null) (next as any)[k] = null;
       else if (v !== undefined) (next as any)[k] = v;
     }
+  }
+  // address_query (free-text region/street) — only set if not already provided in filters_patch
+  if (patch.address_query && next.address == null) {
+    next.address = patch.address_query.trim();
   }
 
   // Condominium resolution
