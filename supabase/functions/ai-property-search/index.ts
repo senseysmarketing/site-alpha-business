@@ -2168,6 +2168,12 @@ const applySelectedChipV3 = (
       if (c) { f.condominium = c; f.condominiumGroup = null; f.lastDidYouMean = null; }
       break;
     }
+    case "set_condominium_group":
+    case "condominium_group": {
+      const g = (opt.payload?.condominiumGroup as string) ?? opt.value;
+      if (g) { f.condominiumGroup = g; f.condominium = null; f.lastDidYouMean = null; }
+      break;
+    }
     case "any_condo":
     case "clear_condominium":
       f.condominium = null; f.condominiumGroup = null; break;
