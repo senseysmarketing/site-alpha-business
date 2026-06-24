@@ -1953,12 +1953,13 @@ Responda APENAS JSON válido no schema descrito acima.`;
     // unknown-but-known filter keys into filters_patch.
     const FILTER_KEYS = [
       "transactionType","propertyType","condominium","condominiumGroup",
-      "neighborhood","city","minBedrooms","minBathrooms","minParking",
+      "neighborhood","city","address","minBedrooms","minBathrooms","minParking",
       "minArea","minPrice","maxPrice",
     ];
     const patch: IntentPatch = {
       filters_patch: { ...(raw.filters_patch ?? {}) },
       condominium_query: raw.condominium_query ?? null,
+      address_query: typeof raw.address_query === "string" ? raw.address_query : null,
       keywords_add: Array.isArray(raw.keywords_add) ? raw.keywords_add : [],
       keywords_remove: Array.isArray(raw.keywords_remove) ? raw.keywords_remove : [],
       excluded_add: Array.isArray(raw.excluded_add) ? raw.excluded_add : [],
