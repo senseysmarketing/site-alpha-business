@@ -2291,6 +2291,72 @@ const handleConverseV3 = async (sb: SB, body: any) => {
     }
   }
 
+  // 1.6) Deterministic macro-region detection (pre-LLM).
+  // Aplica filtros de region/city quando o usuário cita um termo geográfico
+  // conhecido que não é condomínio fechado (ex.: "granja viana", "cotia").
+  if (message && !forcedCondo) {
+    const region = detectRegion(message);
+    if (region) {
+      if (region.kind === "address") state.address = region.value;
+      else if (region.kind === "city") state.city = region.value;
+      console.log("[handleConverseV3] region detected", region);
+    }
+  }
+
+  // 1.7) Desambiguação "alphaville" / "tamboré" sozinhos — bairro vs condomínio.
+  // Só dispara quando ainda não há condomínio fixado E o usuário não está
+  // refinando outro filtro existente.
+  if (
+    message &&
+    !forcedCondo &&
+    !state.condominium &&
+    !state.condominiumGroup &&
+    !selectedOption
+  ) {
+    const area = detectAmbiguousArea(message);
+    if (area) {
+      const groupLabel = area === "tambore" ? "Tamboré" : "Alphaville";
+      // top condos do grupo, ordenados pelo número
+      const groupCondos = entries
+        .filter((e) => e.normalized.startsWith(area + " "))
+        .map((e) => e.canonical)
+        .sort((a, b) => {
+          const na = parseInt(a.replace(/\D+/g, ""), 10) || 99;
+          const nb = parseInt(b.replace(/\D+/g, ""), 10) || 99;
+          return na - nb;
+        })
+        .slice(0, 6);
+      const chips: OptionChip[] = [
+        {
+          label: `Toda a região de ${groupLabel}`,
+          value: groupLabel,
+          kind: "action",
+          action: "set_condominium_group",
+          payload: { condominiumGroup: groupLabel },
+        },
+        ...groupCondos.map((name) => ({
+          label: name,
+          value: name,
+          kind: "condominium",
+          action: "set_condominium",
+          payload: { condominium: name } as Record<string, unknown>,
+        })),
+        { label: "Nova busca", value: "reset", kind: "reset" },
+      ];
+      return {
+        assistantMessage: `Só pra confirmar: quando você fala em **${groupLabel}**, está pensando na **região como um todo** (vários condomínios) ou em um **condomínio específico** (${groupLabel} 1, 2, 3…)? Assim eu te mostro exatamente o que faz sentido.`,
+        responseType: "clarification" as const,
+        conversation_state: state,
+        updatedState: { filters: state } as ConversationState,
+        parsedFilters: state,
+        suggestedOptions: chips,
+        suggestions: chips.map((c) => c.label),
+        nextAction: "ask" as const,
+      };
+    }
+  }
+
+
   // 2) LLM intent extraction (if there's an actual user message to interpret)
   let patch: IntentPatch | null = null;
   if (message) {
