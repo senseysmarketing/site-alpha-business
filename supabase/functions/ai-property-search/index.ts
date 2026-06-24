@@ -2083,6 +2083,8 @@ const summarizeFiltersV3 = (f: PropertySearchFilters): string => {
   if (f.condominium) parts.push(`no ${f.condominium}`);
   else if (f.condominiumGroup) parts.push(`em ${f.condominiumGroup}`);
   if (f.neighborhood) parts.push(`bairro ${f.neighborhood}`);
+  if (f.city) parts.push(`em ${f.city}`);
+  if (f.address) parts.push(`região ${f.address}`);
   if (f.minBedrooms) parts.push(`${f.minBedrooms}+ suítes`);
   if (f.minArea) parts.push(`a partir de ${f.minArea}m²`);
   if (f.maxPrice) parts.push(`até ${fmtBRL(f.maxPrice)}`);
