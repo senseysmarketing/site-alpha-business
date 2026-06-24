@@ -26,6 +26,7 @@ interface PropertySearchFilters {
   condominiumGroup?: string | null;
   city?: string | null;
   neighborhood?: string | null;
+  address?: string | null; // free-text region/street match (ex: "granja viana", "alameda araguaia")
   minBedrooms?: number | null;
   minBathrooms?: number | null;
   minParking?: number | null;
