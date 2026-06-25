@@ -184,6 +184,36 @@ export function LeadDetailModal({ lead, open, onOpenChange, team = [] }: LeadDet
     enabled: !!lead,
   });
 
+  const normalizedPhone = useMemo(() => {
+    if (!lead?.phone) return null;
+    const digits = lead.phone.replace(/\D/g, "");
+    if (!digits) return null;
+    return digits.length > 11 ? digits.slice(-11) : digits;
+  }, [lead?.phone]);
+  const normalizedEmail = useMemo(
+    () => (lead?.email ? lead.email.trim().toLowerCase() : null),
+    [lead?.email],
+  );
+
+  const { data: relatedLeads = [] } = useQuery({
+    queryKey: ["lead_recurrence", lead?.id, normalizedPhone, normalizedEmail],
+    queryFn: async () => {
+      if (!lead || (!normalizedPhone && !normalizedEmail)) return [];
+      const ors: string[] = [];
+      if (normalizedPhone) ors.push(`phone_normalized.eq.${normalizedPhone}`);
+      if (normalizedEmail) ors.push(`email_normalized.eq.${normalizedEmail}`);
+      const { data } = await supabase
+        .from("leads")
+        .select("id, name, pipeline_stage, origin, created_at, assigned_user_id, phone_normalized, email_normalized")
+        .or(ors.join(","))
+        .neq("id", lead.id)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      return data || [];
+    },
+    enabled: !!lead && (!!normalizedPhone || !!normalizedEmail),
+  });
+
   const userIdToName = useMemo(() => {
     const m = new Map<string, string>();
     team.forEach((t) => m.set(t.user_id, t.full_name || "—"));
