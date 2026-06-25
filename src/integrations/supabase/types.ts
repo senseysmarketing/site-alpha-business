@@ -248,6 +248,8 @@ export type Database = {
           created_at: string
           fallback_user_id: string | null
           id: string
+          recurring_lead_enabled: boolean
+          recurring_lead_window_months: number | null
           round_robin_pool: string[]
           rules_by_origin: Json
           updated_at: string
@@ -258,6 +260,8 @@ export type Database = {
           created_at?: string
           fallback_user_id?: string | null
           id?: string
+          recurring_lead_enabled?: boolean
+          recurring_lead_window_months?: number | null
           round_robin_pool?: string[]
           rules_by_origin?: Json
           updated_at?: string
@@ -268,6 +272,8 @@ export type Database = {
           created_at?: string
           fallback_user_id?: string | null
           id?: string
+          recurring_lead_enabled?: boolean
+          recurring_lead_window_months?: number | null
           round_robin_pool?: string[]
           rules_by_origin?: Json
           updated_at?: string
@@ -444,6 +450,7 @@ export type Database = {
           created_at: string
           deal_value: number | null
           email: string | null
+          email_normalized: string | null
           id: string
           last_assignment_rule_id: string | null
           last_assignment_rule_name: string | null
@@ -452,6 +459,7 @@ export type Database = {
           name: string
           origin: string
           phone: string | null
+          phone_normalized: string | null
           pipeline_stage: string
           property_id: string | null
           score: string
@@ -467,6 +475,7 @@ export type Database = {
           created_at?: string
           deal_value?: number | null
           email?: string | null
+          email_normalized?: string | null
           id?: string
           last_assignment_rule_id?: string | null
           last_assignment_rule_name?: string | null
@@ -475,6 +484,7 @@ export type Database = {
           name: string
           origin?: string
           phone?: string | null
+          phone_normalized?: string | null
           pipeline_stage?: string
           property_id?: string | null
           score?: string
@@ -490,6 +500,7 @@ export type Database = {
           created_at?: string
           deal_value?: number | null
           email?: string | null
+          email_normalized?: string | null
           id?: string
           last_assignment_rule_id?: string | null
           last_assignment_rule_name?: string | null
@@ -498,6 +509,7 @@ export type Database = {
           name?: string
           origin?: string
           phone?: string | null
+          phone_normalized?: string | null
           pipeline_stage?: string
           property_id?: string | null
           score?: string

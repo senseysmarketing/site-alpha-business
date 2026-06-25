@@ -8,7 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { AssignmentRulesList } from "./AssignmentRulesList";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, Repeat } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface CrmSettingsDialogProps {
   open: boolean;
