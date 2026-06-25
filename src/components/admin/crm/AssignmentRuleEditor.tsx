@@ -28,6 +28,7 @@ import type {
   RuleConditions,
   RuleInput,
 } from "@/hooks/useAssignmentRules";
+import { usePipelineStages } from "@/hooks/usePipelineStages";
 
 interface TeamProfile {
   user_id: string;
@@ -52,13 +53,7 @@ const ORIGINS = [
   { value: "manual", label: "Cadastro manual" },
 ];
 
-const STAGES = [
-  { value: "novos", label: "Novos" },
-  { value: "visita_agendada", label: "Visita agendada" },
-  { value: "proposta", label: "Proposta" },
-  { value: "contrato", label: "Contrato" },
-  { value: "fechado", label: "Fechado" },
-];
+// STAGES é carregado dinamicamente via usePipelineStages
 
 const SCORES = [
   { value: "quente", label: "Quente" },
@@ -77,6 +72,8 @@ export function AssignmentRuleEditor({
   nextPriority,
   onSave,
 }: Props) {
+  const { activeStages } = usePipelineStages();
+  const STAGES = activeStages.map((s) => ({ value: s.key, label: s.label }));
   const [name, setName] = useState("");
   const [priority, setPriority] = useState<number>(10);
   const [isActive, setIsActive] = useState(true);
