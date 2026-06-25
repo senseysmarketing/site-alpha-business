@@ -370,8 +370,18 @@ const Properties = () => {
                     </Badge>
                   </TableCell>
                   <TableCell className="font-[Inter] text-sm">
-                    {formatPrice(isRentalTransaction(property.transaction_type) ? property.rental_price ?? property.price : property.price)}
+                    {property.transaction_type === "ambos" ? (
+                      <div className="flex flex-col leading-tight">
+                        <span>{formatPrice(property.price)}</span>
+                        <span className="text-[11px] text-muted-foreground">
+                          {formatPrice(property.rental_price)}/mês
+                        </span>
+                      </div>
+                    ) : (
+                      formatPrice(isRentalTransaction(property.transaction_type) ? property.rental_price ?? property.price : property.price)
+                    )}
                   </TableCell>
+
                   <TableCell>
                     <Badge
                       variant={property.status === "ativo" ? "default" : "secondary"}
