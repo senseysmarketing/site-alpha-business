@@ -2452,10 +2452,31 @@ const handleConverseV3 = async (sb: SB, body: any) => {
     };
   }
 
+  // 3.5) Transaction intent guard — preço sem compra/locação gera confusão entre venda x aluguel.
+  // Se o usuário mencionou valor mas ainda não disse se quer comprar ou alugar, pergunte antes.
+  const hasBudget = (state.minPrice != null) || (state.maxPrice != null);
+  if (hasBudget && !state.transactionType) {
+    const stateOut = state;
+    return {
+      assistantMessage:
+        `Antes de eu filtrar pelo valor, me confirma: você está pensando em **comprar** ou **alugar**? A faixa de preço muda bastante entre os dois.`,
+      responseType: "clarification" as const,
+      conversation_state: stateOut,
+      updatedState: { filters: stateOut } as ConversationState,
+      parsedFilters: stateOut,
+      suggestedOptions: [
+        { label: "Quero comprar", value: "venda", kind: "transaction", action: "set_transaction" },
+        { label: "Quero alugar", value: "locacao", kind: "transaction", action: "set_transaction" },
+      ],
+      nextAction: "ask" as const,
+    };
+  }
+
   // 4) Filter + rank
   const ranked = filterAndRankV3(rows, state);
   const matchCount = ranked.length;
   console.log("[handleConverseV3] final", { message, forcedCondo, state, matchCount });
+
 
   const preview = ranked.slice(0, 4).map((m) => rowToResult(m.row));
   const summary = summarizeFiltersV3(state);
