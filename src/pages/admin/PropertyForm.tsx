@@ -441,6 +441,17 @@ const PropertyForm = () => {
                   <Input value={price} onChange={(e) => setPrice(e.target.value)} className={inputClass} placeholder="2500000" />
                 </div>
               )}
+
+              <div className="space-y-2">
+                <Label className={labelClass}>Condomínio (R$/mês)</Label>
+                <Input value={condoFee} onChange={(e) => setCondoFee(e.target.value)} className={inputClass} placeholder="1800" />
+              </div>
+              <div className="space-y-2">
+                <Label className={labelClass}>IPTU (R$/ano)</Label>
+                <Input value={iptu} onChange={(e) => setIptu(e.target.value)} className={inputClass} placeholder="12000" />
+                <p className="text-[10px] text-muted-foreground/70 font-[Inter]">Será exibido também o valor mensal estimado (÷12).</p>
+              </div>
+
               {(transactionType === "locacao" || transactionType === "ambos") && (
                 <div className="space-y-2">
                   <Label className={labelClass}>Preço Locação (R$/mês)</Label>
