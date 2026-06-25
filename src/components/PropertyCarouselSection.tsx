@@ -7,14 +7,16 @@ import useEmblaCarousel from "embla-carousel-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { buildCtaHref, getCtaLabel, isExternalUrl, type CarouselCta } from "@/lib/carouselCta";
 
 interface PropertyCarouselSectionProps {
   title: string;
   propertyIds: string[];
   isActive?: boolean;
+  cta?: CarouselCta;
 }
 
-const PropertyCarouselSection = ({ title, propertyIds, isActive = true }: PropertyCarouselSectionProps) => {
+const PropertyCarouselSection = ({ title, propertyIds, isActive = true, cta }: PropertyCarouselSectionProps) => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
   const [canScrollPrev, setCanScrollPrev] = useState(false);
