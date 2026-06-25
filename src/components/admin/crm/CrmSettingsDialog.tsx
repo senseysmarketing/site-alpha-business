@@ -64,6 +64,12 @@ export function CrmSettingsDialog({ open, onOpenChange }: CrmSettingsDialogProps
   useEffect(() => {
     if (settings) {
       setAssistantSeesAll(settings.assistant_sees_all);
+      setRecurringEnabled(settings.recurring_lead_enabled ?? true);
+      setRecurringWindow(
+        settings.recurring_lead_window_months == null
+          ? "always"
+          : String(settings.recurring_lead_window_months),
+      );
     }
   }, [settings]);
 
@@ -77,7 +83,11 @@ export function CrmSettingsDialog({ open, onOpenChange }: CrmSettingsDialogProps
     setSaving(true);
     const { error } = await supabase
       .from("crm_settings")
-      .update({ assistant_sees_all: assistantSeesAll })
+      .update({
+        assistant_sees_all: assistantSeesAll,
+        recurring_lead_enabled: recurringEnabled,
+        recurring_lead_window_months: recurringWindow === "always" ? null : Number(recurringWindow),
+      })
       .eq("id", settings.id);
     setSaving(false);
     if (error) {
