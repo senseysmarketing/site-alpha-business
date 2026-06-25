@@ -59,27 +59,29 @@ export function DailyPlanCard() {
         })
       );
 
-      // 3. Leads in "proposta" stage
-      const { data: proposalLeads } = await supabase
-        .from("leads")
-        .select("id, name")
-        .eq("pipeline_stage", "proposta")
-        .lt("last_contact_at", twoDaysAgo)
-        .limit(2);
-      proposalLeads?.forEach((l) =>
-        items.push({
-          id: `prop-${l.id}`,
-          icon: <FileText className="h-4 w-4 text-blue-500" />,
-          label: `Follow-up proposta: ${l.name}`,
-          priority: 3,
-        })
-      );
+      // 3. Leads em estágio "proposta" (qualquer estágio cujo nome/chave contenha "proposta")
+      if (proposalKeys.length > 0) {
+        const { data: proposalLeads } = await supabase
+          .from("leads")
+          .select("id, name")
+          .in("pipeline_stage", proposalKeys)
+          .lt("last_contact_at", twoDaysAgo)
+          .limit(2);
+        proposalLeads?.forEach((l) =>
+          items.push({
+            id: `prop-${l.id}`,
+            icon: <FileText className="h-4 w-4 text-blue-500" />,
+            label: `Follow-up proposta: ${l.name}`,
+            priority: 3,
+          })
+        );
+      }
 
-      // 4. New leads without contact
+      // 4. Novos leads sem contato
       const { data: newLeads } = await supabase
         .from("leads")
         .select("id, name")
-        .eq("pipeline_stage", "novos")
+        .eq("pipeline_stage", initialKey)
         .order("created_at", { ascending: true })
         .limit(2);
       newLeads?.forEach((l) =>
