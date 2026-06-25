@@ -76,7 +76,8 @@ const Properties = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [propertyToDelete, setPropertyToDelete] = useState<string | null>(null);
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
+  const { isAdmin, role } = useAuth();
+  const canManageProperties = isAdmin || role === "gerente";
 
   useEffect(() => {
     const fetchProperties = async () => {
@@ -257,7 +258,7 @@ const Properties = () => {
           <p className="font-[Inter] text-sm text-muted-foreground mt-1">Gerencie seu portfólio</p>
         </div>
         <div className="flex items-center gap-2">
-          {isAdmin && (
+          {canManageProperties && (
             <>
               <Button
                 onClick={() => setSettingsOpen(true)}
@@ -279,9 +280,11 @@ const Properties = () => {
               </Button>
             </>
           )}
-          <Button onClick={() => navigate("/admin/imoveis/novo")} className="font-[Inter] text-xs uppercase tracking-widest">
-            <Plus className="h-4 w-4 mr-1" /> Novo Imóvel
-          </Button>
+          {canManageProperties && (
+            <Button onClick={() => navigate("/admin/imoveis/novo")} className="font-[Inter] text-xs uppercase tracking-widest">
+              <Plus className="h-4 w-4 mr-1" /> Novo Imóvel
+            </Button>
+          )}
         </div>
       </div>
 
@@ -454,17 +457,19 @@ const Properties = () => {
                         )}
                       </TooltipProvider>
 
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="font-[Inter] text-xs ml-1"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/admin/imoveis/${property.id}`);
-                        }}
-                      >
-                        Editar
-                      </Button>
+                      {canManageProperties && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="font-[Inter] text-xs ml-1"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/admin/imoveis/${property.id}`);
+                          }}
+                        >
+                          Editar
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>

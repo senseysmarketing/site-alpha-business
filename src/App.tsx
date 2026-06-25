@@ -63,8 +63,8 @@ const AnimatedRoutes = () => {
             <Route path="imoveis" element={<Properties />} />
             <Route path="condominios" element={<ProtectedRoute allowedRoles={["admin"]}><Condominiums /></ProtectedRoute>} />
             <Route path="leads" element={<CRM />} />
-            <Route path="equipe" element={<Team />} />
-            <Route path="equipe/:id" element={<TeamProfile />} />
+            <Route path="equipe" element={<ProtectedRoute allowedRoles={["admin", "gerente"]}><Team /></ProtectedRoute>} />
+            <Route path="equipe/:id" element={<ProtectedRoute allowedRoles={["admin", "gerente"]}><TeamProfile /></ProtectedRoute>} />
             <Route path="agenda" element={<Agenda />} />
             <Route path="relatorios" element={<ProtectedRoute allowedRoles={["admin", "gerente"]}><Reports /></ProtectedRoute>} />
             <Route path="financeiro" element={<ProtectedRoute allowedRoles={["admin"]}><Financial /></ProtectedRoute>} />
@@ -76,8 +76,8 @@ const AnimatedRoutes = () => {
             <Route path="importar" element={<ProtectedRoute allowedRoles={["admin"]}><DataImport /></ProtectedRoute>} />
             <Route path="configuracoes" element={<ProtectedRoute allowedRoles={["admin"]}><SiteSettings /></ProtectedRoute>} />
             <Route path="atividade" element={<ProtectedRoute allowedRoles={["admin"]}><AuditLog /></ProtectedRoute>} />
-            <Route path="imoveis/novo" element={<PropertyForm />} />
-            <Route path="imoveis/:id" element={<PropertyForm />} />
+            <Route path="imoveis/novo" element={<ProtectedRoute allowedRoles={["admin", "gerente"]}><PropertyForm /></ProtectedRoute>} />
+            <Route path="imoveis/:id" element={<ProtectedRoute allowedRoles={["admin", "gerente"]}><PropertyForm /></ProtectedRoute>} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

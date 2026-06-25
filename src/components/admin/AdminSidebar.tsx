@@ -39,9 +39,9 @@ type MenuItem = {
 const menuItems: MenuItem[] = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
   { title: "Imóveis", url: "/admin/imoveis", icon: Building2 },
-  { title: "Condomínios", url: "/admin/condominios", icon: Building2 },
+  { title: "Condomínios", url: "/admin/condominios", icon: Building2, roles: ["admin"] },
   { title: "Pipeline CRM", url: "/admin/leads", icon: Users },
-  { title: "Equipe", url: "/admin/equipe", icon: UserCog },
+  { title: "Equipe", url: "/admin/equipe", icon: UserCog, roles: ["admin", "gerente"] },
   { title: "Agenda", url: "/admin/agenda", icon: CalendarCheck },
   { title: "Relatórios", url: "/admin/relatorios", icon: BarChart3, roles: ["admin", "gerente"] },
   { title: "Financeiro", url: "/admin/financeiro", icon: Wallet, roles: ["admin"] },
