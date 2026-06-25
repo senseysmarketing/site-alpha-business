@@ -82,7 +82,7 @@ export function useAssignmentRules() {
   const upsertRule = useMutation({
     mutationFn: async (payload: RuleInput & { id?: string }) => {
       const { members, id, ...rest } = payload;
-      const dbPayload = { ...rest, conditions: rest.conditions as unknown as Record<string, unknown> };
+      const dbPayload: any = { ...rest, conditions: rest.conditions as any };
       let ruleId = id;
 
       if (ruleId) {
