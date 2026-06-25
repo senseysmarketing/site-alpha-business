@@ -2047,6 +2047,7 @@ const applyPatchV3 = (
   const directKeys: (keyof PropertySearchFilters)[] = [
     "transactionType", "propertyType", "neighborhood", "city", "address",
     "minBedrooms", "minBathrooms", "minParking", "minArea", "minPrice", "maxPrice",
+    "maxCondoFee", "maxIptu",
   ];
   for (const k of directKeys) {
     if (k in fp) {
