@@ -55,10 +55,20 @@ const ACTIVE_PROPERTY_SEARCH_SELECT =
 const ADMIN_PROPERTY_SELECT =
   "id, code, title, condominium, property_type, transaction_type, price, rental_price, status, created_at";
 
+/** Strict: only legacy rental-only rows. */
 export const isRentalTransaction = (transactionType: string | null | undefined) =>
-  transactionType === "locacao" || transactionType === "aluguel" || transactionType === "ambos";
+  transactionType === "locacao" || transactionType === "aluguel";
 
+/** Strict: only sale-only rows. */
 export const isSaleTransaction = (transactionType: string | null | undefined) =>
+  transactionType === "venda";
+
+/** Inclusive: row offers a rental price (rental-only OR ambos). */
+export const hasRentalOffer = (transactionType: string | null | undefined) =>
+  isRentalTransaction(transactionType) || transactionType === "ambos";
+
+/** Inclusive: row offers a sale price (sale-only OR ambos). */
+export const hasSaleOffer = (transactionType: string | null | undefined) =>
   transactionType === "venda" || transactionType === "ambos";
 
 export const hasBothTransactions = (transactionType: string | null | undefined) =>
@@ -67,6 +77,7 @@ export const hasBothTransactions = (transactionType: string | null | undefined) 
 /** SQL `IN` lists that include the unified "ambos" row. */
 export const SALE_TRANSACTION_TYPES = ["venda", "ambos"] as const;
 export const RENTAL_TRANSACTION_TYPES = ["locacao", "aluguel", "ambos"] as const;
+
 
 export async function fetchAllActivePropertySearchRows(
   transactionType?: string | null
