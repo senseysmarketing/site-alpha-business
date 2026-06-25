@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CalendarCheck, Flame, UserPlus, FileText } from "lucide-react";
+import { usePipelineStages } from "@/hooks/usePipelineStages";
 
 interface Task {
   id: string;
@@ -14,9 +15,12 @@ interface Task {
 
 export function DailyPlanCard() {
   const [done, setDone] = useState<Set<string>>(new Set());
+  const { stages, getInitialStageKey } = usePipelineStages();
+  const proposalKeys = stages.filter((s) => /proposta/i.test(s.label) || /proposta/i.test(s.key)).map((s) => s.key);
+  const initialKey = getInitialStageKey();
 
   const { data: tasks = [], isLoading } = useQuery({
-    queryKey: ["daily-plan"],
+    queryKey: ["daily-plan", initialKey, proposalKeys.join(",")],
     queryFn: async () => {
       const items: Task[] = [];
       const twoDaysAgo = new Date(Date.now() - 2 * 86400000).toISOString();
