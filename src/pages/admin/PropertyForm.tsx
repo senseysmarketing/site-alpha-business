@@ -199,11 +199,13 @@ const PropertyForm = () => {
       area_built: areaBuilt ? parseFloat(areaBuilt) : null,
       price: price ? parseFloat(price) : null,
       rental_price: rentalPrice ? parseFloat(rentalPrice) : null,
+      condo_fee: condoFee ? parseFloat(condoFee) : null,
+      iptu: iptu ? parseFloat(iptu) : null,
       is_featured: isFeatured,
       video_url: videoUrl || null,
       photos,
       engineering_highlights: highlights.filter(Boolean),
-    };
+    } as any;
 
     const { error } = isEditing
       ? await supabase.from("properties").update(payload).eq("id", id)
