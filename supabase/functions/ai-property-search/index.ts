@@ -1744,10 +1744,11 @@ const filterAndRankV3 = (rows: PropRow[], f: PropertySearchFilters): ScoredMatch
     if (f.transactionType) {
       const ok =
         f.transactionType === "locacao"
-          ? r.transaction_type === "locacao" || r.transaction_type === "aluguel"
-          : r.transaction_type === "venda";
+          ? r.transaction_type === "locacao" || r.transaction_type === "aluguel" || r.transaction_type === "ambos"
+          : r.transaction_type === "venda" || r.transaction_type === "ambos";
       if (!ok) continue;
     }
+
     // property_type include
     if (f.propertyType) {
       const pt = norm(r.property_type ?? "");
