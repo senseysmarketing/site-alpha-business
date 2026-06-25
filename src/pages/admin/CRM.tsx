@@ -1,13 +1,15 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, Plus } from "lucide-react";
+import { Bell, Plus, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { LeadCard, type Lead } from "@/components/admin/crm/LeadCard";
+import { LeadCard, type Lead, type AssignedUser } from "@/components/admin/crm/LeadCard";
 import { LeadDetailSheet } from "@/components/admin/crm/LeadDetailSheet";
 import { NewLeadDialog } from "@/components/admin/crm/NewLeadDialog";
 import { LeadNotificationSettingsDialog } from "@/components/admin/crm/LeadNotificationSettingsDialog";
+import { CrmSettingsDialog } from "@/components/admin/crm/CrmSettingsDialog";
 import { cn } from "@/lib/utils";
 import { fetchAllPages } from "@/lib/supabasePagination";
 
@@ -29,8 +31,33 @@ export default function CRM() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [newLeadStage, setNewLeadStage] = useState<string | null>(null);
   const [notifyOpen, setNotifyOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [responsibleFilter, setResponsibleFilter] = useState<string>("all");
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-  const { data: leads = [] } = useQuery({
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id ?? null));
+  }, []);
+
+  const { data: team = [] } = useQuery({
+    queryKey: ["team_profiles_crm"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("team_profiles")
+        .select("user_id, full_name, avatar_url, is_active")
+        .order("full_name");
+      if (error) throw error;
+      return (data || []) as (AssignedUser & { is_active: boolean })[];
+    },
+  });
+
+  const teamMap = useMemo(() => {
+    const m = new Map<string, AssignedUser>();
+    team.forEach((t) => m.set(t.user_id, { user_id: t.user_id, full_name: t.full_name, avatar_url: t.avatar_url }));
+    return m;
+  }, [team]);
+
+  const { data: rawLeads = [] } = useQuery({
     queryKey: ["leads"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -42,6 +69,17 @@ export default function CRM() {
     },
   });
 
+  const leads = useMemo(
+    () => rawLeads.map((l) => ({ ...l, assigned_user: l.assigned_user_id ? teamMap.get(l.assigned_user_id) ?? null : null })),
+    [rawLeads, teamMap]
+  );
+
+  const visibleLeads = useMemo(() => {
+    if (responsibleFilter === "all") return leads;
+    if (responsibleFilter === "me") return leads.filter((l) => l.assigned_user_id === currentUserId);
+    return leads.filter((l) => l.assigned_user_id === responsibleFilter);
+  }, [leads, responsibleFilter, currentUserId]);
+
   const { data: properties = [] } = useQuery({
     queryKey: ["properties-list"],
     queryFn: async () => {
@@ -50,6 +88,7 @@ export default function CRM() {
       );
     },
   });
+
 
   const handleDragStart = useCallback((e: React.DragEvent, leadId: string) => {
     e.dataTransfer.setData("text/plain", leadId);
