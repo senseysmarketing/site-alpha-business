@@ -164,6 +164,39 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_settings: {
+        Row: {
+          assignment_strategy: string
+          assistant_sees_all: boolean
+          created_at: string
+          fallback_user_id: string | null
+          id: string
+          round_robin_pool: string[]
+          rules_by_origin: Json
+          updated_at: string
+        }
+        Insert: {
+          assignment_strategy?: string
+          assistant_sees_all?: boolean
+          created_at?: string
+          fallback_user_id?: string | null
+          id?: string
+          round_robin_pool?: string[]
+          rules_by_origin?: Json
+          updated_at?: string
+        }
+        Update: {
+          assignment_strategy?: string
+          assistant_sees_all?: boolean
+          created_at?: string
+          fallback_user_id?: string | null
+          id?: string
+          round_robin_pool?: string[]
+          rules_by_origin?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       expenses: {
         Row: {
           amount: number
@@ -231,6 +264,47 @@ export type Database = {
           },
         ]
       }
+      lead_assignment_history: {
+        Row: {
+          changed_by: string | null
+          created_at: string
+          from_user_id: string | null
+          id: string
+          lead_id: string
+          reason: string | null
+          source: string | null
+          to_user_id: string | null
+        }
+        Insert: {
+          changed_by?: string | null
+          created_at?: string
+          from_user_id?: string | null
+          id?: string
+          lead_id: string
+          reason?: string | null
+          source?: string | null
+          to_user_id?: string | null
+        }
+        Update: {
+          changed_by?: string | null
+          created_at?: string
+          from_user_id?: string | null
+          id?: string
+          lead_id?: string
+          reason?: string | null
+          source?: string | null
+          to_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_assignment_history_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lead_notes: {
         Row: {
           author: string
@@ -266,6 +340,10 @@ export type Database = {
       leads: {
         Row: {
           ai_insights: string | null
+          assigned_at: string | null
+          assigned_by: string | null
+          assigned_user_id: string | null
+          assignment_source: string | null
           avatar_url: string | null
           created_at: string
           deal_value: number | null
@@ -282,6 +360,10 @@ export type Database = {
         }
         Insert: {
           ai_insights?: string | null
+          assigned_at?: string | null
+          assigned_by?: string | null
+          assigned_user_id?: string | null
+          assignment_source?: string | null
           avatar_url?: string | null
           created_at?: string
           deal_value?: number | null
@@ -298,6 +380,10 @@ export type Database = {
         }
         Update: {
           ai_insights?: string | null
+          assigned_at?: string | null
+          assigned_by?: string | null
+          assigned_user_id?: string | null
+          assignment_source?: string | null
           avatar_url?: string | null
           created_at?: string
           deal_value?: number | null
@@ -524,6 +610,7 @@ export type Database = {
           full_name: string
           id: string
           is_active: boolean
+          last_assigned_at: string | null
           phone: string | null
           role_display: string | null
           social_instagram: string | null
@@ -540,6 +627,7 @@ export type Database = {
           full_name: string
           id?: string
           is_active?: boolean
+          last_assigned_at?: string | null
           phone?: string | null
           role_display?: string | null
           social_instagram?: string | null
@@ -556,6 +644,7 @@ export type Database = {
           full_name?: string
           id?: string
           is_active?: boolean
+          last_assigned_at?: string | null
           phone?: string | null
           role_display?: string | null
           social_instagram?: string | null
