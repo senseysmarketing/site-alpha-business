@@ -26,12 +26,16 @@ interface CrmSettings {
   id: string;
   fallback_user_id: string | null;
   assistant_sees_all: boolean;
+  recurring_lead_enabled: boolean;
+  recurring_lead_window_months: number | null;
 }
 
 export function CrmSettingsDialog({ open, onOpenChange }: CrmSettingsDialogProps) {
   const qc = useQueryClient();
   const [saving, setSaving] = useState(false);
   const [assistantSeesAll, setAssistantSeesAll] = useState(true);
+  const [recurringEnabled, setRecurringEnabled] = useState(true);
+  const [recurringWindow, setRecurringWindow] = useState<string>("12"); // "3" | "6" | "12" | "always"
 
   const { data: settings } = useQuery({
     queryKey: ["crm_settings"],
