@@ -1043,7 +1043,17 @@ const SiteSettings = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Settings blocks */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2">
+          <Tabs defaultValue="home" className="w-full">
+            <TabsList className="mb-6 bg-muted/30 font-[Inter] flex flex-wrap h-auto">
+              <TabsTrigger value="home" className="text-xs uppercase tracking-widest">Home</TabsTrigger>
+              <TabsTrigger value="nav" className="text-xs uppercase tracking-widest">Navegação</TabsTrigger>
+              <TabsTrigger value="inst" className="text-xs uppercase tracking-widest">Institucional</TabsTrigger>
+              <TabsTrigger value="social" className="text-xs uppercase tracking-widest">Social</TabsTrigger>
+              <TabsTrigger value="identidade" className="text-xs uppercase tracking-widest">Identidade</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="home" className="space-y-6 mt-0">
           {/* Block 1: Hero — Multi-slide editorial banners */}
           <SettingsBlock title="Homepage Hero" onSave={() => hero.save(heroForm)} isSaving={hero.isSaving}>
             <div className="space-y-3">
@@ -1184,85 +1194,6 @@ const SiteSettings = () => {
                 value={carousel3Form.cta}
                 onChange={(cta) => setCarousel3Form({ ...carousel3Form, cta })}
               />
-            </div>
-          </SettingsBlock>
-
-          {/* Block 2: Design Tokens */}
-          <SettingsBlock
-            title="Design System"
-            onSave={() => tokens.save(tokensForm)}
-            isSaving={tokens.isSaving}
-          >
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <ColorField label="Cor de Acento" value={tokensForm.accent_color} onChange={(v) => setTokensForm({ ...tokensForm, accent_color: v })} />
-              <ColorField label="Cor de Fundo" value={tokensForm.background_color} onChange={(v) => setTokensForm({ ...tokensForm, background_color: v })} />
-              <ColorField label="Cor Secundária" value={tokensForm.secondary_color} onChange={(v) => setTokensForm({ ...tokensForm, secondary_color: v })} />
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-xs text-muted-foreground gap-1.5 mt-2"
-              onClick={() => setTokensForm(DEFAULT_TOKENS)}
-            >
-              <RotateCcw className="h-3 w-3" />
-              Resetar Padrão
-            </Button>
-          </SettingsBlock>
-
-          {/* Block 2.5: Condo Mega Menu */}
-          <SettingsBlock title="Menu de Condomínios (Cabeçalho)" onSave={() => condoMenu.save(condoMenuForm)} isSaving={condoMenu.isSaving}>
-            <div className="space-y-6">
-              {/* Featured Section */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label className="font-[Inter] text-xs font-semibold uppercase tracking-wider text-muted-foreground">Condomínios Destaque (Coluna 1)</Label>
-                  <Button variant="outline" size="sm" onClick={addCondoFeatured} className="h-7 text-[10px] gap-1 px-2">
-                    <Plus className="h-3 w-3" /> Adicionar Destaque
-                  </Button>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {condoMenuForm.featured.map((item, i) => (
-                    <div key={i} className="border border-border/30 rounded-sm p-3 space-y-3 bg-muted/5 relative">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-6 w-6 absolute top-1 right-1 text-muted-foreground hover:text-destructive" 
-                        onClick={() => removeCondoFeatured(i)}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                      <div>
-                        <Label className="text-[10px] text-muted-foreground uppercase">Nome</Label>
-                        <Input 
-                          value={item.name} 
-                          onChange={(e) => updateCondoFeatured(i, "name", e.target.value)} 
-                          className="h-8 text-xs mt-1" 
-                          placeholder="Ex: Tamboré 3"
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-[10px] text-muted-foreground uppercase">Link</Label>
-                        <Input 
-                          value={item.href} 
-                          onChange={(e) => updateCondoFeatured(i, "href", e.target.value)} 
-                          className="h-8 text-xs mt-1" 
-                          placeholder="/busca?condominio=..."
-                        />
-                      </div>
-                      <PhotoDrop 
-                        label="Imagem (opcional)" 
-                        value={item.image || ""} 
-                        onUpload={(url) => updateCondoFeatured(i, "image", url)} 
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <p className="text-[11px] text-muted-foreground/70 italic">
-                A coluna "Por Condomínio" do mega menu é gerada automaticamente a partir dos imóveis ativos cadastrados, agrupando nomes com sufixo numérico (ex.: Alphaville 1, 2, 3…).
-              </p>
-
             </div>
           </SettingsBlock>
 
@@ -1427,7 +1358,82 @@ const SiteSettings = () => {
               ))}
             </div>
           </SettingsBlock>
+            </TabsContent>
 
+            <TabsContent value="nav" className="space-y-6 mt-0">
+          {/* Block 2.5: Condo Mega Menu */}
+          <SettingsBlock title="Menu de Condomínios (Cabeçalho)" onSave={() => condoMenu.save(condoMenuForm)} isSaving={condoMenu.isSaving}>
+            <div className="space-y-6">
+              {/* Featured Section */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label className="font-[Inter] text-xs font-semibold uppercase tracking-wider text-muted-foreground">Condomínios Destaque (Coluna 1)</Label>
+                  <Button variant="outline" size="sm" onClick={addCondoFeatured} className="h-7 text-[10px] gap-1 px-2">
+                    <Plus className="h-3 w-3" /> Adicionar Destaque
+                  </Button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {condoMenuForm.featured.map((item, i) => (
+                    <div key={i} className="border border-border/30 rounded-sm p-3 space-y-3 bg-muted/5 relative">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-6 w-6 absolute top-1 right-1 text-muted-foreground hover:text-destructive" 
+                        onClick={() => removeCondoFeatured(i)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                      <div>
+                        <Label className="text-[10px] text-muted-foreground uppercase">Nome</Label>
+                        <Input 
+                          value={item.name} 
+                          onChange={(e) => updateCondoFeatured(i, "name", e.target.value)} 
+                          className="h-8 text-xs mt-1" 
+                          placeholder="Ex: Tamboré 3"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-[10px] text-muted-foreground uppercase">Link</Label>
+                        <Input 
+                          value={item.href} 
+                          onChange={(e) => updateCondoFeatured(i, "href", e.target.value)} 
+                          className="h-8 text-xs mt-1" 
+                          placeholder="/busca?condominio=..."
+                        />
+                      </div>
+                      <PhotoDrop 
+                        label="Imagem (opcional)" 
+                        value={item.image || ""} 
+                        onUpload={(url) => updateCondoFeatured(i, "image", url)} 
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <p className="text-[11px] text-muted-foreground/70 italic">
+                A coluna "Por Condomínio" do mega menu é gerada automaticamente a partir dos imóveis ativos cadastrados, agrupando nomes com sufixo numérico (ex.: Alphaville 1, 2, 3…).
+              </p>
+
+            </div>
+          </SettingsBlock>
+
+          {/* Block 8: Footer */}
+          <SettingsBlock title="Rodapé" onSave={() => footer.save(footerForm)} isSaving={footer.isSaving}>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="font-[Inter] text-xs text-muted-foreground">Copyright</Label>
+                <Input value={footerForm.copyright_text} onChange={(e) => setFooterForm({ ...footerForm, copyright_text: e.target.value })} className="mt-1 h-9 text-sm border-border/50" />
+              </div>
+              <div>
+                <Label className="font-[Inter] text-xs text-muted-foreground">Tagline</Label>
+                <Input value={footerForm.tagline} onChange={(e) => setFooterForm({ ...footerForm, tagline: e.target.value })} className="mt-1 h-9 text-sm border-border/50" />
+              </div>
+            </div>
+          </SettingsBlock>
+            </TabsContent>
+
+            <TabsContent value="inst" className="space-y-6 mt-0">
           {/* Block 5: Team */}
           <SettingsBlock title="Equipe / Sócios" onSave={() => team.save({ members: teamForm })} isSaving={team.isSaving}>
             <div className="space-y-4">
@@ -1508,7 +1514,9 @@ const SiteSettings = () => {
               </div>
             </div>
           </SettingsBlock>
+            </TabsContent>
 
+            <TabsContent value="social" className="space-y-6 mt-0">
           {/* Block 7: Instagram Posts */}
           <SettingsBlock title="Destaques Social" onSave={handleSaveInsta} isSaving={instaPosts.isSaving || scrapingInsta}>
             <p className="font-[Inter] text-xs text-muted-foreground -mt-2 mb-1">
@@ -1536,20 +1544,32 @@ const SiteSettings = () => {
               onManualThumb={(i, url) => setInstaForm((prev) => prev.map((p, idx) => idx === i ? { ...p, thumbnail: url, status: "success" as const } : p))}
             />
           </SettingsBlock>
+            </TabsContent>
 
-          {/* Block 8: Footer */}
-          <SettingsBlock title="Rodapé" onSave={() => footer.save(footerForm)} isSaving={footer.isSaving}>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label className="font-[Inter] text-xs text-muted-foreground">Copyright</Label>
-                <Input value={footerForm.copyright_text} onChange={(e) => setFooterForm({ ...footerForm, copyright_text: e.target.value })} className="mt-1 h-9 text-sm border-border/50" />
-              </div>
-              <div>
-                <Label className="font-[Inter] text-xs text-muted-foreground">Tagline</Label>
-                <Input value={footerForm.tagline} onChange={(e) => setFooterForm({ ...footerForm, tagline: e.target.value })} className="mt-1 h-9 text-sm border-border/50" />
-              </div>
+            <TabsContent value="identidade" className="space-y-6 mt-0">
+          {/* Block 2: Design Tokens */}
+          <SettingsBlock
+            title="Design System"
+            onSave={() => tokens.save(tokensForm)}
+            isSaving={tokens.isSaving}
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <ColorField label="Cor de Acento" value={tokensForm.accent_color} onChange={(v) => setTokensForm({ ...tokensForm, accent_color: v })} />
+              <ColorField label="Cor de Fundo" value={tokensForm.background_color} onChange={(v) => setTokensForm({ ...tokensForm, background_color: v })} />
+              <ColorField label="Cor Secundária" value={tokensForm.secondary_color} onChange={(v) => setTokensForm({ ...tokensForm, secondary_color: v })} />
             </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs text-muted-foreground gap-1.5 mt-2"
+              onClick={() => setTokensForm(DEFAULT_TOKENS)}
+            >
+              <RotateCcw className="h-3 w-3" />
+              Resetar Padrão
+            </Button>
           </SettingsBlock>
+            </TabsContent>
+          </Tabs>
         </div>
 
         {/* Right: Mini Preview */}
