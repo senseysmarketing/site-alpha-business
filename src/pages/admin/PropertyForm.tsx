@@ -167,6 +167,8 @@ const PropertyForm = () => {
       setAreaBuilt(data.area_built?.toString() ?? "");
       setPrice(data.price?.toString() ?? "");
       setRentalPrice(data.rental_price?.toString() ?? "");
+      setCondoFee((data as any).condo_fee?.toString() ?? "");
+      setIptu((data as any).iptu?.toString() ?? "");
       setIsFeatured(data.is_featured ?? false);
       setVideoUrl(data.video_url ?? "");
       setPhotos(data.photos ?? []);
