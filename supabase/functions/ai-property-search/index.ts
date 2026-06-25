@@ -571,6 +571,8 @@ const applyHardFilters = (q: any, f: PropertySearchFilters) => {
   const priceCol = f.transactionType === "locacao" ? "rental_price" : "price";
   if (f.minPrice) query = query.gte(priceCol, f.minPrice);
   if (f.maxPrice) query = query.lte(priceCol, f.maxPrice);
+  if (f.maxCondoFee) query = query.lte("condo_fee", f.maxCondoFee);
+  if (f.maxIptu) query = query.lte("iptu", f.maxIptu);
   return query;
 };
 
