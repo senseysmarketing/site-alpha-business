@@ -730,6 +730,7 @@ const SiteSettings = () => {
     title: string;
     property_ids: string[];
     is_active: boolean;
+    cta?: import("@/lib/carouselCta").CarouselCta;
   }
   const carousel2 = useSiteSettings<CarouselSettings>("homepage_carousel_2");
   const [carousel2Form, setCarousel2Form] = useState<CarouselSettings>({ title: "", property_ids: [], is_active: false });
