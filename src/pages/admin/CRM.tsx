@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, Plus, Settings2 } from "lucide-react";
+import { Bell, Plus, Settings2, Columns3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,16 +10,10 @@ import { LeadDetailModal } from "@/components/admin/crm/LeadDetailModal";
 import { NewLeadDialog } from "@/components/admin/crm/NewLeadDialog";
 import { LeadNotificationSettingsDialog } from "@/components/admin/crm/LeadNotificationSettingsDialog";
 import { CrmSettingsDialog } from "@/components/admin/crm/CrmSettingsDialog";
+import { PipelineStagesDialog } from "@/components/admin/crm/PipelineStagesDialog";
+import { usePipelineStages } from "@/hooks/usePipelineStages";
 import { cn } from "@/lib/utils";
 import { fetchAllPages } from "@/lib/supabasePagination";
-
-const STAGES = [
-  { key: "novos", label: "Novos" },
-  { key: "visita_agendada", label: "Visita Agendada" },
-  { key: "proposta", label: "Proposta" },
-  { key: "contrato", label: "Contrato" },
-  { key: "fechado", label: "Fechado" },
-] as const;
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(value);
@@ -32,8 +26,11 @@ export default function CRM() {
   const [newLeadStage, setNewLeadStage] = useState<string | null>(null);
   const [notifyOpen, setNotifyOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [stagesOpen, setStagesOpen] = useState(false);
   const [responsibleFilter, setResponsibleFilter] = useState<string>("all");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  const { activeStages, getStage } = usePipelineStages();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id ?? null));
@@ -115,7 +112,6 @@ export default function CRM() {
       const lead = leads.find((l) => l.id === leadId);
       if (!lead || lead.pipeline_stage === newStage) return;
 
-      // Optimistic update
       queryClient.setQueryData<Lead[]>(["leads"], (old) =>
         old?.map((l) => (l.id === leadId ? { ...l, pipeline_stage: newStage } : l)) || []
       );
@@ -137,6 +133,18 @@ export default function CRM() {
     setSelectedLead(lead);
     setSheetOpen(true);
   }, []);
+
+  // Inclui qualquer estágio legado presente em leads que não exista mais
+  const columns = useMemo(() => {
+    const known = new Set(activeStages.map((s) => s.key));
+    const legacy = Array.from(new Set(leads.map((l) => l.pipeline_stage))).filter((k) => k && !known.has(k));
+    const legacyCols = legacy.map((k) => ({
+      key: k,
+      label: getStage(k)?.label || k,
+      color: getStage(k)?.color || "#9CA3AF",
+    }));
+    return [...activeStages.map((s) => ({ key: s.key, label: s.label, color: s.color })), ...legacyCols];
+  }, [activeStages, leads, getStage]);
 
   return (
     <div>
@@ -161,6 +169,9 @@ export default function CRM() {
               ))}
             </SelectContent>
           </Select>
+          <Button variant="outline" size="sm" onClick={() => setStagesOpen(true)} className="font-[Inter]">
+            <Columns3 className="h-4 w-4 mr-2" /> Estágios
+          </Button>
           <Button variant="outline" size="sm" onClick={() => setSettingsOpen(true)} className="font-[Inter]">
             <Settings2 className="h-4 w-4 mr-2" /> Atribuição
           </Button>
@@ -171,7 +182,7 @@ export default function CRM() {
       </div>
 
       <div className="flex gap-4 overflow-x-auto pb-4">
-        {STAGES.map((stage) => {
+        {columns.map((stage) => {
           const stageLeads = visibleLeads.filter((l) => l.pipeline_stage === stage.key);
           const totalValue = stageLeads.reduce((sum, l) => sum + (l.deal_value || 0), 0);
 
@@ -187,9 +198,13 @@ export default function CRM() {
               onDragLeave={handleDragLeave}
               onDrop={(e) => handleDrop(e, stage.key)}
             >
-              <div className="sticky top-0 z-10 rounded-t-sm px-4 py-3 backdrop-blur-md bg-white/90 border-b border-border/30">
+              <div
+                className="sticky top-0 z-10 rounded-t-sm px-4 py-3 backdrop-blur-md bg-white/90 border-b"
+                style={{ borderTopColor: stage.color, borderTopWidth: 3, borderBottomColor: "hsl(var(--border) / 0.3)" }}
+              >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full" style={{ backgroundColor: stage.color }} />
                     <h3 className="font-[Raleway] text-sm font-semibold text-foreground">{stage.label}</h3>
                     <span className="text-[10px] bg-muted text-muted-foreground rounded-full px-2 py-0.5 font-[Inter] font-medium">
                       {stageLeads.length}
@@ -242,7 +257,7 @@ export default function CRM() {
 
       <LeadNotificationSettingsDialog open={notifyOpen} onOpenChange={setNotifyOpen} />
       <CrmSettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
+      <PipelineStagesDialog open={stagesOpen} onOpenChange={setStagesOpen} />
     </div>
   );
 }
-
