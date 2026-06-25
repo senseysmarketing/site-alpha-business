@@ -25,6 +25,8 @@ const AiChatFiltersSummary = ({ filters, onRemove }: Props) => {
   if (filters.minArea) chips.push({ key: "minArea", label: `${filters.minArea}m²+` });
   if (filters.minPrice) chips.push({ key: "minPrice", label: `Min ${fmtBRL(filters.minPrice)}` });
   if (filters.maxPrice) chips.push({ key: "maxPrice", label: `Até ${fmtBRL(filters.maxPrice)}` });
+  if (filters.maxCondoFee) chips.push({ key: "maxCondoFee", label: `Cond. ≤ ${fmtBRL(filters.maxCondoFee)}/mês` });
+  if (filters.maxIptu) chips.push({ key: "maxIptu", label: `IPTU ≤ ${fmtBRL(filters.maxIptu)}/ano` });
   (filters.highlights ?? []).forEach((h) => chips.push({ key: "highlights", label: h }));
 
   if (!chips.length) return null;
