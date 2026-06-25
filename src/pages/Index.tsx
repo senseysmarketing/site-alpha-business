@@ -16,8 +16,8 @@ import Footer from "@/components/Footer";
 const Index = () => {
   const location = useLocation();
 
-  const { data: carousel1 } = useSiteSettings<{ title: string; property_ids: string[]; is_active: boolean }>("homepage_carousel_2");
-  const { data: carousel2 } = useSiteSettings<{ title: string; property_ids: string[]; is_active: boolean }>("homepage_carousel_3");
+  const { data: carousel1 } = useSiteSettings<{ title: string; property_ids: string[]; is_active: boolean; cta?: import("@/lib/carouselCta").CarouselCta }>("homepage_carousel_2");
+  const { data: carousel2 } = useSiteSettings<{ title: string; property_ids: string[]; is_active: boolean; cta?: import("@/lib/carouselCta").CarouselCta }>("homepage_carousel_3");
 
   useEffect(() => {
     const hash = location.hash?.replace("#", "");
