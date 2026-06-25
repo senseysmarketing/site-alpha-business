@@ -569,6 +569,59 @@ const Reports = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Per-broker performance */}
+      <Card className="bg-white border-border/50 shadow-none mt-6">
+        <CardHeader className="flex flex-row items-center gap-2">
+          <Trophy className="h-4 w-4 text-[#2A070C]/60" />
+          <CardTitle className="font-[Inter] text-xs font-medium uppercase tracking-widest text-muted-foreground">
+            Desempenho por Corretor
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {brokerPerformance.length === 0 ? (
+            <p className="font-[Inter] text-sm text-muted-foreground/60 text-center py-8">
+              Sem dados no período selecionado.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm font-[Inter]">
+                <thead>
+                  <tr className="text-left text-[10px] uppercase tracking-widest text-muted-foreground border-b border-border/50">
+                    <th className="py-2 pr-4 font-medium">Corretor</th>
+                    <th className="py-2 pr-4 font-medium text-right">Recebidos</th>
+                    <th className="py-2 pr-4 font-medium text-right">Fechados</th>
+                    <th className="py-2 pr-4 font-medium text-right">Conversão</th>
+                    <th className="py-2 pr-4 font-medium text-right">Ciclo Médio</th>
+                    <th className="py-2 pr-4 font-medium text-right">Pipeline</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {brokerPerformance.map((b, i) => (
+                    <tr key={b.userId} className="border-b border-border/30 last:border-0">
+                      <td className="py-2.5 pr-4">
+                        <div className="flex items-center gap-2">
+                          {i === 0 && b.closed > 0 && <Trophy className="h-3.5 w-3.5 text-amber-500" />}
+                          <span className="text-foreground">{b.name}</span>
+                        </div>
+                      </td>
+                      <td className="py-2.5 pr-4 text-right tabular-nums">{b.received}</td>
+                      <td className="py-2.5 pr-4 text-right tabular-nums font-medium text-foreground">{b.closed}</td>
+                      <td className="py-2.5 pr-4 text-right tabular-nums">{b.conversion.toFixed(1)}%</td>
+                      <td className="py-2.5 pr-4 text-right tabular-nums">
+                        {b.avgCycle !== null ? `${b.avgCycle}d` : "—"}
+                      </td>
+                      <td className="py-2.5 pr-4 text-right tabular-nums text-muted-foreground">
+                        {b.pipelineValue > 0 ? `R$ ${(b.pipelineValue / 1000).toFixed(0)}K` : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
