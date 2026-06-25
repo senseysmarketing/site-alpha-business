@@ -35,16 +35,11 @@ import type { DateRange } from "react-day-picker";
 
 const COLORS = ["#2A070C", "#6B2D3E", "#A85D6F", "#D4919E", "#E8BDC5"];
 
-const STAGE_LABELS: Record<string, string> = {
-  novos: "Novos",
-  contato: "Contato",
-  visita_agendada: "Visita Agendada",
-  visita: "Visita",
-  proposta: "Proposta",
-  fechado: "Fechado",
-};
+import { usePipelineStages } from "@/hooks/usePipelineStages";
 
 const Reports = () => {
+  const { activeStages, getStageLabel, getWonStageKey } = usePipelineStages();
+  const wonKey = getWonStageKey();
   const [leads, setLeads] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [team, setTeam] = useState<Array<{ user_id: string; full_name: string | null }>>([]);
