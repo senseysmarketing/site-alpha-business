@@ -763,8 +763,8 @@ export function LeadDetailModal({ lead, open, onOpenChange, team = [] }: LeadDet
                   {lead.assignment_source && (
                     <p className="text-[11px] text-muted-foreground font-[Inter]">
                       Origem: {lead.assignment_source}
-                      {lead.last_assignment_rule_name
-                        ? ` · regra «${lead.last_assignment_rule_name}»`
+                      {(lead as any).last_assignment_rule_name
+                        ? ` · regra «${(lead as any).last_assignment_rule_name}»`
                         : ""}
                     </p>
                   )}
