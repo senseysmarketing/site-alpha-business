@@ -8,7 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { AssignmentRulesList } from "./AssignmentRulesList";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, Repeat } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface CrmSettingsDialogProps {
   open: boolean;
@@ -25,12 +26,16 @@ interface CrmSettings {
   id: string;
   fallback_user_id: string | null;
   assistant_sees_all: boolean;
+  recurring_lead_enabled: boolean;
+  recurring_lead_window_months: number | null;
 }
 
 export function CrmSettingsDialog({ open, onOpenChange }: CrmSettingsDialogProps) {
   const qc = useQueryClient();
   const [saving, setSaving] = useState(false);
   const [assistantSeesAll, setAssistantSeesAll] = useState(true);
+  const [recurringEnabled, setRecurringEnabled] = useState(true);
+  const [recurringWindow, setRecurringWindow] = useState<string>("12"); // "3" | "6" | "12" | "always"
 
   const { data: settings } = useQuery({
     queryKey: ["crm_settings"],
@@ -59,6 +64,12 @@ export function CrmSettingsDialog({ open, onOpenChange }: CrmSettingsDialogProps
   useEffect(() => {
     if (settings) {
       setAssistantSeesAll(settings.assistant_sees_all);
+      setRecurringEnabled(settings.recurring_lead_enabled ?? true);
+      setRecurringWindow(
+        settings.recurring_lead_window_months == null
+          ? "always"
+          : String(settings.recurring_lead_window_months),
+      );
     }
   }, [settings]);
 
@@ -72,7 +83,11 @@ export function CrmSettingsDialog({ open, onOpenChange }: CrmSettingsDialogProps
     setSaving(true);
     const { error } = await supabase
       .from("crm_settings")
-      .update({ assistant_sees_all: assistantSeesAll })
+      .update({
+        assistant_sees_all: assistantSeesAll,
+        recurring_lead_enabled: recurringEnabled,
+        recurring_lead_window_months: recurringWindow === "always" ? null : Number(recurringWindow),
+      })
       .eq("id", settings.id);
     setSaving(false);
     if (error) {
@@ -115,6 +130,41 @@ export function CrmSettingsDialog({ open, onOpenChange }: CrmSettingsDialogProps
             </div>
 
             <AssignmentRulesList />
+
+            <div className="rounded-md border border-border/40 bg-muted/20 p-3">
+              <div className="flex items-start gap-3">
+                <Repeat className="w-4 h-4 mt-0.5 text-muted-foreground" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-[Raleway] font-semibold">Leads recorrentes</p>
+                      <p className="text-[11px] text-muted-foreground font-[Inter]">
+                        Quando um cliente já existente se cadastrar novamente (mesmo telefone ou e-mail), atribuir ao mesmo corretor anterior.
+                      </p>
+                    </div>
+                    <Switch checked={recurringEnabled} onCheckedChange={setRecurringEnabled} />
+                  </div>
+                  {recurringEnabled && (
+                    <div className="mt-3 flex items-center gap-2">
+                      <Label className="text-[11px] text-muted-foreground font-[Inter]">Considerar recorrente até</Label>
+                      <Select value={recurringWindow} onValueChange={setRecurringWindow}>
+                        <SelectTrigger className="h-8 w-40 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="3">3 meses</SelectItem>
+                          <SelectItem value="6">6 meses</SelectItem>
+                          <SelectItem value="12">12 meses</SelectItem>
+                          <SelectItem value="24">24 meses</SelectItem>
+                          <SelectItem value="always">Sempre</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  <p className="text-[11px] text-muted-foreground/80 font-[Inter] mt-2">
+                    Tem precedência sobre as regras de automação. Se o corretor anterior estiver inativo, cai para as regras normais.
+                  </p>
+                </div>
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="preferences" className="space-y-4 pt-3">

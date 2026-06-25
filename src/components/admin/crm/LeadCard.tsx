@@ -1,6 +1,6 @@
 import { formatDistanceToNow, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Flame, Instagram, Globe, MessageCircle, Users, Mail, CalendarCheck, AlertTriangle } from "lucide-react";
+import { Flame, Instagram, Globe, MessageCircle, Users, Mail, CalendarCheck, AlertTriangle, Repeat } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 
@@ -102,10 +102,18 @@ export function LeadCard({ lead, onDragStart, onClick }: LeadCardProps) {
           </AvatarFallback>
         </Avatar>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <p className="font-[Raleway] text-sm font-semibold text-foreground truncate">{lead.name}</p>
             {isQuente && (
               <Flame className="h-3.5 w-3.5 text-primary animate-pulse shrink-0" />
+            )}
+            {lead.assignment_source === "recurring" && (
+              <span
+                className="inline-flex items-center gap-1 rounded-full bg-secondary/15 text-secondary border border-secondary/30 px-1.5 py-px text-[9px] font-[Inter] font-medium shrink-0"
+                title="Cliente recorrente — atribuído ao mesmo corretor anterior"
+              >
+                <Repeat className="h-2.5 w-2.5" /> Recorrente
+              </span>
             )}
           </div>
           <div className="flex items-center gap-1.5 mt-0.5">

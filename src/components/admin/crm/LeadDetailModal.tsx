@@ -37,6 +37,7 @@ import {
   Activity,
   ClipboardCheck,
   PhoneCall,
+  Repeat,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -181,6 +182,36 @@ export function LeadDetailModal({ lead, open, onOpenChange, team = [] }: LeadDet
       return data || [];
     },
     enabled: !!lead,
+  });
+
+  const normalizedPhone = useMemo(() => {
+    if (!lead?.phone) return null;
+    const digits = lead.phone.replace(/\D/g, "");
+    if (!digits) return null;
+    return digits.length > 11 ? digits.slice(-11) : digits;
+  }, [lead?.phone]);
+  const normalizedEmail = useMemo(
+    () => (lead?.email ? lead.email.trim().toLowerCase() : null),
+    [lead?.email],
+  );
+
+  const { data: relatedLeads = [] } = useQuery({
+    queryKey: ["lead_recurrence", lead?.id, normalizedPhone, normalizedEmail],
+    queryFn: async () => {
+      if (!lead || (!normalizedPhone && !normalizedEmail)) return [];
+      const ors: string[] = [];
+      if (normalizedPhone) ors.push(`phone_normalized.eq.${normalizedPhone}`);
+      if (normalizedEmail) ors.push(`email_normalized.eq.${normalizedEmail}`);
+      const { data } = await supabase
+        .from("leads")
+        .select("id, name, pipeline_stage, origin, created_at, assigned_user_id, phone_normalized, email_normalized")
+        .or(ors.join(","))
+        .neq("id", lead.id)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      return data || [];
+    },
+    enabled: !!lead && (!!normalizedPhone || !!normalizedEmail),
   });
 
   const userIdToName = useMemo(() => {
@@ -613,6 +644,54 @@ export function LeadDetailModal({ lead, open, onOpenChange, team = [] }: LeadDet
                 </SectionCard>
               )}
             </div>
+
+            {/* Histórico do Cliente */}
+            {relatedLeads.length > 0 && (
+              <SectionCard
+                title={`Histórico do cliente (${relatedLeads.length})`}
+                icon={<Repeat className="h-4 w-4 text-secondary" />}
+              >
+                <p className="text-[11px] text-muted-foreground font-[Inter] mb-3">
+                  Outros cadastros encontrados com o mesmo {normalizedPhone ? "telefone" : "e-mail"}.
+                  {lead.assignment_source === "recurring" && (
+                    <span className="ml-1 text-secondary font-medium">
+                      Este lead foi atribuído por recorrência.
+                    </span>
+                  )}
+                </p>
+                <ul className="space-y-2">
+                  {relatedLeads.map((rl: any) => {
+                    const matchType =
+                      normalizedPhone && rl.phone_normalized === normalizedPhone
+                        ? "telefone"
+                        : "e-mail";
+                    return (
+                      <li
+                        key={rl.id}
+                        className="flex items-center justify-between gap-3 rounded-md border border-border/40 bg-muted/30 px-3 py-2"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-sm font-[Inter] text-foreground truncate">
+                            {rl.name}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground/80 font-[Inter]">
+                            {format(new Date(rl.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                            {" · "}
+                            <span className="capitalize">{rl.pipeline_stage.replace("_", " ")}</span>
+                            {" · "}match por {matchType}
+                            {rl.assigned_user_id && (
+                              <>
+                                {" · "}corretor: {nameOf(rl.assigned_user_id)}
+                              </>
+                            )}
+                          </p>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </SectionCard>
+            )}
           </TabsContent>
 
           {/* ====== Atividades ====== */}
