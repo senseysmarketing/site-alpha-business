@@ -429,14 +429,19 @@ const PropertyForm = () => {
                 <Label className={labelClass}>Área Construída (m²)</Label>
                 <Input value={areaBuilt} onChange={(e) => setAreaBuilt(e.target.value)} className={inputClass} placeholder="350" />
               </div>
-              <div className="space-y-2">
-                <Label className={labelClass}>Preço Venda (R$)</Label>
-                <Input value={price} onChange={(e) => setPrice(e.target.value)} className={inputClass} placeholder="2500000" />
-              </div>
-              <div className="space-y-2">
-                <Label className={labelClass}>Preço Locação (R$)</Label>
-                <Input value={rentalPrice} onChange={(e) => setRentalPrice(e.target.value)} className={inputClass} placeholder="15000" />
-              </div>
+              {(transactionType === "venda" || transactionType === "ambos") && (
+                <div className="space-y-2">
+                  <Label className={labelClass}>Preço Venda (R$)</Label>
+                  <Input value={price} onChange={(e) => setPrice(e.target.value)} className={inputClass} placeholder="2500000" />
+                </div>
+              )}
+              {(transactionType === "locacao" || transactionType === "ambos") && (
+                <div className="space-y-2">
+                  <Label className={labelClass}>Preço Locação (R$/mês)</Label>
+                  <Input value={rentalPrice} onChange={(e) => setRentalPrice(e.target.value)} className={inputClass} placeholder="15000" />
+                </div>
+              )}
+
               <div className="flex items-center gap-3 pt-6">
                 <Switch checked={isFeatured} onCheckedChange={setIsFeatured} />
                 <Label className="font-[Inter] text-sm text-foreground">Imóvel em destaque</Label>
