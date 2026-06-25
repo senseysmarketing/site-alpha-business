@@ -97,12 +97,47 @@ const Reports = () => {
   };
 
   const filteredLeads = useMemo(() => {
-    if (!dateRange?.from) return leads;
-    return leads.filter((l) => {
+    let list = leads;
+    if (responsibleFilter !== "all") {
+      list = list.filter((l) => l.assigned_user_id === responsibleFilter);
+    }
+    if (!dateRange?.from) return list;
+    return list.filter((l) => {
       const created = new Date(l.created_at);
       return created >= dateRange.from! && (!dateRange.to || created <= dateRange.to);
     });
-  }, [leads, dateRange]);
+  }, [leads, dateRange, responsibleFilter]);
+
+  // Per-broker performance (always over the full date range, ignoring responsibleFilter)
+  const brokerPerformance = useMemo(() => {
+    const byUser: Record<string, { received: number; closed: number; cycleSum: number; cycleCount: number; pipelineValue: number }> = {};
+    leads
+      .filter((l) => {
+        if (!dateRange?.from) return true;
+        const created = new Date(l.created_at);
+        return created >= dateRange.from && (!dateRange.to || created <= dateRange.to);
+      })
+      .forEach((l) => {
+        const uid = l.assigned_user_id || "_unassigned";
+        if (!byUser[uid]) byUser[uid] = { received: 0, closed: 0, cycleSum: 0, cycleCount: 0, pipelineValue: 0 };
+        byUser[uid].received += 1;
+        byUser[uid].pipelineValue += l.deal_value || 0;
+        if (l.pipeline_stage === "fechado") {
+          byUser[uid].closed += 1;
+          byUser[uid].cycleSum += differenceInDays(new Date(l.updated_at), new Date(l.created_at));
+          byUser[uid].cycleCount += 1;
+        }
+      });
+    return Object.entries(byUser)
+      .map(([uid, stats]) => ({
+        userId: uid,
+        name: uid === "_unassigned" ? "Sem responsável" : (team.find((t) => t.user_id === uid)?.full_name || "Usuário"),
+        ...stats,
+        conversion: stats.received > 0 ? (stats.closed / stats.received) * 100 : 0,
+        avgCycle: stats.cycleCount > 0 ? Math.round(stats.cycleSum / stats.cycleCount) : null,
+      }))
+      .sort((a, b) => b.closed - a.closed || b.received - a.received);
+  }, [leads, dateRange, team]);
 
   const filteredTransactions = useMemo(() => {
     if (!dateRange?.from) return transactions;
