@@ -76,7 +76,8 @@ const Properties = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [propertyToDelete, setPropertyToDelete] = useState<string | null>(null);
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
+  const { isAdmin, role } = useAuth();
+  const canManageProperties = isAdmin || role === "gerente";
 
   useEffect(() => {
     const fetchProperties = async () => {
@@ -257,7 +258,7 @@ const Properties = () => {
           <p className="font-[Inter] text-sm text-muted-foreground mt-1">Gerencie seu portfólio</p>
         </div>
         <div className="flex items-center gap-2">
-          {isAdmin && (
+          {canManageProperties && (
             <>
               <Button
                 onClick={() => setSettingsOpen(true)}
