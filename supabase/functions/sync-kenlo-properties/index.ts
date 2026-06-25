@@ -228,6 +228,8 @@ Deno.serve(async (req) => {
 
       const precoVenda = parseBR(im?.PrecoVenda ?? im?.ValorVenda ?? im?.Preco);
       const precoLocacao = parseBR(im?.PrecoLocacao ?? im?.ValorLocacao ?? im?.PrecoAluguel);
+      const valorCondominio = parseBR(im?.ValorCondominio ?? im?.PrecoCondominio ?? im?.TaxaCondominio);
+      const valorIptu = parseBR(im?.ValorIPTU ?? im?.PrecoIPTU ?? im?.IPTU ?? im?.ValorIptu);
 
       const passPrice = (p: number | null) =>
         p != null && p >= (config.min_price || 0) && (config.max_price === 0 || p <= config.max_price);
