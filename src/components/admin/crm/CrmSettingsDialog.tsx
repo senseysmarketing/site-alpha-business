@@ -3,11 +3,12 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { AssignmentRulesList } from "./AssignmentRulesList";
+import { ShieldCheck } from "lucide-react";
 
 interface CrmSettingsDialogProps {
   open: boolean;
@@ -22,18 +23,13 @@ interface TeamProfile {
 
 interface CrmSettings {
   id: string;
-  assignment_strategy: "fallback_only" | "rodizio";
   fallback_user_id: string | null;
-  round_robin_pool: string[];
   assistant_sees_all: boolean;
 }
 
 export function CrmSettingsDialog({ open, onOpenChange }: CrmSettingsDialogProps) {
   const qc = useQueryClient();
   const [saving, setSaving] = useState(false);
-  const [strategy, setStrategy] = useState<"fallback_only" | "rodizio">("fallback_only");
-  const [fallback, setFallback] = useState<string | null>(null);
-  const [pool, setPool] = useState<string[]>([]);
   const [assistantSeesAll, setAssistantSeesAll] = useState(true);
 
   const { data: settings } = useQuery({
@@ -62,32 +58,21 @@ export function CrmSettingsDialog({ open, onOpenChange }: CrmSettingsDialogProps
 
   useEffect(() => {
     if (settings) {
-      setStrategy(settings.assignment_strategy);
-      setFallback(settings.fallback_user_id);
-      setPool(settings.round_robin_pool || []);
       setAssistantSeesAll(settings.assistant_sees_all);
     }
   }, [settings]);
 
-  const togglePool = (uid: string) => {
-    setPool((prev) => (prev.includes(uid) ? prev.filter((x) => x !== uid) : [...prev, uid]));
-  };
+  const fallbackName =
+    settings?.fallback_user_id
+      ? team.find((t) => t.user_id === settings.fallback_user_id)?.full_name || "—"
+      : "—";
 
   const handleSave = async () => {
     if (!settings) return;
-    if (!fallback) {
-      toast({ title: "Selecione um responsável fallback", variant: "destructive" });
-      return;
-    }
     setSaving(true);
     const { error } = await supabase
       .from("crm_settings")
-      .update({
-        assignment_strategy: strategy,
-        fallback_user_id: fallback,
-        round_robin_pool: pool,
-        assistant_sees_all: assistantSeesAll,
-      })
+      .update({ assistant_sees_all: assistantSeesAll })
       .eq("id", settings.id);
     setSaving(false);
     if (error) {
@@ -101,71 +86,53 @@ export function CrmSettingsDialog({ open, onOpenChange }: CrmSettingsDialogProps
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-[Raleway]">Configurações do CRM</DialogTitle>
           <DialogDescription className="font-[Inter] text-xs">
-            Regras de atribuição automática de leads que entram pelos formulários do site.
+            Gerencie as regras automáticas de atribuição de leads e preferências de visibilidade.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-5 py-2">
-          <div className="space-y-2">
-            <Label className="font-[Inter] text-sm">Estratégia de atribuição</Label>
-            <Select value={strategy} onValueChange={(v) => setStrategy(v as any)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="fallback_only">Sempre para o responsável fallback</SelectItem>
-                <SelectItem value="rodizio">Rodízio entre corretores ativos</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        <Tabs defaultValue="rules" className="mt-2">
+          <TabsList>
+            <TabsTrigger value="rules">Regras</TabsTrigger>
+            <TabsTrigger value="preferences">Preferências</TabsTrigger>
+          </TabsList>
 
-          <div className="space-y-2">
-            <Label className="font-[Inter] text-sm">Responsável fallback (obrigatório)</Label>
-            <p className="text-[11px] text-muted-foreground">Recebe os leads quando nenhuma regra atribuir um responsável.</p>
-            <Select value={fallback || ""} onValueChange={(v) => setFallback(v)}>
-              <SelectTrigger><SelectValue placeholder="Selecione…" /></SelectTrigger>
-              <SelectContent>
-                {team.map((t) => (
-                  <SelectItem key={t.user_id} value={t.user_id}>{t.full_name || t.user_id}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {strategy === "rodizio" && (
-            <div className="space-y-2">
-              <Label className="font-[Inter] text-sm">Pool do rodízio</Label>
-              <p className="text-[11px] text-muted-foreground">
-                Quem participa do rodízio. Se vazio, todos os corretores ativos participam.
-              </p>
-              <div className="max-h-44 overflow-y-auto rounded-md border border-border/60 p-2 space-y-1.5">
-                {team.map((t) => (
-                  <label key={t.user_id} className="flex items-center gap-2 text-sm cursor-pointer">
-                    <Checkbox
-                      checked={pool.includes(t.user_id)}
-                      onCheckedChange={() => togglePool(t.user_id)}
-                    />
-                    <span>{t.full_name || t.user_id}</span>
-                  </label>
-                ))}
+          <TabsContent value="rules" className="space-y-4 pt-3">
+            <div className="rounded-md border border-border/40 bg-muted/30 p-3 flex items-start gap-3">
+              <ShieldCheck className="w-4 h-4 mt-0.5 text-muted-foreground" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-[Raleway] font-semibold">Fallback obrigatório</p>
+                <p className="text-xs text-muted-foreground font-[Inter]">
+                  Garante que todo lead receba um responsável. Atualmente: <strong>{fallbackName}</strong>.
+                </p>
+                <p className="text-[11px] text-muted-foreground/80 font-[Inter] mt-1">
+                  Por segurança, só pode ser alterado diretamente no banco de dados.
+                </p>
               </div>
             </div>
-          )}
 
-          <div className="flex items-center justify-between rounded-md border border-border/60 px-3 py-2.5">
-            <div>
-              <Label className="font-[Inter] text-sm">Assistente vê todos os leads</Label>
-              <p className="text-[11px] text-muted-foreground">Se desligado, assistentes só veem leads atribuídos a eles.</p>
+            <AssignmentRulesList />
+          </TabsContent>
+
+          <TabsContent value="preferences" className="space-y-4 pt-3">
+            <div className="flex items-center justify-between rounded-md border border-border/60 px-3 py-2.5">
+              <div>
+                <Label className="font-[Inter] text-sm">Assistente vê todos os leads</Label>
+                <p className="text-[11px] text-muted-foreground">
+                  Se desligado, assistentes só veem leads atribuídos a eles.
+                </p>
+              </div>
+              <Switch checked={assistantSeesAll} onCheckedChange={setAssistantSeesAll} />
             </div>
-            <Switch checked={assistantSeesAll} onCheckedChange={setAssistantSeesAll} />
-          </div>
-        </div>
+          </TabsContent>
+        </Tabs>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={handleSave} disabled={saving}>{saving ? "Salvando…" : "Salvar"}</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Fechar</Button>
+          <Button onClick={handleSave} disabled={saving}>{saving ? "Salvando…" : "Salvar preferências"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

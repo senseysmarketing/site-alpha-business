@@ -236,6 +236,12 @@ export function LeadDetailSheet({ lead, open, onOpenChange, team = [] }: LeadDet
                     {" → "}
                     <span className="text-foreground font-medium">{nameOf(h.to_user_id)}</span>
                     {h.source && <span className="text-muted-foreground/70"> · {h.source}</span>}
+                    {h.rule_name && (
+                      <span className="text-muted-foreground/70">
+                        {" · regra «"}{h.rule_name}{"»"}
+                        {h.distribution_type ? ` (${h.distribution_type})` : ""}
+                      </span>
+                    )}
                     <span className="text-muted-foreground/60">
                       {" · "}
                       {formatDistanceToNow(new Date(h.created_at), { addSuffix: true, locale: ptBR })}
