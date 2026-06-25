@@ -1977,7 +1977,7 @@ Responda APENAS JSON válido no schema descrito acima.`;
     const FILTER_KEYS = [
       "transactionType","propertyType","condominium","condominiumGroup",
       "neighborhood","city","address","minBedrooms","minBathrooms","minParking",
-      "minArea","minPrice","maxPrice",
+      "minArea","minPrice","maxPrice","maxCondoFee","maxIptu",
     ];
     const patch: IntentPatch = {
       filters_patch: { ...(raw.filters_patch ?? {}) },
