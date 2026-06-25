@@ -44,12 +44,14 @@ const Index = () => {
           <PropertyCarouselSection
             title={carousel1.title}
             propertyIds={carousel1.property_ids || []}
+            cta={carousel1.cta}
           />
         )}
         {carousel2?.is_active && (
           <PropertyCarouselSection
             title={carousel2.title}
             propertyIds={carousel2.property_ids || []}
+            cta={carousel2.cta}
           />
         )}
         <ContactSection />
