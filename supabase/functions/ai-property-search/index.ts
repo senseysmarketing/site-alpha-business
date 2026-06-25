@@ -1552,6 +1552,8 @@ interface PropRow {
   area_built: number | null;
   price: number | null;
   rental_price: number | null;
+  condo_fee: number | null;
+  iptu: number | null;
   is_featured: boolean | null;
   engineering_highlights: string[] | null;
   photos: string[] | null;
