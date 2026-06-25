@@ -51,6 +51,8 @@ const PropertyForm = () => {
   const [areaBuilt, setAreaBuilt] = useState("");
   const [price, setPrice] = useState("");
   const [rentalPrice, setRentalPrice] = useState("");
+  const [condoFee, setCondoFee] = useState("");
+  const [iptu, setIptu] = useState("");
   const [isFeatured, setIsFeatured] = useState(false);
   const [videoUrl, setVideoUrl] = useState("");
 
