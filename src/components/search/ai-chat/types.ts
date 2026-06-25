@@ -121,5 +121,7 @@ export function filtersToSearchParams(f: PropertySearchFilters): string {
   if (f.minArea) p.set("minArea", String(f.minArea));
   if (f.minPrice) p.set("minPrice", String(f.minPrice));
   if (f.maxPrice) p.set("maxPrice", String(f.maxPrice));
+  if (f.maxCondoFee) p.set("maxCondoFee", String(f.maxCondoFee));
+  if (f.maxIptu) p.set("maxIptu", String(f.maxIptu));
   return p.toString();
 }
