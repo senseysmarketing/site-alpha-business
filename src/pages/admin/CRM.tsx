@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { LeadCard, type Lead, type AssignedUser } from "@/components/admin/crm/LeadCard";
-import { LeadDetailSheet } from "@/components/admin/crm/LeadDetailSheet";
+import { LeadDetailModal } from "@/components/admin/crm/LeadDetailModal";
 import { NewLeadDialog } from "@/components/admin/crm/NewLeadDialog";
 import { LeadNotificationSettingsDialog } from "@/components/admin/crm/LeadNotificationSettingsDialog";
 import { CrmSettingsDialog } from "@/components/admin/crm/CrmSettingsDialog";
@@ -226,7 +226,7 @@ export default function CRM() {
         })}
       </div>
 
-      <LeadDetailSheet
+      <LeadDetailModal
         lead={selectedLead}
         open={sheetOpen}
         onOpenChange={setSheetOpen}
