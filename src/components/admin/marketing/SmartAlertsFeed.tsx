@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Flame, Clock, CheckCircle2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { usePipelineStages } from "@/hooks/usePipelineStages";
 
 interface Alert {
   id: string;
@@ -28,6 +29,11 @@ const alertStyles = {
 };
 
 export function SmartAlertsFeed() {
+  const { getStageLabel, keysByBehavior, stages } = usePipelineStages();
+  // alvo: estágios próximos de fechamento — "won" + último "intermediate" ordenado
+  const wonKeys = keysByBehavior("won");
+  const intermediateKeys = stages.filter((s) => s.behavior === "intermediate").map((s) => s.key);
+  const advancedKeys = [...intermediateKeys.slice(-1), ...wonKeys];
   const { data: hotLeads } = useQuery({
     queryKey: ["marketing-hot-leads"],
     queryFn: async () => {
@@ -56,12 +62,13 @@ export function SmartAlertsFeed() {
   });
 
   const { data: advancedLeads } = useQuery({
-    queryKey: ["marketing-advanced-leads"],
+    queryKey: ["marketing-advanced-leads", advancedKeys.join(",")],
+    enabled: advancedKeys.length > 0,
     queryFn: async () => {
       const { data } = await supabase
         .from("leads")
         .select("id, name, pipeline_stage, updated_at")
-        .in("pipeline_stage", ["contrato", "fechado"])
+        .in("pipeline_stage", advancedKeys)
         .order("updated_at", { ascending: false })
         .limit(3);
       return data ?? [];
@@ -73,7 +80,7 @@ export function SmartAlertsFeed() {
       id: `hot-${l.id}`,
       type: "hot" as const,
       title: `Lead Quente: ${l.name}`,
-      description: `Score quente — pipeline: ${l.pipeline_stage}`,
+      description: `Score quente — pipeline: ${getStageLabel(l.pipeline_stage)}`,
       time: l.last_contact_at,
     })) ?? []),
     ...(pendingVisits?.map((v) => ({
@@ -87,7 +94,7 @@ export function SmartAlertsFeed() {
       id: `adv-${l.id}`,
       type: "success" as const,
       title: `${l.name} avançou`,
-      description: `Pipeline: ${l.pipeline_stage}`,
+      description: `Pipeline: ${getStageLabel(l.pipeline_stage)}`,
       time: l.updated_at,
     })) ?? []),
   ];
