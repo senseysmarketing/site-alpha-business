@@ -207,7 +207,7 @@ export function LeadDetailSheet({ lead, open, onOpenChange, team = [] }: LeadDet
           {canReassign ? (
             <Select value={lead.assigned_user_id || ""} onValueChange={handleReassign} disabled={reassigning}>
               <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Selecione…" /></SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[70] bg-popover">
                 {team.map((t) => (
                   <SelectItem key={t.user_id} value={t.user_id}>{t.full_name || "—"}</SelectItem>
                 ))}
