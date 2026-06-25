@@ -14,6 +14,7 @@ import { formatPrice } from "@/lib/formatters";
 import { toTitleCase } from "@/lib/utils";
 import { normalizeCondoName } from "@/lib/lucideIconMap";
 import { fetchAllPages } from "@/lib/supabasePagination";
+import { isRentalTransaction } from "@/lib/propertyQueries";
 import type { Database } from "@/integrations/supabase/types";
 import type { NeighborhoodHighlight } from "@/components/property/PropertyNeighborhood";
 
