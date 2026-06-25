@@ -14,6 +14,7 @@ import { formatPrice } from "@/lib/formatters";
 import { toTitleCase } from "@/lib/utils";
 import { normalizeCondoName } from "@/lib/lucideIconMap";
 import { fetchAllPages } from "@/lib/supabasePagination";
+import { isRentalTransaction } from "@/lib/propertyQueries";
 import type { Database } from "@/integrations/supabase/types";
 import type { NeighborhoodHighlight } from "@/components/property/PropertyNeighborhood";
 
@@ -177,6 +178,10 @@ const PropertyDetail = () => {
         price: (dbProperty.transaction_type === "locacao" || dbProperty.transaction_type === "aluguel")
           ? dbProperty.rental_price
           : dbProperty.price,
+        sale_price: dbProperty.price,
+        rental_price: dbProperty.rental_price,
+        has_both: dbProperty.transaction_type === "ambos"
+          && !!dbProperty.price && !!dbProperty.rental_price,
         bedrooms: dbProperty.bedrooms ?? 0,
         bathrooms: dbProperty.bathrooms ?? 0,
         suites: dbProperty.bedrooms ?? 0,
@@ -194,6 +199,7 @@ const PropertyDetail = () => {
         },
         video_url: dbProperty.video_url,
       };
+
 
 
   // Similar: prefer DB results when current property is from DB
@@ -240,10 +246,31 @@ const PropertyDetail = () => {
             </h1>
             <p className="text-body text-sm text-muted-foreground">{property.subtitle}</p>
           </div>
-          <p className="text-display text-3xl md:text-4xl font-light text-foreground whitespace-nowrap">
-            {formatPrice(property.price)}
-          </p>
+          {property.has_both ? (
+            <div className="flex flex-col items-start md:items-end gap-1">
+              <div className="flex items-baseline gap-2">
+                <span className="text-body text-[10px] tracking-[0.18em] uppercase text-muted-foreground">Compra</span>
+                <span className="text-display text-2xl md:text-3xl font-light text-foreground whitespace-nowrap">
+                  {formatPrice(property.sale_price)}
+                </span>
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-body text-[10px] tracking-[0.18em] uppercase text-muted-foreground">Locação</span>
+                <span className="text-display text-xl md:text-2xl font-light text-foreground whitespace-nowrap">
+                  {formatPrice(property.rental_price)}<span className="text-xs text-muted-foreground ml-1">/mês</span>
+                </span>
+              </div>
+            </div>
+          ) : (
+            <p className="text-display text-3xl md:text-4xl font-light text-foreground whitespace-nowrap">
+              {formatPrice(property.price)}
+              {isRentalTransaction(property.transaction_type) && (
+                <span className="text-sm text-muted-foreground ml-1">/mês</span>
+              )}
+            </p>
+          )}
         </div>
+
 
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           <PropertySpecs

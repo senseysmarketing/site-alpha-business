@@ -161,8 +161,9 @@ const Properties = () => {
         matchCondo(p.condominium, filterCondo);
       const matchesTransaction =
         filterStatus === "Todos" ||
-        (filterStatus === "venda" && p.transaction_type === "venda") ||
-        (filterStatus === "locacao" && isRentalTransaction(p.transaction_type));
+        (filterStatus === "venda" && (p.transaction_type === "venda" || p.transaction_type === "ambos")) ||
+        (filterStatus === "locacao" && (isRentalTransaction(p.transaction_type) || p.transaction_type === "ambos"));
+
 
       return matchesSearch && matchesCondo && matchesTransaction;
     });
@@ -370,8 +371,18 @@ const Properties = () => {
                     </Badge>
                   </TableCell>
                   <TableCell className="font-[Inter] text-sm">
-                    {formatPrice(isRentalTransaction(property.transaction_type) ? property.rental_price ?? property.price : property.price)}
+                    {property.transaction_type === "ambos" ? (
+                      <div className="flex flex-col leading-tight">
+                        <span>{formatPrice(property.price)}</span>
+                        <span className="text-[11px] text-muted-foreground">
+                          {formatPrice(property.rental_price)}/mês
+                        </span>
+                      </div>
+                    ) : (
+                      formatPrice(isRentalTransaction(property.transaction_type) ? property.rental_price ?? property.price : property.price)
+                    )}
                   </TableCell>
+
                   <TableCell>
                     <Badge
                       variant={property.status === "ativo" ? "default" : "secondary"}

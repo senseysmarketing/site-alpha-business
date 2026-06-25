@@ -280,20 +280,18 @@ Deno.serve(async (req) => {
         status: "ativo",
       };
 
-      if (hasV && hasL && config.split_dual) {
-        const codeV = `${ref}-V`;
-        const codeL = `${ref}-L`;
-        rows.push({ ...base, code: codeV, transaction_type: "venda", price: precoVenda, rental_price: null });
-        rows.push({ ...base, code: codeL, transaction_type: "locacao", price: null, rental_price: precoLocacao });
-        seenCodes.add(codeV);
-        seenCodes.add(codeL);
+      if (hasV && hasL) {
+        // Unified record: single property with both prices.
+        rows.push({ ...base, code: ref, transaction_type: "ambos", price: precoVenda, rental_price: precoLocacao });
+        seenCodes.add(ref);
       } else if (hasV) {
-        rows.push({ ...base, code: ref, transaction_type: "venda", price: precoVenda, rental_price: precoLocacao });
+        rows.push({ ...base, code: ref, transaction_type: "venda", price: precoVenda, rental_price: null });
         seenCodes.add(ref);
       } else if (hasL) {
-        rows.push({ ...base, code: ref, transaction_type: "locacao", price: precoVenda, rental_price: precoLocacao });
+        rows.push({ ...base, code: ref, transaction_type: "locacao", price: null, rental_price: precoLocacao });
         seenCodes.add(ref);
       }
+
     }
 
     // Fetch existing kenlo rows for protected fields preservation

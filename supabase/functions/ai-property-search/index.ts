@@ -548,8 +548,8 @@ const applyHardFilters = (q: any, f: PropertySearchFilters) => {
   let query = q.eq("status", "ativo");
   if (f.code) query = query.ilike("code", f.code);
   if (f.transactionType) {
-    if (f.transactionType === "locacao") query = query.in("transaction_type", ["locacao", "aluguel"]);
-    else query = query.eq("transaction_type", f.transactionType);
+    if (f.transactionType === "locacao") query = query.in("transaction_type", ["locacao", "aluguel", "ambos"]);
+    else query = query.in("transaction_type", ["venda", "ambos"]);
   }
   if (f.propertyType) query = query.ilike("property_type", `%${f.propertyType}%`);
   if (f.condominium) {
@@ -565,11 +565,13 @@ const applyHardFilters = (q: any, f: PropertySearchFilters) => {
   if (f.minBathrooms) query = query.gte("bathrooms", f.minBathrooms);
   if (f.minParking) query = query.gte("parking_spots", f.minParking);
   if (f.minArea) query = query.gte("area_total", f.minArea);
+  // Choose the price column based on intent. For "ambos" rows, both columns are populated correctly.
   const priceCol = f.transactionType === "locacao" ? "rental_price" : "price";
   if (f.minPrice) query = query.gte(priceCol, f.minPrice);
   if (f.maxPrice) query = query.lte(priceCol, f.maxPrice);
   return query;
 };
+
 
 const countMatches = async (sb: SB, f: PropertySearchFilters): Promise<number> => {
   let q = sb.from("properties").select("id", { count: "exact", head: true });
@@ -1354,9 +1356,13 @@ const handleConverseV2 = async (sb: SB, body: any) => {
 
 
 const buildPropertyResponse = (prop: PropertyResult, state: ConversationState) => {
-  const rental = prop.transaction_type === "locacao" || prop.transaction_type === "aluguel";
-  const price = rental ? prop.rental_price : prop.price;
-  const priceText = price ? `${fmtBRL(price)}${rental ? "/mês" : ""}` : "Sob consulta";
+  // Decide which price to highlight using the user's stated intent. For "ambos"
+  // rows, the column matching the intent is the relevant one. Default to sale price.
+  const intent = state.filters?.transactionType;
+  const wantsRental = intent === "locacao";
+  const price = wantsRental ? prop.rental_price : prop.price;
+  const priceText = price ? `${fmtBRL(price)}${wantsRental ? "/mês" : ""}` : "Sob consulta";
+
   return {
     assistantMessage: `Encontrei o imóvel **${prop.code}**${prop.condominium ? ` no ${prop.condominium}` : ""} por ${priceText}. Quer ver os detalhes?`,
     responseType: "property_detail" as const,
@@ -1738,10 +1744,11 @@ const filterAndRankV3 = (rows: PropRow[], f: PropertySearchFilters): ScoredMatch
     if (f.transactionType) {
       const ok =
         f.transactionType === "locacao"
-          ? r.transaction_type === "locacao" || r.transaction_type === "aluguel"
-          : r.transaction_type === "venda";
+          ? r.transaction_type === "locacao" || r.transaction_type === "aluguel" || r.transaction_type === "ambos"
+          : r.transaction_type === "venda" || r.transaction_type === "ambos";
       if (!ok) continue;
     }
+
     // property_type include
     if (f.propertyType) {
       const pt = norm(r.property_type ?? "");
@@ -1906,13 +1913,18 @@ Regras críticas:
 7. **DESAMBIGUAÇÃO BAIRRO vs CONDOMÍNIO**: Os termos "Alphaville" e "Tamboré" SOZINHOS (sem número e sem outro condomínio citado) são AMBÍGUOS: podem significar a região como um todo OU um condomínio numerado específico. NESTE CASO, devolva APENAS o reply pedindo a clarificação ("Você quer ver imóveis da região de Alphaville como um todo ou de um condomínio específico, ex.: Alphaville 1, 2, 3…?"), com filters_patch vazio, e intent="clarify_region". NÃO tente adivinhar.
 8. Com número ("alphaville 1", "tamboré 2") use condominium normalmente.
 9. "granja viana", "raposo tavares", "km 26", "cotia" → use address_query (NÃO condominium).
+10. **VENDA vs LOCAÇÃO**: Se o usuário citar valor/orçamento ("até 1 milhão", "uns 8 mil"), mas ainda NÃO disse se quer comprar ou alugar, NÃO chute transactionType — devolva filters_patch só com o preço e uma reply curta perguntando "Você quer comprar ou alugar?". Faixas típicas de aluguel ficam em R$ até 50 mil/mês; valores acima costumam ser venda — mas confirme.
+11. Imóveis com transaction_type="ambos" estão disponíveis tanto para venda quanto para locação (mostre preço correto conforme a intenção do cliente).
 
 Exemplos:
 - Mensagem "casa no alphaville 1" → { filters_patch: { propertyType: "casa", condominium: "Alphaville 1" } }.
 - Mensagem "alphaville 1" (sem mais nada) → { filters_patch: { condominium: "Alphaville 1" } }.
 - Mensagem "imóveis em alphaville" → { filters_patch: {}, intent: "clarify_region", reply: "Quer ver toda a região de Alphaville ou um condomínio específico (Alphaville 1, 2, 3…)?" }.
 - Mensagem "quero imoveis na granja viana" → { filters_patch: {}, address_query: "granja viana", reply: "Achei imóveis na Granja Viana. Você quer comprar ou alugar?" }.
-- Mensagem "até 5 milhões" → { filters_patch: { maxPrice: 5000000 } }.
+- Mensagem "até 5 milhões" → { filters_patch: { maxPrice: 5000000 }, reply: "Show, anotei até R$ 5 milhões. Você está pensando em comprar ou alugar?" }.
+- Mensagem "uns 15 mil de aluguel" → { filters_patch: { transactionType: "locacao", maxPrice: 15000 } }.
+
+
 
 
 Lista real de condomínios ativos: ${condoSample}
@@ -2445,10 +2457,31 @@ const handleConverseV3 = async (sb: SB, body: any) => {
     };
   }
 
+  // 3.5) Transaction intent guard — preço sem compra/locação gera confusão entre venda x aluguel.
+  // Se o usuário mencionou valor mas ainda não disse se quer comprar ou alugar, pergunte antes.
+  const hasBudget = (state.minPrice != null) || (state.maxPrice != null);
+  if (hasBudget && !state.transactionType) {
+    const stateOut = state;
+    return {
+      assistantMessage:
+        `Antes de eu filtrar pelo valor, me confirma: você está pensando em **comprar** ou **alugar**? A faixa de preço muda bastante entre os dois.`,
+      responseType: "clarification" as const,
+      conversation_state: stateOut,
+      updatedState: { filters: stateOut } as ConversationState,
+      parsedFilters: stateOut,
+      suggestedOptions: [
+        { label: "Quero comprar", value: "venda", kind: "transaction", action: "set_transaction" },
+        { label: "Quero alugar", value: "locacao", kind: "transaction", action: "set_transaction" },
+      ],
+      nextAction: "ask" as const,
+    };
+  }
+
   // 4) Filter + rank
   const ranked = filterAndRankV3(rows, state);
   const matchCount = ranked.length;
   console.log("[handleConverseV3] final", { message, forcedCondo, state, matchCount });
+
 
   const preview = ranked.slice(0, 4).map((m) => rowToResult(m.row));
   const summary = summarizeFiltersV3(state);
