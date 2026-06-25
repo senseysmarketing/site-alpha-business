@@ -548,8 +548,8 @@ const applyHardFilters = (q: any, f: PropertySearchFilters) => {
   let query = q.eq("status", "ativo");
   if (f.code) query = query.ilike("code", f.code);
   if (f.transactionType) {
-    if (f.transactionType === "locacao") query = query.in("transaction_type", ["locacao", "aluguel"]);
-    else query = query.eq("transaction_type", f.transactionType);
+    if (f.transactionType === "locacao") query = query.in("transaction_type", ["locacao", "aluguel", "ambos"]);
+    else query = query.in("transaction_type", ["venda", "ambos"]);
   }
   if (f.propertyType) query = query.ilike("property_type", `%${f.propertyType}%`);
   if (f.condominium) {
@@ -565,11 +565,13 @@ const applyHardFilters = (q: any, f: PropertySearchFilters) => {
   if (f.minBathrooms) query = query.gte("bathrooms", f.minBathrooms);
   if (f.minParking) query = query.gte("parking_spots", f.minParking);
   if (f.minArea) query = query.gte("area_total", f.minArea);
+  // Choose the price column based on intent. For "ambos" rows, both columns are populated correctly.
   const priceCol = f.transactionType === "locacao" ? "rental_price" : "price";
   if (f.minPrice) query = query.gte(priceCol, f.minPrice);
   if (f.maxPrice) query = query.lte(priceCol, f.maxPrice);
   return query;
 };
+
 
 const countMatches = async (sb: SB, f: PropertySearchFilters): Promise<number> => {
   let q = sb.from("properties").select("id", { count: "exact", head: true });
