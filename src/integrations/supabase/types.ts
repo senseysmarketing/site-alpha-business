@@ -358,6 +358,7 @@ export type Database = {
           bedrooms: number | null
           city: string | null
           code: string
+          condo_fee: number | null
           condominium: string | null
           condominium_normalized: string | null
           created_at: string | null
@@ -365,6 +366,7 @@ export type Database = {
           engineering_highlights: string[] | null
           external_id: string | null
           id: string
+          iptu: number | null
           is_featured: boolean | null
           last_synced_at: string | null
           neighborhood: string | null
@@ -388,6 +390,7 @@ export type Database = {
           bedrooms?: number | null
           city?: string | null
           code: string
+          condo_fee?: number | null
           condominium?: string | null
           condominium_normalized?: string | null
           created_at?: string | null
@@ -395,6 +398,7 @@ export type Database = {
           engineering_highlights?: string[] | null
           external_id?: string | null
           id?: string
+          iptu?: number | null
           is_featured?: boolean | null
           last_synced_at?: string | null
           neighborhood?: string | null
@@ -418,6 +422,7 @@ export type Database = {
           bedrooms?: number | null
           city?: string | null
           code?: string
+          condo_fee?: number | null
           condominium?: string | null
           condominium_normalized?: string | null
           created_at?: string | null
@@ -425,6 +430,7 @@ export type Database = {
           engineering_highlights?: string[] | null
           external_id?: string | null
           id?: string
+          iptu?: number | null
           is_featured?: boolean | null
           last_synced_at?: string | null
           neighborhood?: string | null
