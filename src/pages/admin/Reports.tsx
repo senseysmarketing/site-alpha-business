@@ -276,7 +276,18 @@ const Reports = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Select value={responsibleFilter} onValueChange={setResponsibleFilter}>
+            <SelectTrigger className="h-8 w-[180px] font-[Inter] text-xs">
+              <SelectValue placeholder="Responsável" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Toda a equipe</SelectItem>
+              {team.map((t) => (
+                <SelectItem key={t.user_id} value={t.user_id}>{t.full_name || "—"}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           {[
             { key: "7dias", label: "7 dias" },
             { key: "mes", label: "Este Mês" },
