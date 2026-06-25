@@ -102,6 +102,24 @@ export function LeadDetailSheet({ lead, open, onOpenChange, team = [] }: LeadDet
     enabled: !!lead,
   });
 
+  const { data: assignmentHistory = [] } = useQuery({
+    queryKey: ["lead_assignment_history", lead?.id],
+    queryFn: async () => {
+      if (!lead) return [];
+      const { data } = await supabase
+        .from("lead_assignment_history")
+        .select("*")
+        .eq("lead_id", lead.id)
+        .order("created_at", { ascending: false });
+      return data || [];
+    },
+    enabled: !!lead,
+  });
+
+  const userIdToName = new Map<string, string>();
+  team.forEach((t) => userIdToName.set(t.user_id, t.full_name || "—"));
+  const nameOf = (uid: string | null) => (uid ? userIdToName.get(uid) || "Usuário" : "—");
+
   const handleAddNote = async () => {
     if (!lead || !newNote.trim()) return;
     setSendingNote(true);
@@ -206,6 +224,26 @@ export function LeadDetailSheet({ lead, open, onOpenChange, team = [] }: LeadDet
           )}
           {lead.assignment_source && (
             <p className="text-[10px] text-muted-foreground/70 mt-2 font-[Inter]">Origem da atribuição: {lead.assignment_source}</p>
+          )}
+
+          {assignmentHistory.length > 0 && (
+            <div className="mt-3 border-t border-border/40 pt-3">
+              <p className="text-[11px] font-[Raleway] font-semibold text-muted-foreground mb-2">Histórico</p>
+              <ul className="space-y-1.5">
+                {assignmentHistory.map((h: any) => (
+                  <li key={h.id} className="text-[11px] text-muted-foreground font-[Inter] leading-snug">
+                    <span className="text-foreground">{nameOf(h.from_user_id)}</span>
+                    {" → "}
+                    <span className="text-foreground font-medium">{nameOf(h.to_user_id)}</span>
+                    {h.source && <span className="text-muted-foreground/70"> · {h.source}</span>}
+                    <span className="text-muted-foreground/60">
+                      {" · "}
+                      {formatDistanceToNow(new Date(h.created_at), { addSuffix: true, locale: ptBR })}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
         </div>
         <Separator />

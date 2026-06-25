@@ -1,6 +1,6 @@
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Flame, Instagram, Globe, MessageCircle, Users, Mail, CalendarCheck } from "lucide-react";
+import { Flame, Instagram, Globe, MessageCircle, Users, Mail, CalendarCheck, AlertTriangle } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 
@@ -62,10 +62,22 @@ const getInitials = (name: string) =>
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(value);
 
+const OVERDUE_DAYS_BY_STAGE: Record<string, number> = {
+  novos: 2,
+  visita_agendada: 5,
+  proposta: 7,
+  contrato: 10,
+  fechado: Infinity,
+};
+
 export function LeadCard({ lead, onDragStart, onClick }: LeadCardProps) {
   const isQuente = lead.score === "quente";
   const isMorno = lead.score === "morno";
   const thumbnail = lead.properties?.photos?.[0];
+
+  const daysSinceContact = differenceInDays(new Date(), new Date(lead.last_contact_at));
+  const threshold = OVERDUE_DAYS_BY_STAGE[lead.pipeline_stage] ?? 7;
+  const isOverdue = daysSinceContact >= threshold && lead.pipeline_stage !== "fechado";
 
   return (
     <div
@@ -75,9 +87,10 @@ export function LeadCard({ lead, onDragStart, onClick }: LeadCardProps) {
       className={cn(
         "group cursor-grab active:cursor-grabbing rounded-lg border bg-card p-3.5 transition-all duration-200",
         "hover:shadow-sm active:scale-[1.03] active:shadow-lg active:rotate-1",
-        isQuente && "border-primary shadow-[0_0_12px_-3px_hsl(var(--primary)/0.3)]",
-        isMorno && "border-secondary/60",
-        !isQuente && !isMorno && "border-border"
+        isOverdue && "border-amber-400/70 bg-amber-50/40",
+        !isOverdue && isQuente && "border-primary shadow-[0_0_12px_-3px_hsl(var(--primary)/0.3)]",
+        !isOverdue && isMorno && "border-secondary/60",
+        !isOverdue && !isQuente && !isMorno && "border-border"
       )}
     >
       {/* Header: Avatar + Name + Origin */}
@@ -127,13 +140,26 @@ export function LeadCard({ lead, onDragStart, onClick }: LeadCardProps) {
 
       {/* Footer */}
       <div className="flex items-center justify-between mt-3 gap-2">
-        <p className="text-[10px] text-muted-foreground/70 font-[Inter] truncate">
-          {formatDistanceToNow(new Date(lead.last_contact_at), { addSuffix: true, locale: ptBR })}
-        </p>
+        <div className="flex items-center gap-1.5 min-w-0">
+          {isOverdue && (
+            <AlertTriangle
+              className="h-3 w-3 text-amber-600 shrink-0"
+              aria-label={`Sem contato há ${daysSinceContact} dias`}
+            />
+          )}
+          <p className={cn(
+            "text-[10px] font-[Inter] truncate",
+            isOverdue ? "text-amber-700 font-medium" : "text-muted-foreground/70"
+          )}>
+            {isOverdue
+              ? `Sem contato há ${daysSinceContact}d`
+              : formatDistanceToNow(new Date(lead.last_contact_at), { addSuffix: true, locale: ptBR })}
+          </p>
+        </div>
         {lead.assigned_user && (
           <div
             className="flex items-center gap-1.5 shrink-0"
-            title={`Responsável: ${lead.assigned_user.full_name || "—"}`}
+            title={`Responsável: ${lead.assigned_user.full_name || "—"}${lead.assignment_source ? ` · ${lead.assignment_source}` : ""}`}
           >
             <Avatar className="h-5 w-5">
               <AvatarImage src={lead.assigned_user.avatar_url || undefined} />

@@ -8,11 +8,13 @@ import {
   DollarSign,
   Sparkles,
   CalendarIcon,
+  Trophy,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import {
@@ -45,6 +47,8 @@ const STAGE_LABELS: Record<string, string> = {
 const Reports = () => {
   const [leads, setLeads] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
+  const [team, setTeam] = useState<Array<{ user_id: string; full_name: string | null }>>([]);
+  const [responsibleFilter, setResponsibleFilter] = useState<string>("all");
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: subDays(new Date(), 30),
     to: new Date(),
@@ -54,6 +58,7 @@ const Reports = () => {
   useEffect(() => {
     fetchLeads();
     fetchTransactions();
+    fetchTeam();
   }, []);
 
   const fetchLeads = async () => {
@@ -64,6 +69,15 @@ const Reports = () => {
   const fetchTransactions = async () => {
     const { data } = await supabase.from("transactions").select("*");
     if (data) setTransactions(data);
+  };
+
+  const fetchTeam = async () => {
+    const { data } = await supabase
+      .from("team_profiles")
+      .select("user_id, full_name")
+      .eq("is_active", true)
+      .order("full_name");
+    if (data) setTeam(data as any);
   };
 
   const handleQuickFilter = (filter: string) => {
@@ -83,12 +97,47 @@ const Reports = () => {
   };
 
   const filteredLeads = useMemo(() => {
-    if (!dateRange?.from) return leads;
-    return leads.filter((l) => {
+    let list = leads;
+    if (responsibleFilter !== "all") {
+      list = list.filter((l) => l.assigned_user_id === responsibleFilter);
+    }
+    if (!dateRange?.from) return list;
+    return list.filter((l) => {
       const created = new Date(l.created_at);
       return created >= dateRange.from! && (!dateRange.to || created <= dateRange.to);
     });
-  }, [leads, dateRange]);
+  }, [leads, dateRange, responsibleFilter]);
+
+  // Per-broker performance (always over the full date range, ignoring responsibleFilter)
+  const brokerPerformance = useMemo(() => {
+    const byUser: Record<string, { received: number; closed: number; cycleSum: number; cycleCount: number; pipelineValue: number }> = {};
+    leads
+      .filter((l) => {
+        if (!dateRange?.from) return true;
+        const created = new Date(l.created_at);
+        return created >= dateRange.from && (!dateRange.to || created <= dateRange.to);
+      })
+      .forEach((l) => {
+        const uid = l.assigned_user_id || "_unassigned";
+        if (!byUser[uid]) byUser[uid] = { received: 0, closed: 0, cycleSum: 0, cycleCount: 0, pipelineValue: 0 };
+        byUser[uid].received += 1;
+        byUser[uid].pipelineValue += l.deal_value || 0;
+        if (l.pipeline_stage === "fechado") {
+          byUser[uid].closed += 1;
+          byUser[uid].cycleSum += differenceInDays(new Date(l.updated_at), new Date(l.created_at));
+          byUser[uid].cycleCount += 1;
+        }
+      });
+    return Object.entries(byUser)
+      .map(([uid, stats]) => ({
+        userId: uid,
+        name: uid === "_unassigned" ? "Sem responsável" : (team.find((t) => t.user_id === uid)?.full_name || "Usuário"),
+        ...stats,
+        conversion: stats.received > 0 ? (stats.closed / stats.received) * 100 : 0,
+        avgCycle: stats.cycleCount > 0 ? Math.round(stats.cycleSum / stats.cycleCount) : null,
+      }))
+      .sort((a, b) => b.closed - a.closed || b.received - a.received);
+  }, [leads, dateRange, team]);
 
   const filteredTransactions = useMemo(() => {
     if (!dateRange?.from) return transactions;
@@ -227,7 +276,18 @@ const Reports = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Select value={responsibleFilter} onValueChange={setResponsibleFilter}>
+            <SelectTrigger className="h-8 w-[180px] font-[Inter] text-xs">
+              <SelectValue placeholder="Responsável" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Toda a equipe</SelectItem>
+              {team.map((t) => (
+                <SelectItem key={t.user_id} value={t.user_id}>{t.full_name || "—"}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           {[
             { key: "7dias", label: "7 dias" },
             { key: "mes", label: "Este Mês" },
@@ -509,6 +569,59 @@ const Reports = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Per-broker performance */}
+      <Card className="bg-white border-border/50 shadow-none mt-6">
+        <CardHeader className="flex flex-row items-center gap-2">
+          <Trophy className="h-4 w-4 text-[#2A070C]/60" />
+          <CardTitle className="font-[Inter] text-xs font-medium uppercase tracking-widest text-muted-foreground">
+            Desempenho por Corretor
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {brokerPerformance.length === 0 ? (
+            <p className="font-[Inter] text-sm text-muted-foreground/60 text-center py-8">
+              Sem dados no período selecionado.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm font-[Inter]">
+                <thead>
+                  <tr className="text-left text-[10px] uppercase tracking-widest text-muted-foreground border-b border-border/50">
+                    <th className="py-2 pr-4 font-medium">Corretor</th>
+                    <th className="py-2 pr-4 font-medium text-right">Recebidos</th>
+                    <th className="py-2 pr-4 font-medium text-right">Fechados</th>
+                    <th className="py-2 pr-4 font-medium text-right">Conversão</th>
+                    <th className="py-2 pr-4 font-medium text-right">Ciclo Médio</th>
+                    <th className="py-2 pr-4 font-medium text-right">Pipeline</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {brokerPerformance.map((b, i) => (
+                    <tr key={b.userId} className="border-b border-border/30 last:border-0">
+                      <td className="py-2.5 pr-4">
+                        <div className="flex items-center gap-2">
+                          {i === 0 && b.closed > 0 && <Trophy className="h-3.5 w-3.5 text-amber-500" />}
+                          <span className="text-foreground">{b.name}</span>
+                        </div>
+                      </td>
+                      <td className="py-2.5 pr-4 text-right tabular-nums">{b.received}</td>
+                      <td className="py-2.5 pr-4 text-right tabular-nums font-medium text-foreground">{b.closed}</td>
+                      <td className="py-2.5 pr-4 text-right tabular-nums">{b.conversion.toFixed(1)}%</td>
+                      <td className="py-2.5 pr-4 text-right tabular-nums">
+                        {b.avgCycle !== null ? `${b.avgCycle}d` : "—"}
+                      </td>
+                      <td className="py-2.5 pr-4 text-right tabular-nums text-muted-foreground">
+                        {b.pipelineValue > 0 ? `R$ ${(b.pipelineValue / 1000).toFixed(0)}K` : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
