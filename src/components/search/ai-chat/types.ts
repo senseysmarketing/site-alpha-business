@@ -13,6 +13,8 @@ export interface PropertySearchFilters {
   minArea?: number | null;
   minPrice?: number | null;
   maxPrice?: number | null;
+  maxCondoFee?: number | null;
+  maxIptu?: number | null;
   highlights?: string[];
   // v3 additions
   keywords?: string[];
