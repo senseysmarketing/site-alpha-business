@@ -164,6 +164,83 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_assignment_rule_members: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          last_assigned_at: string | null
+          rule_id: string
+          sort_order: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_assigned_at?: string | null
+          rule_id: string
+          sort_order?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_assigned_at?: string | null
+          rule_id?: string
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_assignment_rule_members_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "crm_assignment_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_assignment_rules: {
+        Row: {
+          conditions: Json
+          created_at: string
+          distribution_type: string
+          fixed_user_id: string | null
+          id: string
+          is_active: boolean
+          name: string
+          priority: number
+          updated_at: string
+        }
+        Insert: {
+          conditions?: Json
+          created_at?: string
+          distribution_type: string
+          fixed_user_id?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          priority?: number
+          updated_at?: string
+        }
+        Update: {
+          conditions?: Json
+          created_at?: string
+          distribution_type?: string
+          fixed_user_id?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          priority?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       crm_settings: {
         Row: {
           assignment_strategy: string
@@ -268,30 +345,42 @@ export type Database = {
         Row: {
           changed_by: string | null
           created_at: string
+          distribution_type: string | null
           from_user_id: string | null
           id: string
           lead_id: string
+          matched_conditions: Json | null
           reason: string | null
+          rule_id: string | null
+          rule_name: string | null
           source: string | null
           to_user_id: string | null
         }
         Insert: {
           changed_by?: string | null
           created_at?: string
+          distribution_type?: string | null
           from_user_id?: string | null
           id?: string
           lead_id: string
+          matched_conditions?: Json | null
           reason?: string | null
+          rule_id?: string | null
+          rule_name?: string | null
           source?: string | null
           to_user_id?: string | null
         }
         Update: {
           changed_by?: string | null
           created_at?: string
+          distribution_type?: string | null
           from_user_id?: string | null
           id?: string
           lead_id?: string
+          matched_conditions?: Json | null
           reason?: string | null
+          rule_id?: string | null
+          rule_name?: string | null
           source?: string | null
           to_user_id?: string | null
         }
@@ -301,6 +390,13 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_assignment_history_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "crm_assignment_rules"
             referencedColumns: ["id"]
           },
         ]
@@ -349,7 +445,10 @@ export type Database = {
           deal_value: number | null
           email: string | null
           id: string
+          last_assignment_rule_id: string | null
+          last_assignment_rule_name: string | null
           last_contact_at: string
+          last_matched_conditions: Json | null
           name: string
           origin: string
           phone: string | null
@@ -369,7 +468,10 @@ export type Database = {
           deal_value?: number | null
           email?: string | null
           id?: string
+          last_assignment_rule_id?: string | null
+          last_assignment_rule_name?: string | null
           last_contact_at?: string
+          last_matched_conditions?: Json | null
           name: string
           origin?: string
           phone?: string | null
@@ -389,7 +491,10 @@ export type Database = {
           deal_value?: number | null
           email?: string | null
           id?: string
+          last_assignment_rule_id?: string | null
+          last_assignment_rule_name?: string | null
           last_contact_at?: string
+          last_matched_conditions?: Json | null
           name?: string
           origin?: string
           phone?: string | null
@@ -399,6 +504,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "leads_last_assignment_rule_id_fkey"
+            columns: ["last_assignment_rule_id"]
+            isOneToOne: false
+            referencedRelation: "crm_assignment_rules"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "leads_property_id_fkey"
             columns: ["property_id"]
