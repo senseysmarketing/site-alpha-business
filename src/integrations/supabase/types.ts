@@ -559,6 +559,45 @@ export type Database = {
         }
         Relationships: []
       }
+      pipeline_stages: {
+        Row: {
+          behavior: string
+          color: string
+          created_at: string
+          id: string
+          is_active: boolean
+          key: string
+          label: string
+          overdue_days: number | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          behavior?: string
+          color?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          key: string
+          label: string
+          overdue_days?: number | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          behavior?: string
+          color?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          key?: string
+          label?: string
+          overdue_days?: number | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       properties: {
         Row: {
           address: string | null
@@ -881,6 +920,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      delete_pipeline_stage: {
+        Args: { p_key: string; p_reassign_to: string }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
