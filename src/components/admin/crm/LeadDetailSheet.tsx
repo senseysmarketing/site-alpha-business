@@ -180,6 +180,37 @@ export function LeadDetailSheet({ lead, open, onOpenChange, team = [] }: LeadDet
           </>
         )}
 
+        {/* Responsável */}
+        <div className="p-6 py-4">
+          <div className="flex items-center gap-2 mb-2">
+            <UserCog className="h-4 w-4 text-muted-foreground" />
+            <h3 className="font-[Raleway] text-sm font-semibold">Responsável</h3>
+          </div>
+          {canReassign ? (
+            <Select value={lead.assigned_user_id || ""} onValueChange={handleReassign} disabled={reassigning}>
+              <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Selecione…" /></SelectTrigger>
+              <SelectContent>
+                {team.map((t) => (
+                  <SelectItem key={t.user_id} value={t.user_id}>{t.full_name || "—"}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Avatar className="h-7 w-7">
+                <AvatarImage src={lead.assigned_user?.avatar_url || undefined} />
+                <AvatarFallback className="text-[10px]">{getInitials(lead.assigned_user?.full_name || "?")}</AvatarFallback>
+              </Avatar>
+              <span className="text-sm">{lead.assigned_user?.full_name || "Não atribuído"}</span>
+            </div>
+          )}
+          {lead.assignment_source && (
+            <p className="text-[10px] text-muted-foreground/70 mt-2 font-[Inter]">Origem da atribuição: {lead.assignment_source}</p>
+          )}
+        </div>
+        <Separator />
+
+
         {/* Timeline */}
         <div className="p-6 py-4">
           <h3 className="font-[Raleway] text-sm font-semibold mb-3">Timeline</h3>
