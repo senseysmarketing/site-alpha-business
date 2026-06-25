@@ -140,27 +140,39 @@ export default function CRM() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
         <div>
           <h1 className="font-[Raleway] text-2xl font-semibold text-foreground">Pipeline</h1>
           <p className="text-sm text-muted-foreground font-[Inter] mt-1">
-            {leads.length} leads no pipeline
+            {visibleLeads.length} {visibleLeads.length === 1 ? "lead" : "leads"}
+            {responsibleFilter !== "all" ? " (filtrado)" : " no pipeline"}
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setNotifyOpen(true)}
-          className="font-[Inter]"
-        >
-          <Bell className="h-4 w-4 mr-2" />
-          Notificações
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Select value={responsibleFilter} onValueChange={setResponsibleFilter}>
+            <SelectTrigger className="w-[200px] h-9 font-[Inter] text-sm">
+              <SelectValue placeholder="Responsável" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Toda a equipe</SelectItem>
+              {currentUserId && <SelectItem value="me">Meus leads</SelectItem>}
+              {team.filter((t) => t.is_active).map((t) => (
+                <SelectItem key={t.user_id} value={t.user_id}>{t.full_name || "—"}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button variant="outline" size="sm" onClick={() => setSettingsOpen(true)} className="font-[Inter]">
+            <Settings2 className="h-4 w-4 mr-2" /> Atribuição
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setNotifyOpen(true)} className="font-[Inter]">
+            <Bell className="h-4 w-4 mr-2" /> Notificações
+          </Button>
+        </div>
       </div>
 
       <div className="flex gap-4 overflow-x-auto pb-4">
         {STAGES.map((stage) => {
-          const stageLeads = leads.filter((l) => l.pipeline_stage === stage.key);
+          const stageLeads = visibleLeads.filter((l) => l.pipeline_stage === stage.key);
           const totalValue = stageLeads.reduce((sum, l) => sum + (l.deal_value || 0), 0);
 
           return (
@@ -175,7 +187,6 @@ export default function CRM() {
               onDragLeave={handleDragLeave}
               onDrop={(e) => handleDrop(e, stage.key)}
             >
-              {/* Column header — glassmorphism */}
               <div className="sticky top-0 z-10 rounded-t-sm px-4 py-3 backdrop-blur-md bg-white/90 border-b border-border/30">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -200,7 +211,6 @@ export default function CRM() {
                 )}
               </div>
 
-              {/* Cards */}
               <div className="flex-1 p-2 space-y-2 min-h-[200px]">
                 {stageLeads.map((lead) => (
                   <LeadCard
@@ -216,7 +226,12 @@ export default function CRM() {
         })}
       </div>
 
-      <LeadDetailSheet lead={selectedLead} open={sheetOpen} onOpenChange={setSheetOpen} />
+      <LeadDetailSheet
+        lead={selectedLead}
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        team={team.filter((t) => t.is_active)}
+      />
 
       <NewLeadDialog
         open={!!newLeadStage}
@@ -226,6 +241,8 @@ export default function CRM() {
       />
 
       <LeadNotificationSettingsDialog open={notifyOpen} onOpenChange={setNotifyOpen} />
+      <CrmSettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
     </div>
   );
 }
+
