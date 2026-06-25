@@ -45,6 +45,7 @@ import { format, formatDistanceToNow, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import type { Lead, AssignedUser } from "./LeadCard";
+import { usePipelineStages } from "@/hooks/usePipelineStages";
 
 interface LeadDetailModalProps {
   lead: Lead | null;
@@ -106,6 +107,8 @@ const parseCurrencyInput = (raw: string): number | null => {
 
 export function LeadDetailModal({ lead, open, onOpenChange, team = [] }: LeadDetailModalProps) {
   const queryClient = useQueryClient();
+  const { activeStages: STAGES_DATA, getStage } = usePipelineStages();
+  const STAGES = STAGES_DATA.map((s) => ({ value: s.key, label: s.label }));
   const [newNote, setNewNote] = useState("");
   const [sendingNote, setSendingNote] = useState(false);
   const [canReassign, setCanReassign] = useState(false);
