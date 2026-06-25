@@ -1179,6 +1179,11 @@ const SiteSettings = () => {
                 properties={properties ?? []}
                 max={12}
               />
+
+              <CarouselCtaEditor
+                value={carousel3Form.cta}
+                onChange={(cta) => setCarousel3Form({ ...carousel3Form, cta })}
+              />
             </div>
           </SettingsBlock>
 
