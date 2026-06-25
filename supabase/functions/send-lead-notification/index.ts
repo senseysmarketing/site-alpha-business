@@ -1,7 +1,7 @@
 // Edge Function: send-lead-notification
-// Sends a notification email when a new lead is created.
-// Triggered automatically by an AFTER INSERT trigger on public.leads (mode="auto")
-// or manually from the admin UI (mode="test").
+// Envia notificação por e-mail para o corretor atribuído ao lead.
+// Disparado por triggers AFTER INSERT e AFTER UPDATE OF assigned_user_id em public.leads (mode="auto")
+// ou manualmente para teste (mode="test") — neste caso enviado ao usuário autenticado que solicitou.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -14,14 +14,11 @@ const corsHeaders = {
 
 const SETTINGS_KEY = "lead_email_notifications";
 
-type Recipient = string;
-
 interface NotifyConfig {
   enabled: boolean;
-  recipients: Recipient[];
   subjectTemplate?: string;
-  notifyOrigins?: string[]; // empty/undefined => all
-  notifyStages?: string[]; // empty/undefined => all
+  notifyOrigins?: string[];
+  notifyStages?: string[];
   includeLeadContact?: boolean;
   includeProperty?: boolean;
   includeInsights?: boolean;
@@ -30,8 +27,8 @@ interface NotifyConfig {
 interface RequestBody {
   mode: "auto" | "test";
   lead_id?: string;
-  // For test
-  recipients?: string[];
+  event?: "created" | "reassigned";
+  test_recipient?: string;
 }
 
 const ORIGIN_LABELS: Record<string, string> = {
@@ -80,11 +77,17 @@ function buildHtml(opts: {
   lead: Record<string, any>;
   property: Record<string, any> | null;
   config: NotifyConfig;
+  assigneeName?: string | null;
+  headline: string;
 }): string {
-  const { lead, property, config } = opts;
+  const { lead, property, config, assigneeName, headline } = opts;
   const originLabel = ORIGIN_LABELS[lead.origin as string] ?? (lead.origin || "—");
   const stageLabel =
     STAGE_LABELS[lead.pipeline_stage as string] ?? (lead.pipeline_stage || "—");
+
+  const greeting = assigneeName
+    ? `<p style="margin:0 0 16px;font-family:Inter,Arial,sans-serif;font-size:14px;color:#222;">Olá, <strong>${escapeHtml(assigneeName)}</strong>. Um lead foi atribuído a você no CRM.</p>`
+    : "";
 
   const contactRows = config.includeLeadContact !== false
     ? `
@@ -118,8 +121,10 @@ function buildHtml(opts: {
   <div style="max-width:600px;margin:0 auto;padding:32px 24px;background:#ffffff;">
     <div style="border-bottom:1px solid #ececec;padding-bottom:16px;margin-bottom:24px;">
       <p style="margin:0;font-family:Raleway,Arial,sans-serif;font-size:12px;letter-spacing:2px;color:#2A070C;text-transform:uppercase;">AlphaBusiness · CRM</p>
-      <h1 style="margin:8px 0 0;font-family:Raleway,Arial,sans-serif;font-size:22px;color:#111;">Novo lead recebido</h1>
+      <h1 style="margin:8px 0 0;font-family:Raleway,Arial,sans-serif;font-size:22px;color:#111;">${escapeHtml(headline)}</h1>
     </div>
+
+    ${greeting}
 
     <h3 style="font-family:Raleway,Arial,sans-serif;font-size:14px;color:#2A070C;margin:0 0 8px;text-transform:uppercase;letter-spacing:1px;">Lead</h3>
     <table style="width:100%;border-collapse:collapse;font-family:Inter,Arial,sans-serif;font-size:14px;color:#222;">
@@ -166,7 +171,7 @@ Deno.serve(async (req) => {
 
     const admin = createClient(supabaseUrl, serviceKey);
 
-    // Load config from site_settings
+    // Carregar configurações
     const { data: settingsRow } = await admin
       .from("site_settings")
       .select("value")
@@ -182,26 +187,35 @@ Deno.serve(async (req) => {
       });
     }
 
-    const recipientList = (
-      body.mode === "test" && body.recipients?.length
-        ? body.recipients
-        : config?.recipients ?? []
-    )
-      .map((r) => r.trim())
-      .filter(isValidEmail);
-
-    if (recipientList.length === 0) {
-      return new Response(
-        JSON.stringify({ status: "failed", error: "No valid recipients" }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
-    }
-
-    // Resolve lead data
+    let recipientEmail: string | null = null;
+    let assigneeName: string | null = null;
     let lead: Record<string, any> | null = null;
     let property: Record<string, any> | null = null;
+    let headline = "Novo lead recebido";
 
     if (body.mode === "test") {
+      // Resolve recipient: explicitly provided OR authenticated user from JWT
+      if (body.test_recipient && isValidEmail(body.test_recipient)) {
+        recipientEmail = body.test_recipient.toLowerCase();
+      } else {
+        const authHeader = req.headers.get("Authorization") ?? "";
+        const token = authHeader.replace(/^Bearer\s+/i, "");
+        if (token) {
+          const { data: userData } = await admin.auth.getUser(token);
+          if (userData?.user?.email) recipientEmail = userData.user.email;
+        }
+      }
+
+      if (!recipientEmail) {
+        return new Response(
+          JSON.stringify({
+            status: "failed",
+            error: "Sem destinatário para teste. Faça login para receber no seu e-mail.",
+          }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+
       lead = {
         name: "Lead de Teste",
         email: "teste@exemplo.com",
@@ -211,6 +225,7 @@ Deno.serve(async (req) => {
         deal_value: 0,
         ai_insights: "Este é apenas um envio de teste para validar a configuração.",
       };
+      headline = "Teste de notificação — Novo lead";
     } else {
       if (!body.lead_id) {
         return new Response(JSON.stringify({ error: "Missing lead_id" }), {
@@ -231,7 +246,7 @@ Deno.serve(async (req) => {
       }
       lead = leadRow;
 
-      // Origin / stage filters
+      // Filtros de origem / estágio
       if (
         config.notifyOrigins?.length &&
         lead.origin &&
@@ -253,6 +268,45 @@ Deno.serve(async (req) => {
         });
       }
 
+      // Resolver corretor atribuído
+      if (!lead.assigned_user_id) {
+        return new Response(JSON.stringify({ status: "skipped_no_assignee" }), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Garantir que o corretor está ativo
+      const { data: profile } = await admin
+        .from("team_profiles")
+        .select("full_name, is_active")
+        .eq("user_id", lead.assigned_user_id)
+        .maybeSingle();
+
+      if (profile && profile.is_active === false) {
+        return new Response(JSON.stringify({ status: "skipped_inactive_user" }), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      assigneeName = profile?.full_name ?? null;
+
+      // Buscar e-mail via auth admin
+      const { data: userData, error: userErr } =
+        await admin.auth.admin.getUserById(lead.assigned_user_id);
+      if (userErr || !userData?.user?.email || !isValidEmail(userData.user.email)) {
+        console.warn("No email for assigned user", lead.assigned_user_id, userErr?.message);
+        return new Response(
+          JSON.stringify({ status: "skipped_no_recipient" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+      recipientEmail = userData.user.email;
+
+      headline = body.event === "reassigned"
+        ? "Lead reatribuído a você"
+        : "Novo lead atribuído a você";
+
       if (lead.property_id) {
         const { data: propRow } = await admin
           .from("properties")
@@ -263,12 +317,16 @@ Deno.serve(async (req) => {
       }
     }
 
-    const subject = (config?.subjectTemplate?.trim() ||
+    const subjectBase = (config?.subjectTemplate?.trim() ||
       "Novo lead recebido — {{name}}")
       .replace("{{name}}", lead?.name ?? "Lead")
       .replace("{{origin}}", ORIGIN_LABELS[lead?.origin as string] ?? lead?.origin ?? "—");
 
-    const html = buildHtml({ lead: lead!, property, config });
+    const subject = body.mode === "auto" && body.event === "reassigned"
+      ? `[Reatribuído] ${subjectBase}`
+      : subjectBase;
+
+    const html = buildHtml({ lead: lead!, property, config, assigneeName, headline });
 
     const fromAddress =
       Deno.env.get("RESEND_FROM_EMAIL") ?? "AlphaBusiness <leads@rafaelalbuquerque.com.br>";
@@ -281,7 +339,7 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         from: fromAddress,
-        to: recipientList,
+        to: [recipientEmail],
         subject,
         html,
       }),
@@ -297,7 +355,7 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ status: "sent", recipients: recipientList, response: respBody }),
+      JSON.stringify({ status: "sent", recipient: recipientEmail, response: respBody }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (e) {
