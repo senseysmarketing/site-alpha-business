@@ -33,6 +33,8 @@ interface PropertySearchFilters {
   minArea?: number | null;
   minPrice?: number | null;
   maxPrice?: number | null;
+  maxCondoFee?: number | null;
+  maxIptu?: number | null; // stored as annual amount
   highlights?: string[];
   // v3 additions: free-text keywords searched across all textual fields,
   // and property types the user wants to exclude ("tirar apartamentos").
