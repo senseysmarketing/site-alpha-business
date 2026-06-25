@@ -39,7 +39,7 @@ const STAGE_LABELS: Record<string, string> = {
   visita_agendada: "Visita Agendada",
   visita: "Visita",
   proposta: "Proposta",
-  fechados: "Fechados",
+  fechado: "Fechado",
 };
 
 const Reports = () => {
@@ -99,7 +99,7 @@ const Reports = () => {
   }, [transactions, dateRange]);
 
   const totalLeads = filteredLeads.length;
-  const closedLeads = filteredLeads.filter((l) => l.pipeline_stage === "fechados");
+  const closedLeads = filteredLeads.filter((l) => l.pipeline_stage === "fechado");
   const conversionRate = totalLeads > 0 ? ((closedLeads.length / totalLeads) * 100).toFixed(1) : "0";
   const pipelineValue = filteredLeads.reduce((sum, l) => sum + (l.deal_value || 0), 0);
 
@@ -162,7 +162,7 @@ const Reports = () => {
   }, [filteredLeads]);
 
   const funnelData = useMemo(() => {
-    const stages = ["novos", "contato", "visita_agendada", "visita", "proposta", "fechados"];
+    const stages = ["novos", "contato", "visita_agendada", "visita", "proposta", "fechado"];
     return stages.map((stage) => ({
       stage: STAGE_LABELS[stage] || stage,
       count: filteredLeads.filter((l) => l.pipeline_stage === stage).length,
