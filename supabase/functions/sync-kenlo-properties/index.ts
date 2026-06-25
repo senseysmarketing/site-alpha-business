@@ -275,6 +275,8 @@ Deno.serve(async (req) => {
         parking_spots: toInt(im?.QtdVagas ?? im?.Vagas ?? 0) ?? 0,
         area_total: parseBR(im?.AreaTotal ?? im?.AreaTerreno),
         area_built: parseBR(im?.AreaUtil ?? im?.AreaConstruida),
+        condo_fee: valorCondominio,
+        iptu: valorIptu,
         photos,
         source: "kenlo",
         external_id: ref,
