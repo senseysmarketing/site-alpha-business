@@ -1785,6 +1785,8 @@ const filterAndRankV3 = (rows: PropRow[], f: PropertySearchFilters): ScoredMatch
     const priceCol = f.transactionType === "locacao" ? r.rental_price : r.price;
     if (f.minPrice && (priceCol ?? 0) < f.minPrice) continue;
     if (f.maxPrice && priceCol != null && priceCol > f.maxPrice) continue;
+    if (f.maxCondoFee && r.condo_fee != null && r.condo_fee > f.maxCondoFee) continue;
+    if (f.maxIptu && r.iptu != null && r.iptu > f.maxIptu) continue;
 
     // keywords (AND across, with variant OR per keyword)
     let allKw = true;
