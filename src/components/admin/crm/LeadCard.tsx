@@ -3,6 +3,7 @@ import { ptBR } from "date-fns/locale";
 import { Flame, Instagram, Globe, MessageCircle, Users, Mail, CalendarCheck, AlertTriangle, Repeat } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { usePipelineStages } from "@/hooks/usePipelineStages";
 
 export interface AssignedUser {
   user_id: string;
@@ -62,22 +63,17 @@ const getInitials = (name: string) =>
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(value);
 
-const OVERDUE_DAYS_BY_STAGE: Record<string, number> = {
-  novos: 2,
-  visita_agendada: 5,
-  proposta: 7,
-  contrato: 10,
-  fechado: Infinity,
-};
-
 export function LeadCard({ lead, onDragStart, onClick }: LeadCardProps) {
   const isQuente = lead.score === "quente";
   const isMorno = lead.score === "morno";
   const thumbnail = lead.properties?.photos?.[0];
+  const { getStage } = usePipelineStages();
 
+  const stage = getStage(lead.pipeline_stage);
+  const isTerminal = stage?.behavior === "won" || stage?.behavior === "lost";
   const daysSinceContact = differenceInDays(new Date(), new Date(lead.last_contact_at));
-  const threshold = OVERDUE_DAYS_BY_STAGE[lead.pipeline_stage] ?? 7;
-  const isOverdue = daysSinceContact >= threshold && lead.pipeline_stage !== "fechado";
+  const threshold = stage?.overdue_days ?? 7;
+  const isOverdue = !isTerminal && stage?.overdue_days != null && daysSinceContact >= threshold;
 
   return (
     <div
