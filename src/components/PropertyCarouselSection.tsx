@@ -7,14 +7,16 @@ import useEmblaCarousel from "embla-carousel-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { buildCtaHref, getCtaLabel, isExternalUrl, type CarouselCta } from "@/lib/carouselCta";
 
 interface PropertyCarouselSectionProps {
   title: string;
   propertyIds: string[];
   isActive?: boolean;
+  cta?: CarouselCta;
 }
 
-const PropertyCarouselSection = ({ title, propertyIds, isActive = true }: PropertyCarouselSectionProps) => {
+const PropertyCarouselSection = ({ title, propertyIds, isActive = true, cta }: PropertyCarouselSectionProps) => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
   const [canScrollPrev, setCanScrollPrev] = useState(false);
@@ -113,12 +115,30 @@ const PropertyCarouselSection = ({ title, propertyIds, isActive = true }: Proper
                 <ChevronRight className="h-5 w-5" />
               </Button>
             </div>
-            <Link
-              to="/busca"
-              className="text-body text-sm text-foreground/70 hover:text-primary transition-colors whitespace-nowrap"
-            >
-              Ver todos
-            </Link>
+            {(() => {
+              const href = buildCtaHref(cta);
+              if (!href) return null;
+              const label = getCtaLabel(cta);
+              const className =
+                "text-body text-sm text-foreground/70 hover:text-primary transition-colors whitespace-nowrap";
+              if (isExternalUrl(href)) {
+                return (
+                  <a
+                    href={href}
+                    target={cta?.openInNewTab ? "_blank" : undefined}
+                    rel={cta?.openInNewTab ? "noopener noreferrer" : undefined}
+                    className={className}
+                  >
+                    {label}
+                  </a>
+                );
+              }
+              return (
+                <Link to={href} className={className}>
+                  {label}
+                </Link>
+              );
+            })()}
           </div>
         </div>
 

@@ -27,6 +27,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, arrayMove, rectSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { CarouselCtaEditor } from "@/components/admin/CarouselCtaEditor";
 
 // ── Types ──────────────────────────────────────────
 interface HeroSlide {
@@ -730,6 +731,7 @@ const SiteSettings = () => {
     title: string;
     property_ids: string[];
     is_active: boolean;
+    cta?: import("@/lib/carouselCta").CarouselCta;
   }
   const carousel2 = useSiteSettings<CarouselSettings>("homepage_carousel_2");
   const [carousel2Form, setCarousel2Form] = useState<CarouselSettings>({ title: "", property_ids: [], is_active: false });
@@ -1135,6 +1137,11 @@ const SiteSettings = () => {
                 properties={properties ?? []}
                 max={12}
               />
+
+              <CarouselCtaEditor
+                value={carousel2Form.cta}
+                onChange={(cta) => setCarousel2Form({ ...carousel2Form, cta })}
+              />
             </div>
           </SettingsBlock>
 
@@ -1171,6 +1178,11 @@ const SiteSettings = () => {
                 onChange={(ids) => setCarousel3Form({ ...carousel3Form, property_ids: ids })}
                 properties={properties ?? []}
                 max={12}
+              />
+
+              <CarouselCtaEditor
+                value={carousel3Form.cta}
+                onChange={(cta) => setCarousel3Form({ ...carousel3Form, cta })}
               />
             </div>
           </SettingsBlock>

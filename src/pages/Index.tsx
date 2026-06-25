@@ -16,8 +16,8 @@ import Footer from "@/components/Footer";
 const Index = () => {
   const location = useLocation();
 
-  const { data: carousel1 } = useSiteSettings<{ title: string; property_ids: string[]; is_active: boolean }>("homepage_carousel_2");
-  const { data: carousel2 } = useSiteSettings<{ title: string; property_ids: string[]; is_active: boolean }>("homepage_carousel_3");
+  const { data: carousel1 } = useSiteSettings<{ title: string; property_ids: string[]; is_active: boolean; cta?: import("@/lib/carouselCta").CarouselCta }>("homepage_carousel_2");
+  const { data: carousel2 } = useSiteSettings<{ title: string; property_ids: string[]; is_active: boolean; cta?: import("@/lib/carouselCta").CarouselCta }>("homepage_carousel_3");
 
   useEffect(() => {
     const hash = location.hash?.replace("#", "");
@@ -44,12 +44,14 @@ const Index = () => {
           <PropertyCarouselSection
             title={carousel1.title}
             propertyIds={carousel1.property_ids || []}
+            cta={carousel1.cta}
           />
         )}
         {carousel2?.is_active && (
           <PropertyCarouselSection
             title={carousel2.title}
             propertyIds={carousel2.property_ids || []}
+            cta={carousel2.cta}
           />
         )}
         <ContactSection />
