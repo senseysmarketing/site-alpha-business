@@ -8,11 +8,13 @@ import {
   DollarSign,
   Sparkles,
   CalendarIcon,
+  Trophy,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import {
@@ -45,6 +47,8 @@ const STAGE_LABELS: Record<string, string> = {
 const Reports = () => {
   const [leads, setLeads] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
+  const [team, setTeam] = useState<Array<{ user_id: string; full_name: string | null }>>([]);
+  const [responsibleFilter, setResponsibleFilter] = useState<string>("all");
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: subDays(new Date(), 30),
     to: new Date(),
@@ -54,6 +58,7 @@ const Reports = () => {
   useEffect(() => {
     fetchLeads();
     fetchTransactions();
+    fetchTeam();
   }, []);
 
   const fetchLeads = async () => {
@@ -64,6 +69,15 @@ const Reports = () => {
   const fetchTransactions = async () => {
     const { data } = await supabase.from("transactions").select("*");
     if (data) setTransactions(data);
+  };
+
+  const fetchTeam = async () => {
+    const { data } = await supabase
+      .from("team_profiles")
+      .select("user_id, full_name")
+      .eq("is_active", true)
+      .order("full_name");
+    if (data) setTeam(data as any);
   };
 
   const handleQuickFilter = (filter: string) => {
