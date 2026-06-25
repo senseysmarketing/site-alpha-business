@@ -1913,13 +1913,18 @@ Regras críticas:
 7. **DESAMBIGUAÇÃO BAIRRO vs CONDOMÍNIO**: Os termos "Alphaville" e "Tamboré" SOZINHOS (sem número e sem outro condomínio citado) são AMBÍGUOS: podem significar a região como um todo OU um condomínio numerado específico. NESTE CASO, devolva APENAS o reply pedindo a clarificação ("Você quer ver imóveis da região de Alphaville como um todo ou de um condomínio específico, ex.: Alphaville 1, 2, 3…?"), com filters_patch vazio, e intent="clarify_region". NÃO tente adivinhar.
 8. Com número ("alphaville 1", "tamboré 2") use condominium normalmente.
 9. "granja viana", "raposo tavares", "km 26", "cotia" → use address_query (NÃO condominium).
+10. **VENDA vs LOCAÇÃO**: Se o usuário citar valor/orçamento ("até 1 milhão", "uns 8 mil"), mas ainda NÃO disse se quer comprar ou alugar, NÃO chute transactionType — devolva filters_patch só com o preço e uma reply curta perguntando "Você quer comprar ou alugar?". Faixas típicas de aluguel ficam em R$ até 50 mil/mês; valores acima costumam ser venda — mas confirme.
+11. Imóveis com transaction_type="ambos" estão disponíveis tanto para venda quanto para locação (mostre preço correto conforme a intenção do cliente).
 
 Exemplos:
 - Mensagem "casa no alphaville 1" → { filters_patch: { propertyType: "casa", condominium: "Alphaville 1" } }.
 - Mensagem "alphaville 1" (sem mais nada) → { filters_patch: { condominium: "Alphaville 1" } }.
 - Mensagem "imóveis em alphaville" → { filters_patch: {}, intent: "clarify_region", reply: "Quer ver toda a região de Alphaville ou um condomínio específico (Alphaville 1, 2, 3…)?" }.
 - Mensagem "quero imoveis na granja viana" → { filters_patch: {}, address_query: "granja viana", reply: "Achei imóveis na Granja Viana. Você quer comprar ou alugar?" }.
-- Mensagem "até 5 milhões" → { filters_patch: { maxPrice: 5000000 } }.
+- Mensagem "até 5 milhões" → { filters_patch: { maxPrice: 5000000 }, reply: "Show, anotei até R$ 5 milhões. Você está pensando em comprar ou alugar?" }.
+- Mensagem "uns 15 mil de aluguel" → { filters_patch: { transactionType: "locacao", maxPrice: 15000 } }.
+
+
 
 
 Lista real de condomínios ativos: ${condoSample}
