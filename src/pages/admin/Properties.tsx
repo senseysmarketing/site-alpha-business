@@ -280,9 +280,11 @@ const Properties = () => {
               </Button>
             </>
           )}
-          <Button onClick={() => navigate("/admin/imoveis/novo")} className="font-[Inter] text-xs uppercase tracking-widest">
-            <Plus className="h-4 w-4 mr-1" /> Novo Imóvel
-          </Button>
+          {canManageProperties && (
+            <Button onClick={() => navigate("/admin/imoveis/novo")} className="font-[Inter] text-xs uppercase tracking-widest">
+              <Plus className="h-4 w-4 mr-1" /> Novo Imóvel
+            </Button>
+          )}
         </div>
       </div>
 
@@ -455,17 +457,19 @@ const Properties = () => {
                         )}
                       </TooltipProvider>
 
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="font-[Inter] text-xs ml-1"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/admin/imoveis/${property.id}`);
-                        }}
-                      >
-                        Editar
-                      </Button>
+                      {canManageProperties && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="font-[Inter] text-xs ml-1"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/admin/imoveis/${property.id}`);
+                          }}
+                        >
+                          Editar
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
