@@ -1,13 +1,15 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, Plus } from "lucide-react";
+import { Bell, Plus, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { LeadCard, type Lead } from "@/components/admin/crm/LeadCard";
+import { LeadCard, type Lead, type AssignedUser } from "@/components/admin/crm/LeadCard";
 import { LeadDetailSheet } from "@/components/admin/crm/LeadDetailSheet";
 import { NewLeadDialog } from "@/components/admin/crm/NewLeadDialog";
 import { LeadNotificationSettingsDialog } from "@/components/admin/crm/LeadNotificationSettingsDialog";
+import { CrmSettingsDialog } from "@/components/admin/crm/CrmSettingsDialog";
 import { cn } from "@/lib/utils";
 import { fetchAllPages } from "@/lib/supabasePagination";
 
@@ -29,8 +31,33 @@ export default function CRM() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [newLeadStage, setNewLeadStage] = useState<string | null>(null);
   const [notifyOpen, setNotifyOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [responsibleFilter, setResponsibleFilter] = useState<string>("all");
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-  const { data: leads = [] } = useQuery({
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id ?? null));
+  }, []);
+
+  const { data: team = [] } = useQuery({
+    queryKey: ["team_profiles_crm"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("team_profiles")
+        .select("user_id, full_name, avatar_url, is_active")
+        .order("full_name");
+      if (error) throw error;
+      return (data || []) as (AssignedUser & { is_active: boolean })[];
+    },
+  });
+
+  const teamMap = useMemo(() => {
+    const m = new Map<string, AssignedUser>();
+    team.forEach((t) => m.set(t.user_id, { user_id: t.user_id, full_name: t.full_name, avatar_url: t.avatar_url }));
+    return m;
+  }, [team]);
+
+  const { data: rawLeads = [] } = useQuery({
     queryKey: ["leads"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -42,6 +69,17 @@ export default function CRM() {
     },
   });
 
+  const leads = useMemo(
+    () => rawLeads.map((l) => ({ ...l, assigned_user: l.assigned_user_id ? teamMap.get(l.assigned_user_id) ?? null : null })),
+    [rawLeads, teamMap]
+  );
+
+  const visibleLeads = useMemo(() => {
+    if (responsibleFilter === "all") return leads;
+    if (responsibleFilter === "me") return leads.filter((l) => l.assigned_user_id === currentUserId);
+    return leads.filter((l) => l.assigned_user_id === responsibleFilter);
+  }, [leads, responsibleFilter, currentUserId]);
+
   const { data: properties = [] } = useQuery({
     queryKey: ["properties-list"],
     queryFn: async () => {
@@ -50,6 +88,7 @@ export default function CRM() {
       );
     },
   });
+
 
   const handleDragStart = useCallback((e: React.DragEvent, leadId: string) => {
     e.dataTransfer.setData("text/plain", leadId);
@@ -101,27 +140,39 @@ export default function CRM() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
         <div>
           <h1 className="font-[Raleway] text-2xl font-semibold text-foreground">Pipeline</h1>
           <p className="text-sm text-muted-foreground font-[Inter] mt-1">
-            {leads.length} leads no pipeline
+            {visibleLeads.length} {visibleLeads.length === 1 ? "lead" : "leads"}
+            {responsibleFilter !== "all" ? " (filtrado)" : " no pipeline"}
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setNotifyOpen(true)}
-          className="font-[Inter]"
-        >
-          <Bell className="h-4 w-4 mr-2" />
-          Notificações
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Select value={responsibleFilter} onValueChange={setResponsibleFilter}>
+            <SelectTrigger className="w-[200px] h-9 font-[Inter] text-sm">
+              <SelectValue placeholder="Responsável" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Toda a equipe</SelectItem>
+              {currentUserId && <SelectItem value="me">Meus leads</SelectItem>}
+              {team.filter((t) => t.is_active).map((t) => (
+                <SelectItem key={t.user_id} value={t.user_id}>{t.full_name || "—"}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button variant="outline" size="sm" onClick={() => setSettingsOpen(true)} className="font-[Inter]">
+            <Settings2 className="h-4 w-4 mr-2" /> Atribuição
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setNotifyOpen(true)} className="font-[Inter]">
+            <Bell className="h-4 w-4 mr-2" /> Notificações
+          </Button>
+        </div>
       </div>
 
       <div className="flex gap-4 overflow-x-auto pb-4">
         {STAGES.map((stage) => {
-          const stageLeads = leads.filter((l) => l.pipeline_stage === stage.key);
+          const stageLeads = visibleLeads.filter((l) => l.pipeline_stage === stage.key);
           const totalValue = stageLeads.reduce((sum, l) => sum + (l.deal_value || 0), 0);
 
           return (
@@ -136,7 +187,6 @@ export default function CRM() {
               onDragLeave={handleDragLeave}
               onDrop={(e) => handleDrop(e, stage.key)}
             >
-              {/* Column header — glassmorphism */}
               <div className="sticky top-0 z-10 rounded-t-sm px-4 py-3 backdrop-blur-md bg-white/90 border-b border-border/30">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -161,7 +211,6 @@ export default function CRM() {
                 )}
               </div>
 
-              {/* Cards */}
               <div className="flex-1 p-2 space-y-2 min-h-[200px]">
                 {stageLeads.map((lead) => (
                   <LeadCard
@@ -177,7 +226,12 @@ export default function CRM() {
         })}
       </div>
 
-      <LeadDetailSheet lead={selectedLead} open={sheetOpen} onOpenChange={setSheetOpen} />
+      <LeadDetailSheet
+        lead={selectedLead}
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        team={team.filter((t) => t.is_active)}
+      />
 
       <NewLeadDialog
         open={!!newLeadStage}
@@ -187,6 +241,8 @@ export default function CRM() {
       />
 
       <LeadNotificationSettingsDialog open={notifyOpen} onOpenChange={setNotifyOpen} />
+      <CrmSettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
     </div>
   );
 }
+

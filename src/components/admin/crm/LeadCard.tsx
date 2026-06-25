@@ -4,6 +4,12 @@ import { Flame, Instagram, Globe, MessageCircle, Users, Mail, CalendarCheck } fr
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 
+export interface AssignedUser {
+  user_id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+}
+
 export interface Lead {
   id: string;
   name: string;
@@ -19,6 +25,10 @@ export interface Lead {
   last_contact_at: string;
   created_at: string;
   updated_at: string;
+  assigned_user_id: string | null;
+  assigned_at: string | null;
+  assignment_source: string | null;
+  assigned_user?: AssignedUser | null;
   properties?: {
     title: string;
     photos: string[] | null;
@@ -116,9 +126,24 @@ export function LeadCard({ lead, onDragStart, onClick }: LeadCardProps) {
       )}
 
       {/* Footer */}
-      <p className="text-[10px] text-muted-foreground/70 mt-3 font-[Inter]">
-        Último contato {formatDistanceToNow(new Date(lead.last_contact_at), { addSuffix: true, locale: ptBR })}
-      </p>
+      <div className="flex items-center justify-between mt-3 gap-2">
+        <p className="text-[10px] text-muted-foreground/70 font-[Inter] truncate">
+          {formatDistanceToNow(new Date(lead.last_contact_at), { addSuffix: true, locale: ptBR })}
+        </p>
+        {lead.assigned_user && (
+          <div
+            className="flex items-center gap-1.5 shrink-0"
+            title={`Responsável: ${lead.assigned_user.full_name || "—"}`}
+          >
+            <Avatar className="h-5 w-5">
+              <AvatarImage src={lead.assigned_user.avatar_url || undefined} />
+              <AvatarFallback className="text-[8px] bg-secondary text-secondary-foreground">
+                {getInitials(lead.assigned_user.full_name || "?")}
+              </AvatarFallback>
+            </Avatar>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -6,17 +6,19 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { MessageCircle, CalendarDays, Eye, Phone, FileText, StickyNote, Send, Sparkles, Flame } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MessageCircle, CalendarDays, Eye, Phone, FileText, StickyNote, Send, Sparkles, Flame, UserCog } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import type { Lead } from "./LeadCard";
+import type { Lead, AssignedUser } from "./LeadCard";
 
 interface LeadDetailSheetProps {
   lead: Lead | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  team?: AssignedUser[];
 }
 
 const activityIcons: Record<string, React.ReactNode> = {
@@ -38,10 +40,39 @@ const scoreConfig: Record<string, { label: string; className: string }> = {
   frio: { label: "Frio", className: "bg-blue-100 text-blue-700 border-blue-300" },
 };
 
-export function LeadDetailSheet({ lead, open, onOpenChange }: LeadDetailSheetProps) {
+export function LeadDetailSheet({ lead, open, onOpenChange, team = [] }: LeadDetailSheetProps) {
   const queryClient = useQueryClient();
   const [newNote, setNewNote] = useState("");
   const [sendingNote, setSendingNote] = useState(false);
+  const [canReassign, setCanReassign] = useState(false);
+  const [reassigning, setReassigning] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const { data: u } = await supabase.auth.getUser();
+      const uid = u.user?.id;
+      if (!uid) { setCanReassign(false); return; }
+      const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", uid);
+      const list = (roles || []).map((r: any) => r.role);
+      setCanReassign(list.includes("admin") || list.includes("gerente"));
+    })();
+  }, []);
+
+  const handleReassign = async (newUserId: string) => {
+    if (!lead || newUserId === lead.assigned_user_id) return;
+    setReassigning(true);
+    const { error } = await supabase
+      .from("leads")
+      .update({ assigned_user_id: newUserId, assigned_at: new Date().toISOString(), assignment_source: "manual" })
+      .eq("id", lead.id);
+    setReassigning(false);
+    if (error) {
+      toast({ title: "Erro ao reatribuir", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Lead reatribuído" });
+    queryClient.invalidateQueries({ queryKey: ["leads"] });
+  };
 
   const { data: activities = [] } = useQuery({
     queryKey: ["lead_activities", lead?.id],
@@ -148,6 +179,37 @@ export function LeadDetailSheet({ lead, open, onOpenChange }: LeadDetailSheetPro
             <Separator />
           </>
         )}
+
+        {/* Responsável */}
+        <div className="p-6 py-4">
+          <div className="flex items-center gap-2 mb-2">
+            <UserCog className="h-4 w-4 text-muted-foreground" />
+            <h3 className="font-[Raleway] text-sm font-semibold">Responsável</h3>
+          </div>
+          {canReassign ? (
+            <Select value={lead.assigned_user_id || ""} onValueChange={handleReassign} disabled={reassigning}>
+              <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Selecione…" /></SelectTrigger>
+              <SelectContent>
+                {team.map((t) => (
+                  <SelectItem key={t.user_id} value={t.user_id}>{t.full_name || "—"}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Avatar className="h-7 w-7">
+                <AvatarImage src={lead.assigned_user?.avatar_url || undefined} />
+                <AvatarFallback className="text-[10px]">{getInitials(lead.assigned_user?.full_name || "?")}</AvatarFallback>
+              </Avatar>
+              <span className="text-sm">{lead.assigned_user?.full_name || "Não atribuído"}</span>
+            </div>
+          )}
+          {lead.assignment_source && (
+            <p className="text-[10px] text-muted-foreground/70 mt-2 font-[Inter]">Origem da atribuição: {lead.assignment_source}</p>
+          )}
+        </div>
+        <Separator />
+
 
         {/* Timeline */}
         <div className="p-6 py-4">
