@@ -117,7 +117,7 @@ const Reports = () => {
         if (!byUser[uid]) byUser[uid] = { received: 0, closed: 0, cycleSum: 0, cycleCount: 0, pipelineValue: 0 };
         byUser[uid].received += 1;
         byUser[uid].pipelineValue += l.deal_value || 0;
-        if (l.pipeline_stage === "fechado") {
+        if (wonKey && l.pipeline_stage === wonKey) {
           byUser[uid].closed += 1;
           byUser[uid].cycleSum += differenceInDays(new Date(l.updated_at), new Date(l.created_at));
           byUser[uid].cycleCount += 1;
@@ -143,7 +143,7 @@ const Reports = () => {
   }, [transactions, dateRange]);
 
   const totalLeads = filteredLeads.length;
-  const closedLeads = filteredLeads.filter((l) => l.pipeline_stage === "fechado");
+  const closedLeads = filteredLeads.filter((l) => wonKey && l.pipeline_stage === wonKey);
   const conversionRate = totalLeads > 0 ? ((closedLeads.length / totalLeads) * 100).toFixed(1) : "0";
   const pipelineValue = filteredLeads.reduce((sum, l) => sum + (l.deal_value || 0), 0);
 
@@ -185,7 +185,7 @@ const Reports = () => {
       parts.push(`A principal origem de leads é "${topOrigin[0]}" com ${topOrigin[1]} lead(s) no período.`);
     }
     if (topStage) {
-      const label = STAGE_LABELS[topStage[0]] || topStage[0];
+      const label = getStageLabel(topStage[0]);
       parts.push(`O estágio com maior concentração é "${label}" (${topStage[1]}).`);
     }
     if (pipelineValue > 0) {
@@ -206,12 +206,11 @@ const Reports = () => {
   }, [filteredLeads]);
 
   const funnelData = useMemo(() => {
-    const stages = ["novos", "contato", "visita_agendada", "visita", "proposta", "fechado"];
-    return stages.map((stage) => ({
-      stage: STAGE_LABELS[stage] || stage,
-      count: filteredLeads.filter((l) => l.pipeline_stage === stage).length,
+    return activeStages.map((s) => ({
+      stage: s.label,
+      count: filteredLeads.filter((l) => l.pipeline_stage === s.key).length,
     }));
-  }, [filteredLeads]);
+  }, [filteredLeads, activeStages]);
 
   // Leads by week
   const leadsPerWeek = useMemo(() => {
