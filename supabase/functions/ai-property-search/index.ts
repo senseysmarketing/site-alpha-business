@@ -1356,9 +1356,13 @@ const handleConverseV2 = async (sb: SB, body: any) => {
 
 
 const buildPropertyResponse = (prop: PropertyResult, state: ConversationState) => {
-  const rental = prop.transaction_type === "locacao" || prop.transaction_type === "aluguel";
-  const price = rental ? prop.rental_price : prop.price;
-  const priceText = price ? `${fmtBRL(price)}${rental ? "/mês" : ""}` : "Sob consulta";
+  // Decide which price to highlight using the user's stated intent. For "ambos"
+  // rows, the column matching the intent is the relevant one. Default to sale price.
+  const intent = state.filters?.transactionType;
+  const wantsRental = intent === "locacao";
+  const price = wantsRental ? prop.rental_price : prop.price;
+  const priceText = price ? `${fmtBRL(price)}${wantsRental ? "/mês" : ""}` : "Sob consulta";
+
   return {
     assistantMessage: `Encontrei o imóvel **${prop.code}**${prop.condominium ? ` no ${prop.condominium}` : ""} por ${priceText}. Quer ver os detalhes?`,
     responseType: "property_detail" as const,
