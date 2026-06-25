@@ -82,18 +82,19 @@ export function useAssignmentRules() {
   const upsertRule = useMutation({
     mutationFn: async (payload: RuleInput & { id?: string }) => {
       const { members, id, ...rest } = payload;
+      const dbPayload = { ...rest, conditions: rest.conditions as unknown as Record<string, unknown> };
       let ruleId = id;
 
       if (ruleId) {
         const { error } = await supabase
           .from("crm_assignment_rules")
-          .update(rest)
+          .update(dbPayload)
           .eq("id", ruleId);
         if (error) throw error;
       } else {
         const { data, error } = await supabase
           .from("crm_assignment_rules")
-          .insert(rest)
+          .insert(dbPayload)
           .select("id")
           .single();
         if (error) throw error;
