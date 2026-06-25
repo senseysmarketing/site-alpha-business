@@ -56,7 +56,17 @@ const ADMIN_PROPERTY_SELECT =
   "id, code, title, condominium, property_type, transaction_type, price, rental_price, status, created_at";
 
 export const isRentalTransaction = (transactionType: string | null | undefined) =>
-  transactionType === "locacao" || transactionType === "aluguel";
+  transactionType === "locacao" || transactionType === "aluguel" || transactionType === "ambos";
+
+export const isSaleTransaction = (transactionType: string | null | undefined) =>
+  transactionType === "venda" || transactionType === "ambos";
+
+export const hasBothTransactions = (transactionType: string | null | undefined) =>
+  transactionType === "ambos";
+
+/** SQL `IN` lists that include the unified "ambos" row. */
+export const SALE_TRANSACTION_TYPES = ["venda", "ambos"] as const;
+export const RENTAL_TRANSACTION_TYPES = ["locacao", "aluguel", "ambos"] as const;
 
 export async function fetchAllActivePropertySearchRows(
   transactionType?: string | null
@@ -68,9 +78,9 @@ export async function fetchAllActivePropertySearchRows(
       .eq("status", "ativo");
 
     if (transactionType === "venda") {
-      query = query.in("transaction_type", ["venda"]);
+      query = query.in("transaction_type", [...SALE_TRANSACTION_TYPES]);
     } else if (isRentalTransaction(transactionType)) {
-      query = query.in("transaction_type", ["locacao", "aluguel"]);
+      query = query.in("transaction_type", [...RENTAL_TRANSACTION_TYPES]);
     }
 
     return query
@@ -78,6 +88,7 @@ export async function fetchAllActivePropertySearchRows(
       .order("created_at", { ascending: false });
   });
 }
+
 
 export async function fetchAllPropertyCondoRows(
   options: { activeOnly?: boolean } = {}
