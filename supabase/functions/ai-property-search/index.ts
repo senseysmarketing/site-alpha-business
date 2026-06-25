@@ -1899,6 +1899,8 @@ Filtros disponíveis (todos opcionais, números puros sem unidade):
 - neighborhood: bairro/sub-região no cadastro (ex.: "Alphaville 1", "Tamboré 2", "Burle Marx")
 - city: cidade (ex.: "Barueri", "Santana de Parnaíba")
 - minBedrooms, minBathrooms, minParking, minArea, minPrice, maxPrice
+- maxCondoFee: limite máximo do valor MENSAL de condomínio em R$ (ex.: "condomínio até 2 mil" → 2000)
+- maxIptu: limite máximo do IPTU em R$ ANUAL (se o usuário falar "iptu até X por mês", multiplique X por 12 antes de enviar)
 
 Campos extras:
 - condominium_query: nome solto do condomínio quando você não tem certeza da grafia — eu mesmo resolvo via fuzzy match
