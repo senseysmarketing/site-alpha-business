@@ -198,6 +198,8 @@ const PropertyDetail = () => {
           highlights: condoHighlights,
         },
         video_url: dbProperty.video_url,
+        condo_fee: (dbProperty as any).condo_fee as number | null,
+        iptu: (dbProperty as any).iptu as number | null,
       };
 
 
@@ -270,6 +272,26 @@ const PropertyDetail = () => {
             </p>
           )}
         </div>
+
+        {(property.condo_fee || property.iptu) && (
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mb-6 text-body text-xs text-muted-foreground">
+            {property.condo_fee ? (
+              <span>
+                <span className="uppercase tracking-[0.15em] text-[10px] mr-1.5">Condomínio</span>
+                <span className="text-foreground">{formatPrice(property.condo_fee)}<span className="ml-1">/mês</span></span>
+              </span>
+            ) : null}
+            {property.iptu ? (
+              <span>
+                <span className="uppercase tracking-[0.15em] text-[10px] mr-1.5">IPTU</span>
+                <span className="text-foreground">{formatPrice(property.iptu)}<span className="ml-1">/ano</span></span>
+                <span className="ml-1 text-muted-foreground/70">(≈ {formatPrice(Math.round(property.iptu / 12))}/mês)</span>
+              </span>
+            ) : null}
+          </div>
+        )}
+
+
 
 
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">

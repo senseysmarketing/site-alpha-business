@@ -33,6 +33,8 @@ interface PropertySearchFilters {
   minArea?: number | null;
   minPrice?: number | null;
   maxPrice?: number | null;
+  maxCondoFee?: number | null;
+  maxIptu?: number | null; // stored as annual amount
   highlights?: string[];
   // v3 additions: free-text keywords searched across all textual fields,
   // and property types the user wants to exclude ("tirar apartamentos").
@@ -569,6 +571,8 @@ const applyHardFilters = (q: any, f: PropertySearchFilters) => {
   const priceCol = f.transactionType === "locacao" ? "rental_price" : "price";
   if (f.minPrice) query = query.gte(priceCol, f.minPrice);
   if (f.maxPrice) query = query.lte(priceCol, f.maxPrice);
+  if (f.maxCondoFee) query = query.lte("condo_fee", f.maxCondoFee);
+  if (f.maxIptu) query = query.lte("iptu", f.maxIptu);
   return query;
 };
 
@@ -1548,6 +1552,8 @@ interface PropRow {
   area_built: number | null;
   price: number | null;
   rental_price: number | null;
+  condo_fee: number | null;
+  iptu: number | null;
   is_featured: boolean | null;
   engineering_highlights: string[] | null;
   photos: string[] | null;
@@ -1569,7 +1575,7 @@ const loadActiveProperties = async (sb: SB): Promise<PropRow[]> => {
     const { data, error } = await sb
       .from("properties")
       .select(
-        "id, code, title, description, property_type, transaction_type, condominium, condominium_normalized, neighborhood, city, address, bedrooms, bathrooms, parking_spots, area_total, area_built, price, rental_price, is_featured, engineering_highlights, photos, created_at, updated_at",
+        "id, code, title, description, property_type, transaction_type, condominium, condominium_normalized, neighborhood, city, address, bedrooms, bathrooms, parking_spots, area_total, area_built, price, rental_price, condo_fee, iptu, is_featured, engineering_highlights, photos, created_at, updated_at",
       )
       .eq("status", "ativo")
       .range(from, from + 999);
@@ -1779,6 +1785,8 @@ const filterAndRankV3 = (rows: PropRow[], f: PropertySearchFilters): ScoredMatch
     const priceCol = f.transactionType === "locacao" ? r.rental_price : r.price;
     if (f.minPrice && (priceCol ?? 0) < f.minPrice) continue;
     if (f.maxPrice && priceCol != null && priceCol > f.maxPrice) continue;
+    if (f.maxCondoFee && r.condo_fee != null && r.condo_fee > f.maxCondoFee) continue;
+    if (f.maxIptu && r.iptu != null && r.iptu > f.maxIptu) continue;
 
     // keywords (AND across, with variant OR per keyword)
     let allKw = true;
@@ -1891,6 +1899,8 @@ Filtros disponíveis (todos opcionais, números puros sem unidade):
 - neighborhood: bairro/sub-região no cadastro (ex.: "Alphaville 1", "Tamboré 2", "Burle Marx")
 - city: cidade (ex.: "Barueri", "Santana de Parnaíba")
 - minBedrooms, minBathrooms, minParking, minArea, minPrice, maxPrice
+- maxCondoFee: limite máximo do valor MENSAL de condomínio em R$ (ex.: "condomínio até 2 mil" → 2000)
+- maxIptu: limite máximo do IPTU em R$ ANUAL (se o usuário falar "iptu até X por mês", multiplique X por 12 antes de enviar)
 
 Campos extras:
 - condominium_query: nome solto do condomínio quando você não tem certeza da grafia — eu mesmo resolvo via fuzzy match
@@ -1905,7 +1915,7 @@ Campos extras:
 
 Regras críticas:
 1. NUNCA invente filtros que o usuário não pediu NESTA mensagem. Não repita filtros já presentes no estado atual — devolva APENAS o delta.
-2. NUNCA adicione minBedrooms, minBathrooms, minParking, minArea, minPrice, maxPrice ou transactionType se o usuário não citou número, valor, "compra/vender" ou "alugar/locação" NESTA mensagem.
+2. NUNCA adicione minBedrooms, minBathrooms, minParking, minArea, minPrice, maxPrice, maxCondoFee, maxIptu ou transactionType se o usuário não citou número, valor, "compra/vender" ou "alugar/locação" NESTA mensagem.
 3. Se o usuário citar um condomínio que não está na lista, devolva em condominium_query (NÃO em condominium).
 4. Valores monetários sempre em reais inteiros (3 milhões → 3000000).
 5. "casa neo clássica" → filters_patch.propertyType="casa" + keywords_add=["neo classica"].
@@ -1967,7 +1977,7 @@ Responda APENAS JSON válido no schema descrito acima.`;
     const FILTER_KEYS = [
       "transactionType","propertyType","condominium","condominiumGroup",
       "neighborhood","city","address","minBedrooms","minBathrooms","minParking",
-      "minArea","minPrice","maxPrice",
+      "minArea","minPrice","maxPrice","maxCondoFee","maxIptu",
     ];
     const patch: IntentPatch = {
       filters_patch: { ...(raw.filters_patch ?? {}) },
@@ -2037,6 +2047,7 @@ const applyPatchV3 = (
   const directKeys: (keyof PropertySearchFilters)[] = [
     "transactionType", "propertyType", "neighborhood", "city", "address",
     "minBedrooms", "minBathrooms", "minParking", "minArea", "minPrice", "maxPrice",
+    "maxCondoFee", "maxIptu",
   ];
   for (const k of directKeys) {
     if (k in fp) {

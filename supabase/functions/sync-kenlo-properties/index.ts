@@ -228,6 +228,8 @@ Deno.serve(async (req) => {
 
       const precoVenda = parseBR(im?.PrecoVenda ?? im?.ValorVenda ?? im?.Preco);
       const precoLocacao = parseBR(im?.PrecoLocacao ?? im?.ValorLocacao ?? im?.PrecoAluguel);
+      const valorCondominio = parseBR(im?.ValorCondominio ?? im?.PrecoCondominio ?? im?.TaxaCondominio);
+      const valorIptu = parseBR(im?.ValorIPTU ?? im?.PrecoIPTU ?? im?.IPTU ?? im?.ValorIptu);
 
       const passPrice = (p: number | null) =>
         p != null && p >= (config.min_price || 0) && (config.max_price === 0 || p <= config.max_price);
@@ -273,6 +275,8 @@ Deno.serve(async (req) => {
         parking_spots: toInt(im?.QtdVagas ?? im?.Vagas ?? 0) ?? 0,
         area_total: parseBR(im?.AreaTotal ?? im?.AreaTerreno),
         area_built: parseBR(im?.AreaUtil ?? im?.AreaConstruida),
+        condo_fee: valorCondominio,
+        iptu: valorIptu,
         photos,
         source: "kenlo",
         external_id: ref,

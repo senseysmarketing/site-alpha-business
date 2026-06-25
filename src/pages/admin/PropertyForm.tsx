@@ -51,6 +51,8 @@ const PropertyForm = () => {
   const [areaBuilt, setAreaBuilt] = useState("");
   const [price, setPrice] = useState("");
   const [rentalPrice, setRentalPrice] = useState("");
+  const [condoFee, setCondoFee] = useState("");
+  const [iptu, setIptu] = useState("");
   const [isFeatured, setIsFeatured] = useState(false);
   const [videoUrl, setVideoUrl] = useState("");
 
@@ -165,6 +167,8 @@ const PropertyForm = () => {
       setAreaBuilt(data.area_built?.toString() ?? "");
       setPrice(data.price?.toString() ?? "");
       setRentalPrice(data.rental_price?.toString() ?? "");
+      setCondoFee((data as any).condo_fee?.toString() ?? "");
+      setIptu((data as any).iptu?.toString() ?? "");
       setIsFeatured(data.is_featured ?? false);
       setVideoUrl(data.video_url ?? "");
       setPhotos(data.photos ?? []);
@@ -195,11 +199,13 @@ const PropertyForm = () => {
       area_built: areaBuilt ? parseFloat(areaBuilt) : null,
       price: price ? parseFloat(price) : null,
       rental_price: rentalPrice ? parseFloat(rentalPrice) : null,
+      condo_fee: condoFee ? parseFloat(condoFee) : null,
+      iptu: iptu ? parseFloat(iptu) : null,
       is_featured: isFeatured,
       video_url: videoUrl || null,
       photos,
       engineering_highlights: highlights.filter(Boolean),
-    };
+    } as any;
 
     const { error } = isEditing
       ? await supabase.from("properties").update(payload).eq("id", id)
@@ -435,6 +441,17 @@ const PropertyForm = () => {
                   <Input value={price} onChange={(e) => setPrice(e.target.value)} className={inputClass} placeholder="2500000" />
                 </div>
               )}
+
+              <div className="space-y-2">
+                <Label className={labelClass}>Condomínio (R$/mês)</Label>
+                <Input value={condoFee} onChange={(e) => setCondoFee(e.target.value)} className={inputClass} placeholder="1800" />
+              </div>
+              <div className="space-y-2">
+                <Label className={labelClass}>IPTU (R$/ano)</Label>
+                <Input value={iptu} onChange={(e) => setIptu(e.target.value)} className={inputClass} placeholder="12000" />
+                <p className="text-[10px] text-muted-foreground/70 font-[Inter]">Será exibido também o valor mensal estimado (÷12).</p>
+              </div>
+
               {(transactionType === "locacao" || transactionType === "ambos") && (
                 <div className="space-y-2">
                   <Label className={labelClass}>Preço Locação (R$/mês)</Label>
