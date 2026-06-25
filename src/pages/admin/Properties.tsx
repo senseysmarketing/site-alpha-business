@@ -161,8 +161,9 @@ const Properties = () => {
         matchCondo(p.condominium, filterCondo);
       const matchesTransaction =
         filterStatus === "Todos" ||
-        (filterStatus === "venda" && p.transaction_type === "venda") ||
-        (filterStatus === "locacao" && isRentalTransaction(p.transaction_type));
+        (filterStatus === "venda" && (p.transaction_type === "venda" || p.transaction_type === "ambos")) ||
+        (filterStatus === "locacao" && (isRentalTransaction(p.transaction_type) || p.transaction_type === "ambos"));
+
 
       return matchesSearch && matchesCondo && matchesTransaction;
     });
