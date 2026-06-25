@@ -177,6 +177,10 @@ const PropertyDetail = () => {
         price: (dbProperty.transaction_type === "locacao" || dbProperty.transaction_type === "aluguel")
           ? dbProperty.rental_price
           : dbProperty.price,
+        sale_price: dbProperty.price,
+        rental_price: dbProperty.rental_price,
+        has_both: dbProperty.transaction_type === "ambos"
+          && !!dbProperty.price && !!dbProperty.rental_price,
         bedrooms: dbProperty.bedrooms ?? 0,
         bathrooms: dbProperty.bathrooms ?? 0,
         suites: dbProperty.bedrooms ?? 0,
@@ -194,6 +198,7 @@ const PropertyDetail = () => {
         },
         video_url: dbProperty.video_url,
       };
+
 
 
   // Similar: prefer DB results when current property is from DB
