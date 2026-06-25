@@ -1575,7 +1575,7 @@ const loadActiveProperties = async (sb: SB): Promise<PropRow[]> => {
     const { data, error } = await sb
       .from("properties")
       .select(
-        "id, code, title, description, property_type, transaction_type, condominium, condominium_normalized, neighborhood, city, address, bedrooms, bathrooms, parking_spots, area_total, area_built, price, rental_price, is_featured, engineering_highlights, photos, created_at, updated_at",
+        "id, code, title, description, property_type, transaction_type, condominium, condominium_normalized, neighborhood, city, address, bedrooms, bathrooms, parking_spots, area_total, area_built, price, rental_price, condo_fee, iptu, is_featured, engineering_highlights, photos, created_at, updated_at",
       )
       .eq("status", "ativo")
       .range(from, from + 999);
