@@ -72,13 +72,8 @@ const ACTIVITY_TYPES: { value: string; label: string }[] = [
   { value: "document", label: "Documento" },
 ];
 
-const STAGES: { value: string; label: string }[] = [
-  { value: "novos", label: "Novos" },
-  { value: "visita_agendada", label: "Visita Agendada" },
-  { value: "proposta", label: "Proposta" },
-  { value: "contrato", label: "Contrato" },
-  { value: "fechado", label: "Fechado" },
-];
+// Estágios são carregados dinamicamente via usePipelineStages
+
 
 const SCORES: { value: string; label: string; className: string }[] = [
   { value: "quente", label: "Quente", className: "bg-primary/10 text-primary border-primary/30" },
