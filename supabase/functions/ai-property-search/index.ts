@@ -1915,7 +1915,7 @@ Campos extras:
 
 Regras críticas:
 1. NUNCA invente filtros que o usuário não pediu NESTA mensagem. Não repita filtros já presentes no estado atual — devolva APENAS o delta.
-2. NUNCA adicione minBedrooms, minBathrooms, minParking, minArea, minPrice, maxPrice ou transactionType se o usuário não citou número, valor, "compra/vender" ou "alugar/locação" NESTA mensagem.
+2. NUNCA adicione minBedrooms, minBathrooms, minParking, minArea, minPrice, maxPrice, maxCondoFee, maxIptu ou transactionType se o usuário não citou número, valor, "compra/vender" ou "alugar/locação" NESTA mensagem.
 3. Se o usuário citar um condomínio que não está na lista, devolva em condominium_query (NÃO em condominium).
 4. Valores monetários sempre em reais inteiros (3 milhões → 3000000).
 5. "casa neo clássica" → filters_patch.propertyType="casa" + keywords_add=["neo classica"].
