@@ -198,6 +198,8 @@ const PropertyDetail = () => {
           highlights: condoHighlights,
         },
         video_url: dbProperty.video_url,
+        condo_fee: (dbProperty as any).condo_fee as number | null,
+        iptu: (dbProperty as any).iptu as number | null,
       };
 
 
