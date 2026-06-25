@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Bell, Mail, Plus, Send, Trash2 } from "lucide-react";
+import { Bell, Info, Send } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -13,14 +13,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
 export interface LeadEmailNotificationsConfig {
   enabled: boolean;
-  recipients: string[];
   subjectTemplate?: string;
   notifyOrigins?: string[];
   notifyStages?: string[];
@@ -47,7 +45,6 @@ const STAGES: { value: string; label: string }[] = [
 
 const DEFAULT_CONFIG: LeadEmailNotificationsConfig = {
   enabled: false,
-  recipients: [],
   subjectTemplate: "Novo lead recebido — {{name}}",
   notifyOrigins: [],
   notifyStages: [],
@@ -55,10 +52,6 @@ const DEFAULT_CONFIG: LeadEmailNotificationsConfig = {
   includeProperty: true,
   includeInsights: true,
 };
-
-function isValidEmail(s: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
-}
 
 interface Props {
   open: boolean;
@@ -70,33 +63,20 @@ export function LeadNotificationSettingsDialog({ open, onOpenChange }: Props) {
     useSiteSettings<LeadEmailNotificationsConfig>("lead_email_notifications");
 
   const [draft, setDraft] = useState<LeadEmailNotificationsConfig>(DEFAULT_CONFIG);
-  const [emailInput, setEmailInput] = useState("");
   const [testing, setTesting] = useState(false);
+  const [currentEmail, setCurrentEmail] = useState<string | null>(null);
 
   useEffect(() => {
     if (open) {
-      setDraft({ ...DEFAULT_CONFIG, ...(data ?? {}) });
-      setEmailInput("");
+      // Strip out any legacy `recipients` field that may still be in storage
+      const { ...rest } = (data ?? {}) as LeadEmailNotificationsConfig & { recipients?: string[] };
+      delete (rest as any).recipients;
+      setDraft({ ...DEFAULT_CONFIG, ...rest });
+      supabase.auth.getUser().then(({ data: u }) => {
+        setCurrentEmail(u.user?.email ?? null);
+      });
     }
   }, [open, data]);
-
-  const addEmail = () => {
-    const value = emailInput.trim().toLowerCase();
-    if (!isValidEmail(value)) {
-      toast({ title: "E-mail inválido", variant: "destructive" });
-      return;
-    }
-    if (draft.recipients.includes(value)) {
-      setEmailInput("");
-      return;
-    }
-    setDraft({ ...draft, recipients: [...draft.recipients, value] });
-    setEmailInput("");
-  };
-
-  const removeEmail = (email: string) => {
-    setDraft({ ...draft, recipients: draft.recipients.filter((e) => e !== email) });
-  };
 
   const toggleArrayValue = (
     key: "notifyOrigins" | "notifyStages",
@@ -110,33 +90,24 @@ export function LeadNotificationSettingsDialog({ open, onOpenChange }: Props) {
   };
 
   const handleSave = () => {
-    if (draft.enabled && draft.recipients.length === 0) {
-      toast({
-        title: "Adicione pelo menos um destinatário",
-        variant: "destructive",
-      });
-      return;
-    }
     save(draft);
     onOpenChange(false);
   };
 
   const handleSendTest = async () => {
-    const recipients = draft.recipients.filter(isValidEmail);
-    if (recipients.length === 0) {
-      toast({ title: "Adicione um destinatário antes de testar", variant: "destructive" });
-      return;
-    }
     setTesting(true);
     try {
       const { data: resp, error } = await supabase.functions.invoke(
         "send-lead-notification",
-        { body: { mode: "test", recipients } },
+        { body: { mode: "test" } },
       );
       if (error) throw error;
       const status = (resp as any)?.status;
       if (status === "sent") {
-        toast({ title: "E-mail de teste enviado", description: recipients.join(", ") });
+        toast({
+          title: "E-mail de teste enviado",
+          description: (resp as any)?.recipient ?? currentEmail ?? "",
+        });
       } else {
         toast({
           title: "Não foi possível enviar",
@@ -159,7 +130,7 @@ export function LeadNotificationSettingsDialog({ open, onOpenChange }: Props) {
             <Bell className="h-4 w-4" /> Notificações de novos leads
           </DialogTitle>
           <DialogDescription className="font-[Inter]">
-            Configure quem recebe um e-mail sempre que um novo lead entrar no CRM.
+            Cada lead notifica automaticamente o corretor responsável atribuído (no recebimento ou em reatribuições).
           </DialogDescription>
         </DialogHeader>
 
@@ -181,48 +152,17 @@ export function LeadNotificationSettingsDialog({ open, onOpenChange }: Props) {
               />
             </div>
 
-            {/* Recipients */}
-            <div className="space-y-2">
-              <Label className="font-[Raleway] text-sm">Destinatários</Label>
-              <div className="flex gap-2">
-                <Input
-                  type="email"
-                  placeholder="email@exemplo.com"
-                  value={emailInput}
-                  onChange={(e) => setEmailInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      addEmail();
-                    }
-                  }}
-                />
-                <Button type="button" variant="outline" onClick={addEmail}>
-                  <Plus className="h-4 w-4" />
-                </Button>
+            {/* Info box: destinatário automático */}
+            <div className="flex gap-3 rounded-md border border-border/40 bg-muted/30 p-4">
+              <Info className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" />
+              <div className="space-y-1">
+                <p className="text-sm font-[Raleway]">Destinatário automático</p>
+                <p className="text-xs text-muted-foreground font-[Inter] leading-relaxed">
+                  O e-mail é enviado para o corretor responsável pelo lead — definido pela
+                  atribuição automática (rodízio/fallback) ou manual. O teste abaixo é enviado para
+                  o seu e-mail logado{currentEmail ? ` (${currentEmail})` : ""}.
+                </p>
               </div>
-              {draft.recipients.length > 0 && (
-                <div className="flex flex-wrap gap-2 pt-2">
-                  {draft.recipients.map((email) => (
-                    <Badge
-                      key={email}
-                      variant="secondary"
-                      className="font-[Inter] gap-1 pl-3 pr-1 py-1"
-                    >
-                      <Mail className="h-3 w-3" />
-                      {email}
-                      <button
-                        type="button"
-                        onClick={() => removeEmail(email)}
-                        className="ml-1 rounded-full hover:bg-muted p-0.5"
-                        aria-label={`Remover ${email}`}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </button>
-                    </Badge>
-                  ))}
-                </div>
-              )}
             </div>
 
             {/* Subject */}
@@ -234,7 +174,8 @@ export function LeadNotificationSettingsDialog({ open, onOpenChange }: Props) {
                 placeholder="Novo lead recebido — {{name}}"
               />
               <p className="text-[11px] text-muted-foreground font-[Inter]">
-                Você pode usar {"{{name}}"} e {"{{origin}}"}.
+                Você pode usar {"{{name}}"} e {"{{origin}}"}. Reatribuições recebem o prefixo
+                <span className="font-mono"> [Reatribuído]</span>.
               </p>
             </div>
 
@@ -319,7 +260,7 @@ export function LeadNotificationSettingsDialog({ open, onOpenChange }: Props) {
             type="button"
             variant="outline"
             onClick={handleSendTest}
-            disabled={testing || draft.recipients.length === 0}
+            disabled={testing || !currentEmail}
           >
             <Send className="h-4 w-4 mr-2" />
             {testing ? "Enviando…" : "Enviar teste"}
