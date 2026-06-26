@@ -416,6 +416,17 @@ export function LeadDetailModal({ lead, open, onOpenChange, team = [] }: LeadDet
 
         {/* Header */}
         <div className="px-5 sm:px-7 pt-6 pb-4 border-b border-border/50 bg-gradient-to-b from-muted/40 to-transparent">
+          {canReassign && (
+            <button
+              type="button"
+              onClick={() => setDeleteOpen(true)}
+              className="absolute right-12 top-4 p-1.5 rounded-md text-muted-foreground/70 hover:text-destructive hover:bg-destructive/10 transition-colors"
+              aria-label="Excluir lead"
+              title="Excluir lead"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
           <div className="flex items-start gap-4 flex-wrap">
             <Avatar className="h-14 w-14 ring-2 ring-background shadow-sm">
               <AvatarImage src={lead.avatar_url || undefined} />
