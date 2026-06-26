@@ -1,9 +1,13 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
@@ -15,9 +19,13 @@ interface NewLeadDialogProps {
   properties: { id: string; title: string; code: string }[];
 }
 
+const normalize = (s: string) =>
+  s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
 export function NewLeadDialog({ open, onOpenChange, defaultStage, properties }: NewLeadDialogProps) {
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
+  const [propertyPopoverOpen, setPropertyPopoverOpen] = useState(false);
   const [form, setForm] = useState({
     name: "",
     phone: "",
@@ -26,6 +34,11 @@ export function NewLeadDialog({ open, onOpenChange, defaultStage, properties }: 
     property_id: "",
     deal_value: "",
   });
+
+  const selectedProperty = useMemo(
+    () => properties.find((p) => p.id === form.property_id),
+    [properties, form.property_id]
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,14 +109,63 @@ export function NewLeadDialog({ open, onOpenChange, defaultStage, properties }: 
           </div>
           <div className="space-y-2">
             <Label>Imóvel de Interesse</Label>
-            <Select value={form.property_id} onValueChange={(v) => setForm({ ...form, property_id: v })}>
-              <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-              <SelectContent>
-                {properties.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>{p.code} — {p.title}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Popover open={propertyPopoverOpen} onOpenChange={setPropertyPopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  role="combobox"
+                  className="w-full justify-between font-normal"
+                >
+                  <span className="truncate text-left">
+                    {selectedProperty
+                      ? `${selectedProperty.code} — ${selectedProperty.title}`
+                      : "Selecione..."}
+                  </span>
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                className="w-[--radix-popover-trigger-width] p-0"
+                align="start"
+              >
+                <Command
+                  filter={(value, search) => {
+                    if (!search) return 1;
+                    return normalize(value).includes(normalize(search)) ? 1 : 0;
+                  }}
+                >
+                  <CommandInput placeholder="Buscar por código ou título..." />
+                  <CommandList className="max-h-72">
+                    <CommandEmpty>Nenhum imóvel encontrado.</CommandEmpty>
+                    <CommandGroup>
+                      {properties.map((p) => (
+                        <CommandItem
+                          key={p.id}
+                          value={`${p.code} ${p.title}`}
+                          onSelect={() => {
+                            setForm({ ...form, property_id: p.id });
+                            setPropertyPopoverOpen(false);
+                          }}
+                          className="flex items-center gap-2"
+                        >
+                          <Check
+                            className={cn(
+                              "h-4 w-4 shrink-0",
+                              form.property_id === p.id ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          <span className="truncate">
+                            <span className="font-medium">{p.code}</span>
+                            <span className="text-muted-foreground"> — {p.title}</span>
+                          </span>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
           <DialogFooter>
             <Button type="submit" disabled={loading || !form.name.trim()} className="w-full">
