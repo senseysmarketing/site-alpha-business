@@ -2019,6 +2019,7 @@ const blankFiltersV3 = (): PropertySearchFilters => ({
   keywords: [],
   excludedPropertyTypes: [],
   lastDidYouMean: null,
+  pendingClarification: null,
 });
 
 const sanitizeFiltersV3 = (raw: any): PropertySearchFilters => {
@@ -2028,6 +2029,9 @@ const sanitizeFiltersV3 = (raw: any): PropertySearchFilters => {
   f.highlights = Array.isArray(f.highlights) ? f.highlights : [];
   f.keywords = Array.isArray(f.keywords) ? f.keywords : [];
   f.excludedPropertyTypes = Array.isArray(f.excludedPropertyTypes) ? f.excludedPropertyTypes : [];
+  if (f.pendingClarification !== "alphaville" && f.pendingClarification !== "tambore") {
+    f.pendingClarification = null;
+  }
   return f;
 };
 
