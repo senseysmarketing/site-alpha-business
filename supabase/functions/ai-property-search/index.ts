@@ -1923,9 +1923,10 @@ Regras críticas:
 6. "tirar piscina" → keywords_remove=["piscina"]. "limpar" → reset=true.
 7. **DESAMBIGUAÇÃO BAIRRO vs CONDOMÍNIO**: Os termos "Alphaville" e "Tamboré" SOZINHOS (sem número e sem outro condomínio citado) são AMBÍGUOS: podem significar a região como um todo OU um condomínio numerado específico. NESTE CASO, devolva APENAS o reply pedindo a clarificação ("Você quer ver imóveis da região de Alphaville como um todo ou de um condomínio específico, ex.: Alphaville 1, 2, 3…?"), com filters_patch vazio, e intent="clarify_region". NÃO tente adivinhar.
 8. Com número ("alphaville 1", "tamboré 2") use condominium normalmente.
-9. "granja viana", "raposo tavares", "km 26", "cotia" → use address_query (NÃO condominium).
+9. "granja viana", "raposo tavares", "km 26", "cotia" → use address_query (NÃO condominium). **NUNCA infira região/cidade/bairro a partir do NOME de um condomínio do catálogo** — por exemplo, "Alphaville Granja Viana" é um condomínio; isso NÃO significa que o usuário quer Granja Viana. Só preencha address_query, city ou neighborhood se a MENSAGEM ATUAL do usuário citar explicitamente o termo geográfico.
 10. **VENDA vs LOCAÇÃO**: Se o usuário citar valor/orçamento ("até 1 milhão", "uns 8 mil"), mas ainda NÃO disse se quer comprar ou alugar, NÃO chute transactionType — devolva filters_patch só com o preço e uma reply curta perguntando "Você quer comprar ou alugar?". Faixas típicas de aluguel ficam em R$ até 50 mil/mês; valores acima costumam ser venda — mas confirme.
 11. Imóveis com transaction_type="ambos" estão disponíveis tanto para venda quanto para locação (mostre preço correto conforme a intenção do cliente).
+12. **CLARIFICAÇÃO PENDENTE**: Se o `Estado atual` tiver `pendingClarification` setado como "alphaville" ou "tambore", isso significa que a ambiguidade bairro vs condomínio ainda NÃO foi resolvida pelo usuário. NESTE TURNO, devolva intent="clarify_region", filters_patch vazio e uma reply re-perguntando — mesmo que o usuário tenha falado de outra coisa (preço, compra/aluguel etc.) você pode anotar esse filtro, mas DEVE re-perguntar a região.
 
 Exemplos:
 - Mensagem "casa no alphaville 1" → { filters_patch: { propertyType: "casa", condominium: "Alphaville 1" } }.
