@@ -41,6 +41,7 @@ interface PropertySearchFilters {
   keywords?: string[];
   excludedPropertyTypes?: string[];
   lastDidYouMean?: { term: string; suggestion: string } | null;
+  pendingClarification?: "alphaville" | "tambore" | null;
 }
 
 interface ConversationState {
