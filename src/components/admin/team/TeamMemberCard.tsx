@@ -98,7 +98,7 @@ const TeamMemberCard = ({
 
           {phone && (
             <p className="text-[11px] text-muted-foreground/70 font-[Inter] mt-2">
-              {phone}
+              {formatBRPhone(phone)}
             </p>
           )}
         </div>
