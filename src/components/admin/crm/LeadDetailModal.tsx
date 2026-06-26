@@ -38,7 +38,18 @@ import {
   ClipboardCheck,
   PhoneCall,
   Repeat,
+  Trash2,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow, differenceInDays } from "date-fns";
@@ -118,6 +129,23 @@ export function LeadDetailModal({ lead, open, onOpenChange, team = [] }: LeadDet
   const [activityType, setActivityType] = useState<string>("call");
   const [activityDescription, setActivityDescription] = useState("");
   const [registeringActivity, setRegisteringActivity] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeleteLead = async () => {
+    if (!lead) return;
+    setDeleting(true);
+    const { error } = await supabase.from("leads").delete().eq("id", lead.id);
+    setDeleting(false);
+    if (error) {
+      toast({ title: "Erro ao excluir", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Lead excluído", description: "O lead foi removido permanentemente." });
+    setDeleteOpen(false);
+    queryClient.invalidateQueries({ queryKey: ["leads"] });
+    onOpenChange(false);
+  };
 
   useEffect(() => {
     (async () => {
@@ -388,6 +416,17 @@ export function LeadDetailModal({ lead, open, onOpenChange, team = [] }: LeadDet
 
         {/* Header */}
         <div className="px-5 sm:px-7 pt-6 pb-4 border-b border-border/50 bg-gradient-to-b from-muted/40 to-transparent">
+          {canReassign && (
+            <button
+              type="button"
+              onClick={() => setDeleteOpen(true)}
+              className="absolute right-12 top-4 p-1.5 rounded-md text-muted-foreground/70 hover:text-destructive hover:bg-destructive/10 transition-colors"
+              aria-label="Excluir lead"
+              title="Excluir lead"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
           <div className="flex items-start gap-4 flex-wrap">
             <Avatar className="h-14 w-14 ring-2 ring-background shadow-sm">
               <AvatarImage src={lead.avatar_url || undefined} />
@@ -903,6 +942,26 @@ export function LeadDetailModal({ lead, open, onOpenChange, team = [] }: LeadDet
           </TabsContent>
         </Tabs>
       </DialogContent>
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent className="z-[90]">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir lead?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação é permanente. Todas as atividades, notas e histórico de atribuição relacionados a este lead serão removidos.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); void handleDeleteLead(); }}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? "Excluindo..." : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
