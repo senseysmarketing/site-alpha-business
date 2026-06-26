@@ -881,39 +881,81 @@ export type Database = {
       }
       visits_scheduling: {
         Row: {
-          broker_name: string
+          assigned_user_id: string | null
+          broker_name: string | null
           created_at: string
+          created_by: string | null
+          event_type: string
           id: string
-          lead_email: string
-          lead_name: string
-          lead_phone: string
-          property_code: string
+          lead_email: string | null
+          lead_id: string | null
+          lead_name: string | null
+          lead_phone: string | null
+          notes: string | null
+          property_code: string | null
+          property_id: string | null
+          status: string
+          title: string | null
+          updated_at: string
           visit_date: string
           visit_time: string
         }
         Insert: {
-          broker_name: string
+          assigned_user_id?: string | null
+          broker_name?: string | null
           created_at?: string
+          created_by?: string | null
+          event_type?: string
           id?: string
-          lead_email: string
-          lead_name: string
-          lead_phone: string
-          property_code: string
+          lead_email?: string | null
+          lead_id?: string | null
+          lead_name?: string | null
+          lead_phone?: string | null
+          notes?: string | null
+          property_code?: string | null
+          property_id?: string | null
+          status?: string
+          title?: string | null
+          updated_at?: string
           visit_date: string
           visit_time: string
         }
         Update: {
-          broker_name?: string
+          assigned_user_id?: string | null
+          broker_name?: string | null
           created_at?: string
+          created_by?: string | null
+          event_type?: string
           id?: string
-          lead_email?: string
-          lead_name?: string
-          lead_phone?: string
-          property_code?: string
+          lead_email?: string | null
+          lead_id?: string | null
+          lead_name?: string | null
+          lead_phone?: string | null
+          notes?: string | null
+          property_code?: string | null
+          property_id?: string | null
+          status?: string
+          title?: string | null
+          updated_at?: string
           visit_date?: string
           visit_time?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "visits_scheduling_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "visits_scheduling_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
