@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { MessageCircle, Calendar, Loader2 } from "lucide-react";
+import whatsappIcon from "@/assets/whatsapp-icon.png.asset.json";
 import { Skeleton } from "@/components/ui/skeleton";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
