@@ -958,6 +958,13 @@ export type Database = {
         Returns: boolean
       }
       normalize_search_text: { Args: { input: string }; Returns: string }
+      set_user_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _target: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role:
