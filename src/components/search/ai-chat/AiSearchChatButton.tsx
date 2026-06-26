@@ -52,16 +52,17 @@ const AiSearchChatButton = ({ onClick, variant = "hero", extraAction }: Props) =
           </p>
         </div>
       </button>
-      <div className="flex items-center justify-end gap-2 sm:gap-3 flex-shrink-0">
+      <div className="flex items-center justify-center sm:justify-end gap-2 sm:gap-3 flex-shrink-0">
         {extraAction}
         <button
           onClick={onClick}
-          className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 sm:py-2.5 rounded-md text-body text-xs tracking-[0.1em] uppercase hover:opacity-90"
+          className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-1.5 rounded-full text-body text-[10px] tracking-[0.1em] uppercase hover:opacity-90 whitespace-nowrap"
         >
-          <Sparkles size={14} />
+          <Sparkles size={12} />
           Iniciar
         </button>
       </div>
+
     </div>
   );
 };
