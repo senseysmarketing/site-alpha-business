@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useNavigate } from "react-router-dom";
+import { formatBRPhone } from "@/lib/phone";
 
 interface TeamMemberCardProps {
   id: string;
@@ -98,7 +99,7 @@ const TeamMemberCard = ({
 
           {phone && (
             <p className="text-[11px] text-muted-foreground/70 font-[Inter] mt-2">
-              {phone}
+              {formatBRPhone(phone)}
             </p>
           )}
         </div>

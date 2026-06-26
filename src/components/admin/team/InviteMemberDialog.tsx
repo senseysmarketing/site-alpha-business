@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatBRPhone } from "@/lib/phone";
 import {
   Dialog,
   DialogContent,
@@ -149,9 +150,11 @@ const InviteMemberDialog = () => {
           <div className="space-y-2">
             <Label className="font-[Inter] text-xs">Telefone</Label>
             <Input
-              value={form.phone}
-              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              value={formatBRPhone(form.phone)}
+              onChange={(e) => setForm({ ...form, phone: formatBRPhone(e.target.value) })}
               placeholder="(11) 99999-9999"
+              inputMode="tel"
+              maxLength={15}
               className="rounded-sm"
             />
           </div>

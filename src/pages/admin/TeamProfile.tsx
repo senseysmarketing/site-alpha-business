@@ -20,6 +20,7 @@ import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { formatBRPhone } from "@/lib/phone";
 
 type AppRole = "admin" | "gerente" | "corretor" | "assistente";
 
@@ -140,6 +141,7 @@ const TeamProfile = () => {
       });
 
       toast.success("Perfil atualizado com sucesso.");
+      navigate("/admin/equipe");
     } catch (err: any) {
       toast.error(err.message || "Erro ao salvar.");
     } finally {
@@ -325,9 +327,11 @@ const TeamProfile = () => {
           <div className="space-y-2">
             <Label className="font-[Inter] text-xs">Telefone</Label>
             <Input
-              value={profile.phone || ""}
-              onChange={(e) => update("phone", e.target.value)}
+              value={formatBRPhone(profile.phone)}
+              onChange={(e) => update("phone", formatBRPhone(e.target.value))}
               placeholder="(11) 99999-9999"
+              inputMode="tel"
+              maxLength={15}
               className="rounded-sm"
             />
           </div>
