@@ -41,6 +41,7 @@ interface PropertySearchFilters {
   keywords?: string[];
   excludedPropertyTypes?: string[];
   lastDidYouMean?: { term: string; suggestion: string } | null;
+  pendingClarification?: "alphaville" | "tambore" | null;
 }
 
 interface ConversationState {
@@ -1922,9 +1923,10 @@ Regras críticas:
 6. "tirar piscina" → keywords_remove=["piscina"]. "limpar" → reset=true.
 7. **DESAMBIGUAÇÃO BAIRRO vs CONDOMÍNIO**: Os termos "Alphaville" e "Tamboré" SOZINHOS (sem número e sem outro condomínio citado) são AMBÍGUOS: podem significar a região como um todo OU um condomínio numerado específico. NESTE CASO, devolva APENAS o reply pedindo a clarificação ("Você quer ver imóveis da região de Alphaville como um todo ou de um condomínio específico, ex.: Alphaville 1, 2, 3…?"), com filters_patch vazio, e intent="clarify_region". NÃO tente adivinhar.
 8. Com número ("alphaville 1", "tamboré 2") use condominium normalmente.
-9. "granja viana", "raposo tavares", "km 26", "cotia" → use address_query (NÃO condominium).
+9. "granja viana", "raposo tavares", "km 26", "cotia" → use address_query (NÃO condominium). **NUNCA infira região/cidade/bairro a partir do NOME de um condomínio do catálogo** — por exemplo, "Alphaville Granja Viana" é um condomínio; isso NÃO significa que o usuário quer Granja Viana. Só preencha address_query, city ou neighborhood se a MENSAGEM ATUAL do usuário citar explicitamente o termo geográfico.
 10. **VENDA vs LOCAÇÃO**: Se o usuário citar valor/orçamento ("até 1 milhão", "uns 8 mil"), mas ainda NÃO disse se quer comprar ou alugar, NÃO chute transactionType — devolva filters_patch só com o preço e uma reply curta perguntando "Você quer comprar ou alugar?". Faixas típicas de aluguel ficam em R$ até 50 mil/mês; valores acima costumam ser venda — mas confirme.
 11. Imóveis com transaction_type="ambos" estão disponíveis tanto para venda quanto para locação (mostre preço correto conforme a intenção do cliente).
+12. **CLARIFICAÇÃO PENDENTE**: Se o `Estado atual` tiver `pendingClarification` setado como "alphaville" ou "tambore", isso significa que a ambiguidade bairro vs condomínio ainda NÃO foi resolvida pelo usuário. NESTE TURNO, devolva intent="clarify_region", filters_patch vazio e uma reply re-perguntando — mesmo que o usuário tenha falado de outra coisa (preço, compra/aluguel etc.) você pode anotar esse filtro, mas DEVE re-perguntar a região.
 
 Exemplos:
 - Mensagem "casa no alphaville 1" → { filters_patch: { propertyType: "casa", condominium: "Alphaville 1" } }.
@@ -2018,6 +2020,7 @@ const blankFiltersV3 = (): PropertySearchFilters => ({
   keywords: [],
   excludedPropertyTypes: [],
   lastDidYouMean: null,
+  pendingClarification: null,
 });
 
 const sanitizeFiltersV3 = (raw: any): PropertySearchFilters => {
@@ -2027,6 +2030,9 @@ const sanitizeFiltersV3 = (raw: any): PropertySearchFilters => {
   f.highlights = Array.isArray(f.highlights) ? f.highlights : [];
   f.keywords = Array.isArray(f.keywords) ? f.keywords : [];
   f.excludedPropertyTypes = Array.isArray(f.excludedPropertyTypes) ? f.excludedPropertyTypes : [];
+  if (f.pendingClarification !== "alphaville" && f.pendingClarification !== "tambore") {
+    f.pendingClarification = null;
+  }
   return f;
 };
 
@@ -2188,18 +2194,18 @@ const applySelectedChipV3 = (
     case "set_condominium":
     case "condominium": {
       const c = (opt.payload?.condominium as string) ?? opt.value;
-      if (c) { f.condominium = c; f.condominiumGroup = null; f.lastDidYouMean = null; }
+      if (c) { f.condominium = c; f.condominiumGroup = null; f.lastDidYouMean = null; f.pendingClarification = null; }
       break;
     }
     case "set_condominium_group":
     case "condominium_group": {
       const g = (opt.payload?.condominiumGroup as string) ?? opt.value;
-      if (g) { f.condominiumGroup = g; f.condominium = null; f.lastDidYouMean = null; }
+      if (g) { f.condominiumGroup = g; f.condominium = null; f.lastDidYouMean = null; f.pendingClarification = null; }
       break;
     }
     case "any_condo":
     case "clear_condominium":
-      f.condominium = null; f.condominiumGroup = null; break;
+      f.condominium = null; f.condominiumGroup = null; f.pendingClarification = null; break;
     case "set_transaction":
     case "transaction":
       if (opt.value === "venda" || opt.value === "locacao") f.transactionType = opt.value;
@@ -2333,56 +2339,80 @@ const handleConverseV3 = async (sb: SB, body: any) => {
   }
 
   // 1.7) Desambiguação "alphaville" / "tamboré" sozinhos — bairro vs condomínio.
-  // Só dispara quando ainda não há condomínio fixado E o usuário não está
-  // refinando outro filtro existente.
+  // Detecta nesta mensagem OU resgata clarificação pendente de turnos anteriores.
+  // Considera "resolvido" se o usuário:
+  //   - já tem condomínio/grupo fixado
+  //   - menciona "toda" / "região" / "bairro" / "todos" (vai virar grupo)
+  //   - menciona número de condo (já tratado em 1.5)
+  const buildAmbiguousAreaResponse = (area: "alphaville" | "tambore") => {
+    const groupLabel = area === "tambore" ? "Tamboré" : "Alphaville";
+    const groupCondos = entries
+      .filter((e) => e.normalized.startsWith(area + " "))
+      .map((e) => e.canonical)
+      .sort((a, b) => {
+        const na = parseInt(a.replace(/\D+/g, ""), 10) || 99;
+        const nb = parseInt(b.replace(/\D+/g, ""), 10) || 99;
+        return na - nb;
+      })
+      .slice(0, 6);
+    const chips: OptionChip[] = [
+      {
+        label: `Toda a região de ${groupLabel}`,
+        value: groupLabel,
+        kind: "action",
+        action: "set_condominium_group",
+        payload: { condominiumGroup: groupLabel },
+      },
+      ...groupCondos.map((name) => ({
+        label: name,
+        value: name,
+        kind: "condominium",
+        action: "set_condominium",
+        payload: { condominium: name } as Record<string, unknown>,
+      })),
+      { label: "Nova busca", value: "reset", kind: "reset" },
+    ];
+    state.pendingClarification = area;
+    return {
+      assistantMessage: `Só pra confirmar: quando você fala em **${groupLabel}**, está pensando na **região como um todo** (vários condomínios) ou em um **condomínio específico** (${groupLabel} 1, 2, 3…)? Assim eu te mostro exatamente o que faz sentido.`,
+      responseType: "clarification" as const,
+      conversation_state: state,
+      updatedState: { filters: state } as ConversationState,
+      parsedFilters: state,
+      suggestedOptions: chips,
+      suggestions: chips.map((c) => c.label),
+      nextAction: "ask" as const,
+    };
+  };
+
+  const messageHasRegionResolver = (() => {
+    const n = stripAccentsLower(message ?? "");
+    return /\b(toda|todas|todos|regiao|região|bairro|geral|qualquer)\b/.test(n);
+  })();
+
   if (
     message &&
     !forcedCondo &&
     !state.condominium &&
     !state.condominiumGroup &&
-    !selectedOption
+    !messageHasRegionResolver
   ) {
-    const area = detectAmbiguousArea(message);
+    const area = detectAmbiguousArea(message) ?? state.pendingClarification ?? null;
     if (area) {
-      const groupLabel = area === "tambore" ? "Tamboré" : "Alphaville";
-      // top condos do grupo, ordenados pelo número
-      const groupCondos = entries
-        .filter((e) => e.normalized.startsWith(area + " "))
-        .map((e) => e.canonical)
-        .sort((a, b) => {
-          const na = parseInt(a.replace(/\D+/g, ""), 10) || 99;
-          const nb = parseInt(b.replace(/\D+/g, ""), 10) || 99;
-          return na - nb;
-        })
-        .slice(0, 6);
-      const chips: OptionChip[] = [
-        {
-          label: `Toda a região de ${groupLabel}`,
-          value: groupLabel,
-          kind: "action",
-          action: "set_condominium_group",
-          payload: { condominiumGroup: groupLabel },
-        },
-        ...groupCondos.map((name) => ({
-          label: name,
-          value: name,
-          kind: "condominium",
-          action: "set_condominium",
-          payload: { condominium: name } as Record<string, unknown>,
-        })),
-        { label: "Nova busca", value: "reset", kind: "reset" },
-      ];
-      return {
-        assistantMessage: `Só pra confirmar: quando você fala em **${groupLabel}**, está pensando na **região como um todo** (vários condomínios) ou em um **condomínio específico** (${groupLabel} 1, 2, 3…)? Assim eu te mostro exatamente o que faz sentido.`,
-        responseType: "clarification" as const,
-        conversation_state: state,
-        updatedState: { filters: state } as ConversationState,
-        parsedFilters: state,
-        suggestedOptions: chips,
-        suggestions: chips.map((c) => c.label),
-        nextAction: "ask" as const,
-      };
+      return buildAmbiguousAreaResponse(area);
     }
+  }
+
+  // Resolveu por palavra: "toda região"/"bairro" + clarificação pendente → vira grupo.
+  if (
+    !forcedCondo &&
+    !state.condominium &&
+    !state.condominiumGroup &&
+    state.pendingClarification &&
+    messageHasRegionResolver
+  ) {
+    state.condominiumGroup = state.pendingClarification === "tambore" ? "Tamboré" : "Alphaville";
+    state.pendingClarification = null;
   }
 
 
@@ -2421,11 +2451,36 @@ const handleConverseV3 = async (sb: SB, body: any) => {
       console.log("[handleConverseV3] dropping invented transactionType", state.transactionType);
       state.transactionType = before.transactionType ?? null;
     }
+    // Guard anti-invenção de região: LLM não pode injetar address/city/neighborhood
+    // sem que a mensagem ATUAL traga os tokens correspondentes. Também derruba
+    // qualquer inferência de região quando há clarificação pendente (Alphaville/Tamboré).
+    const msgNorm = stripAccentsLower(message);
+    const wasPending = !!before.pendingClarification;
+    const evidenceFor = (val: string | null | undefined) => {
+      if (!val) return true;
+      const v = stripAccentsLower(String(val));
+      if (!v) return true;
+      // aceita se qualquer token significativo (>=4 chars) do valor aparece na msg
+      const tokens = v.split(/\s+/).filter((t) => t.length >= 4);
+      if (tokens.length === 0) return msgNorm.includes(v);
+      return tokens.some((t) => msgNorm.includes(t));
+    };
+    for (const k of ["address", "city", "neighborhood"] as const) {
+      const beforeVal = (before as any)[k] ?? null;
+      const nextVal = (state as any)[k] ?? null;
+      if (nextVal && nextVal !== beforeVal) {
+        if (wasPending || !evidenceFor(nextVal)) {
+          console.log(`[handleConverseV3] dropping invented ${k}`, nextVal, { wasPending });
+          (state as any)[k] = beforeVal;
+        }
+      }
+    }
     if (forcedCondo) {
       // LLM não pode sobrescrever o condomínio resolvido deterministicamente.
       state.condominium = forcedCondo;
       state.condominiumGroup = null;
       state.lastDidYouMean = null;
+      state.pendingClarification = null;
     }
   }
 
