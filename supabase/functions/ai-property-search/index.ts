@@ -2338,56 +2338,80 @@ const handleConverseV3 = async (sb: SB, body: any) => {
   }
 
   // 1.7) Desambiguação "alphaville" / "tamboré" sozinhos — bairro vs condomínio.
-  // Só dispara quando ainda não há condomínio fixado E o usuário não está
-  // refinando outro filtro existente.
+  // Detecta nesta mensagem OU resgata clarificação pendente de turnos anteriores.
+  // Considera "resolvido" se o usuário:
+  //   - já tem condomínio/grupo fixado
+  //   - menciona "toda" / "região" / "bairro" / "todos" (vai virar grupo)
+  //   - menciona número de condo (já tratado em 1.5)
+  const buildAmbiguousAreaResponse = (area: "alphaville" | "tambore") => {
+    const groupLabel = area === "tambore" ? "Tamboré" : "Alphaville";
+    const groupCondos = entries
+      .filter((e) => e.normalized.startsWith(area + " "))
+      .map((e) => e.canonical)
+      .sort((a, b) => {
+        const na = parseInt(a.replace(/\D+/g, ""), 10) || 99;
+        const nb = parseInt(b.replace(/\D+/g, ""), 10) || 99;
+        return na - nb;
+      })
+      .slice(0, 6);
+    const chips: OptionChip[] = [
+      {
+        label: `Toda a região de ${groupLabel}`,
+        value: groupLabel,
+        kind: "action",
+        action: "set_condominium_group",
+        payload: { condominiumGroup: groupLabel },
+      },
+      ...groupCondos.map((name) => ({
+        label: name,
+        value: name,
+        kind: "condominium",
+        action: "set_condominium",
+        payload: { condominium: name } as Record<string, unknown>,
+      })),
+      { label: "Nova busca", value: "reset", kind: "reset" },
+    ];
+    state.pendingClarification = area;
+    return {
+      assistantMessage: `Só pra confirmar: quando você fala em **${groupLabel}**, está pensando na **região como um todo** (vários condomínios) ou em um **condomínio específico** (${groupLabel} 1, 2, 3…)? Assim eu te mostro exatamente o que faz sentido.`,
+      responseType: "clarification" as const,
+      conversation_state: state,
+      updatedState: { filters: state } as ConversationState,
+      parsedFilters: state,
+      suggestedOptions: chips,
+      suggestions: chips.map((c) => c.label),
+      nextAction: "ask" as const,
+    };
+  };
+
+  const messageHasRegionResolver = (() => {
+    const n = stripAccentsLower(message ?? "");
+    return /\b(toda|todas|todos|regiao|região|bairro|geral|qualquer)\b/.test(n);
+  })();
+
   if (
     message &&
     !forcedCondo &&
     !state.condominium &&
     !state.condominiumGroup &&
-    !selectedOption
+    !messageHasRegionResolver
   ) {
-    const area = detectAmbiguousArea(message);
+    const area = detectAmbiguousArea(message) ?? state.pendingClarification ?? null;
     if (area) {
-      const groupLabel = area === "tambore" ? "Tamboré" : "Alphaville";
-      // top condos do grupo, ordenados pelo número
-      const groupCondos = entries
-        .filter((e) => e.normalized.startsWith(area + " "))
-        .map((e) => e.canonical)
-        .sort((a, b) => {
-          const na = parseInt(a.replace(/\D+/g, ""), 10) || 99;
-          const nb = parseInt(b.replace(/\D+/g, ""), 10) || 99;
-          return na - nb;
-        })
-        .slice(0, 6);
-      const chips: OptionChip[] = [
-        {
-          label: `Toda a região de ${groupLabel}`,
-          value: groupLabel,
-          kind: "action",
-          action: "set_condominium_group",
-          payload: { condominiumGroup: groupLabel },
-        },
-        ...groupCondos.map((name) => ({
-          label: name,
-          value: name,
-          kind: "condominium",
-          action: "set_condominium",
-          payload: { condominium: name } as Record<string, unknown>,
-        })),
-        { label: "Nova busca", value: "reset", kind: "reset" },
-      ];
-      return {
-        assistantMessage: `Só pra confirmar: quando você fala em **${groupLabel}**, está pensando na **região como um todo** (vários condomínios) ou em um **condomínio específico** (${groupLabel} 1, 2, 3…)? Assim eu te mostro exatamente o que faz sentido.`,
-        responseType: "clarification" as const,
-        conversation_state: state,
-        updatedState: { filters: state } as ConversationState,
-        parsedFilters: state,
-        suggestedOptions: chips,
-        suggestions: chips.map((c) => c.label),
-        nextAction: "ask" as const,
-      };
+      return buildAmbiguousAreaResponse(area);
     }
+  }
+
+  // Resolveu por palavra: "toda região"/"bairro" + clarificação pendente → vira grupo.
+  if (
+    !forcedCondo &&
+    !state.condominium &&
+    !state.condominiumGroup &&
+    state.pendingClarification &&
+    messageHasRegionResolver
+  ) {
+    state.condominiumGroup = state.pendingClarification === "tambore" ? "Tamboré" : "Alphaville";
+    state.pendingClarification = null;
   }
 
 
