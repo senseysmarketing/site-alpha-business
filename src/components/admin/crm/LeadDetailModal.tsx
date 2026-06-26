@@ -129,6 +129,23 @@ export function LeadDetailModal({ lead, open, onOpenChange, team = [] }: LeadDet
   const [activityType, setActivityType] = useState<string>("call");
   const [activityDescription, setActivityDescription] = useState("");
   const [registeringActivity, setRegisteringActivity] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeleteLead = async () => {
+    if (!lead) return;
+    setDeleting(true);
+    const { error } = await supabase.from("leads").delete().eq("id", lead.id);
+    setDeleting(false);
+    if (error) {
+      toast({ title: "Erro ao excluir", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Lead excluído", description: "O lead foi removido permanentemente." });
+    setDeleteOpen(false);
+    queryClient.invalidateQueries({ queryKey: ["leads"] });
+    onOpenChange(false);
+  };
 
   useEffect(() => {
     (async () => {
