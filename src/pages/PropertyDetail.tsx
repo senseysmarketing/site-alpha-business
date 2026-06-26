@@ -309,7 +309,7 @@ const PropertyDetail = () => {
               rel="noopener noreferrer"
               className="hidden md:flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground text-body text-xs tracking-[0.1em] uppercase hover-magnetic rounded-full"
             >
-              <MessageCircle size={16} />
+              <img src={whatsappIcon.url} alt="" className="w-4 h-4" />
               WhatsApp
             </a>
             <button
