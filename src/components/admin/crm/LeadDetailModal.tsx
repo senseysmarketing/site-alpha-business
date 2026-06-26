@@ -420,7 +420,7 @@ export function LeadDetailModal({ lead, open, onOpenChange, team = [] }: LeadDet
             <button
               type="button"
               onClick={() => setDeleteOpen(true)}
-              className="absolute right-10 top-4 rounded-sm text-muted-foreground/70 hover:text-destructive opacity-70 hover:opacity-100 transition-opacity"
+              className="absolute right-14 top-4 rounded-sm text-muted-foreground/70 hover:text-destructive opacity-70 hover:opacity-100 transition-opacity"
               aria-label="Excluir lead"
               title="Excluir lead"
             >
