@@ -40,34 +40,31 @@ const AiSearchChatButton = ({ onClick, variant = "hero", extraAction }: Props) =
   }
 
   return (
-    <div className="group w-full flex items-center gap-2 sm:gap-4 border border-border rounded-lg p-3 sm:p-4 hover:border-foreground/30 hover:shadow-md transition-all text-left bg-background">
+    <div className="group w-full flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 border border-border rounded-lg p-3 sm:p-4 hover:border-foreground/30 hover:shadow-md transition-all text-left bg-background">
       <button onClick={onClick} className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0 text-left">
-        <img src={rafaAvatar} alt="Rafa IA" width={56} height={56} className="w-11 h-11 sm:w-14 sm:h-14 rounded-full object-cover bg-muted flex-shrink-0" />
+        <img src={rafaAvatar} alt="Rafa IA" width={56} height={56} className="w-12 h-12 sm:w-14 sm:h-14 rounded-full object-cover bg-muted flex-shrink-0" />
         <div className="flex-1 min-w-0">
-          <p className="text-display text-sm sm:text-lg text-foreground font-light leading-tight">
+          <p className="text-display text-base sm:text-lg text-foreground font-light leading-tight">
             Converse com o <strong className="font-medium">Rafa IA</strong>
           </p>
-          <p className="text-body text-[11px] sm:text-sm text-muted-foreground mt-0.5 line-clamp-2 sm:line-clamp-none">
+          <p className="text-body text-xs sm:text-sm text-muted-foreground mt-1 sm:mt-0.5 leading-snug">
             Seu consultor digital — encontra o imóvel ideal por conversa
           </p>
         </div>
       </button>
-      {extraAction}
-      <button
-        onClick={onClick}
-        className="hidden sm:flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2.5 rounded-md text-body text-xs tracking-[0.1em] uppercase hover:opacity-90 flex-shrink-0"
-      >
-        <Sparkles size={14} />
-        Iniciar
-      </button>
-      <button
-        onClick={onClick}
-        className="sm:hidden bg-primary text-primary-foreground p-2.5 rounded-md flex-shrink-0"
-      >
-        <Sparkles size={14} />
-      </button>
+      <div className="flex items-center justify-end gap-2 sm:gap-3 flex-shrink-0">
+        {extraAction}
+        <button
+          onClick={onClick}
+          className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 sm:py-2.5 rounded-md text-body text-xs tracking-[0.1em] uppercase hover:opacity-90"
+        >
+          <Sparkles size={14} />
+          Iniciar
+        </button>
+      </div>
     </div>
   );
 };
+
 
 export default AiSearchChatButton;
