@@ -128,6 +128,8 @@ const Team = () => {
           ))}
         </div>
       )}
+
+      <RolePermissionsGrid />
     </div>
   );
 };
