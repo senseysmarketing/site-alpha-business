@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { MessageCircle, Calendar, Loader2 } from "lucide-react";
+import whatsappIcon from "@/assets/whatsapp-icon.png.asset.json";
 import { Skeleton } from "@/components/ui/skeleton";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -308,7 +309,7 @@ const PropertyDetail = () => {
               rel="noopener noreferrer"
               className="hidden md:flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground text-body text-xs tracking-[0.1em] uppercase hover-magnetic rounded-full"
             >
-              <MessageCircle size={16} />
+              <img src={whatsappIcon.url} alt="" className="w-4 h-4" />
               WhatsApp
             </a>
             <button
@@ -438,7 +439,7 @@ const PropertyDetail = () => {
           rel="noopener noreferrer"
           className="flex-1 flex items-center justify-center gap-2 py-3 bg-[#25D366] text-white text-body text-sm font-medium rounded-full"
         >
-          <MessageCircle size={18} />
+          <img src={whatsappIcon.url} alt="" className="w-5 h-5" />
           WhatsApp
         </a>
         <button
