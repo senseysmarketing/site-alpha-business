@@ -156,20 +156,17 @@ const Agenda = () => {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {canSeeAll && (
-            <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-muted-foreground" />
-              <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                <SelectTrigger className="h-9 min-w-[180px] font-[Inter] text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os responsáveis</SelectItem>
-                  {team.map((t) => (
-                    <SelectItem key={t.user_id} value={t.user_id}>{t.full_name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
+              <SelectTrigger className="h-10 min-w-[180px] font-[Inter] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Toda a equipe</SelectItem>
+                {team.map((t) => (
+                  <SelectItem key={t.user_id} value={t.user_id}>{t.full_name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           )}
           {canSeeAll && (
             <Button
