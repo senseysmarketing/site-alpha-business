@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatBRPhone } from "@/lib/phone";
 import {
   Dialog,
   DialogContent,
