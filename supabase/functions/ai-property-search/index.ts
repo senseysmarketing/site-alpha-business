@@ -2450,11 +2450,36 @@ const handleConverseV3 = async (sb: SB, body: any) => {
       console.log("[handleConverseV3] dropping invented transactionType", state.transactionType);
       state.transactionType = before.transactionType ?? null;
     }
+    // Guard anti-invenção de região: LLM não pode injetar address/city/neighborhood
+    // sem que a mensagem ATUAL traga os tokens correspondentes. Também derruba
+    // qualquer inferência de região quando há clarificação pendente (Alphaville/Tamboré).
+    const msgNorm = stripAccentsLower(message);
+    const wasPending = !!before.pendingClarification;
+    const evidenceFor = (val: string | null | undefined) => {
+      if (!val) return true;
+      const v = stripAccentsLower(String(val));
+      if (!v) return true;
+      // aceita se qualquer token significativo (>=4 chars) do valor aparece na msg
+      const tokens = v.split(/\s+/).filter((t) => t.length >= 4);
+      if (tokens.length === 0) return msgNorm.includes(v);
+      return tokens.some((t) => msgNorm.includes(t));
+    };
+    for (const k of ["address", "city", "neighborhood"] as const) {
+      const beforeVal = (before as any)[k] ?? null;
+      const nextVal = (state as any)[k] ?? null;
+      if (nextVal && nextVal !== beforeVal) {
+        if (wasPending || !evidenceFor(nextVal)) {
+          console.log(`[handleConverseV3] dropping invented ${k}`, nextVal, { wasPending });
+          (state as any)[k] = beforeVal;
+        }
+      }
+    }
     if (forcedCondo) {
       // LLM não pode sobrescrever o condomínio resolvido deterministicamente.
       state.condominium = forcedCondo;
       state.condominiumGroup = null;
       state.lastDidYouMean = null;
+      state.pendingClarification = null;
     }
   }
 
