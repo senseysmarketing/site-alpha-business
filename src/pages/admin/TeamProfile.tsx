@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Save, Instagram, Linkedin, Upload, FileText } from "lucide-react";
+import { ArrowLeft, Save, Instagram, Linkedin, Upload, Lock } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 
+type AppRole = "admin" | "gerente" | "corretor" | "assistente";
+
+const ROLE_LABELS: Record<AppRole, string> = {
+  admin: "Administrador",
+  gerente: "Gerente",
+  corretor: "Corretor",
+  assistente: "Assistente",
+};
+
 interface ProfileData {
   id: string;
   user_id: string;
@@ -39,10 +48,13 @@ interface ProfileData {
 const TeamProfile = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [role, setRole] = useState<AppRole>("corretor");
+  const [initialRole, setInitialRole] = useState<AppRole>("corretor");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -52,11 +64,24 @@ const TeamProfile = () => {
         .select("*")
         .eq("id", id)
         .single();
-      if (data) setProfile(data as ProfileData);
+      if (data) {
+        setProfile(data as ProfileData);
+        const { data: roleRow } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", (data as ProfileData).user_id)
+          .limit(1)
+          .maybeSingle();
+        const r = (roleRow?.role as AppRole) || "corretor";
+        setRole(r);
+        setInitialRole(r);
+      }
       setLoading(false);
     };
     load();
   }, [id]);
+
+  const canEditRole = isAdmin;
 
   const handleSave = async () => {
     if (!profile) return;
@@ -66,7 +91,7 @@ const TeamProfile = () => {
         .from("team_profiles")
         .update({
           full_name: profile.full_name,
-          role_display: profile.role_display,
+          role_display: ROLE_LABELS[role],
           phone: profile.phone,
           creci: profile.creci,
           bio: profile.bio,
@@ -78,6 +103,31 @@ const TeamProfile = () => {
         .eq("id", profile.id);
 
       if (error) throw error;
+
+      // Alteração de cargo (apenas admin via RPC)
+      if (role !== initialRole) {
+        if (!canEditRole) {
+          throw new Error("Apenas administradores podem alterar cargos.");
+        }
+        const { error: roleErr } = await supabase.rpc("set_user_role", {
+          _target: profile.user_id,
+          _role: role,
+        });
+        if (roleErr) throw roleErr;
+
+        await supabase.from("system_audit_logs").insert({
+          user_id: user?.id || null,
+          user_name: user?.email || "Admin",
+          action: "alterar_cargo",
+          object_type: "team_profile",
+          object_id: profile.id,
+          object_label: profile.full_name,
+          metadata: { from: initialRole, to: role } as any,
+        });
+        setInitialRole(role);
+      }
+
+      setProfile({ ...profile, role_display: ROLE_LABELS[role] });
 
       // Audit log
       await supabase.from("system_audit_logs").insert({
@@ -100,26 +150,37 @@ const TeamProfile = () => {
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !profile) return;
-    const ext = file.name.split(".").pop();
-    const path = `${profile.user_id}/avatar.${ext}`;
+    setUploading(true);
+    try {
+      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+      const path = `team-avatars/${profile.user_id}/avatar-${Date.now()}.${ext}`;
 
-    const { error: uploadError } = await supabase.storage
-      .from("team-documents")
-      .upload(path, file, { upsert: true });
+      const { error: uploadError } = await supabase.storage
+        .from("blog-media")
+        .upload(path, file, { upsert: true, contentType: file.type });
 
-    if (uploadError) {
-      toast.error("Erro ao enviar foto.");
-      return;
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from("blog-media")
+        .getPublicUrl(path);
+
+      const newUrl = urlData.publicUrl;
+
+      const { error: updErr } = await supabase
+        .from("team_profiles")
+        .update({ avatar_url: newUrl })
+        .eq("id", profile.id);
+      if (updErr) throw updErr;
+
+      setProfile({ ...profile, avatar_url: newUrl });
+      toast.success("Foto atualizada.");
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao enviar foto.");
+    } finally {
+      setUploading(false);
+      e.target.value = "";
     }
-
-    const { data: urlData } = supabase.storage
-      .from("team-documents")
-      .getPublicUrl(path);
-
-    const newUrl = urlData.publicUrl;
-    setProfile({ ...profile, avatar_url: newUrl });
-    await supabase.from("team_profiles").update({ avatar_url: newUrl }).eq("id", profile.id);
-    toast.success("Foto atualizada.");
   };
 
   if (loading) {
@@ -184,13 +245,19 @@ const TeamProfile = () => {
             </motion.div>
             <label className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
               <Upload className="h-5 w-5 text-white" />
-              <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarUpload}
+                disabled={uploading}
+              />
             </label>
           </div>
           <div>
             <h2 className="font-[Raleway] text-xl font-semibold">{profile.full_name}</h2>
             <p className="text-muted-foreground text-sm font-[Inter]">
-              {profile.role_display || "Membro da equipe"}
+              {ROLE_LABELS[role] || profile.role_display || "Membro da equipe"}
             </p>
             <div className="flex items-center gap-2 mt-2">
               <Badge
@@ -220,13 +287,31 @@ const TeamProfile = () => {
             />
           </div>
           <div className="space-y-2">
-            <Label className="font-[Inter] text-xs">Cargo Exibido</Label>
-            <Input
-              value={profile.role_display || ""}
-              onChange={(e) => update("role_display", e.target.value)}
-              placeholder="Ex: Corretor Sênior"
-              className="rounded-sm"
-            />
+            <Label className="font-[Inter] text-xs flex items-center gap-1.5">
+              Cargo
+              {!canEditRole && <Lock className="h-3 w-3 text-muted-foreground" />}
+            </Label>
+            <Select
+              value={role}
+              onValueChange={(v) => setRole(v as AppRole)}
+              disabled={!canEditRole}
+            >
+              <SelectTrigger className="rounded-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(Object.keys(ROLE_LABELS) as AppRole[]).map((r) => (
+                  <SelectItem key={r} value={r}>
+                    {ROLE_LABELS[r]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {!canEditRole && (
+              <p className="text-[10px] text-muted-foreground font-[Inter]">
+                Apenas administradores podem alterar o cargo.
+              </p>
+            )}
           </div>
           <div className="space-y-2">
             <Label className="font-[Inter] text-xs">CRECI</Label>
