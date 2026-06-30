@@ -1,6 +1,9 @@
 import { Link } from "react-router-dom";
 import { Check } from "lucide-react";
 import { toTitleCase } from "@/lib/utils";
+import { hasRentalOffer, hasSaleOffer, hasBothTransactions } from "@/lib/propertyQueries";
+
+export type TransactionIntent = "venda" | "locacao" | "aluguel" | "all";
 
 interface PropertyCardProps {
   property: {
@@ -23,6 +26,8 @@ interface PropertyCardProps {
   isWide?: boolean;
   isSelected?: boolean;
   onToggleCompare?: (id: string) => void;
+  /** User's current transaction filter; drives which price/label to show for 'ambos'. */
+  transactionIntent?: TransactionIntent;
 }
 
 const formatPrice = (value: number | null) => {
@@ -35,17 +40,39 @@ const formatPrice = (value: number | null) => {
   }).format(value);
 };
 
-const transactionLabel = (t: string) => {
-  const k = (t || "").toLowerCase();
-  if (k === "aluguel" || k === "locacao") return "Locação";
-  if (k === "venda") return "Venda";
-  return t || "Venda";
+const isRentalIntent = (i?: TransactionIntent) => i === "locacao" || i === "aluguel";
+
+const resolveDisplay = (
+  transactionType: string,
+  intent: TransactionIntent | undefined,
+  salePrice: number | null,
+  rentalPrice: number | null
+): { label: string; price: number | null; isRental: boolean } => {
+  const both = hasBothTransactions(transactionType);
+  // Pure rental row
+  if (!hasSaleOffer(transactionType) && hasRentalOffer(transactionType)) {
+    return { label: "Locação", price: rentalPrice, isRental: true };
+  }
+  // Pure sale row
+  if (hasSaleOffer(transactionType) && !hasRentalOffer(transactionType)) {
+    return { label: "Venda", price: salePrice, isRental: false };
+  }
+  // ambos
+  if (both) {
+    if (isRentalIntent(intent)) return { label: "Locação", price: rentalPrice, isRental: true };
+    if (intent === "venda") return { label: "Venda", price: salePrice, isRental: false };
+    return { label: "Venda e Locação", price: salePrice, isRental: false };
+  }
+  return { label: "Venda", price: salePrice, isRental: false };
 };
 
-const PropertyCard = ({ property, isSelected = false, onToggleCompare }: PropertyCardProps) => {
-  const isRental =
-    property.transaction_type === "aluguel" || property.transaction_type === "locacao";
-  const price = isRental ? property.rental_price : property.price;
+const PropertyCard = ({ property, isSelected = false, onToggleCompare, transactionIntent }: PropertyCardProps) => {
+  const display = resolveDisplay(
+    property.transaction_type,
+    transactionIntent,
+    property.price,
+    property.rental_price
+  );
   const locationParts = [property.condominium, property.neighborhood, property.city]
     .filter(Boolean)
     .join(" · ");
@@ -97,7 +124,7 @@ const PropertyCard = ({ property, isSelected = false, onToggleCompare }: Propert
           {/* Meta */}
           <div className="flex items-center justify-between mb-2">
             <span className="text-body text-[11px] tracking-[0.15em] uppercase font-semibold text-foreground">
-              {transactionLabel(property.transaction_type)}
+              {display.label}
             </span>
             <span className="text-body text-[11px] tracking-[0.1em] uppercase text-muted-foreground">
               {property.code}
@@ -130,11 +157,11 @@ const PropertyCard = ({ property, isSelected = false, onToggleCompare }: Propert
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <p className="text-body text-[11px] tracking-[0.1em] uppercase font-semibold text-foreground">
-                {transactionLabel(property.transaction_type)}:
+                {display.label}:
               </p>
               <p className="text-display text-lg font-medium text-foreground truncate">
-                {price ? formatPrice(price) : "Sob consulta"}
-                {price && isRental && (
+                {display.price ? formatPrice(display.price) : "Sob consulta"}
+                {display.price && display.isRental && (
                   <span className="text-body text-[11px] tracking-wider uppercase text-muted-foreground ml-1">
                     /mês
                   </span>
