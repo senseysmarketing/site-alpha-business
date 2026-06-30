@@ -495,6 +495,7 @@ const SearchResults = () => {
                 results={visibleResults}
                 compareIds={compareIds}
                 onToggleCompare={handleToggleCompare}
+                transactionIntent={filters.transactionType}
               />
               {hasMore && (
                 <div className="flex justify-center mt-12 md:mt-16">
