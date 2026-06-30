@@ -12,6 +12,7 @@ import TeamSection from "@/components/TeamSection";
 import ContactSection from "@/components/ContactSection";
 import AlphavilleMapSection from "@/components/AlphavilleMapSection";
 import Footer from "@/components/Footer";
+import FloatingScrollTop from "@/components/FloatingScrollTop";
 
 const Index = () => {
   const location = useLocation();
@@ -57,7 +58,9 @@ const Index = () => {
         <ContactSection />
       </main>
       <Footer />
+      <FloatingScrollTop />
     </>
+
   );
 };
 
