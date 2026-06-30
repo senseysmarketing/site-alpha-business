@@ -157,7 +157,28 @@ const AdvancedFiltersDrawer = ({
 
   const rental = isRental(local.transactionType);
   const activePriceBounds = rental ? bounds.rentRange : bounds.saleRange;
-  const priceStep = rental ? 500 : 50_000;
+  const [priceLo, priceHi] = activePriceBounds;
+  const validPriceRange = priceHi > priceLo;
+
+  // Dynamic step: ~200 increments across the slider, snapped to a sane unit.
+  const priceStep = useMemo(() => {
+    if (!validPriceRange) return rental ? 500 : 50_000;
+    const span = priceHi - priceLo;
+    const unit = rental ? 500 : 50_000;
+    return Math.max(unit, Math.round(span / 200 / unit) * unit);
+  }, [validPriceRange, priceHi, priceLo, rental]);
+
+  // Re-clamp local range whenever the bounds shift while the drawer is open
+  // (e.g. user changed propertyType inside the drawer).
+  useEffect(() => {
+    if (!open || !validPriceRange) return;
+    setLocal((f) => {
+      const lo = Math.max(f.priceRange[0], priceLo);
+      const hi = Math.min(f.priceRange[1], priceHi);
+      if (lo === f.priceRange[0] && hi === f.priceRange[1]) return f;
+      return { ...f, priceRange: [Math.min(lo, hi), Math.max(lo, hi)] };
+    });
+  }, [open, validPriceRange, priceLo, priceHi]);
 
   const handleApply = () => {
     onApply(local);
@@ -203,27 +224,34 @@ const AdvancedFiltersDrawer = ({
                   Faixa de {rental ? "Aluguel" : "Preço"}
                 </SectionLabel>
                 <span className="text-body text-[10px] text-muted-foreground/70">
-                  até {formatCurrency(activePriceBounds[1])}
+                  {validPriceRange
+                    ? `${formatCurrency(priceLo)} – ${formatCurrency(priceHi)}`
+                    : "Sem imóveis no filtro atual"}
                 </span>
               </div>
-              <Slider
-                min={activePriceBounds[0]}
-                max={activePriceBounds[1]}
-                step={priceStep}
-                value={[
-                  Math.max(local.priceRange[0], activePriceBounds[0]),
-                  Math.min(local.priceRange[1], activePriceBounds[1]),
-                ]}
-                onValueChange={(v) =>
-                  setLocal((f) => ({ ...f, priceRange: v as [number, number] }))
-                }
-                className="mt-2"
-              />
+              {validPriceRange ? (
+                <Slider
+                  min={priceLo}
+                  max={priceHi}
+                  step={priceStep}
+                  value={[
+                    Math.max(local.priceRange[0], priceLo),
+                    Math.min(local.priceRange[1], priceHi),
+                  ]}
+                  onValueChange={(v) =>
+                    setLocal((f) => ({ ...f, priceRange: v as [number, number] }))
+                  }
+                  className="mt-2"
+                />
+              ) : (
+                <div className="h-2 rounded-full bg-muted mt-2" />
+              )}
               <div className="flex justify-between text-body text-[11px] text-foreground/80">
                 <span>{formatCurrency(local.priceRange[0])}</span>
                 <span>{formatCurrency(local.priceRange[1])}</span>
               </div>
             </div>
+
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
