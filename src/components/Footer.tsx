@@ -34,13 +34,22 @@ const Footer = () => {
       <div className="max-w-7xl mx-auto">
         {/* Barra superior: Logo + Nav + Botão */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-6 border-b border-white/10 pb-8 mb-8">
-          <Link to="/">
+          <Link
+            to="/"
+            onClick={(e) => {
+              if (location.pathname === "/") {
+                e.preventDefault();
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }
+            }}
+          >
             <img
               src={logoRafael}
               alt="Rafael Albuquerque"
               className="h-8 md:h-10 w-auto"
             />
           </Link>
+
 
           <nav className="flex flex-wrap items-center gap-6">
             {navItems.map((item) =>
