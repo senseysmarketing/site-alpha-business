@@ -5,7 +5,7 @@ export default function FloatingWhatsApp() {
   const { pathname } = useLocation();
 
   // Esconder em rotas privadas (admin/login)
-  if (pathname.startsWith("/admin") || pathname.startsWith("/login")) {
+  if (pathname.startsWith("/admin") || pathname.startsWith("/login") || pathname.startsWith("/imovel")) {
     return null;
   }
 
