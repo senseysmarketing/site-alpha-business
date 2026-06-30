@@ -8,7 +8,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -305,14 +304,6 @@ const AdvancedFiltersDrawer = ({
               />
             </div>
 
-            <div className="space-y-3">
-              <SectionLabel>Banheiros (mínimo)</SectionLabel>
-              <ChipRow
-                value={local.minBathrooms}
-                onChange={(n) => setLocal((f) => ({ ...f, minBathrooms: n }))}
-                max={4}
-              />
-            </div>
 
             <div className="space-y-3">
               <SectionLabel>Vagas (mínimo)</SectionLabel>
@@ -451,21 +442,6 @@ const AdvancedFiltersDrawer = ({
             </div>
           </div>
 
-          {/* GRUPO 4 — Extras */}
-          <div className="space-y-3 pt-5 border-t border-border/40">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-body text-sm text-foreground">Somente em destaque</p>
-                <p className="text-body text-[11px] text-muted-foreground">
-                  Imóveis selecionados pela curadoria
-                </p>
-              </div>
-              <Switch
-                checked={local.onlyFeatured}
-                onCheckedChange={(v) => setLocal((f) => ({ ...f, onlyFeatured: v }))}
-              />
-            </div>
-          </div>
         </div>
 
         {/* Footer fixo */}
