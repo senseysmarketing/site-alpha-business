@@ -8,6 +8,13 @@ import type { ParsedFilters } from "@/components/search/FilterChips";
 import AiSearchChatButton from "@/components/search/ai-chat/AiSearchChatButton";
 import AiSearchChatModal from "@/components/search/ai-chat/AiSearchChatModal";
 import { useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface SearchResult {
   id: string;
@@ -122,9 +129,6 @@ const buildTitle = (params: URLSearchParams, initialQuery: string): { title: str
   };
 };
 
-const selectClass =
-  "bg-background border border-border rounded-full px-4 py-2 text-body text-xs tracking-wider uppercase text-foreground outline-none focus:ring-1 focus:ring-primary appearance-none cursor-pointer pr-8";
-
 const SearchHero = ({
   initialQuery,
   onResults,
@@ -203,20 +207,33 @@ const SearchHero = ({
               />
             </div>
 
-            <div className="relative">
-              <select
-                value={sortBy}
-                onChange={(e) => onSortChange(e.target.value as SortBy)}
-                className={selectClass}
+            <Select value={sortBy} onValueChange={(value) => onSortChange(value as SortBy)}>
+              <SelectTrigger
+                className="bg-background border border-border rounded-full px-4 py-2 text-body text-xs tracking-wider uppercase text-foreground outline-none focus:ring-1 focus:ring-primary cursor-pointer h-auto min-h-[36px] w-auto"
               >
-                <option value="relevance">Ordenar: Relevância</option>
-                <option value="price_asc">Menor preço</option>
-                <option value="price_desc">Maior preço</option>
-                <option value="area_desc">Maior área</option>
-                <option value="alpha">A → Z</option>
-                <option value="recent">Mais recentes</option>
-              </select>
-            </div>
+                <SelectValue>
+                  {(() => {
+                    const labels: Record<SortBy, string> = {
+                      relevance: "Relevância",
+                      price_asc: "Menor preço",
+                      price_desc: "Maior preço",
+                      area_desc: "Maior área",
+                      alpha: "A → Z",
+                      recent: "Mais recentes",
+                    };
+                    return `Ordenar: ${labels[sortBy]}`;
+                  })()}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="relevance">Relevância</SelectItem>
+                <SelectItem value="price_asc">Menor preço</SelectItem>
+                <SelectItem value="price_desc">Maior preço</SelectItem>
+                <SelectItem value="area_desc">Maior área</SelectItem>
+                <SelectItem value="alpha">A → Z</SelectItem>
+                <SelectItem value="recent">Mais recentes</SelectItem>
+              </SelectContent>
+            </Select>
 
             <button
               onClick={onOpenFilters}
