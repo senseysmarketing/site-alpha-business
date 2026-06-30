@@ -123,7 +123,7 @@ const SearchResults = () => {
   const [parsedFilters, setParsedFilters] = useState<ParsedFilters | null>(null);
   const [visibleCount, setVisibleCount] = useState(9);
   const [localQuery, setLocalQuery] = useState("");
-  const [sortBy, setSortBy] = useState<SortBy>("relevance");
+  const [sortBy, setSortBy] = useState<SortBy>("price_desc");
 
   const {
     data: activePropertyRows,
