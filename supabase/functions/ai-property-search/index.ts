@@ -2576,23 +2576,35 @@ const handleConverseV3 = async (sb: SB, body: any) => {
   }
 
   // 3.5) Transaction intent guard — preço sem compra/locação gera confusão entre venda x aluguel.
-  // Se o usuário mencionou valor mas ainda não disse se quer comprar ou alugar, pergunte antes.
+  // Tenta inferir automaticamente a partir dos limites reais do estoque ativo.
+  // Só pergunta quando o valor cai na zona ambígua (entre sale_min e rent_max) ou não há valor.
   const hasBudget = (state.minPrice != null) || (state.maxPrice != null);
   if (hasBudget && !state.transactionType) {
-    const stateOut = state;
-    return {
-      assistantMessage:
-        `Antes de eu filtrar pelo valor, me confirma: você está pensando em **comprar** ou **alugar**? A faixa de preço muda bastante entre os dois.`,
-      responseType: "clarification" as const,
-      conversation_state: stateOut,
-      updatedState: { filters: stateOut } as ConversationState,
-      parsedFilters: stateOut,
-      suggestedOptions: [
-        { label: "Quero comprar", value: "venda", kind: "transaction", action: "set_transaction" },
-        { label: "Quero alugar", value: "locacao", kind: "transaction", action: "set_transaction" },
-      ],
-      nextAction: "ask" as const,
-    };
+    const bounds = await loadPriceBounds(sb);
+    const inferred = inferTransactionFromPrice(state, bounds);
+    if (inferred) {
+      console.log("[handleConverseV3] inferred transactionType from price", {
+        ref: Math.max(state.minPrice ?? 0, state.maxPrice ?? 0),
+        bounds,
+        inferred,
+      });
+      state.transactionType = inferred;
+    } else {
+      const stateOut = state;
+      return {
+        assistantMessage:
+          `Antes de eu filtrar pelo valor, me confirma: você está pensando em **comprar** ou **alugar**? A faixa de preço muda bastante entre os dois.`,
+        responseType: "clarification" as const,
+        conversation_state: stateOut,
+        updatedState: { filters: stateOut } as ConversationState,
+        parsedFilters: stateOut,
+        suggestedOptions: [
+          { label: "Quero comprar", value: "venda", kind: "transaction", action: "set_transaction" },
+          { label: "Quero alugar", value: "locacao", kind: "transaction", action: "set_transaction" },
+        ],
+        nextAction: "ask" as const,
+      };
+    }
   }
 
   // 4) Filter + rank
