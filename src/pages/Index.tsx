@@ -58,7 +58,9 @@ const Index = () => {
         <ContactSection />
       </main>
       <Footer />
+      <FloatingScrollTop />
     </>
+
   );
 };
 
