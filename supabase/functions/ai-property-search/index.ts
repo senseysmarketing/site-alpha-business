@@ -1653,6 +1653,58 @@ const loadCondoIndex = async (sb: SB): Promise<CondoEntry[]> => {
   return entries;
 };
 
+// ---------- Price bounds (dynamic transaction inference) ----------
+interface PriceBounds {
+  saleMin: number | null;
+  saleMax: number | null;
+  rentMin: number | null;
+  rentMax: number | null;
+}
+let priceBoundsCache: { bounds: PriceBounds; at: number } | null = null;
+const FALLBACK_BOUNDS: PriceBounds = { saleMin: 600000, saleMax: null, rentMin: 0, rentMax: 200000 };
+
+const loadPriceBounds = async (sb: SB): Promise<PriceBounds> => {
+  if (priceBoundsCache && Date.now() - priceBoundsCache.at < V3_TTL_MS) return priceBoundsCache.bounds;
+  try {
+    const rows = await loadActiveProperties(sb);
+    let saleMin: number | null = null, saleMax: number | null = null;
+    let rentMin: number | null = null, rentMax: number | null = null;
+    for (const r of rows) {
+      const tt = (r.transaction_type || "").toLowerCase();
+      const isSale = tt === "venda" || tt === "ambos";
+      const isRent = tt === "locacao" || tt === "aluguel" || tt === "ambos";
+      if (isSale && typeof r.price === "number" && r.price > 0) {
+        if (saleMin === null || r.price < saleMin) saleMin = r.price;
+        if (saleMax === null || r.price > saleMax) saleMax = r.price;
+      }
+      if (isRent && typeof r.rental_price === "number" && r.rental_price > 0) {
+        if (rentMin === null || r.rental_price < rentMin) rentMin = r.rental_price;
+        if (rentMax === null || r.rental_price > rentMax) rentMax = r.rental_price;
+      }
+    }
+    const bounds: PriceBounds = { saleMin, saleMax, rentMin, rentMax };
+    priceBoundsCache = { bounds, at: Date.now() };
+    console.log(`[loadPriceBounds]`, bounds);
+    return bounds;
+  } catch (e) {
+    console.error("[loadPriceBounds] failed, using fallback", e);
+    return FALLBACK_BOUNDS;
+  }
+};
+
+const inferTransactionFromPrice = (
+  state: { minPrice?: number | null; maxPrice?: number | null },
+  bounds: PriceBounds,
+): "venda" | "locacao" | null => {
+  const ref = Math.max(state.minPrice ?? 0, state.maxPrice ?? 0);
+  if (ref <= 0) return null;
+  const rentMax = bounds.rentMax ?? 0;
+  const saleMin = bounds.saleMin ?? 0;
+  if (rentMax > 0 && ref > rentMax) return "venda";
+  if (saleMin > 0 && ref < saleMin) return "locacao";
+  return null;
+};
+
 const STOPWORDS_V3 = new Set([
   "de", "do", "da", "dos", "das", "e", "ed", "edificio", "edifício",
   "residencial", "condominio", "condomínio", "cond", "resid", "res",
@@ -1924,7 +1976,7 @@ Regras críticas:
 7. **DESAMBIGUAÇÃO BAIRRO vs CONDOMÍNIO**: Os termos "Alphaville" e "Tamboré" SOZINHOS (sem número e sem outro condomínio citado) são AMBÍGUOS: podem significar a região como um todo OU um condomínio numerado específico. NESTE CASO, devolva APENAS o reply pedindo a clarificação ("Você quer ver imóveis da região de Alphaville como um todo ou de um condomínio específico, ex.: Alphaville 1, 2, 3…?"), com filters_patch vazio, e intent="clarify_region". NÃO tente adivinhar.
 8. Com número ("alphaville 1", "tamboré 2") use condominium normalmente.
 9. "granja viana", "raposo tavares", "km 26", "cotia" → use address_query (NÃO condominium). **NUNCA infira região/cidade/bairro a partir do NOME de um condomínio do catálogo** — por exemplo, "Alphaville Granja Viana" é um condomínio; isso NÃO significa que o usuário quer Granja Viana. Só preencha address_query, city ou neighborhood se a MENSAGEM ATUAL do usuário citar explicitamente o termo geográfico.
-10. **VENDA vs LOCAÇÃO**: Se o usuário citar valor/orçamento ("até 1 milhão", "uns 8 mil"), mas ainda NÃO disse se quer comprar ou alugar, NÃO chute transactionType — devolva filters_patch só com o preço e uma reply curta perguntando "Você quer comprar ou alugar?". Faixas típicas de aluguel ficam em R$ até 50 mil/mês; valores acima costumam ser venda — mas confirme.
+10. **VENDA vs LOCAÇÃO**: Quando o usuário citar valor/orçamento, devolva APENAS o preço (minPrice/maxPrice) — o backend infere automaticamente venda x locação a partir dos limites reais do estoque (ex.: valor muito acima da maior locação → venda; muito abaixo da menor venda → locação). NUNCA chute `transactionType` sem que o usuário tenha dito "comprar/vender" ou "alugar/locação" nesta mensagem.
 11. Imóveis com transaction_type="ambos" estão disponíveis tanto para venda quanto para locação (mostre preço correto conforme a intenção do cliente).
 12. **CLARIFICAÇÃO PENDENTE**: Se o `Estado atual` tiver `pendingClarification` setado como "alphaville" ou "tambore", isso significa que a ambiguidade bairro vs condomínio ainda NÃO foi resolvida pelo usuário. NESTE TURNO, devolva intent="clarify_region", filters_patch vazio e uma reply re-perguntando — mesmo que o usuário tenha falado de outra coisa (preço, compra/aluguel etc.) você pode anotar esse filtro, mas DEVE re-perguntar a região.
 
@@ -1933,7 +1985,7 @@ Exemplos:
 - Mensagem "alphaville 1" (sem mais nada) → { filters_patch: { condominium: "Alphaville 1" } }.
 - Mensagem "imóveis em alphaville" → { filters_patch: {}, intent: "clarify_region", reply: "Quer ver toda a região de Alphaville ou um condomínio específico (Alphaville 1, 2, 3…)?" }.
 - Mensagem "quero imoveis na granja viana" → { filters_patch: {}, address_query: "granja viana", reply: "Achei imóveis na Granja Viana. Você quer comprar ou alugar?" }.
-- Mensagem "até 5 milhões" → { filters_patch: { maxPrice: 5000000 }, reply: "Show, anotei até R$ 5 milhões. Você está pensando em comprar ou alugar?" }.
+- Mensagem "até 5 milhões" → { filters_patch: { maxPrice: 5000000 } } (o servidor infere venda automaticamente).
 - Mensagem "uns 15 mil de aluguel" → { filters_patch: { transactionType: "locacao", maxPrice: 15000 } }.
 
 
@@ -2524,23 +2576,35 @@ const handleConverseV3 = async (sb: SB, body: any) => {
   }
 
   // 3.5) Transaction intent guard — preço sem compra/locação gera confusão entre venda x aluguel.
-  // Se o usuário mencionou valor mas ainda não disse se quer comprar ou alugar, pergunte antes.
+  // Tenta inferir automaticamente a partir dos limites reais do estoque ativo.
+  // Só pergunta quando o valor cai na zona ambígua (entre sale_min e rent_max) ou não há valor.
   const hasBudget = (state.minPrice != null) || (state.maxPrice != null);
   if (hasBudget && !state.transactionType) {
-    const stateOut = state;
-    return {
-      assistantMessage:
-        `Antes de eu filtrar pelo valor, me confirma: você está pensando em **comprar** ou **alugar**? A faixa de preço muda bastante entre os dois.`,
-      responseType: "clarification" as const,
-      conversation_state: stateOut,
-      updatedState: { filters: stateOut } as ConversationState,
-      parsedFilters: stateOut,
-      suggestedOptions: [
-        { label: "Quero comprar", value: "venda", kind: "transaction", action: "set_transaction" },
-        { label: "Quero alugar", value: "locacao", kind: "transaction", action: "set_transaction" },
-      ],
-      nextAction: "ask" as const,
-    };
+    const bounds = await loadPriceBounds(sb);
+    const inferred = inferTransactionFromPrice(state, bounds);
+    if (inferred) {
+      console.log("[handleConverseV3] inferred transactionType from price", {
+        ref: Math.max(state.minPrice ?? 0, state.maxPrice ?? 0),
+        bounds,
+        inferred,
+      });
+      state.transactionType = inferred;
+    } else {
+      const stateOut = state;
+      return {
+        assistantMessage:
+          `Antes de eu filtrar pelo valor, me confirma: você está pensando em **comprar** ou **alugar**? A faixa de preço muda bastante entre os dois.`,
+        responseType: "clarification" as const,
+        conversation_state: stateOut,
+        updatedState: { filters: stateOut } as ConversationState,
+        parsedFilters: stateOut,
+        suggestedOptions: [
+          { label: "Quero comprar", value: "venda", kind: "transaction", action: "set_transaction" },
+          { label: "Quero alugar", value: "locacao", kind: "transaction", action: "set_transaction" },
+        ],
+        nextAction: "ask" as const,
+      };
+    }
   }
 
   // 4) Filter + rank
