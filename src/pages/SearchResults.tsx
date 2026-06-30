@@ -55,6 +55,7 @@ interface SearchResult {
 }
 
 const isRental = isRentalTransaction;
+const isTerreno = (r: SearchResult) => normalize(r.property_type || "") === "terreno";
 
 const numberParam = (value: string | null) => {
   if (!value) return null;
