@@ -55,6 +55,7 @@ interface SearchResult {
 }
 
 const isRental = isRentalTransaction;
+const isTerreno = (r: SearchResult) => normalize(r.property_type || "") === "terreno";
 
 const numberParam = (value: string | null) => {
   if (!value) return null;
@@ -123,7 +124,7 @@ const SearchResults = () => {
   const [parsedFilters, setParsedFilters] = useState<ParsedFilters | null>(null);
   const [visibleCount, setVisibleCount] = useState(9);
   const [localQuery, setLocalQuery] = useState("");
-  const [sortBy, setSortBy] = useState<SortBy>("relevance");
+  const [sortBy, setSortBy] = useState<SortBy>("price_desc");
 
   const {
     data: activePropertyRows,
@@ -219,28 +220,25 @@ const SearchResults = () => {
       (isRental(r.transaction_type) ? r.rental_price : r.price) ?? 0;
 
     const sorted = [...searched];
+    const terrenoRank = (r: SearchResult) => (isTerreno(r) ? 1 : 0);
     switch (sortBy) {
       case "price_asc":
-        sorted.sort((a, b) => priceOf(a) - priceOf(b));
+        sorted.sort((a, b) => terrenoRank(a) - terrenoRank(b) || priceOf(a) - priceOf(b));
         break;
       case "price_desc":
-        sorted.sort((a, b) => priceOf(b) - priceOf(a));
+        sorted.sort((a, b) => terrenoRank(a) - terrenoRank(b) || priceOf(b) - priceOf(a));
         break;
       case "area_desc":
-        sorted.sort((a, b) => (b.area_total || 0) - (a.area_total || 0));
+        sorted.sort((a, b) => terrenoRank(a) - terrenoRank(b) || (b.area_total || 0) - (a.area_total || 0));
         break;
       case "alpha":
-        sorted.sort((a, b) => (a.title || "").localeCompare(b.title || "", "pt-BR"));
+        sorted.sort((a, b) => terrenoRank(a) - terrenoRank(b) || (a.title || "").localeCompare(b.title || "", "pt-BR"));
         break;
       case "recent":
-        sorted.sort((a, b) => (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0));
+        sorted.sort((a, b) => terrenoRank(a) - terrenoRank(b) || (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0));
         break;
       default:
-        sorted.sort((a, b) => {
-          const photoA = a.photo ? 1 : 0;
-          const photoB = b.photo ? 1 : 0;
-          return photoB - photoA;
-        });
+        sorted.sort((a, b) => terrenoRank(a) - terrenoRank(b) || (b.photo ? 1 : 0) - (a.photo ? 1 : 0));
     }
     return sorted;
   }, [results, filters, tagParam, localQuery, sortBy]);
