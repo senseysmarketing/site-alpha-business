@@ -8,6 +8,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SearchHero, { type SortBy } from "@/components/search/SearchHero";
 import BentoGrid from "@/components/search/BentoGrid";
+import { type TransactionIntent } from "@/components/search/PropertyCard";
 import AdvancedFiltersDrawer, {
   type Filters,
   type FilterBounds,
@@ -24,6 +25,8 @@ import { matchCondo } from "@/lib/condoMatching";
 import {
   fetchAllActivePropertySearchRows,
   isRentalTransaction,
+  hasRentalOffer,
+  hasSaleOffer,
   type ActivePropertySearchRow,
 } from "@/lib/propertyQueries";
 
@@ -56,6 +59,26 @@ interface SearchResult {
 
 const isRental = isRentalTransaction;
 const isTerreno = (r: SearchResult) => normalize(r.property_type || "") === "terreno";
+
+/**
+ * Resolve which price column to use for a row, based on the user's current
+ * transaction intent. For "ambos" rows the choice depends on intent; for
+ * pure rental/sale rows the natural column wins.
+ */
+const priceForIntent = (
+  r: Pick<SearchResult, "transaction_type" | "price" | "rental_price">,
+  intent: Filters["transactionType"]
+): number | null => {
+  if (intent === "locacao" || intent === "aluguel") {
+    return r.rental_price ?? r.price ?? null;
+  }
+  if (intent === "venda") {
+    return r.price ?? r.rental_price ?? null;
+  }
+  // "all": prefer sale price; fall back to rental
+  if (hasSaleOffer(r.transaction_type)) return r.price ?? r.rental_price ?? null;
+  return r.rental_price ?? r.price ?? null;
+};
 
 const numberParam = (value: string | null) => {
   if (!value) return null;
@@ -175,14 +198,15 @@ const SearchResults = () => {
 
   const filteredResults = useMemo(() => {
     const tagNorm = tagParam ? normalize(tagParam) : "";
+    const intent = filters.transactionType;
     const filtered = results.filter((r) => {
-      const rental = isRental(r.transaction_type);
-      const price = rental ? r.rental_price : r.price;
-      if (price && (price < filters.priceRange[0] || price > filters.priceRange[1])) return false;
-      if (filters.transactionType !== "all") {
-        const wantRental = isRental(filters.transactionType);
-        if (wantRental !== rental) return false;
+      // Transaction inclusion: "ambos" rows match both venda and locacao.
+      if (intent !== "all") {
+        const want = isRental(intent) ? hasRentalOffer : hasSaleOffer;
+        if (!want(r.transaction_type)) return false;
       }
+      const price = priceForIntent(r, intent);
+      if (price && (price < filters.priceRange[0] || price > filters.priceRange[1])) return false;
       if (filters.propertyType !== "all" && r.property_type !== filters.propertyType) return false;
       if (filters.minBedrooms > 0 && (r.bedrooms || 0) < filters.minBedrooms) return false;
       if (filters.minBathrooms > 0 && (r.bathrooms || 0) < filters.minBathrooms) return false;
@@ -216,8 +240,7 @@ const SearchResults = () => {
         })
       : filtered;
 
-    const priceOf = (r: SearchResult) =>
-      (isRental(r.transaction_type) ? r.rental_price : r.price) ?? 0;
+    const priceOf = (r: SearchResult) => priceForIntent(r, intent) ?? 0;
 
     const sorted = [...searched];
     const terrenoRank = (r: SearchResult) => (isTerreno(r) ? 1 : 0);
@@ -263,10 +286,10 @@ const SearchResults = () => {
   // Compute filter bounds dynamically from loaded results.
   const bounds = useMemo<FilterBounds>(() => {
     const salePrices = results
-      .filter((r) => !isRental(r.transaction_type) && r.price)
+      .filter((r) => hasSaleOffer(r.transaction_type) && r.price)
       .map((r) => r.price as number);
     const rentPrices = results
-      .filter((r) => isRental(r.transaction_type) && r.rental_price)
+      .filter((r) => hasRentalOffer(r.transaction_type) && r.rental_price)
       .map((r) => r.rental_price as number);
     const areas = results.filter((r) => r.area_total).map((r) => r.area_total as number);
 
@@ -473,6 +496,7 @@ const SearchResults = () => {
                 results={visibleResults}
                 compareIds={compareIds}
                 onToggleCompare={handleToggleCompare}
+                transactionIntent={filters.transactionType as TransactionIntent}
               />
               {hasMore && (
                 <div className="flex justify-center mt-12 md:mt-16">

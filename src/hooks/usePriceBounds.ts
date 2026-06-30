@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchAllActivePropertyPriceRows, isRentalTransaction } from "@/lib/propertyQueries";
+import { fetchAllActivePropertyPriceRows, hasRentalOffer, hasSaleOffer } from "@/lib/propertyQueries";
 
 export interface PriceBounds {
   saleMin: number;
@@ -33,10 +33,10 @@ async function loadPriceBounds(): Promise<PriceBounds> {
     }
 
     const sale = rows
-      .filter((p) => !isRentalTransaction(p.transaction_type) && p.price)
+      .filter((p) => hasSaleOffer(p.transaction_type) && p.price)
       .map((p) => Number(p.price));
     const rent = rows
-      .filter((p) => isRentalTransaction(p.transaction_type) && p.rental_price)
+      .filter((p) => hasRentalOffer(p.transaction_type) && p.rental_price)
       .map((p) => Number(p.rental_price));
 
     cache = {

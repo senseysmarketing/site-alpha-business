@@ -20,8 +20,10 @@ const AiChatResultsPreview = ({ results, onNavigate }: Props) => {
     <div className="pl-12 space-y-3">
       <div className="grid grid-cols-2 gap-3">
         {results.slice(0, 4).map((r) => {
-          const rental = r.transaction_type === "locacao" || r.transaction_type === "aluguel";
-          const price = rental ? r.rental_price : r.price;
+          const both = r.transaction_type === "ambos";
+          const pureRental = r.transaction_type === "locacao" || r.transaction_type === "aluguel";
+          const rental = pureRental && !both;
+          const price = rental ? r.rental_price : (r.price ?? r.rental_price);
           return (
             <Link
               key={r.id}

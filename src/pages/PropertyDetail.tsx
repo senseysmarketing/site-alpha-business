@@ -213,7 +213,7 @@ const PropertyDetail = () => {
         title: p.title,
         property_type: p.property_type,
         transaction_type: p.transaction_type,
-        price: (p.transaction_type === "locacao" || p.transaction_type === "aluguel") ? p.rental_price : p.price,
+        price: (p.transaction_type === "locacao" || p.transaction_type === "aluguel") ? p.rental_price : (p.price ?? p.rental_price),
         area_total: p.area_total ?? 0,
         suites: p.bedrooms ?? 0,
         parking: p.parking_spots ?? 0,

@@ -143,15 +143,19 @@ const SearchResultsPanel = ({ results, loading, visible, onClose, query = "" }: 
                   </div>
 
                   <div className="flex items-center gap-3 mt-1">
-                    {(result.price || result.rental_price) && (
-                      <span className="text-body text-xs font-medium text-foreground font-mono">
-                        {formatPrice(
-                          (result.transaction_type === "aluguel" || result.transaction_type === "locacao")
-                            ? result.rental_price
-                            : result.price
-                        )}
-                      </span>
-                    )}
+                    {(result.price || result.rental_price) && (() => {
+                      const tt = result.transaction_type;
+                      const both = tt === "ambos";
+                      const pureRental = tt === "aluguel" || tt === "locacao";
+                      const showRental = pureRental && !both;
+                      const value = showRental ? result.rental_price : (result.price ?? result.rental_price);
+                      return (
+                        <span className="text-body text-xs font-medium text-foreground font-mono">
+                          {formatPrice(value)}
+                          {showRental && value ? "/mês" : ""}
+                        </span>
+                      );
+                    })()}
                     {result.bedrooms ? (
                       <span className="flex items-center gap-1 text-muted-foreground text-xs">
                         <Bed size={12} /> {result.bedrooms}

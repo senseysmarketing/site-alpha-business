@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import PropertyCard from "./PropertyCard";
+import PropertyCard, { type TransactionIntent } from "./PropertyCard";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -27,9 +27,10 @@ interface BentoGridProps {
   results: SearchResult[];
   compareIds: string[];
   onToggleCompare: (id: string) => void;
+  transactionIntent?: TransactionIntent;
 }
 
-const BentoGrid = ({ results, compareIds, onToggleCompare }: BentoGridProps) => {
+const BentoGrid = ({ results, compareIds, onToggleCompare, transactionIntent }: BentoGridProps) => {
   const gridRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -72,6 +73,7 @@ const BentoGrid = ({ results, compareIds, onToggleCompare }: BentoGridProps) => 
             property={item}
             isSelected={compareIds.includes(item.id)}
             onToggleCompare={onToggleCompare}
+            transactionIntent={transactionIntent}
           />
         </div>
       ))}
