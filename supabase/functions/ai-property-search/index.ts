@@ -1653,6 +1653,58 @@ const loadCondoIndex = async (sb: SB): Promise<CondoEntry[]> => {
   return entries;
 };
 
+// ---------- Price bounds (dynamic transaction inference) ----------
+interface PriceBounds {
+  saleMin: number | null;
+  saleMax: number | null;
+  rentMin: number | null;
+  rentMax: number | null;
+}
+let priceBoundsCache: { bounds: PriceBounds; at: number } | null = null;
+const FALLBACK_BOUNDS: PriceBounds = { saleMin: 600000, saleMax: null, rentMin: 0, rentMax: 200000 };
+
+const loadPriceBounds = async (sb: SB): Promise<PriceBounds> => {
+  if (priceBoundsCache && Date.now() - priceBoundsCache.at < V3_TTL_MS) return priceBoundsCache.bounds;
+  try {
+    const rows = await loadActiveProperties(sb);
+    let saleMin: number | null = null, saleMax: number | null = null;
+    let rentMin: number | null = null, rentMax: number | null = null;
+    for (const r of rows) {
+      const tt = (r.transaction_type || "").toLowerCase();
+      const isSale = tt === "venda" || tt === "ambos";
+      const isRent = tt === "locacao" || tt === "aluguel" || tt === "ambos";
+      if (isSale && typeof r.price === "number" && r.price > 0) {
+        if (saleMin === null || r.price < saleMin) saleMin = r.price;
+        if (saleMax === null || r.price > saleMax) saleMax = r.price;
+      }
+      if (isRent && typeof r.rental_price === "number" && r.rental_price > 0) {
+        if (rentMin === null || r.rental_price < rentMin) rentMin = r.rental_price;
+        if (rentMax === null || r.rental_price > rentMax) rentMax = r.rental_price;
+      }
+    }
+    const bounds: PriceBounds = { saleMin, saleMax, rentMin, rentMax };
+    priceBoundsCache = { bounds, at: Date.now() };
+    console.log(`[loadPriceBounds]`, bounds);
+    return bounds;
+  } catch (e) {
+    console.error("[loadPriceBounds] failed, using fallback", e);
+    return FALLBACK_BOUNDS;
+  }
+};
+
+const inferTransactionFromPrice = (
+  state: { minPrice?: number | null; maxPrice?: number | null },
+  bounds: PriceBounds,
+): "venda" | "locacao" | null => {
+  const ref = Math.max(state.minPrice ?? 0, state.maxPrice ?? 0);
+  if (ref <= 0) return null;
+  const rentMax = bounds.rentMax ?? 0;
+  const saleMin = bounds.saleMin ?? 0;
+  if (rentMax > 0 && ref > rentMax) return "venda";
+  if (saleMin > 0 && ref < saleMin) return "locacao";
+  return null;
+};
+
 const STOPWORDS_V3 = new Set([
   "de", "do", "da", "dos", "das", "e", "ed", "edificio", "edifício",
   "residencial", "condominio", "condomínio", "cond", "resid", "res",
