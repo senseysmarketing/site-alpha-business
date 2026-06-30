@@ -1,4 +1,8 @@
-const UNGROUPED_NORMALIZED_BASES = new Set<string>(["valville", "residencial"]);
+const UNGROUPED_NORMALIZED_BASES = new Set<string>([
+  "valville",
+  "residencial",
+  "america",
+]);
 
 export interface CondoGroupItem {
   label: string; // display label (e.g., "1" for grouped, full name for singles)
@@ -91,7 +95,15 @@ export function buildCondoMenuData(rawNames: string[]): CondoMenuData {
     .map((e) => ({ label: e.canonical, full: e.canonical }))
     .sort((a, b) => a.label.localeCompare(b.label, "pt-BR"));
 
-  groups.sort((a, b) => a.canonical.localeCompare(b.canonical, "pt-BR"));
+  const PRIORITY_ORDER = ["alphaville", "tambore", "genesis"];
+  groups.sort((a, b) => {
+    const pa = PRIORITY_ORDER.indexOf(a.base);
+    const pb = PRIORITY_ORDER.indexOf(b.base);
+    if (pa !== -1 && pb !== -1) return pa - pb;
+    if (pa !== -1) return -1;
+    if (pb !== -1) return 1;
+    return a.canonical.localeCompare(b.canonical, "pt-BR");
+  });
 
   return { groups, singles };
 }
