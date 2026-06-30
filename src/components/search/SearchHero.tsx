@@ -8,6 +8,13 @@ import type { ParsedFilters } from "@/components/search/FilterChips";
 import AiSearchChatButton from "@/components/search/ai-chat/AiSearchChatButton";
 import AiSearchChatModal from "@/components/search/ai-chat/AiSearchChatModal";
 import { useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface SearchResult {
   id: string;
