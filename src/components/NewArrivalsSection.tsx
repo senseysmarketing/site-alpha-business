@@ -59,18 +59,25 @@ const NewArrivalsSection = () => {
     },
   });
 
-  const properties = dbProperties?.map((p) => ({
-        id: p.id,
-        image: p.photos?.[0] || "/placeholder.svg",
-        title: p.title,
-        code: p.code,
-        type: p.property_type || "Casa",
-        area: p.area_total,
-        suites: p.bedrooms || 0,
-        parking: p.parking_spots || 0,
-        price: p.price,
-        transaction: p.transaction_type || "Venda",
-      })) ?? [];
+  const properties = dbProperties?.map((p) => {
+        const both = p.transaction_type === "ambos";
+        const isRental = p.transaction_type === "locacao" || p.transaction_type === "aluguel";
+        const label = both ? "Venda e Locação" : isRental ? "Locação" : "Venda";
+        const price = isRental && !both ? p.rental_price : p.price;
+        return {
+          id: p.id,
+          image: p.photos?.[0] || "/placeholder.svg",
+          title: p.title,
+          code: p.code,
+          type: p.property_type || "Casa",
+          area: p.area_total,
+          suites: p.bedrooms || 0,
+          parking: p.parking_spots || 0,
+          price,
+          transaction: label,
+          isRental: isRental && !both,
+        };
+      }) ?? [];
 
   useEffect(() => {
     if (!emblaApi) return;
@@ -190,6 +197,11 @@ const NewArrivalsSection = () => {
                         </p>
                         <p className="text-display text-lg font-medium text-foreground">
                           {formatPrice(prop.price)}
+                          {prop.price && prop.isRental && (
+                            <span className="text-body text-[11px] tracking-wider uppercase text-muted-foreground ml-1">
+                              /mês
+                            </span>
+                          )}
                         </p>
                       </div>
                       <span className="text-body text-sm bg-foreground text-background px-5 py-2 rounded-md group-hover:bg-foreground/90 transition-colors">
