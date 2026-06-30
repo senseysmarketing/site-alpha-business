@@ -8,6 +8,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SearchHero, { type SortBy } from "@/components/search/SearchHero";
 import BentoGrid from "@/components/search/BentoGrid";
+import { type TransactionIntent } from "@/components/search/PropertyCard";
 import AdvancedFiltersDrawer, {
   type Filters,
   type FilterBounds,
@@ -495,7 +496,7 @@ const SearchResults = () => {
                 results={visibleResults}
                 compareIds={compareIds}
                 onToggleCompare={handleToggleCompare}
-                transactionIntent={filters.transactionType}
+                transactionIntent={filters.transactionType as TransactionIntent}
               />
               {hasMore && (
                 <div className="flex justify-center mt-12 md:mt-16">
