@@ -1985,7 +1985,7 @@ Exemplos:
 - Mensagem "alphaville 1" (sem mais nada) → { filters_patch: { condominium: "Alphaville 1" } }.
 - Mensagem "imóveis em alphaville" → { filters_patch: {}, intent: "clarify_region", reply: "Quer ver toda a região de Alphaville ou um condomínio específico (Alphaville 1, 2, 3…)?" }.
 - Mensagem "quero imoveis na granja viana" → { filters_patch: {}, address_query: "granja viana", reply: "Achei imóveis na Granja Viana. Você quer comprar ou alugar?" }.
-- Mensagem "até 5 milhões" → { filters_patch: { maxPrice: 5000000 }, reply: "Show, anotei até R$ 5 milhões. Você está pensando em comprar ou alugar?" }.
+- Mensagem "até 5 milhões" → { filters_patch: { maxPrice: 5000000 } } (o servidor infere venda automaticamente).
 - Mensagem "uns 15 mil de aluguel" → { filters_patch: { transactionType: "locacao", maxPrice: 15000 } }.
 
 
