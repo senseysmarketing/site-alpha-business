@@ -196,24 +196,21 @@ const SearchResults = () => {
     mapPropertyRow,
   ]);
 
-  const filteredResults = useMemo(() => {
+  // Apply every filter EXCEPT price/area ranges. This subset drives the slider
+  // bounds so the slider always reflects "what's actually available given the
+  // other filters the user picked".
+  const nonRangeFiltered = useMemo(() => {
     const tagNorm = tagParam ? normalize(tagParam) : "";
     const intent = filters.transactionType;
-    const filtered = results.filter((r) => {
-      // Transaction inclusion: "ambos" rows match both venda and locacao.
+    return results.filter((r) => {
       if (intent !== "all") {
         const want = isRental(intent) ? hasRentalOffer : hasSaleOffer;
         if (!want(r.transaction_type)) return false;
       }
-      const price = priceForIntent(r, intent);
-      if (price && (price < filters.priceRange[0] || price > filters.priceRange[1])) return false;
       if (filters.propertyType !== "all" && r.property_type !== filters.propertyType) return false;
       if (filters.minBedrooms > 0 && (r.bedrooms || 0) < filters.minBedrooms) return false;
       if (filters.minBathrooms > 0 && (r.bathrooms || 0) < filters.minBathrooms) return false;
       if (filters.minParking > 0 && (r.parking_spots || 0) < filters.minParking) return false;
-      if (r.area_total != null) {
-        if (r.area_total < filters.areaRange[0] || r.area_total > filters.areaRange[1]) return false;
-      }
       if (filters.city !== "all" && r.city !== filters.city) return false;
       if (filters.neighborhood !== "all" && r.neighborhood !== filters.neighborhood) return false;
       if (filters.onlyFeatured && !r.is_featured) return false;
@@ -225,6 +222,30 @@ const SearchResults = () => {
           .map(normalize)
           .join(" | ");
         if (!haystack.includes(tagNorm)) return false;
+      }
+      return true;
+    });
+  }, [
+    results,
+    filters.transactionType,
+    filters.propertyType,
+    filters.minBedrooms,
+    filters.minBathrooms,
+    filters.minParking,
+    filters.city,
+    filters.neighborhood,
+    filters.onlyFeatured,
+    filters.condominium,
+    tagParam,
+  ]);
+
+  const filteredResults = useMemo(() => {
+    const intent = filters.transactionType;
+    const filtered = nonRangeFiltered.filter((r) => {
+      const price = priceForIntent(r, intent);
+      if (price && (price < filters.priceRange[0] || price > filters.priceRange[1])) return false;
+      if (r.area_total != null) {
+        if (r.area_total < filters.areaRange[0] || r.area_total > filters.areaRange[1]) return false;
       }
       return true;
     });
@@ -264,7 +285,7 @@ const SearchResults = () => {
         sorted.sort((a, b) => terrenoRank(a) - terrenoRank(b) || (b.photo ? 1 : 0) - (a.photo ? 1 : 0));
     }
     return sorted;
-  }, [results, filters, tagParam, localQuery, sortBy]);
+  }, [nonRangeFiltered, filters.priceRange, filters.areaRange, filters.transactionType, localQuery, sortBy]);
 
   // Reset pagination whenever the filtered set changes.
   useEffect(() => {
@@ -283,26 +304,43 @@ const SearchResults = () => {
     return [...new Set(results.map((r) => r.condominium).filter(Boolean))] as string[];
   }, [allCondos, results]);
 
-  // Compute filter bounds dynamically from loaded results.
+  /**
+   * Outlier-proof upper bound: returns the 98th percentile of the sorted list.
+   * Avoids one bad cadastro (e.g. R$ 3.2 bi) stretching the slider to absurd
+   * values. Always ensures result >= second-largest sample.
+   */
+  const percentileCap = (values: number[], p = 0.98): number => {
+    if (!values.length) return 0;
+    if (values.length < 5) return Math.max(...values);
+    const sorted = [...values].sort((a, b) => a - b);
+    const idx = Math.max(0, Math.min(sorted.length - 1, Math.floor(sorted.length * p)));
+    return sorted[idx];
+  };
+
+  // Compute filter bounds from the non-range subset, so the slider tracks the
+  // currently visible category (e.g. "casas à venda") instead of the whole DB.
   const bounds = useMemo<FilterBounds>(() => {
-    const salePrices = results
+    const source = nonRangeFiltered.length ? nonRangeFiltered : results;
+    const salePrices = source
       .filter((r) => hasSaleOffer(r.transaction_type) && r.price)
       .map((r) => r.price as number);
-    const rentPrices = results
+    const rentPrices = source
       .filter((r) => hasRentalOffer(r.transaction_type) && r.rental_price)
       .map((r) => r.rental_price as number);
-    const areas = results.filter((r) => r.area_total).map((r) => r.area_total as number);
+    const areas = source.filter((r) => r.area_total).map((r) => r.area_total as number);
 
     const roundUp = (n: number, step: number) => Math.ceil(n / step) * step;
     const roundDown = (n: number, step: number) => Math.floor(n / step) * step;
 
     const saleMin = salePrices.length ? roundDown(Math.min(...salePrices), 100_000) : 0;
-    const saleMax = salePrices.length ? roundUp(Math.max(...salePrices), 100_000) : 50_000_000;
+    const saleMax = salePrices.length ? roundUp(percentileCap(salePrices), 100_000) : 50_000_000;
     const rentMin = rentPrices.length ? roundDown(Math.min(...rentPrices), 1_000) : 0;
-    const rentMax = rentPrices.length ? roundUp(Math.max(...rentPrices), 1_000) : 50_000;
+    const rentMax = rentPrices.length ? roundUp(percentileCap(rentPrices), 1_000) : 50_000;
     const areaMin = areas.length ? roundDown(Math.min(...areas), 10) : 0;
-    const areaMax = areas.length ? roundUp(Math.max(...areas), 10) : 5000;
+    const areaMax = areas.length ? roundUp(percentileCap(areas), 10) : 5000;
 
+    // Property type / city / neighborhood options must stay global so the user
+    // can switch between categories — they don't depend on the current filter.
     const propertyTypes = [
       ...new Set(results.map((r) => r.property_type).filter(Boolean) as string[]),
     ].sort();
@@ -314,14 +352,14 @@ const SearchResults = () => {
     ].sort();
 
     return {
-      saleRange: [saleMin, saleMax],
-      rentRange: [rentMin, rentMax],
-      areaRange: [areaMin, areaMax],
+      saleRange: [Math.min(saleMin, saleMax), Math.max(saleMin, saleMax)],
+      rentRange: [Math.min(rentMin, rentMax), Math.max(rentMin, rentMax)],
+      areaRange: [Math.min(areaMin, areaMax), Math.max(areaMin, areaMax)],
       propertyTypes,
       cities,
       neighborhoods,
     };
-  }, [results]);
+  }, [nonRangeFiltered, results]);
 
   // Initialize price/area ranges to real bounds once data lands.
   const [boundsInitialized, setBoundsInitialized] = useState(false);
@@ -344,6 +382,56 @@ const SearchResults = () => {
     }));
     setBoundsInitialized(true);
   }, [bounds, results.length, boundsInitialized, hasUrlPriceRange, hasUrlAreaRange]);
+
+  // Clamp filter ranges whenever the bounds shift (e.g. user toggles
+  // propertyType, which shrinks the available price range). Stale URL params
+  // pointing outside the new bounds get stripped automatically.
+  useEffect(() => {
+    if (!boundsInitialized) return;
+    const activePriceBounds = isRental(filters.transactionType)
+      ? bounds.rentRange
+      : bounds.saleRange;
+    const clampedMin = Math.max(filters.priceRange[0], activePriceBounds[0]);
+    const clampedMax = Math.min(filters.priceRange[1], activePriceBounds[1]);
+    const safeMin = clampedMin <= clampedMax ? clampedMin : activePriceBounds[0];
+    const safeMax = clampedMin <= clampedMax ? clampedMax : activePriceBounds[1];
+    const areaMin = Math.max(filters.areaRange[0], bounds.areaRange[0]);
+    const areaMax = Math.min(filters.areaRange[1], bounds.areaRange[1]);
+    const safeAreaMin = areaMin <= areaMax ? areaMin : bounds.areaRange[0];
+    const safeAreaMax = areaMin <= areaMax ? areaMax : bounds.areaRange[1];
+
+    const priceChanged =
+      safeMin !== filters.priceRange[0] || safeMax !== filters.priceRange[1];
+    const areaChanged =
+      safeAreaMin !== filters.areaRange[0] || safeAreaMax !== filters.areaRange[1];
+
+    if (priceChanged || areaChanged) {
+      setFilters((f) => ({
+        ...f,
+        priceRange: [safeMin, safeMax],
+        areaRange: [safeAreaMin, safeAreaMax],
+      }));
+
+      // Drop URL params that no longer match the visible range.
+      const next = new URLSearchParams(searchParams);
+      let urlDirty = false;
+      const syncParam = (key: string, value: number, bound: number, isMin: boolean) => {
+        const outOfRange = isMin ? value <= bound : value >= bound;
+        if (outOfRange && next.has(key)) {
+          next.delete(key);
+          urlDirty = true;
+        } else if (!outOfRange && next.has(key) && next.get(key) !== String(value)) {
+          next.set(key, String(value));
+          urlDirty = true;
+        }
+      };
+      syncParam("minPrice", safeMin, activePriceBounds[0], true);
+      syncParam("maxPrice", safeMax, activePriceBounds[1], false);
+      syncParam("minArea", safeAreaMin, bounds.areaRange[0], true);
+      syncParam("maxArea", safeAreaMax, bounds.areaRange[1], false);
+      if (urlDirty) setSearchParams(next, { replace: true });
+    }
+  }, [bounds, boundsInitialized, filters.priceRange, filters.areaRange, filters.transactionType, searchParams, setSearchParams]);
 
   // Canonicalize condominium filter coming from URL once the list is loaded.
   useEffect(() => {
