@@ -129,9 +129,6 @@ const buildTitle = (params: URLSearchParams, initialQuery: string): { title: str
   };
 };
 
-const selectClass =
-  "bg-background border border-border rounded-full px-4 py-2 text-body text-xs tracking-wider uppercase text-foreground outline-none focus:ring-1 focus:ring-primary appearance-none cursor-pointer pr-8";
-
 const SearchHero = ({
   initialQuery,
   onResults,
