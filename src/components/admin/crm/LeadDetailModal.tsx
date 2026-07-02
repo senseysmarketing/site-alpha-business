@@ -39,6 +39,9 @@ import {
   PhoneCall,
   Repeat,
   Trash2,
+  Pencil,
+  X,
+  Check,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -131,6 +134,12 @@ export function LeadDetailModal({ lead, open, onOpenChange, team = [] }: LeadDet
   const [registeringActivity, setRegisteringActivity] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [editingActId, setEditingActId] = useState<string | null>(null);
+  const [editingActDraft, setEditingActDraft] = useState("");
+  const [savingEditAct, setSavingEditAct] = useState(false);
+  const [deleteActId, setDeleteActId] = useState<string | null>(null);
+  const [deletingAct, setDeletingAct] = useState(false);
 
   const handleDeleteLead = async () => {
     if (!lead) return;
@@ -150,7 +159,8 @@ export function LeadDetailModal({ lead, open, onOpenChange, team = [] }: LeadDet
   useEffect(() => {
     (async () => {
       const { data: u } = await supabase.auth.getUser();
-      const uid = u.user?.id;
+      const uid = u.user?.id ?? null;
+      setCurrentUserId(uid);
       if (!uid) {
         setCanReassign(false);
         return;
@@ -387,6 +397,45 @@ export function LeadDetailModal({ lead, open, onOpenChange, team = [] }: LeadDet
     toast({ title: "Contato registrado" });
     queryClient.invalidateQueries({ queryKey: ["lead_activities", lead.id] });
     invalidateLead();
+  };
+
+  const startEditActivity = (act: any) => {
+    setEditingActId(act.id);
+    setEditingActDraft(act.description ?? "");
+  };
+  const cancelEditActivity = () => {
+    setEditingActId(null);
+    setEditingActDraft("");
+  };
+  const handleSaveEditActivity = async () => {
+    if (!editingActId || !editingActDraft.trim() || !lead) return;
+    setSavingEditAct(true);
+    const { error } = await supabase
+      .from("lead_activities")
+      .update({ description: editingActDraft.trim() })
+      .eq("id", editingActId);
+    setSavingEditAct(false);
+    if (error) {
+      toast({ title: "Erro ao editar", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Atividade atualizada" });
+    setEditingActId(null);
+    setEditingActDraft("");
+    queryClient.invalidateQueries({ queryKey: ["lead_activities", lead.id] });
+  };
+  const handleDeleteActivity = async () => {
+    if (!deleteActId || !lead) return;
+    setDeletingAct(true);
+    const { error } = await supabase.from("lead_activities").delete().eq("id", deleteActId);
+    setDeletingAct(false);
+    if (error) {
+      toast({ title: "Erro ao excluir", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Atividade excluída" });
+    setDeleteActId(null);
+    queryClient.invalidateQueries({ queryKey: ["lead_activities", lead.id] });
   };
 
   const handleCopy = async (value: string, label: string) => {
@@ -779,29 +828,105 @@ export function LeadDetailModal({ lead, open, onOpenChange, team = [] }: LeadDet
                 </p>
               ) : (
                 <div className="space-y-0">
-                  {activities.map((act: any, i: number) => (
-                    <div key={act.id} className="flex gap-3 relative">
-                      <div className="flex flex-col items-center">
-                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground shrink-0">
-                          {activityIcons[act.type] || <StickyNote className="h-4 w-4" />}
+                  {activities.map((act: any, i: number) => {
+                    const isAuthor = !!act.created_by && act.created_by === currentUserId;
+                    const canManage = isAuthor || canReassign;
+                    const authorName = act.created_by
+                      ? userIdToName.get(act.created_by) || "Usuário"
+                      : "Sistema";
+                    const isEditing = editingActId === act.id;
+                    return (
+                      <div key={act.id} className="flex gap-3 relative group">
+                        <div className="flex flex-col items-center">
+                          <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground shrink-0">
+                            {activityIcons[act.type] || <StickyNote className="h-4 w-4" />}
+                          </div>
+                          {i < activities.length - 1 && (
+                            <div className="w-px flex-1 bg-border my-1" />
+                          )}
                         </div>
-                        {i < activities.length - 1 && (
-                          <div className="w-px flex-1 bg-border my-1" />
-                        )}
+                        <div className="pb-4 min-w-0 flex-1">
+                          <div className="flex items-start gap-2">
+                            <div className="min-w-0 flex-1">
+                              {isEditing ? (
+                                <Textarea
+                                  value={editingActDraft}
+                                  onChange={(e) => setEditingActDraft(e.target.value)}
+                                  className="min-h-[60px] text-sm"
+                                  autoFocus
+                                />
+                              ) : (
+                                <p className="text-sm text-foreground font-[Inter] whitespace-pre-wrap break-words">
+                                  {act.description}
+                                </p>
+                              )}
+                              <p className="text-[10px] text-muted-foreground/70 mt-0.5">
+                                por <span className="font-medium">{authorName}</span>
+                                {" · "}
+                                {format(new Date(act.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                                {" · "}
+                                {formatDistanceToNow(new Date(act.created_at), {
+                                  addSuffix: true,
+                                  locale: ptBR,
+                                })}
+                                {act.edited && (
+                                  <span className="ml-1 italic text-muted-foreground/60">
+                                    · editado
+                                  </span>
+                                )}
+                              </p>
+                            </div>
+                            {canManage && !isEditing && (
+                              <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-6 w-6"
+                                  onClick={() => startEditActivity(act)}
+                                  title="Editar atividade"
+                                >
+                                  <Pencil className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-6 w-6 text-destructive hover:text-destructive"
+                                  onClick={() => setDeleteActId(act.id)}
+                                  title="Excluir atividade"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            )}
+                            {isEditing && (
+                              <div className="flex items-center gap-0.5 shrink-0">
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-6 w-6"
+                                  onClick={handleSaveEditActivity}
+                                  disabled={savingEditAct || !editingActDraft.trim()}
+                                  title="Salvar"
+                                >
+                                  <Check className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-6 w-6"
+                                  onClick={cancelEditActivity}
+                                  disabled={savingEditAct}
+                                  title="Cancelar"
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <div className="pb-4 min-w-0 flex-1">
-                        <p className="text-sm text-foreground font-[Inter]">{act.description}</p>
-                        <p className="text-[10px] text-muted-foreground/70 mt-0.5">
-                          {format(new Date(act.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
-                          {" · "}
-                          {formatDistanceToNow(new Date(act.created_at), {
-                            addSuffix: true,
-                            locale: ptBR,
-                          })}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -958,6 +1083,27 @@ export function LeadDetailModal({ lead, open, onOpenChange, team = [] }: LeadDet
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {deleting ? "Excluindo..." : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!deleteActId} onOpenChange={(o) => !o && setDeleteActId(null)}>
+        <AlertDialogContent className="z-[90]">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir atividade?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação removerá o registro permanentemente da timeline.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletingAct}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteActivity}
+              disabled={deletingAct}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {deletingAct ? "Excluindo…" : "Excluir"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
