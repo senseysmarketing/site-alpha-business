@@ -396,6 +396,45 @@ export function LeadDetailModal({ lead, open, onOpenChange, team = [] }: LeadDet
     invalidateLead();
   };
 
+  const startEditActivity = (act: any) => {
+    setEditingActId(act.id);
+    setEditingActDraft(act.description ?? "");
+  };
+  const cancelEditActivity = () => {
+    setEditingActId(null);
+    setEditingActDraft("");
+  };
+  const handleSaveEditActivity = async () => {
+    if (!editingActId || !editingActDraft.trim() || !lead) return;
+    setSavingEditAct(true);
+    const { error } = await supabase
+      .from("lead_activities")
+      .update({ description: editingActDraft.trim() })
+      .eq("id", editingActId);
+    setSavingEditAct(false);
+    if (error) {
+      toast({ title: "Erro ao editar", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Atividade atualizada" });
+    setEditingActId(null);
+    setEditingActDraft("");
+    queryClient.invalidateQueries({ queryKey: ["lead_activities", lead.id] });
+  };
+  const handleDeleteActivity = async () => {
+    if (!deleteActId || !lead) return;
+    setDeletingAct(true);
+    const { error } = await supabase.from("lead_activities").delete().eq("id", deleteActId);
+    setDeletingAct(false);
+    if (error) {
+      toast({ title: "Erro ao excluir", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Atividade excluída" });
+    setDeleteActId(null);
+    queryClient.invalidateQueries({ queryKey: ["lead_activities", lead.id] });
+  };
+
   const handleCopy = async (value: string, label: string) => {
     try {
       await navigator.clipboard.writeText(value);
