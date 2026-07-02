@@ -318,24 +318,33 @@ export type Database = {
       lead_activities: {
         Row: {
           created_at: string
+          created_by: string | null
           description: string
+          edited: boolean
           id: string
           lead_id: string
           type: string
+          updated_at: string
         }
         Insert: {
           created_at?: string
+          created_by?: string | null
           description: string
+          edited?: boolean
           id?: string
           lead_id: string
           type: string
+          updated_at?: string
         }
         Update: {
           created_at?: string
+          created_by?: string | null
           description?: string
+          edited?: boolean
           id?: string
           lead_id?: string
           type?: string
+          updated_at?: string
         }
         Relationships: [
           {
