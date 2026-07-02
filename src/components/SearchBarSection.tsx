@@ -1,10 +1,18 @@
 import { motion } from "framer-motion";
 import { Search, Hash, ArrowRight } from "lucide-react";
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { usePriceBounds, buildPriceOptions } from "@/hooks/usePriceBounds";
 import AiSearchChatButton from "./search/ai-chat/AiSearchChatButton";
 import AiSearchChatModal from "./search/ai-chat/AiSearchChatModal";
+
+const brlFormatter = new Intl.NumberFormat("pt-BR", {
+  style: "currency",
+  currency: "BRL",
+  maximumFractionDigits: 0,
+});
+const parseCurrency = (input: string): string => input.replace(/\D/g, "");
+const formatCurrencyBRL = (digits: string): string =>
+  digits ? brlFormatter.format(Number(digits)) : "";
 
 const SearchBarSection = () => {
   const [mode, setMode] = useState<"cognitive" | "traditional">("cognitive");
@@ -22,11 +30,31 @@ const SearchBarSection = () => {
   const [filterMinArea, setFilterMinArea] = useState("");
   const [filterTransaction, setFilterTransaction] = useState("");
 
-  const priceBounds = usePriceBounds();
   const isRental = filterTransaction === "locacao" || filterTransaction === "aluguel";
-  const priceOptions = isRental
-    ? buildPriceOptions(priceBounds.rentMin, priceBounds.rentMax, true)
-    : buildPriceOptions(priceBounds.saleMin, priceBounds.saleMax, false);
+
+  const priceError = useMemo(() => {
+    if (!filterMinPrice || !filterMaxPrice) return null;
+    if (Number(filterMinPrice) > Number(filterMaxPrice)) {
+      return "O valor mínimo não pode ser maior que o máximo.";
+    }
+    return null;
+  }, [filterMinPrice, filterMaxPrice]);
+
+  const priceSuggestions = useMemo(
+    () =>
+      isRental
+        ? [
+            { label: "Até R$ 5 mil", min: "", max: "5000" },
+            { label: "R$ 5–10 mil", min: "5000", max: "10000" },
+            { label: "Acima de R$ 10 mil", min: "10000", max: "" },
+          ]
+        : [
+            { label: "Até R$ 2 mi", min: "", max: "2000000" },
+            { label: "R$ 2–5 mi", min: "2000000", max: "5000000" },
+            { label: "Acima de R$ 5 mi", min: "5000000", max: "" },
+          ],
+    [isRental],
+  );
 
   const handleCodeSearch = useCallback(() => {
     const code = filterCode.trim();
@@ -35,6 +63,7 @@ const SearchBarSection = () => {
   }, [filterCode, navigate]);
 
   const handleTraditionalSearch = useCallback(() => {
+    if (priceError) return;
     const params = new URLSearchParams();
     if (filterCode.trim()) params.set("q", filterCode.trim());
     if (filterTransaction) params.set("transactionType", filterTransaction);
@@ -123,19 +152,44 @@ const SearchBarSection = () => {
                   <option value="terreno">Terreno</option>
                 </select>
 
-                <select value={filterMinPrice} onChange={(e) => setFilterMinPrice(e.target.value)} className={selectClass}>
-                  <option value="">Preço mínimo</option>
-                  {priceOptions.filter((o) => o.value).map((o) => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
-                </select>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={formatCurrencyBRL(filterMinPrice)}
+                  onChange={(e) => setFilterMinPrice(parseCurrency(e.target.value))}
+                  onKeyDown={(e) => { if (e.key === "Enter" && !priceError) handleTraditionalSearch(); }}
+                  placeholder={isRental ? "Mínimo (ex: R$ 5.000)" : "Mínimo (ex: R$ 1.500.000)"}
+                  aria-invalid={!!priceError}
+                  className={`${selectClass} text-left ${priceError ? "border-destructive focus:ring-destructive" : ""}`}
+                />
 
-                <select value={filterMaxPrice} onChange={(e) => setFilterMaxPrice(e.target.value)} className={selectClass}>
-                  <option value="">Preço máximo</option>
-                  {priceOptions.filter((o) => o.value).map((o) => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
-                </select>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={formatCurrencyBRL(filterMaxPrice)}
+                  onChange={(e) => setFilterMaxPrice(parseCurrency(e.target.value))}
+                  onKeyDown={(e) => { if (e.key === "Enter" && !priceError) handleTraditionalSearch(); }}
+                  placeholder={isRental ? "Máximo (ex: R$ 15.000)" : "Máximo (ex: R$ 5.000.000)"}
+                  aria-invalid={!!priceError}
+                  className={`${selectClass} text-left ${priceError ? "border-destructive focus:ring-destructive" : ""}`}
+                />
+              </div>
+
+              {priceError && (
+                <p className="text-body text-xs text-destructive -mt-2">{priceError}</p>
+              )}
+
+              <div className="flex flex-wrap gap-2 -mt-2">
+                {priceSuggestions.map((s) => (
+                  <button
+                    key={s.label}
+                    type="button"
+                    onClick={() => { setFilterMinPrice(s.min); setFilterMaxPrice(s.max); }}
+                    className="text-body text-[10px] tracking-[0.1em] uppercase px-3 py-1.5 rounded-full bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors"
+                  >
+                    {s.label}
+                  </button>
+                ))}
               </div>
 
               {/* Linha 3 — Filtros secundários */}
@@ -178,7 +232,8 @@ const SearchBarSection = () => {
 
               <button
                 onClick={handleTraditionalSearch}
-                className="w-full bg-primary text-primary-foreground py-3 text-body text-xs tracking-[0.15em] uppercase hover-magnetic flex items-center justify-center gap-2 rounded-md"
+                disabled={!!priceError}
+                className="w-full bg-primary text-primary-foreground py-3 text-body text-xs tracking-[0.15em] uppercase hover-magnetic flex items-center justify-center gap-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Search size={14} />
                 Buscar imóveis
