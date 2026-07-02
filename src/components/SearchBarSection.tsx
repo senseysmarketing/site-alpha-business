@@ -63,6 +63,7 @@ const SearchBarSection = () => {
   }, [filterCode, navigate]);
 
   const handleTraditionalSearch = useCallback(() => {
+    if (priceError) return;
     const params = new URLSearchParams();
     if (filterCode.trim()) params.set("q", filterCode.trim());
     if (filterTransaction) params.set("transactionType", filterTransaction);
