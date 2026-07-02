@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Plus, Search, RefreshCw, Settings, Copy, Power, Trash2, Eye, EyeOff } from "lucide-react";
 import { KenloSettingsDialog } from "@/components/admin/KenloSettingsDialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -65,8 +65,9 @@ const transactionFilters = [
 ] as const;
 
 const Properties = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [properties, setProperties] = useState<Property[]>([]);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
   const [filterCondo, setFilterCondo] = useState("Todos");
   const [filterStatus, setFilterStatus] = useState("Todos");
   const [loading, setLoading] = useState(true);
@@ -78,6 +79,15 @@ const Properties = () => {
   const navigate = useNavigate();
   const { isAdmin, role } = useAuth();
   const canManageProperties = isAdmin || role === "gerente";
+
+  useEffect(() => {
+    const q = searchParams.get("q");
+    if (q !== null) {
+      setSearch(q);
+      searchParams.delete("q");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     const fetchProperties = async () => {

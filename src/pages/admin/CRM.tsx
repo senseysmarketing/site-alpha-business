@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, Plus, Settings2, Columns3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,8 @@ export default function CRM() {
     supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id ?? null));
   }, []);
 
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const { data: team = [] } = useQuery({
     queryKey: ["team_profiles_crm"],
     queryFn: async () => {
@@ -70,6 +73,19 @@ export default function CRM() {
     () => rawLeads.map((l) => ({ ...l, assigned_user: l.assigned_user_id ? teamMap.get(l.assigned_user_id) ?? null : null })),
     [rawLeads, teamMap]
   );
+
+  // Auto-open lead vindo da busca global (?leadId=)
+  useEffect(() => {
+    const leadId = searchParams.get("leadId");
+    if (!leadId || leads.length === 0) return;
+    const target = leads.find((l) => l.id === leadId);
+    if (target) {
+      setSelectedLead(target);
+      setSheetOpen(true);
+      searchParams.delete("leadId");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, leads, setSearchParams]);
 
   const visibleLeads = useMemo(() => {
     if (responsibleFilter === "all") return leads;

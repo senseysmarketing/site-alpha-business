@@ -1,4 +1,4 @@
-import { Bell, LogOut, Search, User } from "lucide-react";
+import { Bell, LogOut, User } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { GlobalAdminSearch } from "@/components/admin/GlobalAdminSearch";
 
 const routeTitles: Record<string, string> = {
   "/admin": "Dashboard",
@@ -42,13 +42,7 @@ export function AdminHeader() {
 
       {/* Center: Global search */}
       <div className="flex-1 max-w-md mx-4 hidden md:block">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/50" />
-          <Input
-            placeholder="Pesquisar Imóveis ou Leads"
-            className="pl-9 h-9 bg-white/50 border-border/30 font-[Inter] text-sm placeholder:text-muted-foreground/40 focus-visible:ring-[#2A070C]/20"
-          />
-        </div>
+        <GlobalAdminSearch />
       </div>
 
       {/* Right: Notifications + Profile */}
