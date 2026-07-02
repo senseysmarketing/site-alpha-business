@@ -37,6 +37,8 @@ export default function CRM() {
     supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id ?? null));
   }, []);
 
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const { data: team = [] } = useQuery({
     queryKey: ["team_profiles_crm"],
     queryFn: async () => {
