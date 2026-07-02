@@ -1,4 +1,4 @@
-import { Bell, LogOut, Search, User } from "lucide-react";
+import { Bell, LogOut, User } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { GlobalAdminSearch } from "@/components/admin/GlobalAdminSearch";
 
 const routeTitles: Record<string, string> = {
   "/admin": "Dashboard",
