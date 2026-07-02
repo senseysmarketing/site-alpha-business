@@ -74,6 +74,19 @@ export default function CRM() {
     [rawLeads, teamMap]
   );
 
+  // Auto-open lead vindo da busca global (?leadId=)
+  useEffect(() => {
+    const leadId = searchParams.get("leadId");
+    if (!leadId || leads.length === 0) return;
+    const target = leads.find((l) => l.id === leadId);
+    if (target) {
+      setSelectedLead(target);
+      setSheetOpen(true);
+      searchParams.delete("leadId");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, leads, setSearchParams]);
+
   const visibleLeads = useMemo(() => {
     if (responsibleFilter === "all") return leads;
     if (responsibleFilter === "me") return leads.filter((l) => l.assigned_user_id === currentUserId);
