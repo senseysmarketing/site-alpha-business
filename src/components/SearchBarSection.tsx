@@ -179,18 +179,6 @@ const SearchBarSection = () => {
                 <p className="text-body text-xs text-destructive -mt-2">{priceError}</p>
               )}
 
-              <div className="flex flex-wrap gap-2 -mt-2">
-                {priceSuggestions.map((s) => (
-                  <button
-                    key={s.label}
-                    type="button"
-                    onClick={() => { setFilterMinPrice(s.min); setFilterMaxPrice(s.max); }}
-                    className="text-body text-[10px] tracking-[0.1em] uppercase px-3 py-1.5 rounded-full bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors"
-                  >
-                    {s.label}
-                  </button>
-                ))}
-              </div>
 
               {/* Linha 3 — Filtros secundários */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
