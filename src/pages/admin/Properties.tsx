@@ -65,8 +65,9 @@ const transactionFilters = [
 ] as const;
 
 const Properties = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [properties, setProperties] = useState<Property[]>([]);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
   const [filterCondo, setFilterCondo] = useState("Todos");
   const [filterStatus, setFilterStatus] = useState("Todos");
   const [loading, setLoading] = useState(true);
