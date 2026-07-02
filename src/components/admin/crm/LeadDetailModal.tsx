@@ -828,29 +828,105 @@ export function LeadDetailModal({ lead, open, onOpenChange, team = [] }: LeadDet
                 </p>
               ) : (
                 <div className="space-y-0">
-                  {activities.map((act: any, i: number) => (
-                    <div key={act.id} className="flex gap-3 relative">
-                      <div className="flex flex-col items-center">
-                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground shrink-0">
-                          {activityIcons[act.type] || <StickyNote className="h-4 w-4" />}
+                  {activities.map((act: any, i: number) => {
+                    const isAuthor = !!act.created_by && act.created_by === currentUserId;
+                    const canManage = isAuthor || canReassign;
+                    const authorName = act.created_by
+                      ? userIdToName.get(act.created_by) || "Usuário"
+                      : "Sistema";
+                    const isEditing = editingActId === act.id;
+                    return (
+                      <div key={act.id} className="flex gap-3 relative group">
+                        <div className="flex flex-col items-center">
+                          <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground shrink-0">
+                            {activityIcons[act.type] || <StickyNote className="h-4 w-4" />}
+                          </div>
+                          {i < activities.length - 1 && (
+                            <div className="w-px flex-1 bg-border my-1" />
+                          )}
                         </div>
-                        {i < activities.length - 1 && (
-                          <div className="w-px flex-1 bg-border my-1" />
-                        )}
+                        <div className="pb-4 min-w-0 flex-1">
+                          <div className="flex items-start gap-2">
+                            <div className="min-w-0 flex-1">
+                              {isEditing ? (
+                                <Textarea
+                                  value={editingActDraft}
+                                  onChange={(e) => setEditingActDraft(e.target.value)}
+                                  className="min-h-[60px] text-sm"
+                                  autoFocus
+                                />
+                              ) : (
+                                <p className="text-sm text-foreground font-[Inter] whitespace-pre-wrap break-words">
+                                  {act.description}
+                                </p>
+                              )}
+                              <p className="text-[10px] text-muted-foreground/70 mt-0.5">
+                                por <span className="font-medium">{authorName}</span>
+                                {" · "}
+                                {format(new Date(act.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                                {" · "}
+                                {formatDistanceToNow(new Date(act.created_at), {
+                                  addSuffix: true,
+                                  locale: ptBR,
+                                })}
+                                {act.edited && (
+                                  <span className="ml-1 italic text-muted-foreground/60">
+                                    · editado
+                                  </span>
+                                )}
+                              </p>
+                            </div>
+                            {canManage && !isEditing && (
+                              <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-6 w-6"
+                                  onClick={() => startEditActivity(act)}
+                                  title="Editar atividade"
+                                >
+                                  <Pencil className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-6 w-6 text-destructive hover:text-destructive"
+                                  onClick={() => setDeleteActId(act.id)}
+                                  title="Excluir atividade"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            )}
+                            {isEditing && (
+                              <div className="flex items-center gap-0.5 shrink-0">
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-6 w-6"
+                                  onClick={handleSaveEditActivity}
+                                  disabled={savingEditAct || !editingActDraft.trim()}
+                                  title="Salvar"
+                                >
+                                  <Check className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-6 w-6"
+                                  onClick={cancelEditActivity}
+                                  disabled={savingEditAct}
+                                  title="Cancelar"
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <div className="pb-4 min-w-0 flex-1">
-                        <p className="text-sm text-foreground font-[Inter]">{act.description}</p>
-                        <p className="text-[10px] text-muted-foreground/70 mt-0.5">
-                          {format(new Date(act.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
-                          {" · "}
-                          {formatDistanceToNow(new Date(act.created_at), {
-                            addSuffix: true,
-                            locale: ptBR,
-                          })}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
