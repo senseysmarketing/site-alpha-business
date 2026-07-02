@@ -156,7 +156,8 @@ export function LeadDetailModal({ lead, open, onOpenChange, team = [] }: LeadDet
   useEffect(() => {
     (async () => {
       const { data: u } = await supabase.auth.getUser();
-      const uid = u.user?.id;
+      const uid = u.user?.id ?? null;
+      setCurrentUserId(uid);
       if (!uid) {
         setCanReassign(false);
         return;
