@@ -131,6 +131,12 @@ export function LeadDetailModal({ lead, open, onOpenChange, team = [] }: LeadDet
   const [registeringActivity, setRegisteringActivity] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [editingActId, setEditingActId] = useState<string | null>(null);
+  const [editingActDraft, setEditingActDraft] = useState("");
+  const [savingEditAct, setSavingEditAct] = useState(false);
+  const [deleteActId, setDeleteActId] = useState<string | null>(null);
+  const [deletingAct, setDeletingAct] = useState(false);
 
   const handleDeleteLead = async () => {
     if (!lead) return;
