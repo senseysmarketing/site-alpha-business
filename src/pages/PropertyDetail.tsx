@@ -95,14 +95,103 @@ const PropertyDetail = () => {
         setDbCondo(null);
       }
 
-      // Fetch similar from DB (exclude current)
-      const { data: sim } = await supabase
-        .from("properties")
-        .select("*")
-        .eq("status", "ativo")
-        .neq("id", id)
-        .limit(3);
-      if (!cancelled) setSimilarDb(sim ?? []);
+      // Fetch similar with cascading criteria
+      const isRental = data.transaction_type === "locacao" || data.transaction_type === "aluguel";
+      const refPrice = isRental ? (data.rental_price ?? data.price ?? 0) : (data.price ?? data.rental_price ?? 0);
+      const txCompat = data.transaction_type === "ambos"
+        ? ["venda", "locacao", "aluguel", "ambos"]
+        : isRental
+          ? ["locacao", "aluguel", "ambos"]
+          : ["venda", "ambos"];
+
+      const isTerreno = (p: DbProperty) => (p.property_type ?? "").toLowerCase().includes("terreno");
+      const priceOf = (p: DbProperty) => {
+        const rent = p.transaction_type === "locacao" || p.transaction_type === "aluguel";
+        return rent ? (p.rental_price ?? p.price ?? 0) : (p.price ?? p.rental_price ?? 0);
+      };
+      const sortByRelevance = (arr: DbProperty[]) =>
+        [...arr].sort((a, b) => {
+          const ta = isTerreno(a) ? 1 : 0;
+          const tb = isTerreno(b) ? 1 : 0;
+          if (ta !== tb) return ta - tb;
+          if (!refPrice) return 0;
+          return Math.abs(priceOf(a) - refPrice) - Math.abs(priceOf(b) - refPrice);
+        });
+
+      const accumulator: DbProperty[] = [];
+      const seen = new Set<string>([id!]);
+      const push = (arr: DbProperty[]) => {
+        for (const p of sortByRelevance(arr)) {
+          if (accumulator.length >= 3) break;
+          if (seen.has(p.id)) continue;
+          seen.add(p.id);
+          accumulator.push(p);
+        }
+      };
+
+      const runQuery = async (build: (q: any) => any) => {
+        let q = supabase.from("properties").select("*")
+          .eq("status", "ativo")
+          .neq("id", id!)
+          .in("transaction_type", txCompat);
+        q = build(q);
+        const { data: r } = await q.limit(12);
+        return r ?? [];
+      };
+
+      // 1) Mesmo condomínio + faixa de preço ±30%
+      if (data.condominium && accumulator.length < 3) {
+        const min = refPrice ? refPrice * 0.7 : 0;
+        const max = refPrice ? refPrice * 1.3 : 0;
+        const rows = await runQuery((q) => {
+          q = q.eq("condominium", data.condominium!);
+          if (refPrice) {
+            const col = isRental ? "rental_price" : "price";
+            q = q.gte(col, min).lte(col, max);
+          }
+          return q;
+        });
+        push(rows);
+      }
+      // 2) Mesmo condomínio (sem preço)
+      if (data.condominium && accumulator.length < 3) {
+        const rows = await runQuery((q) => q.eq("condominium", data.condominium!));
+        push(rows);
+      }
+      // 3) Mesmo bairro + mesmo tipo + preço ±40%
+      if (data.neighborhood && accumulator.length < 3) {
+        const min = refPrice ? refPrice * 0.6 : 0;
+        const max = refPrice ? refPrice * 1.4 : 0;
+        const rows = await runQuery((q) => {
+          q = q.eq("neighborhood", data.neighborhood!);
+          if (data.property_type) q = q.eq("property_type", data.property_type);
+          if (refPrice) {
+            const col = isRental ? "rental_price" : "price";
+            q = q.gte(col, min).lte(col, max);
+          }
+          return q;
+        });
+        push(rows);
+      }
+      // 4) Mesma cidade + mesmo tipo
+      if (data.city && accumulator.length < 3) {
+        const rows = await runQuery((q) => {
+          q = q.eq("city", data.city!);
+          if (data.property_type) q = q.eq("property_type", data.property_type);
+          return q;
+        });
+        push(rows);
+      }
+      // 5) Fallback: mesmo tipo + transação compatível
+      if (accumulator.length < 3) {
+        const rows = await runQuery((q) => {
+          if (data.property_type) q = q.eq("property_type", data.property_type);
+          return q;
+        });
+        push(rows);
+      }
+
+      if (!cancelled) setSimilarDb(accumulator.slice(0, 3));
     })();
     return () => { cancelled = true; };
   }, [id]);
