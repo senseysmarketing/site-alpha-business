@@ -1,10 +1,18 @@
 import { motion } from "framer-motion";
 import { Search, Hash, ArrowRight } from "lucide-react";
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { usePriceBounds, buildPriceOptions } from "@/hooks/usePriceBounds";
 import AiSearchChatButton from "./search/ai-chat/AiSearchChatButton";
 import AiSearchChatModal from "./search/ai-chat/AiSearchChatModal";
+
+const brlFormatter = new Intl.NumberFormat("pt-BR", {
+  style: "currency",
+  currency: "BRL",
+  maximumFractionDigits: 0,
+});
+const parseCurrency = (input: string): string => input.replace(/\D/g, "");
+const formatCurrencyBRL = (digits: string): string =>
+  digits ? brlFormatter.format(Number(digits)) : "";
 
 const SearchBarSection = () => {
   const [mode, setMode] = useState<"cognitive" | "traditional">("cognitive");
