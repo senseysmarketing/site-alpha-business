@@ -40,21 +40,6 @@ const SearchBarSection = () => {
     return null;
   }, [filterMinPrice, filterMaxPrice]);
 
-  const priceSuggestions = useMemo(
-    () =>
-      isRental
-        ? [
-            { label: "Até R$ 5 mil", min: "", max: "5000" },
-            { label: "R$ 5–10 mil", min: "5000", max: "10000" },
-            { label: "Acima de R$ 10 mil", min: "10000", max: "" },
-          ]
-        : [
-            { label: "Até R$ 2 mi", min: "", max: "2000000" },
-            { label: "R$ 2–5 mi", min: "2000000", max: "5000000" },
-            { label: "Acima de R$ 5 mi", min: "5000000", max: "" },
-          ],
-    [isRental],
-  );
 
   const handleCodeSearch = useCallback(() => {
     const code = filterCode.trim();
