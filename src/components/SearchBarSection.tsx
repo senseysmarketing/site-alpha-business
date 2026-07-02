@@ -152,19 +152,44 @@ const SearchBarSection = () => {
                   <option value="terreno">Terreno</option>
                 </select>
 
-                <select value={filterMinPrice} onChange={(e) => setFilterMinPrice(e.target.value)} className={selectClass}>
-                  <option value="">Preço mínimo</option>
-                  {priceOptions.filter((o) => o.value).map((o) => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
-                </select>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={formatCurrencyBRL(filterMinPrice)}
+                  onChange={(e) => setFilterMinPrice(parseCurrency(e.target.value))}
+                  onKeyDown={(e) => { if (e.key === "Enter" && !priceError) handleTraditionalSearch(); }}
+                  placeholder={isRental ? "Mínimo (ex: R$ 5.000)" : "Mínimo (ex: R$ 1.500.000)"}
+                  aria-invalid={!!priceError}
+                  className={`${selectClass} text-left ${priceError ? "border-destructive focus:ring-destructive" : ""}`}
+                />
 
-                <select value={filterMaxPrice} onChange={(e) => setFilterMaxPrice(e.target.value)} className={selectClass}>
-                  <option value="">Preço máximo</option>
-                  {priceOptions.filter((o) => o.value).map((o) => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
-                </select>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={formatCurrencyBRL(filterMaxPrice)}
+                  onChange={(e) => setFilterMaxPrice(parseCurrency(e.target.value))}
+                  onKeyDown={(e) => { if (e.key === "Enter" && !priceError) handleTraditionalSearch(); }}
+                  placeholder={isRental ? "Máximo (ex: R$ 15.000)" : "Máximo (ex: R$ 5.000.000)"}
+                  aria-invalid={!!priceError}
+                  className={`${selectClass} text-left ${priceError ? "border-destructive focus:ring-destructive" : ""}`}
+                />
+              </div>
+
+              {priceError && (
+                <p className="text-body text-xs text-destructive -mt-2">{priceError}</p>
+              )}
+
+              <div className="flex flex-wrap gap-2 -mt-2">
+                {priceSuggestions.map((s) => (
+                  <button
+                    key={s.label}
+                    type="button"
+                    onClick={() => { setFilterMinPrice(s.min); setFilterMaxPrice(s.max); }}
+                    className="text-body text-[10px] tracking-[0.1em] uppercase px-3 py-1.5 rounded-full bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors"
+                  >
+                    {s.label}
+                  </button>
+                ))}
               </div>
 
               {/* Linha 3 — Filtros secundários */}
