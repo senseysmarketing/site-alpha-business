@@ -30,11 +30,31 @@ const SearchBarSection = () => {
   const [filterMinArea, setFilterMinArea] = useState("");
   const [filterTransaction, setFilterTransaction] = useState("");
 
-  const priceBounds = usePriceBounds();
   const isRental = filterTransaction === "locacao" || filterTransaction === "aluguel";
-  const priceOptions = isRental
-    ? buildPriceOptions(priceBounds.rentMin, priceBounds.rentMax, true)
-    : buildPriceOptions(priceBounds.saleMin, priceBounds.saleMax, false);
+
+  const priceError = useMemo(() => {
+    if (!filterMinPrice || !filterMaxPrice) return null;
+    if (Number(filterMinPrice) > Number(filterMaxPrice)) {
+      return "O valor mínimo não pode ser maior que o máximo.";
+    }
+    return null;
+  }, [filterMinPrice, filterMaxPrice]);
+
+  const priceSuggestions = useMemo(
+    () =>
+      isRental
+        ? [
+            { label: "Até R$ 5 mil", min: "", max: "5000" },
+            { label: "R$ 5–10 mil", min: "5000", max: "10000" },
+            { label: "Acima de R$ 10 mil", min: "10000", max: "" },
+          ]
+        : [
+            { label: "Até R$ 2 mi", min: "", max: "2000000" },
+            { label: "R$ 2–5 mi", min: "2000000", max: "5000000" },
+            { label: "Acima de R$ 5 mi", min: "5000000", max: "" },
+          ],
+    [isRental],
+  );
 
   const handleCodeSearch = useCallback(() => {
     const code = filterCode.trim();
