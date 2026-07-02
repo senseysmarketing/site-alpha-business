@@ -232,7 +232,8 @@ const SearchBarSection = () => {
 
               <button
                 onClick={handleTraditionalSearch}
-                className="w-full bg-primary text-primary-foreground py-3 text-body text-xs tracking-[0.15em] uppercase hover-magnetic flex items-center justify-center gap-2 rounded-md"
+                disabled={!!priceError}
+                className="w-full bg-primary text-primary-foreground py-3 text-body text-xs tracking-[0.15em] uppercase hover-magnetic flex items-center justify-center gap-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Search size={14} />
                 Buscar imóveis
