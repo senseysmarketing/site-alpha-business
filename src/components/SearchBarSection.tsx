@@ -40,21 +40,6 @@ const SearchBarSection = () => {
     return null;
   }, [filterMinPrice, filterMaxPrice]);
 
-  const priceSuggestions = useMemo(
-    () =>
-      isRental
-        ? [
-            { label: "Até R$ 5 mil", min: "", max: "5000" },
-            { label: "R$ 5–10 mil", min: "5000", max: "10000" },
-            { label: "Acima de R$ 10 mil", min: "10000", max: "" },
-          ]
-        : [
-            { label: "Até R$ 2 mi", min: "", max: "2000000" },
-            { label: "R$ 2–5 mi", min: "2000000", max: "5000000" },
-            { label: "Acima de R$ 5 mi", min: "5000000", max: "" },
-          ],
-    [isRental],
-  );
 
   const handleCodeSearch = useCallback(() => {
     const code = filterCode.trim();
@@ -179,18 +164,6 @@ const SearchBarSection = () => {
                 <p className="text-body text-xs text-destructive -mt-2">{priceError}</p>
               )}
 
-              <div className="flex flex-wrap gap-2 -mt-2">
-                {priceSuggestions.map((s) => (
-                  <button
-                    key={s.label}
-                    type="button"
-                    onClick={() => { setFilterMinPrice(s.min); setFilterMaxPrice(s.max); }}
-                    className="text-body text-[10px] tracking-[0.1em] uppercase px-3 py-1.5 rounded-full bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors"
-                  >
-                    {s.label}
-                  </button>
-                ))}
-              </div>
 
               {/* Linha 3 — Filtros secundários */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
