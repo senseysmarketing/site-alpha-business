@@ -81,6 +81,15 @@ const Properties = () => {
   const canManageProperties = isAdmin || role === "gerente";
 
   useEffect(() => {
+    const q = searchParams.get("q");
+    if (q !== null) {
+      setSearch(q);
+      searchParams.delete("q");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
+  useEffect(() => {
     const fetchProperties = async () => {
       setLoading(true);
       try {
