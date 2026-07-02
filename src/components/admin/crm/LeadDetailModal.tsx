@@ -1087,6 +1087,27 @@ export function LeadDetailModal({ lead, open, onOpenChange, team = [] }: LeadDet
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={!!deleteActId} onOpenChange={(o) => !o && setDeleteActId(null)}>
+        <AlertDialogContent className="z-[90]">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir atividade?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação removerá o registro permanentemente da timeline.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletingAct}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteActivity}
+              disabled={deletingAct}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {deletingAct ? "Excluindo…" : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
