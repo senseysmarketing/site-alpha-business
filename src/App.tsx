@@ -93,10 +93,8 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <SiteGate>
-            <AnimatedRoutes />
-            <FloatingWhatsApp />
-          </SiteGate>
+          <AnimatedRoutes />
+          <FloatingWhatsApp />
         </BrowserRouter>
       </TooltipProvider>
     </ThemeProvider>
