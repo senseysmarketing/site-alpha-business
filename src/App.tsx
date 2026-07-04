@@ -8,7 +8,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import ProtectedRoute from "./components/admin/ProtectedRoute.tsx";
 import AdminLayout from "./components/admin/AdminLayout.tsx";
-import SiteGate from "./components/SiteGate";
+
 import ThemeProvider from "./components/ThemeProvider";
 
 const Index = lazy(() => import("./pages/Index"));
