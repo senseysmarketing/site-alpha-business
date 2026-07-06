@@ -605,14 +605,18 @@ const PropertyForm = () => {
             </div>
           </TabsContent>
         </Tabs>
+        </fieldset>
 
         <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-border/50">
           <Button variant="outline" onClick={() => navigate("/admin/imoveis")} className="font-[Inter] text-xs uppercase tracking-widest">
-            Cancelar
+            {canEdit ? "Cancelar" : "Voltar"}
           </Button>
-          <Button onClick={handleSave} disabled={saving} className="font-[Inter] text-xs uppercase tracking-widest">
-            {saving ? "Salvando..." : isEditing ? "Atualizar" : "Cadastrar"}
-          </Button>
+          {canEdit && (
+            <Button onClick={handleSave} disabled={saving} className="font-[Inter] text-xs uppercase tracking-widest">
+              {saving ? "Salvando..." : isEditing ? "Atualizar" : "Cadastrar"}
+            </Button>
+          )}
+
         </div>
       </div>
     </div>
