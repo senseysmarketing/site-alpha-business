@@ -125,3 +125,23 @@
   .text-greige { color: hsl(var(--greige)); }
   .text-bordeaux { color: hsl(var(--bordeaux)); }
 }
+/* CRM Pipeline — scrollbar horizontal sempre visível */
+.crm-pipeline-scroll::-webkit-scrollbar {
+  height: 10px;
+  -webkit-appearance: none;
+}
+.crm-pipeline-scroll::-webkit-scrollbar-track {
+  background: hsl(var(--muted) / 0.4);
+  border-radius: 999px;
+}
+.crm-pipeline-scroll::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.35);
+  border-radius: 999px;
+}
+.crm-pipeline-scroll::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.55);
+}
+.crm-pipeline-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--muted-foreground) / 0.35) hsl(var(--muted) / 0.4);
+}
