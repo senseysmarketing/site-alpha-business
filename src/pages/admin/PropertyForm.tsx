@@ -23,9 +23,12 @@ const PropertyForm = () => {
   const isEditing = !!id;
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { role } = useAuth();
+  const canEdit = role === "admin" || role === "gerente";
 
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState(isEditing ? "basics" : "ai");
+  const [activeTab, setActiveTab] = useState(isEditing || !canEdit ? "basics" : "ai");
+
 
   // Lifestyle tag suggestions (from site_settings.lifestyle_categories).
   const { data: lifestyleData } = useSiteSettings<{ categories: { title: string; tag?: string }[] }>("lifestyle_categories");
