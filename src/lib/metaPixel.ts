@@ -35,7 +35,10 @@ function track(event: FbEventName, params?: Record<string, unknown>) {
   }
 }
 
-export const trackPageView = () => track("PageView");
+export const trackPageView = () => {
+  track("PageView");
+  ga4.trackPageView();
+};
 
 export const trackViewContent = (params: {
   content_ids?: string[];
@@ -43,29 +46,47 @@ export const trackViewContent = (params: {
   content_category?: string;
   value?: number;
   currency?: string;
-}) => track("ViewContent", { currency: "BRL", ...params });
+}) => {
+  track("ViewContent", { currency: "BRL", ...params });
+  ga4.trackViewContent(params);
+};
 
 export const trackSearch = (params: {
   search_string?: string;
   content_category?: string;
-}) => track("Search", params);
+}) => {
+  track("Search", params);
+  ga4.trackSearch(params);
+};
 
 export const trackLead = (params?: {
   content_name?: string;
   value?: number;
   currency?: string;
-}) => track("Lead", { currency: "BRL", ...params });
+}) => {
+  track("Lead", { currency: "BRL", ...params });
+  ga4.trackLead(params);
+};
 
-export const trackContact = (params?: { content_name?: string }) =>
+export const trackContact = (params?: { content_name?: string }) => {
   track("Contact", params);
+  ga4.trackContact(params);
+};
 
 export const trackSchedule = (params?: {
   content_name?: string;
   content_ids?: string[];
-}) => track("Schedule", params);
+}) => {
+  track("Schedule", params);
+  ga4.trackSchedule(params);
+};
 
 export const trackSubmitApplication = (params?: {
   content_name?: string;
   value?: number;
   currency?: string;
-}) => track("SubmitApplication", { currency: "BRL", ...params });
+}) => {
+  track("SubmitApplication", { currency: "BRL", ...params });
+  ga4.trackSubmitApplication(params);
+};
+
