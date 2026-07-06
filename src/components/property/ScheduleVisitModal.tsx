@@ -46,10 +46,21 @@ const HOLIDAYS_2026 = [
 ];
 
 const TIME_SLOTS = [
-  "09:00", "10:00", "11:00", "12:00",
-  "13:00", "14:00", "15:00", "16:00",
-  "17:00", "18:00",
+  "08:00", "09:00", "10:00", "11:00",
+  "12:00", "13:00", "14:00", "15:00",
+  "16:00", "17:00", "18:00",
 ];
+
+function isSlotPast(date: Date, slot: string) {
+  const now = new Date();
+  const isToday =
+    date.getDate() === now.getDate() &&
+    date.getMonth() === now.getMonth() &&
+    date.getFullYear() === now.getFullYear();
+  if (!isToday) return false;
+  const [h] = slot.split(":").map(Number);
+  return h <= now.getHours();
+}
 
 const contactSchema = z.object({
   name: z.string().trim().min(2, "Nome deve ter pelo menos 2 caracteres").max(100),
@@ -116,13 +127,42 @@ const ScheduleVisitModal = ({
     if (!selectedDate || !selectedTime) return;
     setIsSubmitting(true);
 
+    const phoneDigits = data.phone.replace(/\D/g, "");
+    const visitDateStr = format(selectedDate, "yyyy-MM-dd");
+
+    // 1) Create lead first so we can link the visit to it
+    const { data: leadRow, error: leadErr } = await supabase
+      .from("leads")
+      .insert({
+        name: data.name,
+        phone: phoneDigits,
+        email: data.email,
+        origin: "agendamento_visita",
+        pipeline_stage: "visita_agendada",
+        score: "quente",
+        property_id: propertyId || null,
+        ai_insights: `Visita agendada para ${format(selectedDate, "dd/MM/yyyy")} às ${selectedTime} — Imóvel ${propertyCode}`,
+      })
+      .select("id")
+      .single();
+
+    if (leadErr) {
+      setIsSubmitting(false);
+      toast.error("Erro ao registrar o lead. Tente novamente.");
+      return;
+    }
+
+    // 2) Insert visit linked to the newly created lead
     const { error } = await supabase.from("visits_scheduling").insert({
       property_code: propertyCode,
+      property_id: propertyId || null,
       broker_name: brokerName,
-      visit_date: format(selectedDate, "yyyy-MM-dd"),
+      visit_date: visitDateStr,
       visit_time: selectedTime,
+      event_type: "visita",
+      lead_id: leadRow?.id ?? null,
       lead_name: data.name,
-      lead_phone: data.phone,
+      lead_phone: phoneDigits,
       lead_email: data.email,
     });
 
@@ -131,18 +171,6 @@ const ScheduleVisitModal = ({
       toast.error("Erro ao agendar visita. Tente novamente.");
       return;
     }
-
-    // Create lead in CRM pipeline
-    await supabase.from("leads").insert({
-      name: data.name,
-      phone: data.phone,
-      email: data.email,
-      origin: "agendamento_visita",
-      pipeline_stage: "visita_agendada",
-      score: "quente",
-      property_id: propertyId || null,
-      ai_insights: `Visita agendada para ${format(selectedDate!, "dd/MM/yyyy")} às ${selectedTime} — Imóvel ${propertyCode}`,
-    });
 
     trackSchedule({
       content_name: `Visita — ${propertyCode}`,
@@ -217,23 +245,30 @@ const ScheduleVisitModal = ({
             {/* Step 2: Time Slots */}
             {step === 2 && (
               <motion.div key="step2" {...stepVariants} transition={{ duration: 0.25 }}>
-                <div className="grid grid-cols-5 gap-2">
-                  {TIME_SLOTS.map((slot) => (
-                    <button
-                      key={slot}
-                      onClick={() => {
-                        setSelectedTime(slot);
-                        setStep(3);
-                      }}
-                      className={`py-3 text-body text-sm rounded-full border transition-all duration-200 ${
-                        selectedTime === slot
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "border-border text-foreground hover:bg-muted hover:border-muted-foreground/30"
-                      }`}
-                    >
-                      {slot}
-                    </button>
-                  ))}
+                <div className="grid grid-cols-4 gap-2">
+                  {TIME_SLOTS.map((slot) => {
+                    const past = selectedDate ? isSlotPast(selectedDate, slot) : false;
+                    return (
+                      <button
+                        key={slot}
+                        disabled={past}
+                        onClick={() => {
+                          if (past) return;
+                          setSelectedTime(slot);
+                          setStep(3);
+                        }}
+                        className={`py-3 text-body text-sm rounded-full border transition-all duration-200 ${
+                          past
+                            ? "border-border/40 text-muted-foreground/40 cursor-not-allowed line-through"
+                            : selectedTime === slot
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "border-border text-foreground hover:bg-muted hover:border-muted-foreground/30"
+                        }`}
+                      >
+                        {slot}
+                      </button>
+                    );
+                  })}
                 </div>
 
                 <button
