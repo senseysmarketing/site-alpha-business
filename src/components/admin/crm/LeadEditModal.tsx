@@ -346,9 +346,9 @@ export function LeadEditModal({
                     <Button
                       variant="outline"
                       role="combobox"
-                      className="h-9 flex-1 justify-between rounded-sm font-[Inter] text-sm font-normal"
+                      className="h-9 flex-1 justify-between rounded-sm font-[Inter] text-sm font-normal min-w-0"
                     >
-                      <span className="flex items-center gap-2 min-w-0">
+                      <span className="flex items-center gap-2 min-w-0 overflow-hidden">
                         <Building2 className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                         <span className="truncate">
                           {propertyLabel || "Buscar imóvel por título ou código"}
