@@ -23,6 +23,8 @@ import {
 } from "@/components/ui/select";
 import { LUCIDE_ICON_NAMES, getLucideIcon, normalizeCondoName } from "@/lib/lucideIconMap";
 import { fetchAllPropertyCondoRows } from "@/lib/propertyQueries";
+import { useAuth } from "@/hooks/useAuth";
+
 
 type Highlight = { icon: string; label: string };
 type Condo = {
@@ -48,7 +50,10 @@ const emptyCondo = (): Condo => ({
 });
 
 const Condominiums = () => {
+  const { role } = useAuth();
+  const canManage = role === "admin" || role === "gerente";
   const [items, setItems] = useState<Condo[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<Condo | null>(null);
@@ -190,15 +195,20 @@ const Condominiums = () => {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleSyncFromProperties} disabled={syncing}>
-            {syncing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-            Sincronizar com imóveis
-          </Button>
-          <Button onClick={() => setEditing(emptyCondo())}>
-            <Plus className="mr-2 h-4 w-4" /> Novo Condomínio
-          </Button>
+          {canManage && (
+            <>
+              <Button variant="outline" onClick={handleSyncFromProperties} disabled={syncing}>
+                {syncing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                Sincronizar com imóveis
+              </Button>
+              <Button onClick={() => setEditing(emptyCondo())}>
+                <Plus className="mr-2 h-4 w-4" /> Novo Condomínio
+              </Button>
+            </>
+          )}
         </div>
       </div>
+
 
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -252,13 +262,20 @@ const Condominiums = () => {
                     )}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="sm" onClick={() => setEditing(c)}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => setDeleting(c.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {canManage ? (
+                      <>
+                        <Button variant="ghost" size="sm" onClick={() => setEditing(c)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => setDeleting(c.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </>
+                    ) : (
+                      <span className="text-xs text-muted-foreground/60">—</span>
+                    )}
                   </TableCell>
+
                 </TableRow>
               ))
             )}

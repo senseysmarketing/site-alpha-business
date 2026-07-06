@@ -12,6 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { useAuth } from "@/hooks/useAuth";
+import { Eye } from "lucide-react";
+
 
 const CONDOMINIUMS = ["Residencial 1", "Residencial 2", "Tamboré", "Alphaville 11", "Alphaville 0", "Outro"];
 
@@ -20,9 +23,12 @@ const PropertyForm = () => {
   const isEditing = !!id;
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { role } = useAuth();
+  const canEdit = role === "admin" || role === "gerente";
 
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState(isEditing ? "basics" : "ai");
+  const [activeTab, setActiveTab] = useState(isEditing || !canEdit ? "basics" : "ai");
+
 
   // Lifestyle tag suggestions (from site_settings.lifestyle_categories).
   const { data: lifestyleData } = useSiteSettings<{ categories: { title: string; tag?: string }[] }>("lifestyle_categories");
@@ -178,11 +184,13 @@ const PropertyForm = () => {
   }, [id, isEditing]);
 
   const handleSave = async () => {
+    if (!canEdit) return;
     if (!code || !title) {
       toast({ title: "Preencha código e título", variant: "destructive" });
       return;
     }
     setSaving(true);
+
 
     const payload = {
       code,
@@ -254,7 +262,8 @@ const PropertyForm = () => {
   // Debounced persistence + cover-change toast for photo reorder/remove (edit mode only)
   const prevCoverRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!isEditing || !id) return;
+    if (!isEditing || !id || !canEdit) return;
+
     const newCover = photos[0] ?? null;
     if (prevCoverRef.current !== null && newCover && prevCoverRef.current !== newCover) {
       toast({ title: "Nova capa do imóvel definida" });
@@ -279,13 +288,24 @@ const PropertyForm = () => {
         </Button>
         <div>
           <h1 className="font-[Raleway] text-2xl font-semibold text-foreground tracking-tight">
-            {isEditing ? "Editar Imóvel" : "Novo Imóvel"}
+            {!canEdit ? "Detalhes do Imóvel" : isEditing ? "Editar Imóvel" : "Novo Imóvel"}
           </h1>
         </div>
       </div>
 
+      {!canEdit && (
+        <div className="mb-4 flex items-center gap-2 rounded-md border border-border/60 bg-muted/40 px-4 py-2.5">
+          <Eye className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
+          <p className="font-[Inter] text-xs text-muted-foreground">
+            Modo de visualização — seu cargo permite consultar, mas não editar este imóvel.
+          </p>
+        </div>
+      )}
+
       <div className="bg-white rounded-lg border border-border/50 p-6">
+        <fieldset disabled={!canEdit} className="border-0 p-0 m-0 min-w-0 disabled:opacity-95">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
+
           <TabsList className="mb-6 bg-muted/30 font-[Inter]">
             {!isEditing && (
               <TabsTrigger value="ai" className="text-xs uppercase tracking-widest gap-1.5">
@@ -585,14 +605,18 @@ const PropertyForm = () => {
             </div>
           </TabsContent>
         </Tabs>
+        </fieldset>
 
         <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-border/50">
           <Button variant="outline" onClick={() => navigate("/admin/imoveis")} className="font-[Inter] text-xs uppercase tracking-widest">
-            Cancelar
+            {canEdit ? "Cancelar" : "Voltar"}
           </Button>
-          <Button onClick={handleSave} disabled={saving} className="font-[Inter] text-xs uppercase tracking-widest">
-            {saving ? "Salvando..." : isEditing ? "Atualizar" : "Cadastrar"}
-          </Button>
+          {canEdit && (
+            <Button onClick={handleSave} disabled={saving} className="font-[Inter] text-xs uppercase tracking-widest">
+              {saving ? "Salvando..." : isEditing ? "Atualizar" : "Cadastrar"}
+            </Button>
+          )}
+
         </div>
       </div>
     </div>
