@@ -184,11 +184,13 @@ const PropertyForm = () => {
   }, [id, isEditing]);
 
   const handleSave = async () => {
+    if (!canEdit) return;
     if (!code || !title) {
       toast({ title: "Preencha código e título", variant: "destructive" });
       return;
     }
     setSaving(true);
+
 
     const payload = {
       code,
