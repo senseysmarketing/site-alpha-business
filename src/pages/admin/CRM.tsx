@@ -341,7 +341,7 @@ export default function CRM() {
                     variant="ghost"
                     size="sm"
                     onClick={() => toggleExpanded(stage.key)}
-                    className="w-full font-[Inter] text-xs text-muted-foreground hover:text-foreground"
+                    className="w-full font-[Inter] text-xs text-muted-foreground hover:text-accent-foreground"
                   >
                     {isExpanded ? (
                       <>
