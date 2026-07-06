@@ -21,6 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { formatBRPhone } from "@/lib/phone";
+import { derivePresence } from "@/lib/presence";
 
 type AppRole = "admin" | "gerente" | "corretor" | "assistente";
 
@@ -42,14 +43,14 @@ interface ProfileData {
   bio: string | null;
   social_instagram: string | null;
   social_linkedin: string | null;
-  availability: string;
+  last_seen_at: string | null;
   is_active: boolean;
 }
 
 const TeamProfile = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, role: currentUserRole } = useAuth();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [role, setRole] = useState<AppRole>("corretor");
   const [initialRole, setInitialRole] = useState<AppRole>("corretor");
@@ -98,7 +99,6 @@ const TeamProfile = () => {
           bio: profile.bio,
           social_instagram: profile.social_instagram,
           social_linkedin: profile.social_linkedin,
-          availability: profile.availability,
           is_active: profile.is_active,
         })
         .eq("id", profile.id);
