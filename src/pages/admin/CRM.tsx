@@ -161,6 +161,70 @@ export default function CRM() {
     setSheetOpen(true);
   }, []);
 
+  // Auto-scroll horizontal enquanto arrasta próximo às bordas do container
+  const stopAutoScroll = useCallback(() => {
+    if (autoScrollRef.current.raf !== null) {
+      cancelAnimationFrame(autoScrollRef.current.raf);
+      autoScrollRef.current.raf = null;
+    }
+    autoScrollRef.current.dir = 0;
+    autoScrollRef.current.speed = 0;
+  }, []);
+
+  const stepAutoScroll = useCallback(() => {
+    const el = scrollRef.current;
+    const state = autoScrollRef.current;
+    if (!el || state.dir === 0) {
+      state.raf = null;
+      return;
+    }
+    el.scrollLeft += state.dir * state.speed;
+    state.raf = requestAnimationFrame(stepAutoScroll);
+  }, []);
+
+  const handleContainerDragOver = useCallback(
+    (e: React.DragEvent) => {
+      const el = scrollRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const x = e.clientX;
+      const leftDist = x - rect.left;
+      const rightDist = rect.right - x;
+      const state = autoScrollRef.current;
+
+      if (leftDist < EDGE_THRESHOLD && leftDist >= 0) {
+        const intensity = 1 - leftDist / EDGE_THRESHOLD;
+        state.dir = -1;
+        state.speed = Math.max(6, MAX_STEP * intensity);
+      } else if (rightDist < EDGE_THRESHOLD && rightDist >= 0) {
+        const intensity = 1 - rightDist / EDGE_THRESHOLD;
+        state.dir = 1;
+        state.speed = Math.max(6, MAX_STEP * intensity);
+      } else {
+        state.dir = 0;
+        state.speed = 0;
+      }
+
+      if (state.dir !== 0 && state.raf === null) {
+        state.raf = requestAnimationFrame(stepAutoScroll);
+      }
+    },
+    [stepAutoScroll]
+  );
+
+  useEffect(() => () => stopAutoScroll(), [stopAutoScroll]);
+
+  // Ao trocar filtro, colapsa expansões
+  useEffect(() => {
+    setExpandedStages({});
+  }, [responsibleFilter]);
+
+  const toggleExpanded = useCallback((key: string) => {
+    setExpandedStages((prev) => ({ ...prev, [key]: !prev[key] }));
+  }, []);
+
+
+
   // Inclui qualquer estágio legado presente em leads que não exista mais
   const columns = useMemo(() => {
     const known = new Set(activeStages.map((s) => s.key));
