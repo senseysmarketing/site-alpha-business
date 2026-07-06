@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { LeadCard, type Lead, type AssignedUser } from "@/components/admin/crm/LeadCard";
 import { LeadDetailModal } from "@/components/admin/crm/LeadDetailModal";
+import { LeadEditModal } from "@/components/admin/crm/LeadEditModal";
 import { NewLeadDialog } from "@/components/admin/crm/NewLeadDialog";
 import { LeadNotificationSettingsDialog } from "@/components/admin/crm/LeadNotificationSettingsDialog";
 import { CrmSettingsDialog } from "@/components/admin/crm/CrmSettingsDialog";
@@ -30,6 +31,7 @@ export default function CRM() {
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [newLeadStage, setNewLeadStage] = useState<string | null>(null);
   const [notifyOpen, setNotifyOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -366,7 +368,27 @@ export default function CRM() {
         open={sheetOpen}
         onOpenChange={setSheetOpen}
         team={team.filter((t) => t.is_active)}
+        onRequestEdit={() => {
+          setSheetOpen(false);
+          setEditOpen(true);
+        }}
       />
+
+      <LeadEditModal
+        lead={selectedLead}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        onCancel={() => {
+          setEditOpen(false);
+          if (selectedLead) setSheetOpen(true);
+        }}
+        onSaved={(updated) => {
+          setSelectedLead(updated);
+          setEditOpen(false);
+          setSheetOpen(true);
+        }}
+      />
+
 
       <NewLeadDialog
         open={!!newLeadStage}
