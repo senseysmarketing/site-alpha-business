@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { format, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -11,6 +12,7 @@ import {
   Phone,
   Bell,
   Users,
+  ArrowUpRight,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
