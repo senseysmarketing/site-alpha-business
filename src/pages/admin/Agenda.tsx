@@ -255,85 +255,118 @@ const Agenda = () => {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {selectedDayVisits.map((visit) => (
-                    <div
-                      key={visit.id}
-                      className="flex items-center gap-4 p-3 rounded-lg border border-border/50 hover:border-border transition-colors"
-                    >
-                      <Avatar className="h-10 w-10 bg-[#2A070C]/10">
-                        <AvatarFallback className="bg-[#2A070C]/10 text-[#2A070C] font-[Inter] text-xs font-semibold">
-                          {getInitials(visit.title || visit.lead_name)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {renderTypeBadge(visit.event_type)}
-                          <p className="font-[Inter] text-sm font-medium text-foreground truncate">
-                            {visit.title || visit.lead_name || "Compromisso"}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-3 mt-1 flex-wrap">
-                          <span className="font-[Inter] text-xs text-muted-foreground flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {visit.visit_time}
-                          </span>
-                          {visit.property_code && (
-                            <Badge variant="outline" className="font-[Inter] text-[10px] px-1.5 py-0">
-                              {visit.property_code}
-                            </Badge>
+                  {selectedDayVisits.map((visit) => {
+                    const thumb = visit.property?.photos?.[0];
+                    const propertyTitle = visit.property?.title;
+                    return (
+                      <div
+                        key={visit.id}
+                        className="flex items-center gap-4 p-3 rounded-lg border border-border/50 hover:border-border transition-colors"
+                      >
+                        {thumb ? (
+                          <img
+                            src={thumb}
+                            alt=""
+                            className="h-10 w-14 rounded object-cover border border-border/50 shrink-0"
+                          />
+                        ) : (
+                          <Avatar className="h-10 w-10 bg-[#2A070C]/10 shrink-0">
+                            <AvatarFallback className="bg-[#2A070C]/10 text-[#2A070C] font-[Inter] text-xs font-semibold">
+                              {getInitials(visit.title || visit.lead_name)}
+                            </AvatarFallback>
+                          </Avatar>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {renderTypeBadge(visit.event_type)}
+                            <p className="font-[Inter] text-sm font-medium text-foreground truncate">
+                              {visit.title || visit.lead_name || "Compromisso"}
+                            </p>
+                          </div>
+                          {propertyTitle && (
+                            <p className="font-[Inter] text-[11px] text-muted-foreground truncate mt-0.5">
+                              {propertyTitle}
+                            </p>
                           )}
-                          {canSeeAll && (
-                            <span className="font-[Inter] text-[11px] text-muted-foreground">
-                              · {responsibleName(visit.assigned_user_id, visit.broker_name)}
+                          <div className="flex items-center gap-3 mt-1 flex-wrap">
+                            <span className="font-[Inter] text-xs text-muted-foreground flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {visit.visit_time}
                             </span>
+                            {visit.property_code && (
+                              <Badge variant="outline" className="font-[Inter] text-[10px] px-1.5 py-0">
+                                {visit.property_code}
+                              </Badge>
+                            )}
+                            {visit.lead_phone && (
+                              <span className="font-[Inter] text-[11px] text-muted-foreground">
+                                {formatBRPhone(visit.lead_phone)}
+                              </span>
+                            )}
+                            {canSeeAll && (
+                              <span className="font-[Inter] text-[11px] text-muted-foreground">
+                                · {responsibleName(visit.assigned_user_id, visit.broker_name)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          {visit.lead_email && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <a
+                                  href={`mailto:${visit.lead_email}`}
+                                  className="p-1.5 rounded-md hover:bg-accent transition-colors"
+                                >
+                                  <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+                                </a>
+                              </TooltipTrigger>
+                              <TooltipContent>{visit.lead_email}</TooltipContent>
+                            </Tooltip>
+                          )}
+                          {visit.lead_phone && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <a
+                                  href={`tel:${visit.lead_phone}`}
+                                  className="p-1.5 rounded-md hover:bg-accent transition-colors"
+                                >
+                                  <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                                </a>
+                              </TooltipTrigger>
+                              <TooltipContent>{formatBRPhone(visit.lead_phone)}</TooltipContent>
+                            </Tooltip>
+                          )}
+                          {visit.property_code && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <a
+                                  href={getMapsUrl(visit.property_code)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="p-1.5 rounded-md hover:bg-accent transition-colors"
+                                >
+                                  <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                                </a>
+                              </TooltipTrigger>
+                              <TooltipContent>Abrir no Google Maps</TooltipContent>
+                            </Tooltip>
+                          )}
+                          {visit.lead_id && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => navigate(`/admin/leads?leadId=${visit.lead_id}`)}
+                              className="h-7 px-2 gap-1 font-[Inter] text-[10px] uppercase tracking-widest ml-1"
+                            >
+                              Detalhes
+                              <ArrowUpRight className="h-3 w-3" />
+                            </Button>
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-1">
-                        {visit.lead_email && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <a
-                                href={`mailto:${visit.lead_email}`}
-                                className="p-1.5 rounded-md hover:bg-accent transition-colors"
-                              >
-                                <Mail className="h-3.5 w-3.5 text-muted-foreground" />
-                              </a>
-                            </TooltipTrigger>
-                            <TooltipContent>{visit.lead_email}</TooltipContent>
-                          </Tooltip>
-                        )}
-                        {visit.lead_phone && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <a
-                                href={`tel:${visit.lead_phone}`}
-                                className="p-1.5 rounded-md hover:bg-accent transition-colors"
-                              >
-                                <Phone className="h-3.5 w-3.5 text-muted-foreground" />
-                              </a>
-                            </TooltipTrigger>
-                            <TooltipContent>{formatBRPhone(visit.lead_phone)}</TooltipContent>
-                          </Tooltip>
-                        )}
-                        {visit.property_code && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <a
-                                href={getMapsUrl(visit.property_code)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="p-1.5 rounded-md hover:bg-accent transition-colors"
-                              >
-                                <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-                              </a>
-                            </TooltipTrigger>
-                            <TooltipContent>Abrir no Google Maps</TooltipContent>
-                          </Tooltip>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </CardContent>
