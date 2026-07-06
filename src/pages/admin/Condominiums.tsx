@@ -23,6 +23,8 @@ import {
 } from "@/components/ui/select";
 import { LUCIDE_ICON_NAMES, getLucideIcon, normalizeCondoName } from "@/lib/lucideIconMap";
 import { fetchAllPropertyCondoRows } from "@/lib/propertyQueries";
+import { useAuth } from "@/hooks/useAuth";
+
 
 type Highlight = { icon: string; label: string };
 type Condo = {
