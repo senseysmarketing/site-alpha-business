@@ -39,7 +39,7 @@ type MenuItem = {
 const menuItems: MenuItem[] = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
   { title: "Imóveis", url: "/admin/imoveis", icon: Building2 },
-  { title: "Condomínios", url: "/admin/condominios", icon: Building2, roles: ["admin"] },
+  { title: "Condomínios", url: "/admin/condominios", icon: Building2 },
   { title: "Pipeline CRM", url: "/admin/leads", icon: Users },
   { title: "Equipe", url: "/admin/equipe", icon: UserCog, roles: ["admin", "gerente"] },
   { title: "Agenda", url: "/admin/agenda", icon: CalendarCheck },
