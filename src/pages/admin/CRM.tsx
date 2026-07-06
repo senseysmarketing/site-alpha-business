@@ -36,12 +36,17 @@ export default function CRM() {
   const [stagesOpen, setStagesOpen] = useState(false);
   const [responsibleFilter, setResponsibleFilter] = useState<string>("all");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [expandedStages, setExpandedStages] = useState<Record<string, boolean>>({});
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const autoScrollRef = useRef<{ raf: number | null; dir: number; speed: number }>({ raf: null, dir: 0, speed: 0 });
 
   const { activeStages, getStage } = usePipelineStages();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id ?? null));
   }, []);
+
 
   const [searchParams, setSearchParams] = useSearchParams();
 
