@@ -46,10 +46,21 @@ const HOLIDAYS_2026 = [
 ];
 
 const TIME_SLOTS = [
-  "09:00", "10:00", "11:00", "12:00",
-  "13:00", "14:00", "15:00", "16:00",
-  "17:00", "18:00",
+  "08:00", "09:00", "10:00", "11:00",
+  "12:00", "13:00", "14:00", "15:00",
+  "16:00", "17:00", "18:00",
 ];
+
+function isSlotPast(date: Date, slot: string) {
+  const now = new Date();
+  const isToday =
+    date.getDate() === now.getDate() &&
+    date.getMonth() === now.getMonth() &&
+    date.getFullYear() === now.getFullYear();
+  if (!isToday) return false;
+  const [h] = slot.split(":").map(Number);
+  return h <= now.getHours();
+}
 
 const contactSchema = z.object({
   name: z.string().trim().min(2, "Nome deve ter pelo menos 2 caracteres").max(100),
