@@ -288,13 +288,24 @@ const PropertyForm = () => {
         </Button>
         <div>
           <h1 className="font-[Raleway] text-2xl font-semibold text-foreground tracking-tight">
-            {isEditing ? "Editar Imóvel" : "Novo Imóvel"}
+            {!canEdit ? "Detalhes do Imóvel" : isEditing ? "Editar Imóvel" : "Novo Imóvel"}
           </h1>
         </div>
       </div>
 
+      {!canEdit && (
+        <div className="mb-4 flex items-center gap-2 rounded-md border border-border/60 bg-muted/40 px-4 py-2.5">
+          <Eye className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
+          <p className="font-[Inter] text-xs text-muted-foreground">
+            Modo de visualização — seu cargo permite consultar, mas não editar este imóvel.
+          </p>
+        </div>
+      )}
+
       <div className="bg-white rounded-lg border border-border/50 p-6">
+        <fieldset disabled={!canEdit} className="border-0 p-0 m-0 min-w-0 disabled:opacity-95">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
+
           <TabsList className="mb-6 bg-muted/30 font-[Inter]">
             {!isEditing && (
               <TabsTrigger value="ai" className="text-xs uppercase tracking-widest gap-1.5">
