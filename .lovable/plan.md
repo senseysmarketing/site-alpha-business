@@ -1,17 +1,25 @@
-## Objetivo
-Retirar a tela de senha de acesso "Site em Construção", liberando o site publicamente.
+## Instalar Google Tag Manager
 
-## Alterações
+Adicionar o container GTM-54ZGG83N ao site conforme snippet oficial do Google.
 
-### 1. `src/App.tsx`
-- Remover o import de `SiteGate`.
-- Remover o wrapper `<SiteGate>` ao redor de `<AnimatedRoutes />` e `<FloatingWhatsApp />`, deixando-os diretamente no JSX.
+### Alterações em `index.html`
 
-### 2. `src/components/SiteGate.tsx`
-- Remover o arquivo completo (componente deixa de existir).
+1. **No `<head>`** (logo após `<meta name="author">`): adicionar o script do GTM:
+```html
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-54ZGG83N');</script>
+```
 
-## Fora do escopo
-- Nenhuma alteração em rotas, autenticação do admin, estilos ou outras páginas.
+2. **No início do `<body>`**: adicionar o fallback `<noscript>` com iframe:
+```html
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-54ZGG83N"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+```
 
-## Resultado esperado
-O site público (`/`, `/imovel/:id`, `/busca`, `/blog`, etc.) será acessível sem senha. A área `/admin` continua protegida pelo login normal.
+O fallback fica no `<body>` (não no `<head>`) para respeitar a restrição de HTML5 sobre `<noscript>` em `<head>`.
+
+### Fora do escopo
+- Sem eventos customizados de `dataLayer` — apenas o container base. Rastreamento de eventos específicos (cliques, conversões) fica para uma solicitação futura.
