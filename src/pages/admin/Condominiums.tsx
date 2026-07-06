@@ -195,15 +195,20 @@ const Condominiums = () => {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleSyncFromProperties} disabled={syncing}>
-            {syncing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-            Sincronizar com imóveis
-          </Button>
-          <Button onClick={() => setEditing(emptyCondo())}>
-            <Plus className="mr-2 h-4 w-4" /> Novo Condomínio
-          </Button>
+          {canManage && (
+            <>
+              <Button variant="outline" onClick={handleSyncFromProperties} disabled={syncing}>
+                {syncing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                Sincronizar com imóveis
+              </Button>
+              <Button onClick={() => setEditing(emptyCondo())}>
+                <Plus className="mr-2 h-4 w-4" /> Novo Condomínio
+              </Button>
+            </>
+          )}
         </div>
       </div>
+
 
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
