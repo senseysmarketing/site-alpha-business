@@ -1,7 +1,8 @@
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, Plus, Settings2, Columns3 } from "lucide-react";
+import { Bell, Plus, Settings2, Columns3, ChevronDown, ChevronUp } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,6 +20,11 @@ import { fetchAllPages } from "@/lib/supabasePagination";
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(value);
 
+const INITIAL_VISIBLE = 8;
+const EDGE_THRESHOLD = 90; // px da borda para acionar auto-scroll
+const MAX_STEP = 24; // px por frame no auto-scroll
+
+
 export default function CRM() {
   const queryClient = useQueryClient();
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
@@ -30,12 +36,17 @@ export default function CRM() {
   const [stagesOpen, setStagesOpen] = useState(false);
   const [responsibleFilter, setResponsibleFilter] = useState<string>("all");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [expandedStages, setExpandedStages] = useState<Record<string, boolean>>({});
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const autoScrollRef = useRef<{ raf: number | null; dir: number; speed: number }>({ raf: null, dir: 0, speed: 0 });
 
   const { activeStages, getStage } = usePipelineStages();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id ?? null));
   }, []);
+
 
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -150,6 +161,70 @@ export default function CRM() {
     setSheetOpen(true);
   }, []);
 
+  // Auto-scroll horizontal enquanto arrasta próximo às bordas do container
+  const stopAutoScroll = useCallback(() => {
+    if (autoScrollRef.current.raf !== null) {
+      cancelAnimationFrame(autoScrollRef.current.raf);
+      autoScrollRef.current.raf = null;
+    }
+    autoScrollRef.current.dir = 0;
+    autoScrollRef.current.speed = 0;
+  }, []);
+
+  const stepAutoScroll = useCallback(() => {
+    const el = scrollRef.current;
+    const state = autoScrollRef.current;
+    if (!el || state.dir === 0) {
+      state.raf = null;
+      return;
+    }
+    el.scrollLeft += state.dir * state.speed;
+    state.raf = requestAnimationFrame(stepAutoScroll);
+  }, []);
+
+  const handleContainerDragOver = useCallback(
+    (e: React.DragEvent) => {
+      const el = scrollRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const x = e.clientX;
+      const leftDist = x - rect.left;
+      const rightDist = rect.right - x;
+      const state = autoScrollRef.current;
+
+      if (leftDist < EDGE_THRESHOLD && leftDist >= 0) {
+        const intensity = 1 - leftDist / EDGE_THRESHOLD;
+        state.dir = -1;
+        state.speed = Math.max(6, MAX_STEP * intensity);
+      } else if (rightDist < EDGE_THRESHOLD && rightDist >= 0) {
+        const intensity = 1 - rightDist / EDGE_THRESHOLD;
+        state.dir = 1;
+        state.speed = Math.max(6, MAX_STEP * intensity);
+      } else {
+        state.dir = 0;
+        state.speed = 0;
+      }
+
+      if (state.dir !== 0 && state.raf === null) {
+        state.raf = requestAnimationFrame(stepAutoScroll);
+      }
+    },
+    [stepAutoScroll]
+  );
+
+  useEffect(() => () => stopAutoScroll(), [stopAutoScroll]);
+
+  // Ao trocar filtro, colapsa expansões
+  useEffect(() => {
+    setExpandedStages({});
+  }, [responsibleFilter]);
+
+  const toggleExpanded = useCallback((key: string) => {
+    setExpandedStages((prev) => ({ ...prev, [key]: !prev[key] }));
+  }, []);
+
+
+
   // Inclui qualquer estágio legado presente em leads que não exista mais
   const columns = useMemo(() => {
     const known = new Set(activeStages.map((s) => s.key));
@@ -197,16 +272,26 @@ export default function CRM() {
         </div>
       </div>
 
-      <div className="flex gap-4 overflow-x-auto pb-4">
+      <div
+        ref={scrollRef}
+        onDragOver={handleContainerDragOver}
+        onDragEnd={stopAutoScroll}
+        onDrop={stopAutoScroll}
+        className="crm-pipeline-scroll flex gap-4 overflow-x-auto overflow-y-hidden h-[calc(100vh-200px)] pb-2"
+        style={{ scrollbarGutter: "stable" }}
+      >
         {columns.map((stage) => {
           const stageLeads = visibleLeads.filter((l) => l.pipeline_stage === stage.key);
           const totalValue = stageLeads.reduce((sum, l) => sum + (l.deal_value || 0), 0);
+          const isExpanded = !!expandedStages[stage.key];
+          const shownLeads = isExpanded ? stageLeads : stageLeads.slice(0, INITIAL_VISIBLE);
+          const hiddenCount = stageLeads.length - shownLeads.length;
 
           return (
             <div
               key={stage.key}
               className={cn(
-                "flex-shrink-0 w-[280px] rounded-sm flex flex-col border border-border/40",
+                "flex-shrink-0 w-[280px] h-full rounded-sm flex flex-col border border-border/40",
                 "transition-colors duration-200",
                 dragOverStage === stage.key ? "bg-white border-primary/20" : "bg-white"
               )}
@@ -215,7 +300,7 @@ export default function CRM() {
               onDrop={(e) => handleDrop(e, stage.key)}
             >
               <div
-                className="sticky top-0 z-10 rounded-t-sm px-4 py-3 backdrop-blur-md bg-white/90 border-b"
+                className="shrink-0 rounded-t-sm px-4 py-3 backdrop-blur-md bg-white/90 border-b"
                 style={{ borderTopColor: stage.color, borderTopWidth: 3, borderBottomColor: "hsl(var(--border) / 0.3)" }}
               >
                 <div className="flex items-center justify-between">
@@ -242,8 +327,8 @@ export default function CRM() {
                 )}
               </div>
 
-              <div className="flex-1 p-2 space-y-2 min-h-[200px]">
-                {stageLeads.map((lead) => (
+              <div className="flex-1 overflow-y-auto p-2 space-y-2 min-h-[200px]">
+                {shownLeads.map((lead) => (
                   <LeadCard
                     key={lead.id}
                     lead={lead}
@@ -251,11 +336,30 @@ export default function CRM() {
                     onClick={handleCardClick}
                   />
                 ))}
+                {stageLeads.length > INITIAL_VISIBLE && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => toggleExpanded(stage.key)}
+                    className="w-full font-[Inter] text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    {isExpanded ? (
+                      <>
+                        <ChevronUp className="h-3.5 w-3.5 mr-1" /> Ver menos
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="h-3.5 w-3.5 mr-1" /> Ver mais {hiddenCount} {hiddenCount === 1 ? "lead" : "leads"}
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
             </div>
           );
         })}
       </div>
+
 
       <LeadDetailModal
         lead={selectedLead}
