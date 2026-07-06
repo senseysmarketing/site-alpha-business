@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { trackSearch } from "@/lib/metaPixel";
 import type {
   ChatMessage,
   ConversationResponse,
@@ -171,6 +172,7 @@ export function useAiSearchChat() {
       const historyForApi = buildHistoryForApi([...messages, userMsg]);
       setMessages((m) => [...m, userMsg]);
       setLoading(true);
+      trackSearch({ search_string: message, content_category: "ia" });
 
       try {
         const { data, error } = await supabase.functions.invoke("ai-property-search", {

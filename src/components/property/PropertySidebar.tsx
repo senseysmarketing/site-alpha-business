@@ -2,6 +2,7 @@ import { useState } from "react";
 import { MessageCircle, Calendar, Zap } from "lucide-react";
 import ScheduleVisitModal from "./ScheduleVisitModal";
 import rafaelPhoto from "@/assets/rafael-broker.png";
+import { trackContact } from "@/lib/metaPixel";
 
 interface PropertySidebarProps {
   brokerName: string;
@@ -54,6 +55,7 @@ const PropertySidebar = ({
             href={`https://wa.me/${whatsappNumber}`}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => trackContact({ content_name: `WhatsApp Sidebar — ${propertyCode}` })}
             className="flex items-center justify-center gap-2 w-full py-3 bg-[#25D366] text-white text-body text-sm font-medium rounded-full hover:bg-[#20bd5a] transition-colors"
           >
             <MessageCircle size={18} />

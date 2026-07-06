@@ -4,6 +4,7 @@ import React, { useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import AiSearchChatButton from "./search/ai-chat/AiSearchChatButton";
 import AiSearchChatModal from "./search/ai-chat/AiSearchChatModal";
+import { trackSearch } from "@/lib/metaPixel";
 
 const brlFormatter = new Intl.NumberFormat("pt-BR", {
   style: "currency",
@@ -44,6 +45,7 @@ const SearchBarSection = () => {
   const handleCodeSearch = useCallback(() => {
     const code = filterCode.trim();
     if (!code) return;
+    trackSearch({ search_string: code, content_category: "codigo" });
     navigate(`/busca?q=${encodeURIComponent(code)}`);
   }, [filterCode, navigate]);
 
@@ -59,10 +61,14 @@ const SearchBarSection = () => {
     if (filterCondo) params.set("condominium", filterCondo);
     if (filterMinPrice) params.set("minPrice", filterMinPrice);
     if (filterMaxPrice) params.set("maxPrice", filterMaxPrice);
+    trackSearch({
+      search_string: params.toString(),
+      content_category: "tradicional",
+    });
     navigate(`/busca?${params.toString()}`);
   }, [
     filterCode, filterTransaction, filterType, filterBedrooms, filterParking,
-    filterMinArea, filterCondo, filterMinPrice, filterMaxPrice, navigate,
+    filterMinArea, filterCondo, filterMinPrice, filterMaxPrice, priceError, navigate,
   ]);
 
   const selectClass =
