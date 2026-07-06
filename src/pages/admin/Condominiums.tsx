@@ -50,7 +50,10 @@ const emptyCondo = (): Condo => ({
 });
 
 const Condominiums = () => {
+  const { role } = useAuth();
+  const canManage = role === "admin" || role === "gerente";
   const [items, setItems] = useState<Condo[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<Condo | null>(null);
