@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { trackPageView } from "@/lib/metaPixel";
 
@@ -21,5 +21,4 @@ const MetaPixelRouteTracker = () => {
   return null;
 };
 
-import { useRef } from "react";
 export default MetaPixelRouteTracker;
