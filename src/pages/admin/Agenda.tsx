@@ -67,6 +67,7 @@ const TYPE_BADGES: Record<string, { label: string; className: string }> = {
 };
 
 const Agenda = () => {
+  const navigate = useNavigate();
   const { user, role } = useAuth();
   const canSeeAll = role === "admin" || role === "gerente";
 
