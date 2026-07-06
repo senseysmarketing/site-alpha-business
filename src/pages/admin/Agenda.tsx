@@ -99,7 +99,7 @@ const Agenda = () => {
   const fetchVisits = async () => {
     let q = supabase
       .from("visits_scheduling")
-      .select("*")
+      .select("*, property:properties(id, code, title, photos)")
       .order("visit_date", { ascending: true })
       .order("visit_time", { ascending: true });
 
@@ -107,7 +107,7 @@ const Agenda = () => {
       q = q.eq("assigned_user_id", assigneeFilter);
     }
     const { data } = await q;
-    if (data) setVisits(data as Visit[]);
+    if (data) setVisits(data as unknown as Visit[]);
   };
 
   const visitDates = useMemo(
