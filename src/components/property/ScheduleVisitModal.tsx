@@ -245,23 +245,30 @@ const ScheduleVisitModal = ({
             {/* Step 2: Time Slots */}
             {step === 2 && (
               <motion.div key="step2" {...stepVariants} transition={{ duration: 0.25 }}>
-                <div className="grid grid-cols-5 gap-2">
-                  {TIME_SLOTS.map((slot) => (
-                    <button
-                      key={slot}
-                      onClick={() => {
-                        setSelectedTime(slot);
-                        setStep(3);
-                      }}
-                      className={`py-3 text-body text-sm rounded-full border transition-all duration-200 ${
-                        selectedTime === slot
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "border-border text-foreground hover:bg-muted hover:border-muted-foreground/30"
-                      }`}
-                    >
-                      {slot}
-                    </button>
-                  ))}
+                <div className="grid grid-cols-4 gap-2">
+                  {TIME_SLOTS.map((slot) => {
+                    const past = selectedDate ? isSlotPast(selectedDate, slot) : false;
+                    return (
+                      <button
+                        key={slot}
+                        disabled={past}
+                        onClick={() => {
+                          if (past) return;
+                          setSelectedTime(slot);
+                          setStep(3);
+                        }}
+                        className={`py-3 text-body text-sm rounded-full border transition-all duration-200 ${
+                          past
+                            ? "border-border/40 text-muted-foreground/40 cursor-not-allowed line-through"
+                            : selectedTime === slot
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "border-border text-foreground hover:bg-muted hover:border-muted-foreground/30"
+                        }`}
+                      >
+                        {slot}
+                      </button>
+                    );
+                  })}
                 </div>
 
                 <button
