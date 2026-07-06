@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useNavigate } from "react-router-dom";
 import { formatBRPhone } from "@/lib/phone";
+import { derivePresence } from "@/lib/presence";
 
 interface TeamMemberCardProps {
   id: string;
@@ -13,7 +14,7 @@ interface TeamMemberCardProps {
   avatarUrl?: string | null;
   creci?: string | null;
   phone?: string | null;
-  availability: string;
+  lastSeenAt?: string | null;
   isActive: boolean;
 }
 
@@ -26,12 +27,6 @@ const roleBadgeStyles: Record<string, string> = {
   user: "bg-slate-100 text-slate-600 border-slate-200",
 };
 
-const availabilityConfig: Record<string, { color: string; label: string }> = {
-  online: { color: "bg-emerald-500", label: "Online" },
-  em_visita: { color: "bg-amber-500", label: "Em Visita" },
-  offline: { color: "bg-slate-300", label: "Offline" },
-};
-
 const TeamMemberCard = ({
   id,
   fullName,
@@ -40,7 +35,7 @@ const TeamMemberCard = ({
   avatarUrl,
   creci,
   phone,
-  availability,
+  lastSeenAt,
   isActive,
 }: TeamMemberCardProps) => {
   const navigate = useNavigate();
@@ -51,7 +46,7 @@ const TeamMemberCard = ({
     .join("")
     .toUpperCase();
 
-  const avail = availabilityConfig[availability] || availabilityConfig.offline;
+  const presence = derivePresence(lastSeenAt);
   const badgeStyle = roleBadgeStyles[role] || roleBadgeStyles.user;
 
   return (
@@ -73,8 +68,8 @@ const TeamMemberCard = ({
             </Avatar>
           </motion.div>
           <span
-            className={`absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-white ${avail.color}`}
-            title={avail.label}
+            className={`absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-white ${presence.dotClass}`}
+            title={`${presence.label} · ${presence.lastSeenLabel}`}
           />
         </div>
 
@@ -102,6 +97,11 @@ const TeamMemberCard = ({
               {formatBRPhone(phone)}
             </p>
           )}
+
+          <p className="text-[10px] text-muted-foreground/70 font-[Inter] mt-2 flex items-center gap-1.5">
+            <span className={`inline-block h-1.5 w-1.5 rounded-full ${presence.dotClass}`} />
+            <span>Último acesso: {presence.lastSeenLabel.toLowerCase()}</span>
+          </p>
         </div>
       </div>
     </motion.div>
