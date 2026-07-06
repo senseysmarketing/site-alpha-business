@@ -291,8 +291,9 @@ const Agenda = () => {
               ) : (
                 <div className="space-y-3">
                   {selectedDayVisits.map((visit) => {
-                    const thumb = visit.property?.photos?.[0];
-                    const propertyTitle = visit.property?.title;
+                    const prop = resolveProperty(visit);
+                    const thumb = prop?.photos?.[0];
+                    const propertyTitle = prop?.title;
                     return (
                       <div
                         key={visit.id}
