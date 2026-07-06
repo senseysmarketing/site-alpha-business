@@ -51,6 +51,7 @@ const AnimatedRoutes = () => {
   const location = useLocation();
   return (
     <AnimatePresence mode="wait">
+      <MetaPixelRouteTracker />
       <Suspense fallback={<div className="min-h-screen bg-background" />}>
         <Routes location={location} key={location.pathname}>
           <Route path="/" element={<Index />} />
