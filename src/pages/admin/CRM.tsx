@@ -272,16 +272,26 @@ export default function CRM() {
         </div>
       </div>
 
-      <div className="flex gap-4 overflow-x-auto pb-4">
+      <div
+        ref={scrollRef}
+        onDragOver={handleContainerDragOver}
+        onDragEnd={stopAutoScroll}
+        onDrop={stopAutoScroll}
+        className="crm-pipeline-scroll flex gap-4 overflow-x-auto overflow-y-hidden h-[calc(100vh-200px)] pb-2"
+        style={{ scrollbarGutter: "stable" }}
+      >
         {columns.map((stage) => {
           const stageLeads = visibleLeads.filter((l) => l.pipeline_stage === stage.key);
           const totalValue = stageLeads.reduce((sum, l) => sum + (l.deal_value || 0), 0);
+          const isExpanded = !!expandedStages[stage.key];
+          const shownLeads = isExpanded ? stageLeads : stageLeads.slice(0, INITIAL_VISIBLE);
+          const hiddenCount = stageLeads.length - shownLeads.length;
 
           return (
             <div
               key={stage.key}
               className={cn(
-                "flex-shrink-0 w-[280px] rounded-sm flex flex-col border border-border/40",
+                "flex-shrink-0 w-[280px] h-full rounded-sm flex flex-col border border-border/40",
                 "transition-colors duration-200",
                 dragOverStage === stage.key ? "bg-white border-primary/20" : "bg-white"
               )}
@@ -290,7 +300,7 @@ export default function CRM() {
               onDrop={(e) => handleDrop(e, stage.key)}
             >
               <div
-                className="sticky top-0 z-10 rounded-t-sm px-4 py-3 backdrop-blur-md bg-white/90 border-b"
+                className="shrink-0 rounded-t-sm px-4 py-3 backdrop-blur-md bg-white/90 border-b"
                 style={{ borderTopColor: stage.color, borderTopWidth: 3, borderBottomColor: "hsl(var(--border) / 0.3)" }}
               >
                 <div className="flex items-center justify-between">
@@ -317,8 +327,8 @@ export default function CRM() {
                 )}
               </div>
 
-              <div className="flex-1 p-2 space-y-2 min-h-[200px]">
-                {stageLeads.map((lead) => (
+              <div className="flex-1 overflow-y-auto p-2 space-y-2 min-h-[200px]">
+                {shownLeads.map((lead) => (
                   <LeadCard
                     key={lead.id}
                     lead={lead}
@@ -326,11 +336,30 @@ export default function CRM() {
                     onClick={handleCardClick}
                   />
                 ))}
+                {stageLeads.length > INITIAL_VISIBLE && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => toggleExpanded(stage.key)}
+                    className="w-full font-[Inter] text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    {isExpanded ? (
+                      <>
+                        <ChevronUp className="h-3.5 w-3.5 mr-1" /> Ver menos
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="h-3.5 w-3.5 mr-1" /> Ver mais {hiddenCount} {hiddenCount === 1 ? "lead" : "leads"}
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
             </div>
           );
         })}
       </div>
+
 
       <LeadDetailModal
         lead={selectedLead}
