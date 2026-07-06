@@ -12,6 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { useAuth } from "@/hooks/useAuth";
+import { Eye } from "lucide-react";
+
 
 const CONDOMINIUMS = ["Residencial 1", "Residencial 2", "Tamboré", "Alphaville 11", "Alphaville 0", "Outro"];
 
