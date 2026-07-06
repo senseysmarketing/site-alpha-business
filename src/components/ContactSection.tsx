@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { trackLead } from "@/lib/metaPixel";
 import { CheckCircle } from "lucide-react";
 import contactImageAsset from "@/assets/contact-house.jpg.asset.json";
 const contactImage = contactImageAsset.url;
@@ -54,6 +55,7 @@ const ContactSection = () => {
       return;
     }
 
+    trackLead({ content_name: "Anuncie seu imóvel — Home" });
     setSuccess(true);
   };
 

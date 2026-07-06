@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { trackSubmitApplication } from "@/lib/metaPixel";
 
 interface AdvertisePropertyModalProps {
   open: boolean;
@@ -81,6 +82,10 @@ const AdvertisePropertyModal = ({ open, onOpenChange }: AdvertisePropertyModalPr
 
     setLoading(false);
     if (error) { toast.error("Erro ao enviar. Tente novamente."); return; }
+    trackSubmitApplication({
+      content_name: "Anuncie seu imóvel — Modal",
+      value: dealValue ?? undefined,
+    });
     setSuccess(true);
   };
 

@@ -27,6 +27,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { supabase } from "@/integrations/supabase/client";
+import { trackSchedule } from "@/lib/metaPixel";
 
 // Brazilian holidays 2026
 const HOLIDAYS_2026 = [
@@ -141,6 +142,11 @@ const ScheduleVisitModal = ({
       score: "quente",
       property_id: propertyId || null,
       ai_insights: `Visita agendada para ${format(selectedDate!, "dd/MM/yyyy")} às ${selectedTime} — Imóvel ${propertyCode}`,
+    });
+
+    trackSchedule({
+      content_name: `Visita — ${propertyCode}`,
+      content_ids: propertyId ? [propertyId] : [propertyCode],
     });
 
     setIsSubmitting(false);
