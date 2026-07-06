@@ -125,6 +125,41 @@ const Agenda = () => {
     [visits, selectedDate],
   );
 
+  // Fallback: para visitas sem property_id vinculado, buscar imóvel pelo code
+  const missingCodes = useMemo(() => {
+    const set = new Set<string>();
+    visits.forEach((v) => {
+      if (!v.property && v.property_code) set.add(v.property_code);
+    });
+    return Array.from(set);
+  }, [visits]);
+
+  const { data: propertyByCode = {} } = useQuery({
+    queryKey: ["agenda_property_by_code", missingCodes.sort().join(",")],
+    queryFn: async () => {
+      if (missingCodes.length === 0) return {} as Record<string, { id: string; title: string | null; photos: string[] | null; code: string | null }>;
+      const { data } = await supabase
+        .from("properties")
+        .select("id, code, title, photos")
+        .in("code", missingCodes);
+      const map: Record<string, { id: string; title: string | null; photos: string[] | null; code: string | null }> = {};
+      (data || []).forEach((p) => {
+        if (p.code) map[p.code] = p;
+      });
+      return map;
+    },
+    enabled: missingCodes.length > 0,
+  });
+
+  const resolveProperty = (visit: Visit) => {
+    if (visit.property) return visit.property;
+    if (visit.property_code && propertyByCode[visit.property_code]) {
+      return propertyByCode[visit.property_code];
+    }
+    return null;
+  };
+
+
   const getInitials = (name: string | null) =>
     (name || "?")
       .split(" ")
