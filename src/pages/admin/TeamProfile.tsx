@@ -21,6 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { formatBRPhone } from "@/lib/phone";
+import { derivePresence } from "@/lib/presence";
 
 type AppRole = "admin" | "gerente" | "corretor" | "assistente";
 
@@ -42,14 +43,14 @@ interface ProfileData {
   bio: string | null;
   social_instagram: string | null;
   social_linkedin: string | null;
-  availability: string;
+  last_seen_at: string | null;
   is_active: boolean;
 }
 
 const TeamProfile = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, role: currentUserRole } = useAuth();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [role, setRole] = useState<AppRole>("corretor");
   const [initialRole, setInitialRole] = useState<AppRole>("corretor");
@@ -98,7 +99,6 @@ const TeamProfile = () => {
           bio: profile.bio,
           social_instagram: profile.social_instagram,
           social_linkedin: profile.social_linkedin,
-          availability: profile.availability,
           is_active: profile.is_active,
         })
         .eq("id", profile.id);
@@ -386,27 +386,38 @@ const TeamProfile = () => {
         </h3>
         <Separator />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label className="font-[Inter] text-xs">Disponibilidade</Label>
-            <Select
-              value={profile.availability}
-              onValueChange={(v) => update("availability", v)}
-            >
-              <SelectTrigger className="rounded-sm">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="online">Online</SelectItem>
-                <SelectItem value="em_visita">Em Visita</SelectItem>
-                <SelectItem value="offline">Offline</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="rounded-sm border border-border/50 px-4 py-3">
+            <Label className="font-[Inter] text-[10px] uppercase tracking-wide text-muted-foreground">
+              Último acesso
+            </Label>
+            <div className="mt-1.5 flex items-center gap-2">
+              <span className={`inline-block h-2.5 w-2.5 rounded-full ${derivePresence(profile.last_seen_at).dotClass}`} />
+              <div className="flex flex-col">
+                <span className="font-[Inter] text-sm text-foreground">
+                  {derivePresence(profile.last_seen_at).label}
+                </span>
+                <span className="text-[10px] text-muted-foreground font-[Inter]">
+                  {derivePresence(profile.last_seen_at).lastSeenLabel}
+                </span>
+              </div>
+            </div>
+            <p className="text-[10px] text-muted-foreground/70 font-[Inter] mt-2">
+              Atualizado automaticamente pelo próprio membro.
+            </p>
           </div>
           <div className="flex items-center justify-between rounded-sm border border-border/50 px-4 py-3">
-            <Label className="font-[Inter] text-xs">Membro Ativo</Label>
+            <div>
+              <Label className="font-[Inter] text-xs">Membro Ativo</Label>
+              {!(isAdmin || currentUserRole === "gerente") && (
+                <p className="text-[10px] text-muted-foreground font-[Inter] mt-1">
+                  Apenas admin/gerente podem alterar.
+                </p>
+              )}
+            </div>
             <Switch
               checked={profile.is_active}
               onCheckedChange={(v) => update("is_active", v)}
+              disabled={!(isAdmin || currentUserRole === "gerente")}
             />
           </div>
         </div>

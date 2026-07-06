@@ -783,6 +783,7 @@ export type Database = {
           id: string
           is_active: boolean
           last_assigned_at: string | null
+          last_seen_at: string | null
           phone: string | null
           role_display: string | null
           social_instagram: string | null
@@ -800,6 +801,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           last_assigned_at?: string | null
+          last_seen_at?: string | null
           phone?: string | null
           role_display?: string | null
           social_instagram?: string | null
@@ -817,6 +819,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           last_assigned_at?: string | null
+          last_seen_at?: string | null
           phone?: string | null
           role_display?: string | null
           social_instagram?: string | null
@@ -1016,6 +1019,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      touch_last_seen: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role:

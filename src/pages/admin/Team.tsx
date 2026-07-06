@@ -22,7 +22,7 @@ interface TeamProfile {
   avatar_url: string | null;
   phone: string | null;
   creci: string | null;
-  availability: string;
+  last_seen_at: string | null;
   is_active: boolean;
 }
 
@@ -122,7 +122,7 @@ const Team = () => {
               avatarUrl={p.avatar_url}
               creci={p.creci}
               phone={p.phone}
-              availability={p.availability}
+              lastSeenAt={p.last_seen_at}
               isActive={p.is_active}
             />
           ))}
