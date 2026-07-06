@@ -428,8 +428,9 @@ const Agenda = () => {
                 <ScrollArea className="max-h-[320px]">
                   <div className="space-y-3">
                     {todayVisits.map((visit) => {
-                      const thumb = visit.property?.photos?.[0];
-                      const propertyTitle = visit.property?.title;
+                      const prop = resolveProperty(visit);
+                      const thumb = prop?.photos?.[0];
+                      const propertyTitle = prop?.title;
                       return (
                         <div
                           key={visit.id}
