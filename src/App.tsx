@@ -36,6 +36,8 @@ const DataImport = lazy(() => import("./pages/admin/DataImport"));
 const SiteSettings = lazy(() => import("./pages/admin/SiteSettings"));
 const Team = lazy(() => import("./pages/admin/Team"));
 const TeamProfile = lazy(() => import("./pages/admin/TeamProfile"));
+const MyProfile = lazy(() => import("./pages/admin/MyProfile"));
+
 
 const queryClient = new QueryClient({
   defaultOptions: {
