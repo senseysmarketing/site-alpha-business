@@ -16,6 +16,7 @@ import { toTitleCase } from "@/lib/utils";
 import { normalizeCondoName } from "@/lib/lucideIconMap";
 import { fetchAllPages } from "@/lib/supabasePagination";
 import { isRentalTransaction } from "@/lib/propertyQueries";
+import { trackViewContent, trackContact } from "@/lib/metaPixel";
 import type { Database } from "@/integrations/supabase/types";
 import type { NeighborhoodHighlight } from "@/components/property/PropertyNeighborhood";
 
@@ -199,6 +200,18 @@ const PropertyDetail = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [id]);
+
+  useEffect(() => {
+    if (!dbProperty) return;
+    const isRental = dbProperty.transaction_type === "locacao" || dbProperty.transaction_type === "aluguel";
+    const price = isRental ? (dbProperty.rental_price ?? dbProperty.price) : (dbProperty.price ?? dbProperty.rental_price);
+    trackViewContent({
+      content_ids: [dbProperty.id],
+      content_name: dbProperty.title ?? dbProperty.code ?? undefined,
+      content_category: dbProperty.property_type ?? undefined,
+      value: price ?? undefined,
+    });
+  }, [dbProperty]);
 
   // Loading state for real DB fetches
   if (isUUID(id) && loadingDb) {
@@ -396,6 +409,7 @@ const PropertyDetail = () => {
               href="https://wa.me/5511993116849"
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => trackContact({ content_name: `WhatsApp Ficha — ${property.code}` })}
               className="hidden md:flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground text-body text-xs tracking-[0.1em] uppercase hover-magnetic rounded-full"
             >
               <img src={whatsappIcon.url} alt="" className="w-4 h-4 brightness-0 invert" />
