@@ -63,7 +63,7 @@ const AnimatedRoutes = () => {
           <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
             <Route index element={<Dashboard />} />
             <Route path="imoveis" element={<Properties />} />
-            <Route path="condominios" element={<ProtectedRoute allowedRoles={["admin"]}><Condominiums /></ProtectedRoute>} />
+            <Route path="condominios" element={<Condominiums />} />
             <Route path="leads" element={<CRM />} />
             <Route path="equipe" element={<ProtectedRoute allowedRoles={["admin", "gerente"]}><Team /></ProtectedRoute>} />
             <Route path="equipe/:id" element={<ProtectedRoute allowedRoles={["admin", "gerente"]}><TeamProfile /></ProtectedRoute>} />
