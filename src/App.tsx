@@ -79,7 +79,7 @@ const AnimatedRoutes = () => {
             <Route path="configuracoes" element={<ProtectedRoute allowedRoles={["admin"]}><SiteSettings /></ProtectedRoute>} />
             <Route path="atividade" element={<ProtectedRoute allowedRoles={["admin"]}><AuditLog /></ProtectedRoute>} />
             <Route path="imoveis/novo" element={<ProtectedRoute allowedRoles={["admin", "gerente"]}><PropertyForm /></ProtectedRoute>} />
-            <Route path="imoveis/:id" element={<ProtectedRoute allowedRoles={["admin", "gerente"]}><PropertyForm /></ProtectedRoute>} />
+            <Route path="imoveis/:id" element={<PropertyForm />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
