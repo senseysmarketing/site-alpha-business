@@ -20,6 +20,11 @@ import { fetchAllPages } from "@/lib/supabasePagination";
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(value);
 
+const INITIAL_VISIBLE = 8;
+const EDGE_THRESHOLD = 90; // px da borda para acionar auto-scroll
+const MAX_STEP = 24; // px por frame no auto-scroll
+
+
 export default function CRM() {
   const queryClient = useQueryClient();
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
