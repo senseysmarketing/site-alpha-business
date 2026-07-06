@@ -39,6 +39,7 @@ type EventType = "visita" | "evento" | "tarefa";
 
 type Visit = {
   id: string;
+  lead_id: string | null;
   lead_name: string | null;
   lead_email: string | null;
   lead_phone: string | null;
@@ -51,6 +52,12 @@ type Visit = {
   status: string | null;
   notes: string | null;
   assigned_user_id: string | null;
+  property?: {
+    id: string;
+    code: string | null;
+    title: string | null;
+    photos: string[] | null;
+  } | null;
 };
 
 const TYPE_BADGES: Record<string, { label: string; className: string }> = {
