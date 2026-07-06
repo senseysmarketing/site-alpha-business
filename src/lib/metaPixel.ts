@@ -1,13 +1,17 @@
 /**
  * Meta Pixel client-side helper.
+ * Cada função também dispara o evento equivalente no GA4 (ga4.ts).
  * CAPI (server-side) será adicionado quando o token estiver disponível.
  */
+
+import * as ga4 from "@/lib/ga4";
 
 declare global {
   interface Window {
     fbq?: (...args: unknown[]) => void;
   }
 }
+
 
 type FbEventName =
   | "PageView"
