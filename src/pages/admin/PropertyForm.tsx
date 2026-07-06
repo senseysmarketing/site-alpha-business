@@ -262,7 +262,8 @@ const PropertyForm = () => {
   // Debounced persistence + cover-change toast for photo reorder/remove (edit mode only)
   const prevCoverRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!isEditing || !id) return;
+    if (!isEditing || !id || !canEdit) return;
+
     const newCover = photos[0] ?? null;
     if (prevCoverRef.current !== null && newCover && prevCoverRef.current !== newCover) {
       toast({ title: "Nova capa do imóvel definida" });
