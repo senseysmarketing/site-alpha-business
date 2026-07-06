@@ -391,42 +391,71 @@ const Agenda = () => {
               ) : (
                 <ScrollArea className="max-h-[320px]">
                   <div className="space-y-3">
-                    {todayVisits.map((visit) => (
-                      <div
-                        key={visit.id}
-                        className="flex items-start gap-3 p-3 rounded-lg border border-border/50"
-                      >
-                        <Avatar className="h-9 w-9 mt-0.5">
-                          <AvatarFallback className="bg-[#2A070C]/10 text-[#2A070C] font-[Inter] text-[10px] font-semibold">
-                            {getInitials(visit.title || visit.lead_name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            {renderTypeBadge(visit.event_type)}
-                            <p className="font-[Inter] text-sm font-medium text-foreground truncate">
-                              {visit.title || visit.lead_name || "Compromisso"}
-                            </p>
-                          </div>
-                          <p className="font-[Inter] text-xs text-muted-foreground mt-0.5">
-                            <Clock className="h-3 w-3 inline mr-1" />
-                            {visit.visit_time}
-                            {visit.property_code ? ` · ${visit.property_code}` : ""}
-                          </p>
-                          {visit.property_code && (
-                            <a
-                              href={getMapsUrl(visit.property_code)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="font-[Inter] text-[10px] text-[#2A070C] hover:underline inline-flex items-center gap-1 mt-1"
-                            >
-                              <ExternalLink className="h-3 w-3" />
-                              Ver no mapa
-                            </a>
+                    {todayVisits.map((visit) => {
+                      const thumb = visit.property?.photos?.[0];
+                      const propertyTitle = visit.property?.title;
+                      return (
+                        <div
+                          key={visit.id}
+                          className="flex items-start gap-3 p-3 rounded-lg border border-border/50"
+                        >
+                          {thumb ? (
+                            <img
+                              src={thumb}
+                              alt=""
+                              className="h-10 w-14 rounded object-cover border border-border/50 shrink-0 mt-0.5"
+                            />
+                          ) : (
+                            <Avatar className="h-9 w-9 mt-0.5 shrink-0">
+                              <AvatarFallback className="bg-[#2A070C]/10 text-[#2A070C] font-[Inter] text-[10px] font-semibold">
+                                {getInitials(visit.title || visit.lead_name)}
+                              </AvatarFallback>
+                            </Avatar>
                           )}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {renderTypeBadge(visit.event_type)}
+                              <p className="font-[Inter] text-sm font-medium text-foreground truncate">
+                                {visit.title || visit.lead_name || "Compromisso"}
+                              </p>
+                            </div>
+                            {propertyTitle && (
+                              <p className="font-[Inter] text-[11px] text-muted-foreground truncate mt-0.5">
+                                {propertyTitle}
+                              </p>
+                            )}
+                            <p className="font-[Inter] text-xs text-muted-foreground mt-0.5">
+                              <Clock className="h-3 w-3 inline mr-1" />
+                              {visit.visit_time}
+                              {visit.property_code ? ` · ${visit.property_code}` : ""}
+                            </p>
+                            <div className="flex items-center gap-3 mt-1 flex-wrap">
+                              {visit.property_code && (
+                                <a
+                                  href={getMapsUrl(visit.property_code)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="font-[Inter] text-[10px] text-[#2A070C] hover:underline inline-flex items-center gap-1"
+                                >
+                                  <ExternalLink className="h-3 w-3" />
+                                  Ver no mapa
+                                </a>
+                              )}
+                              {visit.lead_id && (
+                                <button
+                                  type="button"
+                                  onClick={() => navigate(`/admin/leads?leadId=${visit.lead_id}`)}
+                                  className="font-[Inter] text-[10px] text-[#2A070C] hover:underline inline-flex items-center gap-1"
+                                >
+                                  <ArrowUpRight className="h-3 w-3" />
+                                  Ver detalhes
+                                </button>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </ScrollArea>
               )}
