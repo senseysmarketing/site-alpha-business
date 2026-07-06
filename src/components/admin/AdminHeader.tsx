@@ -64,16 +64,22 @@ export function AdminHeader() {
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48 font-[Inter]">
-            <DropdownMenuItem className="text-xs text-muted-foreground cursor-default">
+          <DropdownMenuContent align="end" className="w-52 font-[Inter]">
+            <DropdownMenuItem className="text-xs text-muted-foreground cursor-default focus:bg-transparent">
               <User className="mr-2 h-3.5 w-3.5" />
               {user?.email}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleSignOut} className="text-xs text-destructive">
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => navigate("/admin/meu-perfil")} className="text-xs">
+              <UserCircle className="mr-2 h-3.5 w-3.5" />
+              Ver Perfil
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleSignOut} className="text-xs text-destructive focus:text-destructive">
               <LogOut className="mr-2 h-3.5 w-3.5" />
               Sair
             </DropdownMenuItem>
           </DropdownMenuContent>
+
         </DropdownMenu>
       </div>
     </header>
