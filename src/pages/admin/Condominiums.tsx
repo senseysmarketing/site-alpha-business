@@ -262,13 +262,20 @@ const Condominiums = () => {
                     )}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="sm" onClick={() => setEditing(c)}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => setDeleting(c.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {canManage ? (
+                      <>
+                        <Button variant="ghost" size="sm" onClick={() => setEditing(c)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => setDeleting(c.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </>
+                    ) : (
+                      <span className="text-xs text-muted-foreground/60">—</span>
+                    )}
                   </TableCell>
+
                 </TableRow>
               ))
             )}
