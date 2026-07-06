@@ -1,4 +1,4 @@
-import { Bell, LogOut, User } from "lucide-react";
+import { Bell, LogOut, User, UserCircle } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -6,8 +6,10 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { GlobalAdminSearch } from "@/components/admin/GlobalAdminSearch";
@@ -62,16 +64,22 @@ export function AdminHeader() {
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48 font-[Inter]">
-            <DropdownMenuItem className="text-xs text-muted-foreground cursor-default">
+          <DropdownMenuContent align="end" className="w-52 font-[Inter]">
+            <DropdownMenuItem className="text-xs text-muted-foreground cursor-default focus:bg-transparent">
               <User className="mr-2 h-3.5 w-3.5" />
               {user?.email}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleSignOut} className="text-xs text-destructive">
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => navigate("/admin/meu-perfil")} className="text-xs">
+              <UserCircle className="mr-2 h-3.5 w-3.5" />
+              Ver Perfil
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleSignOut} className="text-xs text-destructive focus:text-destructive">
               <LogOut className="mr-2 h-3.5 w-3.5" />
               Sair
             </DropdownMenuItem>
           </DropdownMenuContent>
+
         </DropdownMenu>
       </div>
     </header>
