@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { MessageCircle, Calendar, Zap, Check, Loader2 } from "lucide-react";
+import { MessageCircle, Calendar, Zap, Check, Loader2, Send } from "lucide-react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
