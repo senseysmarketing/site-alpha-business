@@ -43,6 +43,7 @@ type DbCondo = Database["public"]["Tables"]["condominiums"]["Row"];
 const PropertyDetail = () => {
   const { id } = useParams<{ id: string }>();
   const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [descExpanded, setDescExpanded] = useState(false);
   const [dbProperty, setDbProperty] = useState<DbProperty | null>(null);
   const [dbCondo, setDbCondo] = useState<DbCondo | null>(null);
   const [similarDb, setSimilarDb] = useState<DbProperty[]>([]);
