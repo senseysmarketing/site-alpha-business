@@ -213,9 +213,12 @@ const PropertyCarouselSection = ({ title, propertyIds, isActive = true, cta }: P
                           )}
                         </p>
                       </div>
-                      <span className="text-body text-sm bg-foreground text-background px-5 py-2 rounded-md group-hover:bg-foreground/90 transition-colors">
-                        Saiba Mais
-                      </span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <ShareButton path={`/imovel/${prop.id}`} title={toTitleCase(prop.title)} />
+                        <span className="text-body text-sm bg-foreground text-background px-5 py-2 rounded-md group-hover:bg-foreground/90 transition-colors">
+                          Saiba Mais
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </Link>
