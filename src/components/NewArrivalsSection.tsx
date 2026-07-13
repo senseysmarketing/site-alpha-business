@@ -191,12 +191,12 @@ const NewArrivalsSection = () => {
                     <div className="border-t border-border/60 my-4" />
 
                     {/* Footer */}
-                    <div className="flex items-center justify-between">
-                      <div>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
                         <p className="text-body text-[11px] tracking-[0.1em] uppercase font-semibold text-foreground">
                           {prop.transaction}:
                         </p>
-                        <p className="text-display text-lg font-medium text-foreground">
+                        <p className="text-display text-lg font-medium text-foreground truncate">
                           {formatPrice(prop.price)}
                           {prop.price && prop.isRental && (
                             <span className="text-body text-[11px] tracking-wider uppercase text-muted-foreground ml-1">
@@ -207,7 +207,7 @@ const NewArrivalsSection = () => {
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         <ShareButton path={`/imovel/${prop.id}`} title={toTitleCase(prop.title)} />
-                        <span className="text-body text-sm bg-foreground text-background px-5 py-2 rounded-md group-hover:bg-foreground/90 transition-colors">
+                        <span className="text-body text-sm bg-foreground text-background px-4 md:px-5 py-2 rounded-md group-hover:bg-foreground/90 transition-colors whitespace-nowrap">
                           Saiba Mais
                         </span>
                       </div>
