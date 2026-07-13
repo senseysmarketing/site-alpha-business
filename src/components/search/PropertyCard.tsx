@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Check } from "lucide-react";
+import ShareButton from "@/components/ShareButton";
 import { toTitleCase } from "@/lib/utils";
 import { hasRentalOffer, hasSaleOffer, hasBothTransactions } from "@/lib/propertyQueries";
 
