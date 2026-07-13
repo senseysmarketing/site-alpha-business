@@ -310,19 +310,26 @@ const PropertyDetail = () => {
 
   // Similar: prefer DB results when current property is from DB
   const similarProperties = similarDb.length > 0
-    ? similarDb.map((p) => ({
-        id: p.id,
-        code: p.code,
-        title: p.title,
-        property_type: p.property_type,
-        transaction_type: p.transaction_type,
-        price: (p.transaction_type === "locacao" || p.transaction_type === "aluguel") ? p.rental_price : (p.price ?? p.rental_price),
-        area_total: p.area_total ?? 0,
-        suites: p.bedrooms ?? 0,
-        parking: p.parking_spots ?? 0,
-        photo: p.photos?.[0] || PLACEHOLDER_IMAGE,
-        images: p.photos?.length ? p.photos : [PLACEHOLDER_IMAGE],
-      }))
+    ? similarDb.map((p) => {
+        const both = p.transaction_type === "ambos";
+        const pureRental = p.transaction_type === "locacao" || p.transaction_type === "aluguel";
+        const label = both ? "Venda e Locação" : pureRental ? "Locação" : "Venda";
+        const price = pureRental && !both ? p.rental_price : (p.price ?? p.rental_price);
+        return {
+          id: p.id,
+          code: p.code,
+          title: p.title,
+          property_type: p.property_type,
+          transaction_label: label,
+          is_rental: pureRental && !both,
+          price,
+          area_total: p.area_total ?? 0,
+          suites: p.bedrooms ?? 0,
+          parking: p.parking_spots ?? 0,
+          photo: p.photos?.[0] || PLACEHOLDER_IMAGE,
+          images: p.photos?.length ? p.photos : [PLACEHOLDER_IMAGE],
+        };
+      })
     : [];
 
   return (
@@ -506,25 +513,30 @@ const PropertyDetail = () => {
                     {prop.code}
                   </span>
                 </div>
-                <h3 className="text-display text-xl font-normal text-foreground group-hover:text-primary transition-colors mb-2">
+                <h3 className="text-display text-xl font-normal text-foreground group-hover:text-primary transition-colors mb-2 line-clamp-2 min-h-[3.5rem]">
                   {toTitleCase(prop.title)}
                 </h3>
                 <p className="text-body text-sm text-muted-foreground">
                   {prop.area_total}m² &nbsp;-&nbsp; Suítes: {prop.suites} &nbsp;-&nbsp; Vagas: {prop.parking}
                 </p>
                 <div className="border-t border-border/60 my-4" />
-                <div className="flex items-center justify-between">
-                  <div>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
                     <p className="text-body text-[11px] tracking-[0.1em] uppercase font-semibold text-foreground">
-                      {prop.transaction_type || "Venda"}:
+                      {prop.transaction_label}:
                     </p>
-                    <p className="text-display text-lg font-medium text-foreground">
+                    <p className="text-display text-lg font-medium text-foreground truncate">
                       {formatPrice(prop.price)}
+                      {prop.price && prop.is_rental && (
+                        <span className="text-body text-[11px] tracking-wider uppercase text-muted-foreground ml-1">
+                          /mês
+                        </span>
+                      )}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <ShareButton path={`/imovel/${prop.id}`} title={toTitleCase(prop.title)} />
-                    <span className="text-body text-sm bg-foreground text-background px-5 py-2 rounded-full group-hover:bg-foreground/90 transition-colors">
+                    <span className="text-body text-sm bg-foreground text-background px-4 md:px-5 py-2 rounded-md group-hover:bg-foreground/90 transition-colors whitespace-nowrap">
                       Saiba Mais
                     </span>
                   </div>
