@@ -442,9 +442,23 @@ const PropertyDetail = () => {
               <h2 className="text-display text-2xl md:text-3xl font-light tracking-tight text-foreground mb-6">
                 Sobre o Imóvel
               </h2>
-              <div className="text-body text-sm text-muted-foreground leading-[1.9] whitespace-pre-line">
+              <div
+                className={`text-body text-sm text-muted-foreground leading-[1.9] whitespace-pre-line relative md:!max-h-none ${
+                  descExpanded
+                    ? ""
+                    : "max-h-[240px] overflow-hidden after:content-[''] after:absolute after:inset-x-0 after:bottom-0 after:h-20 after:bg-gradient-to-t after:from-background after:to-transparent md:after:hidden"
+                }`}
+              >
                 {property.description}
               </div>
+              <button
+                type="button"
+                onClick={() => setDescExpanded((v) => !v)}
+                className="md:hidden mt-4 inline-flex items-center gap-2 px-5 py-2 border border-border text-body text-xs tracking-[0.1em] uppercase text-foreground hover:bg-muted transition-colors rounded-full"
+              >
+                {descExpanded ? "Ver menos" : "Ver mais"}
+                {descExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              </button>
             </motion.section>
 
             {/* Amenities */}
