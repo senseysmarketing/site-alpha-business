@@ -591,7 +591,7 @@ const PropertyDetail = () => {
       {/* Mobile sticky bar */}
       <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-background/95 backdrop-blur-sm border-t border-border p-3 flex gap-2">
         <a
-          href="https://wa.me/5511993116849"
+          href={waHref}
           target="_blank"
           rel="noopener noreferrer"
           className="flex-1 flex items-center justify-center gap-2 py-3 bg-[#25D366] text-white text-body text-sm font-medium rounded-full"
