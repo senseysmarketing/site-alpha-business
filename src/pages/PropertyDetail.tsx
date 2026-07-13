@@ -11,6 +11,7 @@ import PropertySpecs from "@/components/property/PropertySpecs";
 import PropertySidebar from "@/components/property/PropertySidebar";
 import PropertyNeighborhood from "@/components/property/PropertyNeighborhood";
 import ScheduleVisitModal from "@/components/property/ScheduleVisitModal";
+import ShareButton from "@/components/ShareButton";
 import { formatPrice } from "@/lib/formatters";
 import { toTitleCase } from "@/lib/utils";
 import { normalizeCondoName } from "@/lib/lucideIconMap";
