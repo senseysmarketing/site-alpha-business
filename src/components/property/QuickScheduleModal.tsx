@@ -94,33 +94,14 @@ const QuickScheduleModal = ({
     const visitDateStr = format(date, "yyyy-MM-dd");
     const summary = `Visita agendada para ${format(date, "dd/MM/yyyy")} às ${time}`;
 
-    const { error: updErr } = await supabase
-      .from("leads")
-      .update({
-        pipeline_stage: "visita_agendada",
-        score: "quente",
-        last_contact_at: new Date().toISOString(),
-        ai_insights: `${summary} — Imóvel ${propertyCode}`,
-      })
-      .eq("id", leadId);
-
-    if (updErr) {
-      setIsSubmitting(false);
-      toast.error("Erro ao atualizar o lead. Tente novamente.");
-      return;
-    }
-
-    const { error } = await supabase.from("visits_scheduling").insert({
-      property_code: propertyCode,
-      property_id: propertyId || null,
-      broker_name: brokerName,
-      visit_date: visitDateStr,
-      visit_time: time,
-      event_type: "visita",
-      lead_id: leadId,
-      lead_name: contactName,
-      lead_phone: contactPhone,
-      lead_email: contactEmail,
+    const { error } = await supabase.rpc("schedule_visit_for_lead", {
+      p_lead_id: leadId,
+      p_property_id: propertyId || null,
+      p_property_code: propertyCode,
+      p_broker_name: brokerName,
+      p_visit_date: visitDateStr,
+      p_visit_time: time,
+      p_ai_insights: `${summary} — Imóvel ${propertyCode}`,
     });
 
     if (error) {

@@ -1000,6 +1000,33 @@ export type Database = {
       }
     }
     Functions: {
+      create_public_lead: {
+        Args: {
+          p_ai_insights?: string
+          p_email: string
+          p_name: string
+          p_origin: string
+          p_phone: string
+          p_pipeline_stage?: string
+          p_property_id?: string
+          p_score?: string
+        }
+        Returns: string
+      }
+      create_public_visit: {
+        Args: {
+          p_ai_insights?: string
+          p_broker_name: string
+          p_email: string
+          p_name: string
+          p_phone: string
+          p_property_code: string
+          p_property_id: string
+          p_visit_date: string
+          p_visit_time: string
+        }
+        Returns: string
+      }
       delete_pipeline_stage: {
         Args: { p_key: string; p_reassign_to: string }
         Returns: undefined
@@ -1012,6 +1039,18 @@ export type Database = {
         Returns: boolean
       }
       normalize_search_text: { Args: { input: string }; Returns: string }
+      schedule_visit_for_lead: {
+        Args: {
+          p_ai_insights?: string
+          p_broker_name: string
+          p_lead_id: string
+          p_property_code: string
+          p_property_id: string
+          p_visit_date: string
+          p_visit_time: string
+        }
+        Returns: string
+      }
       set_user_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
