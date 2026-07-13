@@ -211,6 +211,18 @@ const PropertySidebar = ({
                 </Button>
               </form>
             </Form>
+
+            {/* Separador */}
+            <div className="h-px bg-border/60 my-4" />
+
+            {/* Bloco D — Agendar visita */}
+            <button
+              onClick={() => setScheduleOpen(true)}
+              className="flex items-center justify-center gap-2 w-full py-3 border border-border text-body text-sm font-medium text-foreground rounded-full hover:bg-muted transition-colors"
+            >
+              <Calendar size={18} />
+              Agendar visita
+            </button>
           </div>
         ) : (
           <div className="space-y-4 text-center py-2">
@@ -225,7 +237,7 @@ const PropertySidebar = ({
             </div>
             <Button
               onClick={() => setQuickScheduleOpen(true)}
-              className="w-full bg-primary text-primary-foreground hover:bg-primary/90 text-body text-sm font-medium rounded-full h-11"
+              className="w-full bg-primary text-background hover:bg-primary/90 hover:text-background text-body text-sm font-medium rounded-full h-11"
             >
               <Calendar size={16} className="mr-2" />
               Agendar visita agora
@@ -233,17 +245,6 @@ const PropertySidebar = ({
           </div>
         )}
 
-        {/* Separador */}
-        <div className="h-px bg-border/60" />
-
-        {/* Bloco D — Agendar visita */}
-        <button
-          onClick={() => setScheduleOpen(true)}
-          className="flex items-center justify-center gap-2 w-full py-3 border border-border text-body text-sm font-medium text-foreground rounded-full hover:bg-muted transition-colors"
-        >
-          <Calendar size={18} />
-          Agendar visita
-        </button>
       </div>
 
       <p className="text-body text-[11px] text-muted-foreground text-center uppercase tracking-widest">
