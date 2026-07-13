@@ -367,22 +367,22 @@ const PropertyDetail = () => {
             <p className="text-body text-sm text-muted-foreground">{property.subtitle}</p>
           </div>
           {property.has_both ? (
-            <div className="flex flex-col items-start md:items-end gap-1">
+            <div className="flex flex-col items-start md:items-end gap-1 md:hidden">
               <div className="flex items-baseline gap-2">
                 <span className="text-body text-[10px] tracking-[0.18em] uppercase text-muted-foreground">Compra</span>
-                <span className="text-display text-2xl md:text-3xl font-light text-foreground whitespace-nowrap">
+                <span className="text-display text-2xl font-light text-foreground whitespace-nowrap">
                   {formatPrice(property.sale_price)}
                 </span>
               </div>
               <div className="flex items-baseline gap-2">
                 <span className="text-body text-[10px] tracking-[0.18em] uppercase text-muted-foreground">Locação</span>
-                <span className="text-display text-xl md:text-2xl font-light text-foreground whitespace-nowrap">
+                <span className="text-display text-xl font-light text-foreground whitespace-nowrap">
                   {formatPrice(property.rental_price)}<span className="text-xs text-muted-foreground ml-1">/mês</span>
                 </span>
               </div>
             </div>
           ) : (
-            <p className="text-display text-3xl md:text-4xl font-light text-foreground whitespace-nowrap">
+            <p className="text-display text-3xl font-light text-foreground whitespace-nowrap md:hidden">
               {formatPrice(property.price)}
               {isRentalTransaction(property.transaction_type) && (
                 <span className="text-sm text-muted-foreground ml-1">/mês</span>
