@@ -199,7 +199,7 @@ const PropertySidebar = ({
                 <Button
                   type="submit"
                   disabled={!form.formState.isValid || isSubmitting}
-                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:bg-muted-foreground/40 disabled:text-background disabled:opacity-100 text-body text-sm font-medium rounded-full h-11"
+                  className="w-full bg-primary !text-[#F8F8F8] hover:bg-primary/90 disabled:bg-muted-foreground/40 disabled:!text-[#F8F8F8] disabled:opacity-100 text-body text-sm font-medium rounded-full h-11"
                 >
                   {isSubmitting ? (
                     <>
