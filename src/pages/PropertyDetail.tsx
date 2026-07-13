@@ -333,6 +333,12 @@ const PropertyDetail = () => {
       })
     : [];
 
+  const priceLabel = property.has_both
+    ? `${formatPrice(property.sale_price)} (compra) / ${formatPrice(property.rental_price)}/mês (locação)`
+    : `${formatPrice(property.price)}${isRentalTransaction(property.transaction_type) ? "/mês" : ""}`;
+  const waMessage = `Olá! Tenho interesse no imóvel ${toTitleCase(property.title)} (Cód: ${property.code}) — ${priceLabel}. Link: ${typeof window !== "undefined" ? window.location.href : ""}. Poderia me passar mais informações?`;
+  const waHref = `https://wa.me/5511993116849?text=${encodeURIComponent(waMessage)}`;
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
