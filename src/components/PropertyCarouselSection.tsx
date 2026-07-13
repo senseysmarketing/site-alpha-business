@@ -157,7 +157,7 @@ const PropertyCarouselSection = ({ title, propertyIds, isActive = true, cta }: P
             {properties.map((prop) => (
               <article
                 key={prop.id}
-                className="flex-[0_0_88%] sm:flex-[0_0_75%] md:flex-[0_0_calc(33.333%-16px)] min-w-0"
+                className="flex-[0_0_85%] md:flex-[0_0_calc(33.333%-16px)] min-w-0"
               >
                 <Link
                   to={`/imovel/${prop.id}`}
