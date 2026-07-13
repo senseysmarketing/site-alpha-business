@@ -237,7 +237,7 @@ const PropertySidebar = ({
             </div>
             <Button
               onClick={() => setQuickScheduleOpen(true)}
-              className="w-full bg-primary text-background hover:bg-primary/90 hover:text-background text-body text-sm font-medium rounded-full h-11"
+              className="w-full bg-primary !text-[#F8F8F8] hover:bg-primary/90 hover:!text-[#F8F8F8] text-body text-sm font-medium rounded-full h-11 [&_svg]:!text-[#F8F8F8]"
             >
               <Calendar size={16} className="mr-2" />
               Agendar visita agora
