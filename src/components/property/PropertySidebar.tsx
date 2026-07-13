@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { MessageCircle, Calendar, Zap, Check, Loader2 } from "lucide-react";
+import { MessageCircle, Calendar, Zap, Check, Loader2, Send } from "lucide-react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -132,9 +132,6 @@ const PropertySidebar = ({
         {/* Bloco B/C — Formulário ou Sucesso */}
         {sessionLeadId === null ? (
           <div className="space-y-4">
-            <p className="text-body text-sm font-medium text-foreground">
-              Fale com {brokerFirstName}
-            </p>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
                 <FormField
@@ -202,9 +199,19 @@ const PropertySidebar = ({
                 <Button
                   type="submit"
                   disabled={!form.formState.isValid || isSubmitting}
-                  className="w-full bg-foreground text-background hover:bg-foreground/90 text-body text-sm font-medium rounded-full h-11"
+                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:bg-muted-foreground/40 disabled:text-background disabled:opacity-100 text-body text-sm font-medium rounded-full h-11"
                 >
-                  {isSubmitting ? <Loader2 className="animate-spin" size={16} /> : "Enviar"}
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="animate-spin mr-2" size={16} />
+                      Enviando…
+                    </>
+                  ) : (
+                    <>
+                      <Send size={16} className="mr-2" />
+                      Enviar mensagem
+                    </>
+                  )}
                 </Button>
               </form>
             </Form>
@@ -233,27 +240,14 @@ const PropertySidebar = ({
         {/* Separador */}
         <div className="h-px bg-border/60" />
 
-        {/* Bloco D — Botões existentes */}
-        <div className="space-y-3">
-          <a
-            href={`https://wa.me/${whatsappNumber}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => trackContact({ content_name: `WhatsApp Sidebar — ${propertyCode}` })}
-            className="flex items-center justify-center gap-2 w-full py-3 bg-[#25D366] text-white text-body text-sm font-medium rounded-full hover:bg-[#20bd5a] transition-colors"
-          >
-            <MessageCircle size={18} />
-            Falar com {brokerFirstName}
-          </a>
-
-          <button
-            onClick={() => setScheduleOpen(true)}
-            className="flex items-center justify-center gap-2 w-full py-3 border border-border text-body text-sm font-medium text-foreground rounded-full hover:bg-muted transition-colors"
-          >
-            <Calendar size={18} />
-            Agendar visita
-          </button>
-        </div>
+        {/* Bloco D — Agendar visita */}
+        <button
+          onClick={() => setScheduleOpen(true)}
+          className="flex items-center justify-center gap-2 w-full py-3 border border-border text-body text-sm font-medium text-foreground rounded-full hover:bg-muted transition-colors"
+        >
+          <Calendar size={18} />
+          Agendar visita
+        </button>
       </div>
 
       <p className="text-body text-[11px] text-muted-foreground text-center uppercase tracking-widest">
