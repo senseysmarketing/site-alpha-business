@@ -157,7 +157,7 @@ const PropertyCarouselSection = ({ title, propertyIds, isActive = true, cta }: P
             {properties.map((prop) => (
               <article
                 key={prop.id}
-                className="flex-[0_0_88%] sm:flex-[0_0_75%] md:flex-[0_0_calc(33.333%-16px)] min-w-0"
+                className="flex-[0_0_85%] md:flex-[0_0_calc(33.333%-16px)] min-w-0"
               >
                 <Link
                   to={`/imovel/${prop.id}`}
@@ -199,12 +199,12 @@ const PropertyCarouselSection = ({ title, propertyIds, isActive = true, cta }: P
                     <div className="border-t border-border/60 my-4" />
 
                     {/* Footer */}
-                    <div className="flex items-center justify-between gap-3">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                       <div className="min-w-0">
                         <p className="text-body text-[11px] tracking-[0.1em] uppercase font-semibold text-foreground">
                           {prop.transaction}:
                         </p>
-                        <p className="text-display text-lg font-medium text-foreground truncate">
+                        <p className="text-display text-lg font-medium text-foreground">
                           {formatPrice(prop.price)}
                           {prop.price && prop.isRental && (
                             <span className="text-body text-[11px] tracking-wider uppercase text-muted-foreground ml-1">
@@ -213,9 +213,9 @@ const PropertyCarouselSection = ({ title, propertyIds, isActive = true, cta }: P
                           )}
                         </p>
                       </div>
-                      <div className="flex items-center gap-2 shrink-0">
+                      <div className="flex items-center gap-2 w-full md:w-auto shrink-0">
                         <ShareButton path={`/imovel/${prop.id}`} title={toTitleCase(prop.title)} />
-                        <span className="text-body text-sm bg-foreground text-background px-4 md:px-5 py-2 rounded-md group-hover:bg-foreground/90 transition-colors whitespace-nowrap">
+                        <span className="flex-1 md:flex-none text-center text-body text-sm bg-foreground text-background px-5 py-2 rounded-md group-hover:bg-foreground/90 transition-colors whitespace-nowrap">
                           Saiba Mais
                         </span>
                       </div>
