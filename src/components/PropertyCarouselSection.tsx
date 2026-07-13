@@ -7,6 +7,7 @@ import useEmblaCarousel from "embla-carousel-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import ShareButton from "@/components/ShareButton";
 import { buildCtaHref, getCtaLabel, isExternalUrl, type CarouselCta } from "@/lib/carouselCta";
 
 interface PropertyCarouselSectionProps {
@@ -212,9 +213,12 @@ const PropertyCarouselSection = ({ title, propertyIds, isActive = true, cta }: P
                           )}
                         </p>
                       </div>
-                      <span className="text-body text-sm bg-foreground text-background px-5 py-2 rounded-md group-hover:bg-foreground/90 transition-colors">
-                        Saiba Mais
-                      </span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <ShareButton path={`/imovel/${prop.id}`} title={toTitleCase(prop.title)} />
+                        <span className="text-body text-sm bg-foreground text-background px-5 py-2 rounded-md group-hover:bg-foreground/90 transition-colors">
+                          Saiba Mais
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </Link>

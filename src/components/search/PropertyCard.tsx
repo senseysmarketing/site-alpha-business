@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Check } from "lucide-react";
+import ShareButton from "@/components/ShareButton";
 import { toTitleCase } from "@/lib/utils";
 import { hasRentalOffer, hasSaleOffer, hasBothTransactions } from "@/lib/propertyQueries";
 
@@ -168,9 +169,12 @@ const PropertyCard = ({ property, isSelected = false, onToggleCompare, transacti
                 )}
               </p>
             </div>
-            <span className="text-body text-sm bg-foreground text-background px-5 py-2 rounded-md group-hover:bg-foreground/90 transition-colors whitespace-nowrap">
-              Saiba Mais
-            </span>
+            <div className="flex items-center gap-2 shrink-0">
+              <ShareButton path={`/imovel/${property.id}`} title={toTitleCase(property.title)} />
+              <span className="text-body text-sm bg-foreground text-background px-5 py-2 rounded-md group-hover:bg-foreground/90 transition-colors whitespace-nowrap">
+                Saiba Mais
+              </span>
+            </div>
           </div>
         </div>
       </Link>
