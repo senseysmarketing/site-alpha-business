@@ -513,25 +513,30 @@ const PropertyDetail = () => {
                     {prop.code}
                   </span>
                 </div>
-                <h3 className="text-display text-xl font-normal text-foreground group-hover:text-primary transition-colors mb-2">
+                <h3 className="text-display text-xl font-normal text-foreground group-hover:text-primary transition-colors mb-2 line-clamp-2 min-h-[3.5rem]">
                   {toTitleCase(prop.title)}
                 </h3>
                 <p className="text-body text-sm text-muted-foreground">
                   {prop.area_total}m² &nbsp;-&nbsp; Suítes: {prop.suites} &nbsp;-&nbsp; Vagas: {prop.parking}
                 </p>
                 <div className="border-t border-border/60 my-4" />
-                <div className="flex items-center justify-between">
-                  <div>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
                     <p className="text-body text-[11px] tracking-[0.1em] uppercase font-semibold text-foreground">
-                      {prop.transaction_type || "Venda"}:
+                      {prop.transaction_label}:
                     </p>
-                    <p className="text-display text-lg font-medium text-foreground">
+                    <p className="text-display text-lg font-medium text-foreground truncate">
                       {formatPrice(prop.price)}
+                      {prop.price && prop.is_rental && (
+                        <span className="text-body text-[11px] tracking-wider uppercase text-muted-foreground ml-1">
+                          /mês
+                        </span>
+                      )}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <ShareButton path={`/imovel/${prop.id}`} title={toTitleCase(prop.title)} />
-                    <span className="text-body text-sm bg-foreground text-background px-5 py-2 rounded-full group-hover:bg-foreground/90 transition-colors">
+                    <span className="text-body text-sm bg-foreground text-background px-4 md:px-5 py-2 rounded-md group-hover:bg-foreground/90 transition-colors whitespace-nowrap">
                       Saiba Mais
                     </span>
                   </div>
