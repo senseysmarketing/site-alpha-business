@@ -412,30 +412,47 @@ const PropertyDetail = () => {
 
 
 
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
           <PropertySpecs
             area={String(property.area_total)}
             bedrooms={String(property.bedrooms)}
             suites={String(property.suites)}
             parking={String(property.parking)}
           />
-          <div className="flex gap-3">
+          <div className="hidden md:flex items-end gap-5">
             <a
-              href="https://wa.me/5511993116849"
+              href={waHref}
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => trackContact({ content_name: `WhatsApp Ficha — ${property.code}` })}
-              className="hidden md:flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground text-body text-xs tracking-[0.1em] uppercase hover-magnetic rounded-full"
+              className="flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground text-body text-xs tracking-[0.1em] uppercase hover-magnetic rounded-full"
             >
               <img src={whatsappIcon.url} alt="" className="w-4 h-4 brightness-0 invert" />
               WhatsApp
             </a>
-            <button
-              onClick={() => setScheduleOpen(true)}
-              className="hidden md:block px-6 py-2.5 border border-border text-body text-xs tracking-[0.1em] uppercase text-foreground hover:bg-muted transition-colors rounded-full"
-            >
-              Agendar visita
-            </button>
+            {property.has_both ? (
+              <div className="flex flex-col items-end gap-0.5 leading-none">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-body text-[10px] tracking-[0.18em] uppercase text-muted-foreground">Compra</span>
+                  <span className="text-display text-2xl lg:text-3xl font-light text-foreground whitespace-nowrap">
+                    {formatPrice(property.sale_price)}
+                  </span>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-body text-[10px] tracking-[0.18em] uppercase text-muted-foreground">Locação</span>
+                  <span className="text-display text-xl lg:text-2xl font-light text-foreground whitespace-nowrap">
+                    {formatPrice(property.rental_price)}<span className="text-xs text-muted-foreground ml-1">/mês</span>
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <p className="text-display text-3xl lg:text-4xl font-light text-foreground whitespace-nowrap leading-none">
+                {formatPrice(property.price)}
+                {isRentalTransaction(property.transaction_type) && (
+                  <span className="text-sm text-muted-foreground ml-1">/mês</span>
+                )}
+              </p>
+            )}
           </div>
         </div>
       </motion.div>
