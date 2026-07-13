@@ -132,9 +132,6 @@ const PropertySidebar = ({
         {/* Bloco B/C — Formulário ou Sucesso */}
         {sessionLeadId === null ? (
           <div className="space-y-4">
-            <p className="text-body text-sm font-medium text-foreground">
-              Fale com {brokerFirstName}
-            </p>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
                 <FormField
