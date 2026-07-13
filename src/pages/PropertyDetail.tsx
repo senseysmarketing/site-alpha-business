@@ -310,19 +310,26 @@ const PropertyDetail = () => {
 
   // Similar: prefer DB results when current property is from DB
   const similarProperties = similarDb.length > 0
-    ? similarDb.map((p) => ({
-        id: p.id,
-        code: p.code,
-        title: p.title,
-        property_type: p.property_type,
-        transaction_type: p.transaction_type,
-        price: (p.transaction_type === "locacao" || p.transaction_type === "aluguel") ? p.rental_price : (p.price ?? p.rental_price),
-        area_total: p.area_total ?? 0,
-        suites: p.bedrooms ?? 0,
-        parking: p.parking_spots ?? 0,
-        photo: p.photos?.[0] || PLACEHOLDER_IMAGE,
-        images: p.photos?.length ? p.photos : [PLACEHOLDER_IMAGE],
-      }))
+    ? similarDb.map((p) => {
+        const both = p.transaction_type === "ambos";
+        const pureRental = p.transaction_type === "locacao" || p.transaction_type === "aluguel";
+        const label = both ? "Venda e Locação" : pureRental ? "Locação" : "Venda";
+        const price = pureRental && !both ? p.rental_price : (p.price ?? p.rental_price);
+        return {
+          id: p.id,
+          code: p.code,
+          title: p.title,
+          property_type: p.property_type,
+          transaction_label: label,
+          is_rental: pureRental && !both,
+          price,
+          area_total: p.area_total ?? 0,
+          suites: p.bedrooms ?? 0,
+          parking: p.parking_spots ?? 0,
+          photo: p.photos?.[0] || PLACEHOLDER_IMAGE,
+          images: p.photos?.length ? p.photos : [PLACEHOLDER_IMAGE],
+        };
+      })
     : [];
 
   return (
