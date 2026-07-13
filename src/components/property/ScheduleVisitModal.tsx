@@ -130,40 +130,16 @@ const ScheduleVisitModal = ({
     const phoneDigits = data.phone.replace(/\D/g, "");
     const visitDateStr = format(selectedDate, "yyyy-MM-dd");
 
-    // 1) Create lead first so we can link the visit to it
-    const { data: leadRow, error: leadErr } = await supabase
-      .from("leads")
-      .insert({
-        name: data.name,
-        phone: phoneDigits,
-        email: data.email,
-        origin: "agendamento_visita",
-        pipeline_stage: "visita_agendada",
-        score: "quente",
-        property_id: propertyId || null,
-        ai_insights: `Visita agendada para ${format(selectedDate, "dd/MM/yyyy")} às ${selectedTime} — Imóvel ${propertyCode}`,
-      })
-      .select("id")
-      .single();
-
-    if (leadErr) {
-      setIsSubmitting(false);
-      toast.error("Erro ao registrar o lead. Tente novamente.");
-      return;
-    }
-
-    // 2) Insert visit linked to the newly created lead
-    const { error } = await supabase.from("visits_scheduling").insert({
-      property_code: propertyCode,
-      property_id: propertyId || null,
-      broker_name: brokerName,
-      visit_date: visitDateStr,
-      visit_time: selectedTime,
-      event_type: "visita",
-      lead_id: leadRow?.id ?? null,
-      lead_name: data.name,
-      lead_phone: phoneDigits,
-      lead_email: data.email,
+    const { error } = await supabase.rpc("create_public_visit", {
+      p_name: data.name,
+      p_phone: phoneDigits,
+      p_email: data.email,
+      p_property_id: propertyId || null,
+      p_property_code: propertyCode,
+      p_broker_name: brokerName,
+      p_visit_date: visitDateStr,
+      p_visit_time: selectedTime,
+      p_ai_insights: `Visita agendada para ${format(selectedDate, "dd/MM/yyyy")} às ${selectedTime} — Imóvel ${propertyCode}`,
     });
 
     if (error) {

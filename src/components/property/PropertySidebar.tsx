@@ -72,22 +72,18 @@ const PropertySidebar = ({
     setIsSubmitting(true);
     const phoneDigits = onlyDigits(data.phone);
 
-    const { data: leadRow, error } = await supabase
-      .from("leads")
-      .insert({
-        name: data.name,
-        phone: phoneDigits,
-        email: data.email,
-        origin: "fale_conosco",
-        pipeline_stage: "novos",
-        score: "morno",
-        property_id: propertyId || null,
-        ai_insights: `Contato via card do corretor — Imóvel ${propertyCode}`,
-      })
-      .select("id")
-      .single();
+    const { data: newLeadId, error } = await supabase.rpc("create_public_lead", {
+      p_name: data.name,
+      p_phone: phoneDigits,
+      p_email: data.email,
+      p_origin: "fale_conosco",
+      p_pipeline_stage: "novos",
+      p_score: "morno",
+      p_property_id: propertyId || null,
+      p_ai_insights: `Contato via card do corretor — Imóvel ${propertyCode}`,
+    });
 
-    if (error || !leadRow) {
+    if (error || !newLeadId) {
       setIsSubmitting(false);
       toast.error("Erro ao enviar. Tente novamente.");
       return;
@@ -95,7 +91,7 @@ const PropertySidebar = ({
 
     trackContact({ content_name: `Sidebar Form — ${propertyCode}` });
 
-    setSessionLeadId(leadRow.id);
+    setSessionLeadId(newLeadId as string);
     setContactData({ name: data.name, phone: phoneDigits, email: data.email });
     setIsSubmitting(false);
   };
