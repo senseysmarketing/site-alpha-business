@@ -7,6 +7,7 @@ import useEmblaCarousel from "embla-carousel-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import ShareButton from "@/components/ShareButton";
 import { buildCtaHref, getCtaLabel, isExternalUrl, type CarouselCta } from "@/lib/carouselCta";
 
 interface PropertyCarouselSectionProps {
