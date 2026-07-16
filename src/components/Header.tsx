@@ -404,23 +404,6 @@ const Header = ({ variant = "transparent" }: HeaderProps) => {
                   </AccordionTrigger>
                   <AccordionContent className="pb-6">
                     <div className="space-y-8 mt-2">
-                      {/* Destaques Mobile */}
-                      <div className="space-y-4">
-                        <p className="text-[10px] tracking-[0.2em] uppercase text-white/40 font-semibold pl-1">Destaques</p>
-                        <div className="grid grid-cols-1 gap-3 max-h-[360px] overflow-y-auto pr-2 -mr-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-thumb]:rounded-full">
-                          {(condoMenuSettings?.featured || []).map((item, idx) => (
-                            <Link key={idx} to={getFeaturedHref(item)} onClick={() => setMenuOpen(false)} className="group/item block relative aspect-[21/9] overflow-hidden rounded-sm bg-white/5 border border-white/5">
-                              {item.image && (
-                                <img src={item.image} alt={item.name} className="absolute inset-0 w-full h-full object-cover opacity-60" />
-                              )}
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                              <div className="absolute bottom-3 left-3">
-                                <p className="text-xs font-medium tracking-wider uppercase text-white">{item.name}</p>
-                              </div>
-                            </Link>
-                          ))}
-                        </div>
-                      </div>
 
                       {/* Condomínios Mobile (auto) */}
                       <div className="space-y-5 max-h-[420px] overflow-y-auto pr-2 -mr-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-thumb]:rounded-full">
