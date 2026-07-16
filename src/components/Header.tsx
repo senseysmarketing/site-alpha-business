@@ -56,7 +56,7 @@ const SALE_TYPES: { label: string; propertyType?: string }[] = [
   { label: "Apartamento", propertyType: "apartamento" },
   { label: "Cobertura", propertyType: "cobertura" },
   { label: "Terreno", propertyType: "terreno" },
-  { label: "Sala Comercial", propertyType: "sala_comercial" },
+  
 ];
 
 const buildSaleHref = (propertyType?: string) =>
