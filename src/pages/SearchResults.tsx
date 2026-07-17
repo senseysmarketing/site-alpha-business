@@ -138,8 +138,11 @@ const SearchResults = () => {
   const txParam = searchParams.get("transactionType") || "";
   const hasUrlPriceRange =
     searchParams.has("minPrice") || searchParams.has("maxPrice");
+  const hasUrlRentRange =
+    searchParams.has("minRent") || searchParams.has("maxRent");
   const hasUrlAreaRange =
     searchParams.has("minArea") || searchParams.has("maxArea");
+
   const filtersFromUrl = useMemo(
     () => filtersFromParams(new URLSearchParams(searchParamKey)),
     [searchParamKey]
