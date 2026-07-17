@@ -484,6 +484,8 @@ const SearchResults = () => {
         "minParking",
         "minPrice",
         "maxPrice",
+        "minRent",
+        "maxRent",
         "minArea",
         "maxArea",
         "condominium",
@@ -506,14 +508,17 @@ const SearchResults = () => {
       if (nextFilters.neighborhood !== "all") next.set("neighborhood", nextFilters.neighborhood);
       if (nextFilters.onlyFeatured) next.set("featured", "1");
 
-      const activePriceBounds = isRental(nextFilters.transactionType)
-        ? bounds.rentRange
-        : bounds.saleRange;
-      if (nextFilters.priceRange[0] > activePriceBounds[0]) {
+      if (nextFilters.priceRange[0] > bounds.saleRange[0]) {
         next.set("minPrice", String(nextFilters.priceRange[0]));
       }
-      if (nextFilters.priceRange[1] < activePriceBounds[1]) {
+      if (nextFilters.priceRange[1] < bounds.saleRange[1]) {
         next.set("maxPrice", String(nextFilters.priceRange[1]));
+      }
+      if (nextFilters.rentalRange[0] > bounds.rentRange[0]) {
+        next.set("minRent", String(nextFilters.rentalRange[0]));
+      }
+      if (nextFilters.rentalRange[1] < bounds.rentRange[1]) {
+        next.set("maxRent", String(nextFilters.rentalRange[1]));
       }
       if (nextFilters.areaRange[0] > bounds.areaRange[0]) {
         next.set("minArea", String(nextFilters.areaRange[0]));
@@ -521,6 +526,7 @@ const SearchResults = () => {
       if (nextFilters.areaRange[1] < bounds.areaRange[1]) {
         next.set("maxArea", String(nextFilters.areaRange[1]));
       }
+
 
       setSearchParams(next, { replace: true });
     },
