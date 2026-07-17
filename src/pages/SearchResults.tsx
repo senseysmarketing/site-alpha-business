@@ -399,46 +399,46 @@ const SearchResults = () => {
     if (boundsInitialized || results.length === 0) return;
     setFilters((f) => ({
       ...f,
-      priceRange: hasUrlPriceRange
-        ? f.priceRange
-        : isRental(f.transactionType)
-          ? bounds.rentRange
-          : bounds.saleRange,
+      priceRange: hasUrlPriceRange ? f.priceRange : bounds.saleRange,
+      rentalRange: hasUrlRentRange ? f.rentalRange : bounds.rentRange,
       areaRange: hasUrlAreaRange ? f.areaRange : bounds.areaRange,
     }));
     setBoundsInitialized(true);
-  }, [bounds, results.length, boundsInitialized, hasUrlPriceRange, hasUrlAreaRange]);
+  }, [bounds, results.length, boundsInitialized, hasUrlPriceRange, hasUrlRentRange, hasUrlAreaRange]);
 
   // Clamp filter ranges whenever the bounds shift (e.g. user toggles
   // propertyType, which shrinks the available price range). Stale URL params
   // pointing outside the new bounds get stripped automatically.
   useEffect(() => {
     if (!boundsInitialized) return;
-    const activePriceBounds = isRental(filters.transactionType)
-      ? bounds.rentRange
-      : bounds.saleRange;
-    const clampedMin = Math.max(filters.priceRange[0], activePriceBounds[0]);
-    const clampedMax = Math.min(filters.priceRange[1], activePriceBounds[1]);
-    const safeMin = clampedMin <= clampedMax ? clampedMin : activePriceBounds[0];
-    const safeMax = clampedMin <= clampedMax ? clampedMax : activePriceBounds[1];
-    const areaMin = Math.max(filters.areaRange[0], bounds.areaRange[0]);
-    const areaMax = Math.min(filters.areaRange[1], bounds.areaRange[1]);
-    const safeAreaMin = areaMin <= areaMax ? areaMin : bounds.areaRange[0];
-    const safeAreaMax = areaMin <= areaMax ? areaMax : bounds.areaRange[1];
 
-    const priceChanged =
-      safeMin !== filters.priceRange[0] || safeMax !== filters.priceRange[1];
-    const areaChanged =
-      safeAreaMin !== filters.areaRange[0] || safeAreaMax !== filters.areaRange[1];
+    const clampRange = (
+      cur: [number, number],
+      b: [number, number],
+    ): [number, number] => {
+      const lo = Math.max(cur[0], b[0]);
+      const hi = Math.min(cur[1], b[1]);
+      const safeLo = lo <= hi ? lo : b[0];
+      const safeHi = lo <= hi ? hi : b[1];
+      return [safeLo, safeHi];
+    };
 
-    if (priceChanged || areaChanged) {
+    const [sMin, sMax] = clampRange(filters.priceRange, bounds.saleRange);
+    const [rMin, rMax] = clampRange(filters.rentalRange, bounds.rentRange);
+    const [aMin, aMax] = clampRange(filters.areaRange, bounds.areaRange);
+
+    const priceChanged = sMin !== filters.priceRange[0] || sMax !== filters.priceRange[1];
+    const rentChanged = rMin !== filters.rentalRange[0] || rMax !== filters.rentalRange[1];
+    const areaChanged = aMin !== filters.areaRange[0] || aMax !== filters.areaRange[1];
+
+    if (priceChanged || rentChanged || areaChanged) {
       setFilters((f) => ({
         ...f,
-        priceRange: [safeMin, safeMax],
-        areaRange: [safeAreaMin, safeAreaMax],
+        priceRange: [sMin, sMax],
+        rentalRange: [rMin, rMax],
+        areaRange: [aMin, aMax],
       }));
 
-      // Drop URL params that no longer match the visible range.
       const next = new URLSearchParams(searchParams);
       let urlDirty = false;
       const syncParam = (key: string, value: number, bound: number, isMin: boolean) => {
@@ -451,13 +451,16 @@ const SearchResults = () => {
           urlDirty = true;
         }
       };
-      syncParam("minPrice", safeMin, activePriceBounds[0], true);
-      syncParam("maxPrice", safeMax, activePriceBounds[1], false);
-      syncParam("minArea", safeAreaMin, bounds.areaRange[0], true);
-      syncParam("maxArea", safeAreaMax, bounds.areaRange[1], false);
+      syncParam("minPrice", sMin, bounds.saleRange[0], true);
+      syncParam("maxPrice", sMax, bounds.saleRange[1], false);
+      syncParam("minRent", rMin, bounds.rentRange[0], true);
+      syncParam("maxRent", rMax, bounds.rentRange[1], false);
+      syncParam("minArea", aMin, bounds.areaRange[0], true);
+      syncParam("maxArea", aMax, bounds.areaRange[1], false);
       if (urlDirty) setSearchParams(next, { replace: true });
     }
-  }, [bounds, boundsInitialized, filters.priceRange, filters.areaRange, filters.transactionType, searchParams, setSearchParams]);
+  }, [bounds, boundsInitialized, filters.priceRange, filters.rentalRange, filters.areaRange, searchParams, setSearchParams]);
+
 
   // Canonicalize condominium filter coming from URL once the list is loaded.
   useEffect(() => {
