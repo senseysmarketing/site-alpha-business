@@ -252,12 +252,28 @@ const SearchResults = () => {
   const filteredResults = useMemo(() => {
     const intent = filters.transactionType;
     const filtered = nonRangeFiltered.filter((r) => {
-      const price = priceForIntent(r, intent);
-      if (price && (price < filters.priceRange[0] || price > filters.priceRange[1])) return false;
+      // Per-channel price filter: a row passes if ANY channel accepted by the
+      // current intent is within its own bounds. This prevents a rental-only
+      // row (R$ 23.000/mês) from being killed by the sale range (millions)
+      // when intent is "all".
+      const wantSale = intent === "all" || intent === "venda";
+      const wantRent = intent === "all" || isRental(intent);
+      const saleOk = wantSale && hasSaleOffer(r.transaction_type) && r.price != null
+        ? r.price >= filters.priceRange[0] && r.price <= filters.priceRange[1]
+        : false;
+      const rentOk = wantRent && hasRentalOffer(r.transaction_type) && r.rental_price != null
+        ? r.rental_price >= filters.rentalRange[0] && r.rental_price <= filters.rentalRange[1]
+        : false;
+      // If neither channel is applicable (e.g. row has no price at all), keep it.
+      const hasAnyApplicable =
+        (wantSale && hasSaleOffer(r.transaction_type) && r.price != null) ||
+        (wantRent && hasRentalOffer(r.transaction_type) && r.rental_price != null);
+      if (hasAnyApplicable && !saleOk && !rentOk) return false;
       if (r.area_total != null) {
         if (r.area_total < filters.areaRange[0] || r.area_total > filters.areaRange[1]) return false;
       }
       return true;
+
     });
 
     const lq = normalize(localQuery);
