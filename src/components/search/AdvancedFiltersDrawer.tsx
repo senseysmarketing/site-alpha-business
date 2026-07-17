@@ -309,9 +309,11 @@ const AdvancedFiltersDrawer = ({
                     setLocal((f) => ({
                       ...f,
                       transactionType: v,
-                      priceRange: isRental(v) ? bounds.rentRange : bounds.saleRange,
+                      priceRange: bounds.saleRange,
+                      rentalRange: bounds.rentRange,
                     }))
                   }
+
                 >
                   <SelectTrigger><SelectValue placeholder="Todos" /></SelectTrigger>
                   <SelectContent className="z-[80]">
