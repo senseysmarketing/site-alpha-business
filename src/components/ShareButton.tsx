@@ -10,24 +10,9 @@ interface ShareButtonProps {
   className?: string;
 }
 
-const SUPABASE_URL = "https://cnzmxxvqmvhdtyqbqnlf.supabase.co";
-const PROPERTY_PATH_RE = /^\/imovel\/([^/?#]+)/i;
-
 const buildAbsoluteUrl = (path: string) => {
   if (typeof window === "undefined") return path;
   return `${window.location.origin}${path.startsWith("/") ? path : `/${path}`}`;
-};
-
-/**
- * For property pages, route the shared URL through the `share-property` edge
- * function so social crawlers (WhatsApp, Facebook, iMessage, LinkedIn) receive
- * proper OG tags with the property's photo/title/price. Real users are 302'd
- * straight to the SPA page, so the experience is unchanged.
- */
-const buildShareUrl = (path: string) => {
-  const match = PROPERTY_PATH_RE.exec(path);
-  if (!match) return buildAbsoluteUrl(path);
-  return `${SUPABASE_URL}/functions/v1/share-property?id=${encodeURIComponent(match[1])}`;
 };
 
 const ShareButton = ({ path, title, className }: ShareButtonProps) => {
@@ -40,7 +25,7 @@ const ShareButton = ({ path, title, className }: ShareButtonProps) => {
 
   const handleTriggerClick = async (e: React.MouseEvent) => {
     stop(e);
-    const url = buildShareUrl(path);
+    const url = buildAbsoluteUrl(path);
     // Prefer native share on supported devices (mobile) — opens the OS sheet with WhatsApp, IG, etc.
     if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
       try {
@@ -53,7 +38,7 @@ const ShareButton = ({ path, title, className }: ShareButtonProps) => {
     setOpen((v) => !v);
   };
 
-  const url = buildShareUrl(path);
+  const url = buildAbsoluteUrl(path);
   const encodedUrl = encodeURIComponent(url);
   const encodedTitle = encodeURIComponent(title);
 
