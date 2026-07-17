@@ -35,15 +35,7 @@ async function loadCondos(): Promise<string[]> {
       groups.set(sig, arr);
     };
 
-    const condos = await fetchAllPages<{ name: string; is_active: boolean }>(() =>
-      supabase
-        .from("condominiums")
-        .select("name, is_active")
-        .eq("is_active", true)
-        .order("name")
-    ).catch(() => []);
-    condos.forEach((c) => add(c.name));
-
+    // Only include condos that actually have active properties.
     const props = await fetchAllActivePropertyCondoRows();
     props.forEach((p) => add(p.condominium));
 
