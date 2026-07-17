@@ -7,7 +7,7 @@ import { toast } from "sonner";
 
 import ScheduleVisitModal from "./ScheduleVisitModal";
 import QuickScheduleModal from "./QuickScheduleModal";
-import rafaelPhoto from "@/assets/rafael-broker.png";
+import rafaelPhoto from "@/assets/rafa-avatar.png";
 import { trackContact } from "@/lib/metaPixel";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRPhone, onlyDigits } from "@/lib/phone";
