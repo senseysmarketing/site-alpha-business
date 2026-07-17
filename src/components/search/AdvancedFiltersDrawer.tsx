@@ -33,6 +33,7 @@ import { useEffect, useMemo, useState } from "react";
 
 export interface Filters {
   priceRange: [number, number];
+  rentalRange: [number, number];
   transactionType: string;
   propertyType: string;
   minBedrooms: number;
@@ -56,6 +57,7 @@ export interface FilterBounds {
 
 export const defaultFilters: Filters = {
   priceRange: [0, 50_000_000],
+  rentalRange: [0, 50_000],
   transactionType: "all",
   propertyType: "all",
   minBedrooms: 0,
@@ -67,6 +69,7 @@ export const defaultFilters: Filters = {
   neighborhood: "all",
   onlyFeatured: false,
 };
+
 
 interface AdvancedFiltersDrawerProps {
   open: boolean;
