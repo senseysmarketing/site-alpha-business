@@ -647,8 +647,10 @@ const SearchResults = () => {
                   handleApplyFilters({
                     ...defaultFilters,
                     priceRange: bounds.saleRange,
+                    rentalRange: bounds.rentRange,
                     areaRange: bounds.areaRange,
                   })
+
                 }
                 className="mt-4 text-body text-xs tracking-wider uppercase"
               >
