@@ -89,6 +89,8 @@ const numberParam = (value: string | null) => {
 const filtersFromParams = (params: URLSearchParams): Filters => {
   const minPrice = numberParam(params.get("minPrice"));
   const maxPrice = numberParam(params.get("maxPrice"));
+  const minRent = numberParam(params.get("minRent"));
+  const maxRent = numberParam(params.get("maxRent"));
   const minArea = numberParam(params.get("minArea"));
   const maxArea = numberParam(params.get("maxArea"));
   const minBedrooms = numberParam(params.get("minBedrooms"));
@@ -113,6 +115,10 @@ const filtersFromParams = (params: URLSearchParams): Filters => {
       minPrice ?? defaultFilters.priceRange[0],
       maxPrice ?? defaultFilters.priceRange[1],
     ],
+    rentalRange: [
+      minRent ?? defaultFilters.rentalRange[0],
+      maxRent ?? defaultFilters.rentalRange[1],
+    ],
     areaRange: [
       minArea ?? defaultFilters.areaRange[0],
       maxArea ?? defaultFilters.areaRange[1],
@@ -122,6 +128,7 @@ const filtersFromParams = (params: URLSearchParams): Filters => {
     onlyFeatured,
   };
 };
+
 
 const SearchResults = () => {
   const [searchParams, setSearchParams] = useSearchParams();
