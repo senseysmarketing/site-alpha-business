@@ -89,6 +89,8 @@ const numberParam = (value: string | null) => {
 const filtersFromParams = (params: URLSearchParams): Filters => {
   const minPrice = numberParam(params.get("minPrice"));
   const maxPrice = numberParam(params.get("maxPrice"));
+  const minRent = numberParam(params.get("minRent"));
+  const maxRent = numberParam(params.get("maxRent"));
   const minArea = numberParam(params.get("minArea"));
   const maxArea = numberParam(params.get("maxArea"));
   const minBedrooms = numberParam(params.get("minBedrooms"));
@@ -113,6 +115,10 @@ const filtersFromParams = (params: URLSearchParams): Filters => {
       minPrice ?? defaultFilters.priceRange[0],
       maxPrice ?? defaultFilters.priceRange[1],
     ],
+    rentalRange: [
+      minRent ?? defaultFilters.rentalRange[0],
+      maxRent ?? defaultFilters.rentalRange[1],
+    ],
     areaRange: [
       minArea ?? defaultFilters.areaRange[0],
       maxArea ?? defaultFilters.areaRange[1],
@@ -123,6 +129,7 @@ const filtersFromParams = (params: URLSearchParams): Filters => {
   };
 };
 
+
 const SearchResults = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const searchParamKey = searchParams.toString();
@@ -131,8 +138,11 @@ const SearchResults = () => {
   const txParam = searchParams.get("transactionType") || "";
   const hasUrlPriceRange =
     searchParams.has("minPrice") || searchParams.has("maxPrice");
+  const hasUrlRentRange =
+    searchParams.has("minRent") || searchParams.has("maxRent");
   const hasUrlAreaRange =
     searchParams.has("minArea") || searchParams.has("maxArea");
+
   const filtersFromUrl = useMemo(
     () => filtersFromParams(new URLSearchParams(searchParamKey)),
     [searchParamKey]
@@ -242,12 +252,28 @@ const SearchResults = () => {
   const filteredResults = useMemo(() => {
     const intent = filters.transactionType;
     const filtered = nonRangeFiltered.filter((r) => {
-      const price = priceForIntent(r, intent);
-      if (price && (price < filters.priceRange[0] || price > filters.priceRange[1])) return false;
+      // Per-channel price filter: a row passes if ANY channel accepted by the
+      // current intent is within its own bounds. This prevents a rental-only
+      // row (R$ 23.000/mês) from being killed by the sale range (millions)
+      // when intent is "all".
+      const wantSale = intent === "all" || intent === "venda";
+      const wantRent = intent === "all" || isRental(intent);
+      const saleOk = wantSale && hasSaleOffer(r.transaction_type) && r.price != null
+        ? r.price >= filters.priceRange[0] && r.price <= filters.priceRange[1]
+        : false;
+      const rentOk = wantRent && hasRentalOffer(r.transaction_type) && r.rental_price != null
+        ? r.rental_price >= filters.rentalRange[0] && r.rental_price <= filters.rentalRange[1]
+        : false;
+      // If neither channel is applicable (e.g. row has no price at all), keep it.
+      const hasAnyApplicable =
+        (wantSale && hasSaleOffer(r.transaction_type) && r.price != null) ||
+        (wantRent && hasRentalOffer(r.transaction_type) && r.rental_price != null);
+      if (hasAnyApplicable && !saleOk && !rentOk) return false;
       if (r.area_total != null) {
         if (r.area_total < filters.areaRange[0] || r.area_total > filters.areaRange[1]) return false;
       }
       return true;
+
     });
 
     const lq = normalize(localQuery);
@@ -285,7 +311,7 @@ const SearchResults = () => {
         sorted.sort((a, b) => terrenoRank(a) - terrenoRank(b) || (b.photo ? 1 : 0) - (a.photo ? 1 : 0));
     }
     return sorted;
-  }, [nonRangeFiltered, filters.priceRange, filters.areaRange, filters.transactionType, localQuery, sortBy]);
+  }, [nonRangeFiltered, filters.priceRange, filters.rentalRange, filters.areaRange, filters.transactionType, localQuery, sortBy]);
 
   // Reset pagination whenever the filtered set changes.
   useEffect(() => {
@@ -373,46 +399,46 @@ const SearchResults = () => {
     if (boundsInitialized || results.length === 0) return;
     setFilters((f) => ({
       ...f,
-      priceRange: hasUrlPriceRange
-        ? f.priceRange
-        : isRental(f.transactionType)
-          ? bounds.rentRange
-          : bounds.saleRange,
+      priceRange: hasUrlPriceRange ? f.priceRange : bounds.saleRange,
+      rentalRange: hasUrlRentRange ? f.rentalRange : bounds.rentRange,
       areaRange: hasUrlAreaRange ? f.areaRange : bounds.areaRange,
     }));
     setBoundsInitialized(true);
-  }, [bounds, results.length, boundsInitialized, hasUrlPriceRange, hasUrlAreaRange]);
+  }, [bounds, results.length, boundsInitialized, hasUrlPriceRange, hasUrlRentRange, hasUrlAreaRange]);
 
   // Clamp filter ranges whenever the bounds shift (e.g. user toggles
   // propertyType, which shrinks the available price range). Stale URL params
   // pointing outside the new bounds get stripped automatically.
   useEffect(() => {
     if (!boundsInitialized) return;
-    const activePriceBounds = isRental(filters.transactionType)
-      ? bounds.rentRange
-      : bounds.saleRange;
-    const clampedMin = Math.max(filters.priceRange[0], activePriceBounds[0]);
-    const clampedMax = Math.min(filters.priceRange[1], activePriceBounds[1]);
-    const safeMin = clampedMin <= clampedMax ? clampedMin : activePriceBounds[0];
-    const safeMax = clampedMin <= clampedMax ? clampedMax : activePriceBounds[1];
-    const areaMin = Math.max(filters.areaRange[0], bounds.areaRange[0]);
-    const areaMax = Math.min(filters.areaRange[1], bounds.areaRange[1]);
-    const safeAreaMin = areaMin <= areaMax ? areaMin : bounds.areaRange[0];
-    const safeAreaMax = areaMin <= areaMax ? areaMax : bounds.areaRange[1];
 
-    const priceChanged =
-      safeMin !== filters.priceRange[0] || safeMax !== filters.priceRange[1];
-    const areaChanged =
-      safeAreaMin !== filters.areaRange[0] || safeAreaMax !== filters.areaRange[1];
+    const clampRange = (
+      cur: [number, number],
+      b: [number, number],
+    ): [number, number] => {
+      const lo = Math.max(cur[0], b[0]);
+      const hi = Math.min(cur[1], b[1]);
+      const safeLo = lo <= hi ? lo : b[0];
+      const safeHi = lo <= hi ? hi : b[1];
+      return [safeLo, safeHi];
+    };
 
-    if (priceChanged || areaChanged) {
+    const [sMin, sMax] = clampRange(filters.priceRange, bounds.saleRange);
+    const [rMin, rMax] = clampRange(filters.rentalRange, bounds.rentRange);
+    const [aMin, aMax] = clampRange(filters.areaRange, bounds.areaRange);
+
+    const priceChanged = sMin !== filters.priceRange[0] || sMax !== filters.priceRange[1];
+    const rentChanged = rMin !== filters.rentalRange[0] || rMax !== filters.rentalRange[1];
+    const areaChanged = aMin !== filters.areaRange[0] || aMax !== filters.areaRange[1];
+
+    if (priceChanged || rentChanged || areaChanged) {
       setFilters((f) => ({
         ...f,
-        priceRange: [safeMin, safeMax],
-        areaRange: [safeAreaMin, safeAreaMax],
+        priceRange: [sMin, sMax],
+        rentalRange: [rMin, rMax],
+        areaRange: [aMin, aMax],
       }));
 
-      // Drop URL params that no longer match the visible range.
       const next = new URLSearchParams(searchParams);
       let urlDirty = false;
       const syncParam = (key: string, value: number, bound: number, isMin: boolean) => {
@@ -425,13 +451,16 @@ const SearchResults = () => {
           urlDirty = true;
         }
       };
-      syncParam("minPrice", safeMin, activePriceBounds[0], true);
-      syncParam("maxPrice", safeMax, activePriceBounds[1], false);
-      syncParam("minArea", safeAreaMin, bounds.areaRange[0], true);
-      syncParam("maxArea", safeAreaMax, bounds.areaRange[1], false);
+      syncParam("minPrice", sMin, bounds.saleRange[0], true);
+      syncParam("maxPrice", sMax, bounds.saleRange[1], false);
+      syncParam("minRent", rMin, bounds.rentRange[0], true);
+      syncParam("maxRent", rMax, bounds.rentRange[1], false);
+      syncParam("minArea", aMin, bounds.areaRange[0], true);
+      syncParam("maxArea", aMax, bounds.areaRange[1], false);
       if (urlDirty) setSearchParams(next, { replace: true });
     }
-  }, [bounds, boundsInitialized, filters.priceRange, filters.areaRange, filters.transactionType, searchParams, setSearchParams]);
+  }, [bounds, boundsInitialized, filters.priceRange, filters.rentalRange, filters.areaRange, searchParams, setSearchParams]);
+
 
   // Canonicalize condominium filter coming from URL once the list is loaded.
   useEffect(() => {
@@ -455,6 +484,8 @@ const SearchResults = () => {
         "minParking",
         "minPrice",
         "maxPrice",
+        "minRent",
+        "maxRent",
         "minArea",
         "maxArea",
         "condominium",
@@ -477,14 +508,17 @@ const SearchResults = () => {
       if (nextFilters.neighborhood !== "all") next.set("neighborhood", nextFilters.neighborhood);
       if (nextFilters.onlyFeatured) next.set("featured", "1");
 
-      const activePriceBounds = isRental(nextFilters.transactionType)
-        ? bounds.rentRange
-        : bounds.saleRange;
-      if (nextFilters.priceRange[0] > activePriceBounds[0]) {
+      if (nextFilters.priceRange[0] > bounds.saleRange[0]) {
         next.set("minPrice", String(nextFilters.priceRange[0]));
       }
-      if (nextFilters.priceRange[1] < activePriceBounds[1]) {
+      if (nextFilters.priceRange[1] < bounds.saleRange[1]) {
         next.set("maxPrice", String(nextFilters.priceRange[1]));
+      }
+      if (nextFilters.rentalRange[0] > bounds.rentRange[0]) {
+        next.set("minRent", String(nextFilters.rentalRange[0]));
+      }
+      if (nextFilters.rentalRange[1] < bounds.rentRange[1]) {
+        next.set("maxRent", String(nextFilters.rentalRange[1]));
       }
       if (nextFilters.areaRange[0] > bounds.areaRange[0]) {
         next.set("minArea", String(nextFilters.areaRange[0]));
@@ -492,6 +526,7 @@ const SearchResults = () => {
       if (nextFilters.areaRange[1] < bounds.areaRange[1]) {
         next.set("maxArea", String(nextFilters.areaRange[1]));
       }
+
 
       setSearchParams(next, { replace: true });
     },
@@ -612,8 +647,10 @@ const SearchResults = () => {
                   handleApplyFilters({
                     ...defaultFilters,
                     priceRange: bounds.saleRange,
+                    rentalRange: bounds.rentRange,
                     areaRange: bounds.areaRange,
                   })
+
                 }
                 className="mt-4 text-body text-xs tracking-wider uppercase"
               >

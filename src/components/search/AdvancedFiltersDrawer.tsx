@@ -33,6 +33,7 @@ import { useEffect, useMemo, useState } from "react";
 
 export interface Filters {
   priceRange: [number, number];
+  rentalRange: [number, number];
   transactionType: string;
   propertyType: string;
   minBedrooms: number;
@@ -56,6 +57,7 @@ export interface FilterBounds {
 
 export const defaultFilters: Filters = {
   priceRange: [0, 50_000_000],
+  rentalRange: [0, 50_000],
   transactionType: "all",
   propertyType: "all",
   minBedrooms: 0,
@@ -67,6 +69,7 @@ export const defaultFilters: Filters = {
   neighborhood: "all",
   onlyFeatured: false,
 };
+
 
 interface AdvancedFiltersDrawerProps {
   open: boolean;
@@ -155,29 +158,50 @@ const AdvancedFiltersDrawer = ({
   }, [open, filters]);
 
   const rental = isRental(local.transactionType);
-  const activePriceBounds = rental ? bounds.rentRange : bounds.saleRange;
-  const [priceLo, priceHi] = activePriceBounds;
-  const validPriceRange = priceHi > priceLo;
+  const showSale = local.transactionType === "all" || local.transactionType === "venda";
+  const showRent = local.transactionType === "all" || rental;
 
-  // Dynamic step: ~200 increments across the slider, snapped to a sane unit.
-  const priceStep = useMemo(() => {
-    if (!validPriceRange) return rental ? 500 : 50_000;
-    const span = priceHi - priceLo;
-    const unit = rental ? 500 : 50_000;
+  const [saleLo, saleHi] = bounds.saleRange;
+  const [rentLo, rentHi] = bounds.rentRange;
+  const validSale = saleHi > saleLo;
+  const validRent = rentHi > rentLo;
+
+  const saleStep = useMemo(() => {
+    if (!validSale) return 50_000;
+    const span = saleHi - saleLo;
+    const unit = 50_000;
     return Math.max(unit, Math.round(span / 200 / unit) * unit);
-  }, [validPriceRange, priceHi, priceLo, rental]);
+  }, [validSale, saleHi, saleLo]);
 
-  // Re-clamp local range whenever the bounds shift while the drawer is open
-  // (e.g. user changed propertyType inside the drawer).
+  const rentStep = useMemo(() => {
+    if (!validRent) return 500;
+    const span = rentHi - rentLo;
+    const unit = 500;
+    return Math.max(unit, Math.round(span / 200 / unit) * unit);
+  }, [validRent, rentHi, rentLo]);
+
+  // Re-clamp local ranges whenever bounds shift while the drawer is open.
   useEffect(() => {
-    if (!open || !validPriceRange) return;
+    if (!open) return;
     setLocal((f) => {
-      const lo = Math.max(f.priceRange[0], priceLo);
-      const hi = Math.min(f.priceRange[1], priceHi);
-      if (lo === f.priceRange[0] && hi === f.priceRange[1]) return f;
-      return { ...f, priceRange: [Math.min(lo, hi), Math.max(lo, hi)] };
+      let next = f;
+      if (validSale) {
+        const lo = Math.max(f.priceRange[0], saleLo);
+        const hi = Math.min(f.priceRange[1], saleHi);
+        if (lo !== f.priceRange[0] || hi !== f.priceRange[1]) {
+          next = { ...next, priceRange: [Math.min(lo, hi), Math.max(lo, hi)] };
+        }
+      }
+      if (validRent) {
+        const lo = Math.max(f.rentalRange[0], rentLo);
+        const hi = Math.min(f.rentalRange[1], rentHi);
+        if (lo !== f.rentalRange[0] || hi !== f.rentalRange[1]) {
+          next = { ...next, rentalRange: [Math.min(lo, hi), Math.max(lo, hi)] };
+        }
+      }
+      return next;
     });
-  }, [open, validPriceRange, priceLo, priceHi]);
+  }, [open, validSale, validRent, saleLo, saleHi, rentLo, rentHi]);
 
   const handleApply = () => {
     onApply(local);
@@ -188,6 +212,7 @@ const AdvancedFiltersDrawer = ({
     setLocal({
       ...defaultFilters,
       priceRange: bounds.saleRange,
+      rentalRange: bounds.rentRange,
       areaRange: bounds.areaRange,
     });
   };
@@ -199,6 +224,41 @@ const AdvancedFiltersDrawer = ({
   }, [condoSearch, condominiums]);
 
   const neighborhoodOptions = bounds.neighborhoods;
+
+  const renderPriceSlider = (
+    labelText: string,
+    range: [number, number],
+    lo: number,
+    hi: number,
+    valid: boolean,
+    step: number,
+    onChange: (v: [number, number]) => void,
+  ) => (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <SectionLabel>{labelText}</SectionLabel>
+        <span className="text-body text-[10px] text-muted-foreground/70">
+          {valid ? `${formatCurrency(lo)} – ${formatCurrency(hi)}` : "Sem imóveis no filtro atual"}
+        </span>
+      </div>
+      {valid ? (
+        <Slider
+          min={lo}
+          max={hi}
+          step={step}
+          value={[Math.max(range[0], lo), Math.min(range[1], hi)]}
+          onValueChange={(v) => onChange(v as [number, number])}
+          className="mt-2"
+        />
+      ) : (
+        <div className="h-2 rounded-full bg-muted mt-2" />
+      )}
+      <div className="flex justify-between text-body text-[11px] text-foreground/80">
+        <span>{formatCurrency(range[0])}</span>
+        <span>{formatCurrency(range[1])}</span>
+      </div>
+    </div>
+  );
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -217,39 +277,27 @@ const AdvancedFiltersDrawer = ({
         <div className="flex-1 overflow-y-auto px-6 py-6 space-y-8">
           {/* GRUPO 1 — Preço & Tipo */}
           <div className="space-y-6">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <SectionLabel>
-                  Faixa de {rental ? "Aluguel" : "Preço"}
-                </SectionLabel>
-                <span className="text-body text-[10px] text-muted-foreground/70">
-                  {validPriceRange
-                    ? `${formatCurrency(priceLo)} – ${formatCurrency(priceHi)}`
-                    : "Sem imóveis no filtro atual"}
-                </span>
-              </div>
-              {validPriceRange ? (
-                <Slider
-                  min={priceLo}
-                  max={priceHi}
-                  step={priceStep}
-                  value={[
-                    Math.max(local.priceRange[0], priceLo),
-                    Math.min(local.priceRange[1], priceHi),
-                  ]}
-                  onValueChange={(v) =>
-                    setLocal((f) => ({ ...f, priceRange: v as [number, number] }))
-                  }
-                  className="mt-2"
-                />
-              ) : (
-                <div className="h-2 rounded-full bg-muted mt-2" />
-              )}
-              <div className="flex justify-between text-body text-[11px] text-foreground/80">
-                <span>{formatCurrency(local.priceRange[0])}</span>
-                <span>{formatCurrency(local.priceRange[1])}</span>
-              </div>
-            </div>
+            {showSale && renderPriceSlider(
+              local.transactionType === "all" ? "Faixa de Preço (Venda)" : "Faixa de Preço",
+              local.priceRange,
+              saleLo,
+              saleHi,
+              validSale,
+              saleStep,
+              (v) => setLocal((f) => ({ ...f, priceRange: v })),
+            )}
+
+            {showRent && renderPriceSlider(
+              local.transactionType === "all" ? "Faixa de Aluguel" : "Faixa de Aluguel",
+              local.rentalRange,
+              rentLo,
+              rentHi,
+              validRent,
+              rentStep,
+              (v) => setLocal((f) => ({ ...f, rentalRange: v })),
+            )}
+
+
 
 
             <div className="grid grid-cols-2 gap-3">
@@ -261,9 +309,11 @@ const AdvancedFiltersDrawer = ({
                     setLocal((f) => ({
                       ...f,
                       transactionType: v,
-                      priceRange: isRental(v) ? bounds.rentRange : bounds.saleRange,
+                      priceRange: bounds.saleRange,
+                      rentalRange: bounds.rentRange,
                     }))
                   }
+
                 >
                   <SelectTrigger><SelectValue placeholder="Todos" /></SelectTrigger>
                   <SelectContent className="z-[80]">
