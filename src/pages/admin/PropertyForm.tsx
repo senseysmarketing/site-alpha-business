@@ -18,6 +18,13 @@ import { Eye } from "lucide-react";
 
 const CONDOMINIUMS = ["Residencial 1", "Residencial 2", "Tamboré", "Alphaville 11", "Alphaville 0", "Outro"];
 
+const parseCurrencyInput = (value: string): string => value.replace(/\D/g, "");
+const formatCurrencyInput = (digits: string): string => {
+  const clean = (digits ?? "").toString().replace(/\D/g, "");
+  if (!clean) return "";
+  return `R$ ${Number(clean).toLocaleString("pt-BR")}`;
+};
+
 const PropertyForm = () => {
   const { id } = useParams();
   const isEditing = !!id;
