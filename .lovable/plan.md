@@ -1,53 +1,44 @@
-## Instalar Meta Pixel + Conversions API (CAPI)
+## Diagnóstico
 
-Rastreamento duplo (browser via Pixel + servidor via CAPI) para maximizar qualidade de sinal e resistir a bloqueadores.
+**Bug 1 — slider com uma bolinha só**
+`src/components/ui/slider.tsx` renderiza apenas um `<SliderPrimitive.Thumb />`. Radix cria um thumb por valor do array — como só existe um `Thumb` no JSX, mesmo passando `value={[min, max]}` a segunda bolinha nunca aparece. Afeta todos os range sliders (Faixa de Preço, Faixa de Aluguel, Área).
 
-### 1. Meta Pixel (browser) — `index.html`
-Inserir snippet oficial no `<head>` com ID `967163625325337`, e fallback `<noscript>` no `<body>`. Dispara `PageView` automaticamente em toda navegação (SPA já rerrenderiza em rota, então também vamos disparar `PageView` em mudanças de rota — ver item 3).
+**Bug 2 — filtro corta imóveis caros legítimos**
+Em `SearchResults.tsx` a função `percentileCap(values, 0.98)` é usada para calcular `saleMax`/`rentMax` (~linha 362) e esse mesmo valor vira o **filtro ativo** (`priceRange` inicializado com `bounds.saleRange`). Resultado: uma casa legítima de R$ 80M fica fora do resultado quando o pool tem 519 imóveis (p98 ≈ R$ 44M), mas reaparece quando o pool encolhe para 128 imóveis (5+ suítes). Como `sortBy=price_desc` só mostra os primeiros 9, a "mansão" nunca aparece.
 
-### 2. Helper de tracking — `src/lib/metaPixel.ts` (novo)
-Wrapper tipado sobre `window.fbq` com funções:
-- `trackPageView()`
-- `trackLead(params)` — para leads (formulários enviados)
-- `trackContact()` — cliques em WhatsApp / telefone
-- `trackSchedule(params)` — agendamento de visita
-- `trackViewContent(params)` — visualização de ficha de imóvel
-- `trackSearch(params)` — busca (tradicional e IA)
-- `trackSubmitApplication()` — "Anuncie seu imóvel"
+## Dinamismo dos limites — sim, e já é assim (com um ajuste)
 
-Cada função também chama um `sendCapiEvent(eventName, params)` que faz `POST` para a edge function `meta-capi` (item 4), enviando `event_id` único (deduplicação Pixel↔CAPI), `event_source_url`, e user_data disponível (email, phone, nome quando existir no formulário — hasheados no servidor).
+O `bounds` já é calculado a partir de `nonRangeFiltered`, ou seja, o subconjunto de imóveis após aplicar **todos os filtros não-range** (condomínio, cidade, bairro, tipo, transação, quartos, banheiros, vagas, featured). Então:
 
-### 3. Disparos nos pontos-chave
-| Ação do usuário | Componente | Evento Pixel + CAPI |
-|---|---|---|
-| Mudança de rota | `App.tsx` (novo `RouteTracker`) | `PageView` |
-| Ver ficha de imóvel | `pages/PropertyDetail.tsx` | `ViewContent` (content_ids, price, currency BRL) |
-| Buscar (tradicional) | `SearchBarSection.tsx` submit | `Search` (search_string com filtros) |
-| Buscar (IA) | `useAiSearchChat.ts` ao enviar prompt | `Search` |
-| Clicar WhatsApp flutuante | `FloatingWhatsApp.tsx` | `Contact` |
-| Clicar telefone/WhatsApp em card/sidebar | `PropertySidebar.tsx`, `ContactSection.tsx` | `Contact` |
-| Enviar form de contato | `ContactSection.tsx` submit | `Lead` |
-| Agendar visita (concluir) | `ScheduleVisitModal.tsx` submit final | `Schedule` |
-| Enviar "Anuncie seu imóvel" | `AdvertisePropertyModal.tsx` submit | `SubmitApplication` |
+- `/busca?condominium=Tamboré+1` → slider mostra o mínimo e máximo **do Tamboré 1**.
+- `/busca?transactionType=venda&propertyType=casa` → slider mostra min/max **das casas à venda**.
+- Se o usuário mudar tipo/condomínio, os limites (e o range ativo, quando ainda estava colado nos limites) recalculam automaticamente.
 
-Cada disparo gera um `event_id` (uuid) reutilizado no Pixel e no CAPI para deduplicação.
+Isso é preservado. O único ajuste é **como** o min/max são calculados: hoje é o percentil 98, passamos a usar o min/max **real** do subconjunto atual.
 
-### 4. Conversions API — edge function `supabase/functions/meta-capi/index.ts` (nova)
-- Público (verify_jwt = false), CORS liberado.
-- Recebe `{ event_name, event_id, event_time, event_source_url, user_data, custom_data }`.
-- Hash SHA-256 (server-side) em `email`, `phone`, `fn`, `ln` antes de enviar.
-- Coleta `client_ip_address` (do header `x-forwarded-for`) e `client_user_agent`.
-- Se houver cookies `_fbp` / `_fbc` no request body (lidos do `document.cookie` no client), inclui em `user_data`.
-- POST para `https://graph.facebook.com/v21.0/{PIXEL_ID}/events?access_token={META_CAPI_TOKEN}`.
-- Em dev, também envia `test_event_code` se `META_CAPI_TEST_CODE` estiver definido.
-- Registra no `supabase/config.toml` como função pública.
+## Correções
 
-### 5. Secrets necessários (Lovable Cloud)
-- `META_PIXEL_ID` = `967163625325337` (também exposto no client via constante — é público)
-- `META_CAPI_ACCESS_TOKEN` — **você precisa gerar em Meta Events Manager → seu Pixel → Configurações → API de Conversões → Gerar token de acesso**. Vou pedir via formulário seguro após você aprovar o plano.
-- `META_CAPI_TEST_CODE` (opcional) — para validar eventos na aba "Testar eventos" do Events Manager antes de ir pra produção. Pode enviar depois.
+### 1. `src/components/ui/slider.tsx`
+Renderizar um Thumb por valor:
+```tsx
+{(props.value ?? props.defaultValue ?? [0]).map((_, i) => (
+  <SliderPrimitive.Thumb key={i} className="..." />
+))}
+```
+Corrige as duas bolinhas em todos os sliders do site sem tocar em cada consumidor.
 
-### Fora do escopo
-- Consent Mode / banner de cookies LGPD (não solicitado; podemos adicionar depois).
-- Eventos de e-commerce avançados (Purchase, AddToCart) — não se aplicam ao fluxo atual.
-- Catálogo de imóveis para Advantage+ (integração separada).
+### 2. `src/pages/SearchResults.tsx` — bounds reais, cap só para o step
+- Trocar `percentileCap` por `Math.max(...)`/`Math.min(...)` reais do subconjunto `nonRangeFiltered` para `saleRange`, `rentRange` e `areaRange`.
+- Manter o `percentileCap` **apenas** para calcular o `step` do slider no `AdvancedFiltersDrawer` (evita passos absurdos quando existe um outlier no cadastro). O `step` fica em `AdvancedFiltersDrawer.tsx` e já é derivado do range, então basta manter a lógica atual lá.
+- Arredondar min para baixo e max para cima em unidades sensatas (R$ 50.000 para venda, R$ 500 para aluguel, 10 m² para área) para o slider ficar "limpo".
+- A dependência de `nonRangeFiltered` garante que o range é **contextual** ao filtro atual (Tamboré 1, casa venda, etc.).
+
+### 3. Reset automático quando o range ativo estava colado nos limites
+Se o usuário não mexeu no slider (`priceRange` == `bounds.saleRange` anterior), quando os bounds recalcularem por causa de outro filtro, o `priceRange` acompanha os novos limites — assim o 80M passa a ser incluído automaticamente sem pedir para o usuário mexer no slider. Se o usuário já customizou o range, respeitamos a escolha dele (só clampamos aos novos limites).
+
+### 4. Verificação
+- `/busca?transactionType=venda&propertyType=casa` → slider duas bolinhas, max = preço real da casa mais cara, card de R$ 80M aparece como primeiro resultado.
+- `/busca?condominium=Tamboré+1` → slider vai do menor ao maior preço do Tamboré 1, não do catálogo inteiro.
+- `/busca?transactionType=locacao` → slider de aluguel usa min/max reais do pool de locação.
+
+Sem alterações em schema, RPCs ou outras telas.
