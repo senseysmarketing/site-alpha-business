@@ -358,12 +358,12 @@ const SearchResults = () => {
     const roundUp = (n: number, step: number) => Math.ceil(n / step) * step;
     const roundDown = (n: number, step: number) => Math.floor(n / step) * step;
 
-    const saleMin = salePrices.length ? roundDown(Math.min(...salePrices), 100_000) : 0;
-    const saleMax = salePrices.length ? roundUp(percentileCap(salePrices), 100_000) : 50_000_000;
-    const rentMin = rentPrices.length ? roundDown(Math.min(...rentPrices), 1_000) : 0;
-    const rentMax = rentPrices.length ? roundUp(percentileCap(rentPrices), 1_000) : 50_000;
+    const saleMin = salePrices.length ? roundDown(Math.min(...salePrices), 50_000) : 0;
+    const saleMax = salePrices.length ? roundUp(Math.max(...salePrices), 50_000) : 50_000_000;
+    const rentMin = rentPrices.length ? roundDown(Math.min(...rentPrices), 500) : 0;
+    const rentMax = rentPrices.length ? roundUp(Math.max(...rentPrices), 500) : 50_000;
     const areaMin = areas.length ? roundDown(Math.min(...areas), 10) : 0;
-    const areaMax = areas.length ? roundUp(percentileCap(areas), 10) : 5000;
+    const areaMax = areas.length ? roundUp(Math.max(...areas), 10) : 5000;
 
     // Property type / city / neighborhood options must stay global so the user
     // can switch between categories — they don't depend on the current filter.
