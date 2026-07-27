@@ -225,7 +225,11 @@ const SearchResults = () => {
       if (filters.neighborhood !== "all" && r.neighborhood !== filters.neighborhood) return false;
       if (filters.onlyFeatured && !r.is_featured) return false;
       if (filters.condominium !== "all") {
-        if (!matchCondo(r.condominium, filters.condominium)) return false;
+        // Fallback: alguns imóveis chegam sem condomínio e trazem o nome apenas no bairro.
+        const condoOk =
+          matchCondo(r.condominium, filters.condominium) ||
+          (!r.condominium && matchCondo(r.neighborhood, filters.condominium));
+        if (!condoOk) return false;
       }
       if (tagNorm) {
         const haystack = [r.title || "", r.condominium || "", r.relevance_reason || ""]
