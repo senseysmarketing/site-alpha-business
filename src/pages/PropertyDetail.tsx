@@ -367,28 +367,43 @@ const PropertyDetail = () => {
             <p className="text-body text-sm text-muted-foreground">{property.subtitle}</p>
           </div>
           {property.has_both ? (
-            <div className="flex flex-col items-start md:items-end gap-1 md:hidden">
-              <div className="flex items-baseline gap-2">
-                <span className="text-body text-[10px] tracking-[0.18em] uppercase text-muted-foreground">Compra</span>
-                <span className="text-display text-2xl font-light text-foreground whitespace-nowrap">
-                  {formatPrice(property.sale_price)}
-                </span>
+            <div className="flex items-center justify-between gap-3 md:hidden">
+              <div className="flex flex-col items-start gap-1">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-body text-[10px] tracking-[0.18em] uppercase text-muted-foreground">Compra</span>
+                  <span className="text-display text-2xl font-light text-foreground whitespace-nowrap">
+                    {formatPrice(property.sale_price)}
+                  </span>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-body text-[10px] tracking-[0.18em] uppercase text-muted-foreground">Locação</span>
+                  <span className="text-display text-xl font-light text-foreground whitespace-nowrap">
+                    {formatPrice(property.rental_price)}<span className="text-xs text-muted-foreground ml-1">/mês</span>
+                  </span>
+                </div>
               </div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-body text-[10px] tracking-[0.18em] uppercase text-muted-foreground">Locação</span>
-                <span className="text-display text-xl font-light text-foreground whitespace-nowrap">
-                  {formatPrice(property.rental_price)}<span className="text-xs text-muted-foreground ml-1">/mês</span>
-                </span>
-              </div>
+              <ShareButton
+                path={`/imovel/${property.id}`}
+                title={toTitleCase(property.title)}
+                className="inline-flex items-center justify-center h-10 w-10 rounded-full border border-border/60 text-foreground hover:bg-muted transition-colors shrink-0"
+              />
             </div>
           ) : (
-            <p className="text-display text-3xl font-light text-foreground whitespace-nowrap md:hidden">
-              {formatPrice(property.price)}
-              {isRentalTransaction(property.transaction_type) && (
-                <span className="text-sm text-muted-foreground ml-1">/mês</span>
-              )}
-            </p>
+            <div className="flex items-center justify-between gap-3 md:hidden">
+              <p className="text-display text-3xl font-light text-foreground whitespace-nowrap">
+                {formatPrice(property.price)}
+                {isRentalTransaction(property.transaction_type) && (
+                  <span className="text-sm text-muted-foreground ml-1">/mês</span>
+                )}
+              </p>
+              <ShareButton
+                path={`/imovel/${property.id}`}
+                title={toTitleCase(property.title)}
+                className="inline-flex items-center justify-center h-10 w-10 rounded-full border border-border/60 text-foreground hover:bg-muted transition-colors shrink-0"
+              />
+            </div>
           )}
+
         </div>
 
         {(property.condo_fee || property.iptu) && (
