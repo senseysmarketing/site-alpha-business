@@ -468,7 +468,13 @@ const PropertyDetail = () => {
                 )}
               </p>
             )}
+            <ShareButton
+              path={`/imovel/${property.id}`}
+              title={toTitleCase(property.title)}
+              className="inline-flex items-center justify-center h-10 w-10 rounded-full border border-border/60 text-foreground hover:bg-muted transition-colors shrink-0"
+            />
           </div>
+
         </div>
       </motion.div>
 
