@@ -255,30 +255,43 @@ const SearchResults = () => {
 
   const filteredResults = useMemo(() => {
     const intent = filters.transactionType;
+    // A faixa só é aplicada quando o usuário realmente a definiu (existe na URL).
+    // Faixa "cheia" (intocada) não pode aprovar um imóvel que falhou na faixa
+    // que o usuário definiu — era isso que deixava passar imóveis "ambos"
+    // fora da faixa de venda por causa do aluguel.
+    const saleFilterActive = hasUrlPriceRange;
+    const rentFilterActive = hasUrlRentRange;
+
     const filtered = nonRangeFiltered.filter((r) => {
-      // Per-channel price filter: a row passes if ANY channel accepted by the
-      // current intent is within its own bounds. This prevents a rental-only
-      // row (R$ 23.000/mês) from being killed by the sale range (millions)
-      // when intent is "all".
       const wantSale = intent === "all" || intent === "venda";
       const wantRent = intent === "all" || isRental(intent);
-      const saleOk = wantSale && hasSaleOffer(r.transaction_type) && r.price != null
-        ? r.price >= filters.priceRange[0] && r.price <= filters.priceRange[1]
+      const saleApplicable = wantSale && hasSaleOffer(r.transaction_type) && r.price != null;
+      const rentApplicable = wantRent && hasRentalOffer(r.transaction_type) && r.rental_price != null;
+
+      const saleOk = saleApplicable
+        ? (r.price as number) >= filters.priceRange[0] && (r.price as number) <= filters.priceRange[1]
         : false;
-      const rentOk = wantRent && hasRentalOffer(r.transaction_type) && r.rental_price != null
-        ? r.rental_price >= filters.rentalRange[0] && r.rental_price <= filters.rentalRange[1]
+      const rentOk = rentApplicable
+        ? (r.rental_price as number) >= filters.rentalRange[0] &&
+          (r.rental_price as number) <= filters.rentalRange[1]
         : false;
-      // If neither channel is applicable (e.g. row has no price at all), keep it.
-      const hasAnyApplicable =
-        (wantSale && hasSaleOffer(r.transaction_type) && r.price != null) ||
-        (wantRent && hasRentalOffer(r.transaction_type) && r.rental_price != null);
-      if (hasAnyApplicable && !saleOk && !rentOk) return false;
+
+      // Só considera "em avaliação" os canais que o usuário filtrou E que o
+      // imóvel oferece. Um imóvel só de locação nunca é morto pela faixa de venda.
+      const saleChecked = saleFilterActive && saleApplicable;
+      const rentChecked = rentFilterActive && rentApplicable;
+      if (saleChecked || rentChecked) {
+        const passes = (saleChecked && saleOk) || (rentChecked && rentOk);
+        if (!passes) return false;
+      }
+
       if (r.area_total != null) {
         if (r.area_total < filters.areaRange[0] || r.area_total > filters.areaRange[1]) return false;
       }
       return true;
-
     });
+
+
 
     const lq = normalize(localQuery);
     const searched = lq
