@@ -1848,8 +1848,9 @@ const filterAndRankV3 = (rows: PropRow[], f: PropertySearchFilters): ScoredMatch
     if (f.minParking && (r.parking_spots ?? 0) < f.minParking) continue;
     if (f.minArea && (r.area_total ?? 0) < f.minArea) continue;
     const priceCol = f.transactionType === "locacao" ? r.rental_price : r.price;
+    // Imóvel sem preço no canal filtrado não pode ser aprovado por omissão.
     if (f.minPrice && (priceCol ?? 0) < f.minPrice) continue;
-    if (f.maxPrice && priceCol != null && priceCol > f.maxPrice) continue;
+    if (f.maxPrice && (priceCol == null || priceCol > f.maxPrice)) continue;
     if (f.maxCondoFee && r.condo_fee != null && r.condo_fee > f.maxCondoFee) continue;
     if (f.maxIptu && r.iptu != null && r.iptu > f.maxIptu) continue;
 
