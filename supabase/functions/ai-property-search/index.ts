@@ -309,8 +309,20 @@ const filtersToQS = (f: PropertySearchFilters): string => {
   if (f.minBathrooms) p.set("minBathrooms", String(f.minBathrooms));
   if (f.minParking) p.set("minParking", String(f.minParking));
   if (f.minArea) p.set("minArea", String(f.minArea));
-  if (f.minPrice) p.set("minPrice", String(f.minPrice));
-  if (f.maxPrice) p.set("maxPrice", String(f.maxPrice));
+  // A página de busca usa pares distintos por canal: minPrice/maxPrice (venda)
+  // e minRent/maxRent (locação). Enviar sempre no par errado fazia a faixa ser
+  // ignorada em buscas de locação.
+  const isRental = f.transactionType === "locacao";
+  const writeSale = !isRental;
+  const writeRent = isRental || !f.transactionType;
+  if (writeSale) {
+    if (f.minPrice) p.set("minPrice", String(f.minPrice));
+    if (f.maxPrice) p.set("maxPrice", String(f.maxPrice));
+  }
+  if (writeRent) {
+    if (f.minPrice) p.set("minRent", String(f.minPrice));
+    if (f.maxPrice) p.set("maxRent", String(f.maxPrice));
+  }
   return p.toString();
 };
 
