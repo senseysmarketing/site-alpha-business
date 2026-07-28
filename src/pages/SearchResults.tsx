@@ -328,7 +328,7 @@ const SearchResults = () => {
         sorted.sort((a, b) => terrenoRank(a) - terrenoRank(b) || (b.photo ? 1 : 0) - (a.photo ? 1 : 0));
     }
     return sorted;
-  }, [nonRangeFiltered, filters.priceRange, filters.rentalRange, filters.areaRange, filters.transactionType, localQuery, sortBy]);
+  }, [nonRangeFiltered, filters.priceRange, filters.rentalRange, filters.areaRange, filters.transactionType, hasUrlPriceRange, hasUrlRentRange, localQuery, sortBy]);
 
   // Reset pagination whenever the filtered set changes.
   useEffect(() => {
