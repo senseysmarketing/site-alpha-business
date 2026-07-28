@@ -120,8 +120,18 @@ export function filtersToSearchParams(f: PropertySearchFilters): string {
   if (f.minBathrooms) p.set("minBathrooms", String(f.minBathrooms));
   if (f.minParking) p.set("minParking", String(f.minParking));
   if (f.minArea) p.set("minArea", String(f.minArea));
-  if (f.minPrice) p.set("minPrice", String(f.minPrice));
-  if (f.maxPrice) p.set("maxPrice", String(f.maxPrice));
+  if (f.maxArea) p.set("maxArea", String(f.maxArea));
+  // A página de busca lê minPrice/maxPrice para venda e minRent/maxRent para
+  // locação. Enviar no par correto do canal evita que a faixa seja ignorada.
+  const isRental = f.transactionType === "locacao";
+  if (!isRental) {
+    if (f.minPrice) p.set("minPrice", String(f.minPrice));
+    if (f.maxPrice) p.set("maxPrice", String(f.maxPrice));
+  }
+  if (isRental || !f.transactionType) {
+    if (f.minPrice) p.set("minRent", String(f.minPrice));
+    if (f.maxPrice) p.set("maxRent", String(f.maxPrice));
+  }
   if (f.maxCondoFee) p.set("maxCondoFee", String(f.maxCondoFee));
   if (f.maxIptu) p.set("maxIptu", String(f.maxIptu));
   return p.toString();
