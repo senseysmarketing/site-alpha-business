@@ -11,6 +11,7 @@ export interface PropertySearchFilters {
   minBathrooms?: number | null;
   minParking?: number | null;
   minArea?: number | null;
+  maxArea?: number | null;
   minPrice?: number | null;
   maxPrice?: number | null;
   maxCondoFee?: number | null;
