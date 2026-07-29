@@ -73,6 +73,8 @@ const Properties = () => {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [refreshTick, setRefreshTick] = useState(0);
+  const [lastSync, setLastSync] = useState<{ at: string; summary: string } | null>(null);
+
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [propertyToDelete, setPropertyToDelete] = useState<string | null>(null);
