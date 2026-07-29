@@ -407,13 +407,13 @@ const Properties = () => {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-12">
+                <TableCell colSpan={8} className="text-center py-12">
                   <p className="font-[Inter] text-sm text-muted-foreground">Carregando imóveis...</p>
                 </TableCell>
               </TableRow>
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-12">
+                <TableCell colSpan={8} className="text-center py-12">
                   <p className="font-[Inter] text-sm text-muted-foreground">Nenhum imóvel encontrado</p>
                 </TableCell>
               </TableRow>
