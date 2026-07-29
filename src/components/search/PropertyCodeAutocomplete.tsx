@@ -139,7 +139,9 @@ const PropertyCodeAutocomplete = ({ value, onChange, onSubmit }: Props) => {
     }
   };
 
-  const showPanel = open && value.trim().length >= 2;
+  const isDefaultList = value.trim().length < 2;
+  const showPanel = open;
+
 
   return (
     <div ref={wrapRef} className="flex-1 relative">
