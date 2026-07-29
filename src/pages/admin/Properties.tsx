@@ -73,6 +73,8 @@ const Properties = () => {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [refreshTick, setRefreshTick] = useState(0);
+  const [lastSync, setLastSync] = useState<{ at: string; summary: string } | null>(null);
+
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [propertyToDelete, setPropertyToDelete] = useState<string | null>(null);
@@ -107,6 +109,30 @@ const Properties = () => {
     };
     fetchProperties();
   }, [refreshTick]);
+
+  useEffect(() => {
+    const fetchLastSync = async () => {
+      const { data } = await supabase
+        .from("system_audit_logs")
+        .select("created_at, object_label, metadata")
+        .eq("object_type", "kenlo_sync")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (data) {
+        const meta = (data.metadata ?? {}) as Record<string, number>;
+        setLastSync({
+          at: data.created_at,
+          summary:
+            data.object_label === "Falha"
+              ? "falhou"
+              : `${meta.created ?? 0} criados · ${meta.updated ?? 0} atualizados · ${meta.deactivated ?? 0} inativados`,
+        });
+      }
+    };
+    fetchLastSync();
+  }, [refreshTick]);
+
 
   const handleSync = async () => {
     setSyncing(true);
@@ -266,6 +292,16 @@ const Properties = () => {
         <div>
           <h1 className="font-[Raleway] text-2xl font-semibold text-foreground tracking-tight">Imóveis</h1>
           <p className="font-[Inter] text-sm text-muted-foreground mt-1">Gerencie seu portfólio</p>
+          {lastSync && (
+            <p className="font-[Inter] text-xs text-muted-foreground/80 mt-1">
+              Última sincronização Kenlo:{" "}
+              {new Date(lastSync.at).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
+              {" · "}
+              {lastSync.summary}
+              {" · automática às 07h, 13h e 19h"}
+            </p>
+          )}
+
         </div>
         <div className="flex items-center gap-2">
           {canManageProperties && (
