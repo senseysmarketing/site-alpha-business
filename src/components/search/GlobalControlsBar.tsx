@@ -90,17 +90,15 @@ const GlobalControlsBar = ({ propertyTypes }: Props) => {
       <div className="lg:ml-auto w-full lg:w-[240px]">
         <CondoAutocomplete
           value={condoInput}
+          placeholder="Trocar de condomínio"
           onChange={(v) => {
             setCondoInput(v);
-            if (v === "") setParam("condominium", null);
-            else if (v !== currentCondo && v.length > 2) {
-              // Só grava na URL quando o usuário escolhe da lista (valor completo).
-              const isExact = true;
-              if (isExact) setParam("condominium", v);
-            }
+            if (v === "" && currentCondo) setParam("condominium", null);
           }}
+          onSelect={(v) => setParam("condominium", v)}
           className="w-full bg-background border border-border rounded-full pl-4 pr-8 py-2 text-body text-xs text-foreground outline-none focus:ring-1 focus:ring-primary"
         />
+
       </div>
     </div>
   );
