@@ -53,7 +53,7 @@ const ACTIVE_PROPERTY_SEARCH_SELECT =
   "id, code, title, condominium, neighborhood, city, price, rental_price, transaction_type, property_type, bedrooms, bathrooms, parking_spots, area_total, photos, is_featured, created_at";
 
 const ADMIN_PROPERTY_SELECT =
-  "id, code, title, condominium, property_type, transaction_type, price, rental_price, status, created_at";
+  "id, code, title, condominium, property_type, transaction_type, price, rental_price, status, source, created_at";
 
 /** Strict: only legacy rental-only rows. */
 export const isRentalTransaction = (transactionType: string | null | undefined) =>
