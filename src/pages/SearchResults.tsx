@@ -19,7 +19,7 @@ import CompareModal from "@/components/search/CompareModal";
 import FilterChips, { type ParsedFilters } from "@/components/search/FilterChips";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+
 import { useCondoList, resolveCanonicalCondo } from "@/hooks/useCondoList";
 import { matchCondo } from "@/lib/condoMatching";
 import {
