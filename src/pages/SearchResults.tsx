@@ -584,6 +584,8 @@ const SearchResults = () => {
         sortBy={sortBy}
         onSortChange={setSortBy}
         onOpenFilters={() => setFiltersOpen(true)}
+        propertyTypes={bounds.propertyTypes}
+
         chips={
           (parsedFilters && !loading) || (tagParam && !loading) ? (
             <div className="flex items-center gap-3 flex-wrap">
