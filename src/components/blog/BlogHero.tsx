@@ -13,11 +13,12 @@ const BlogHero = ({ post }: BlogHeroProps) => {
   return (
     <section className="relative min-h-[60vh] md:min-h-[68vh] flex items-center overflow-hidden">
       <div className="absolute inset-0">
-        {post.cover_image ? (
-          <img src={post.cover_image} alt={post.title} className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-br from-bordeaux to-foreground" />
-        )}
+        <CoverImage
+          desktop={post.cover_image}
+          mobile={post.cover_image_mobile}
+          alt={post.title}
+          loading="eager"
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A]/95 via-[#0A0A0A]/55 to-[#0A0A0A]/15" />
       </div>
 
