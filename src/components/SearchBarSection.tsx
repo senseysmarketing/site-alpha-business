@@ -110,10 +110,11 @@ const SearchBarSection = () => {
                 />
                 <button
                   onClick={() => setMode("cognitive")}
-                  className="text-body text-[10px] tracking-[0.1em] uppercase px-4 py-2 rounded-full bg-muted text-muted-foreground hover:text-foreground transition-colors self-end sm:self-auto"
+                  className="hidden sm:inline-flex text-body text-[10px] tracking-[0.1em] uppercase px-4 py-2 rounded-full bg-muted text-muted-foreground hover:text-foreground transition-colors self-auto"
                 >
                   Cognitivo
                 </button>
+
               </div>
 
 
@@ -207,6 +208,16 @@ const SearchBarSection = () => {
                 <Search size={14} />
                 Buscar imóveis
               </button>
+
+              <div className="flex sm:hidden justify-center">
+                <button
+                  onClick={() => setMode("cognitive")}
+                  className="text-body text-[10px] tracking-[0.1em] uppercase px-4 py-2 rounded-full bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Cognitivo
+                </button>
+              </div>
+
             </div>
           )}
         </motion.div>
