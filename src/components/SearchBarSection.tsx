@@ -164,13 +164,12 @@ const SearchBarSection = () => {
 
               {/* Linha 3 — Filtros secundários */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <input
-                  type="text"
+                <CondoAutocomplete
                   value={filterCondo}
-                  onChange={(e) => setFilterCondo(e.target.value)}
-                  placeholder="Condomínio"
+                  onChange={setFilterCondo}
                   className={selectClass}
                 />
+
 
                 <select value={filterBedrooms} onChange={(e) => setFilterBedrooms(e.target.value)} className={selectClass}>
                   <option value="">Suítes (mínimo)</option>
