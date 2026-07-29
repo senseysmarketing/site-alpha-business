@@ -62,6 +62,7 @@ const BlogEditor = () => {
     }
   }, [categories, isEditing, category]);
   const [coverImage, setCoverImage] = useState<string | null>(null);
+  const [coverImageMobile, setCoverImageMobile] = useState<string | null>(null);
   const [isFeatured, setIsFeatured] = useState(false);
   const [isExclusive, setIsExclusive] = useState(false);
   const [scheduleDate, setScheduleDate] = useState<Date | undefined>();
