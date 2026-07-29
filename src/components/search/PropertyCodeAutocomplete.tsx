@@ -55,18 +55,19 @@ const PropertyCodeAutocomplete = ({ value, onChange, onSubmit }: Props) => {
     (async () => {
       if (!defaultCache) {
         if (!defaultInflight) {
-          defaultInflight = supabase
-            .from("properties")
-            .select("id, code, title, price, rental_price")
-            .eq("status", "ativo")
-            .order("is_featured", { ascending: false })
-            .order("created_at", { ascending: false })
-            .limit(LIMIT)
-            .then(({ data }) => {
-              defaultCache = (data as Suggestion[]) ?? [];
-              defaultInflight = null;
-              return defaultCache;
-            });
+          defaultInflight = (async () => {
+            const { data } = await supabase
+              .from("properties")
+              .select("id, code, title, price, rental_price")
+              .eq("status", "ativo")
+              .order("is_featured", { ascending: false })
+              .order("created_at", { ascending: false })
+              .limit(LIMIT);
+            defaultCache = (data as Suggestion[]) ?? [];
+            defaultInflight = null;
+            return defaultCache;
+          })();
+
         }
         await defaultInflight;
       }
