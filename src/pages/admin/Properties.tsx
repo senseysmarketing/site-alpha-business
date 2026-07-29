@@ -448,6 +448,13 @@ const Properties = () => {
                   </TableCell>
 
                   <TableCell>
+                    <Badge variant="outline" className="font-[Inter] text-[10px] uppercase">
+                      {formatSource(property.source)}
+                    </Badge>
+                  </TableCell>
+
+
+                  <TableCell>
                     <Badge
                       variant={property.status === "ativo" ? "default" : "secondary"}
                       className="font-[Inter] text-[10px] uppercase"
