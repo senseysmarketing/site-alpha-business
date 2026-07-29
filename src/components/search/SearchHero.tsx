@@ -146,11 +146,14 @@ const SearchHero = ({
   sortBy,
   onSortChange,
   onOpenFilters,
+  propertyTypes = [],
   chips,
 }: SearchHeroProps) => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [chatOpen, setChatOpen] = useState(false);
   const { title, subtitle } = buildTitle(searchParams, initialQuery);
+  const hasAnyFilter = Array.from(searchParams.keys()).length > 0;
+
 
   // Backward compat: if a ?q= initial query is present, run legacy search once.
   useEffect(() => {
