@@ -56,7 +56,9 @@ interface SearchHeroProps {
   sortBy: SortBy;
   onSortChange: (value: SortBy) => void;
   onOpenFilters: () => void;
+  propertyTypes?: string[];
   chips?: ReactNode;
+
 }
 
 const formatBRL = (value: number) => {
