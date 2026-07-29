@@ -48,6 +48,7 @@ export type Database = {
           category: string
           content: string
           cover_image: string | null
+          cover_image_mobile: string | null
           created_at: string
           excerpt: string | null
           id: string
@@ -66,6 +67,7 @@ export type Database = {
           category: string
           content: string
           cover_image?: string | null
+          cover_image_mobile?: string | null
           created_at?: string
           excerpt?: string | null
           id?: string
@@ -84,6 +86,7 @@ export type Database = {
           category?: string
           content?: string
           cover_image?: string | null
+          cover_image_mobile?: string | null
           created_at?: string
           excerpt?: string | null
           id?: string
