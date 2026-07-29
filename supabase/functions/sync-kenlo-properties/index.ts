@@ -397,12 +397,24 @@ Deno.serve(async (req) => {
 
     const duration_ms = Date.now() - startedAt;
 
+    const topChangedFields = Object.fromEntries(
+      Object.entries(changedFields).sort((a, b) => b[1] - a[1]).slice(0, 8),
+    );
+
     await admin.from("system_audit_logs").insert({
       action: "sincronizou",
       object_type: "kenlo_sync",
       object_label: `${created + updated} imóveis`,
       user_name: "Sistema",
-      metadata: { created, updated, deactivated, duration_ms, outbound_ip: outboundIp },
+      metadata: {
+        created,
+        updated,
+        unchanged,
+        deactivated,
+        duration_ms,
+        outbound_ip: outboundIp,
+        changed_fields: topChangedFields,
+      },
     });
 
     return new Response(
@@ -410,11 +422,14 @@ Deno.serve(async (req) => {
         success: true,
         created,
         updated,
+        unchanged,
         deactivated,
+        changed_fields: topChangedFields,
         total_in_feed: imoveis.length,
         duration_ms,
         outbound_ip: outboundIp,
       }),
+
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (e) {
