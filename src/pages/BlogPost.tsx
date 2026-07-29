@@ -6,6 +6,7 @@ import { ArrowLeft, Clock, Calendar } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { renderMarkdownContent } from "@/lib/markdown";
+import CoverImage from "@/components/blog/CoverImage";
 
 const categoryLabels: Record<string, string> = {
   "inside-alphaville": "Inside Alphaville",
