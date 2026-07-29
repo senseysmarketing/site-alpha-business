@@ -80,7 +80,7 @@ const CondoAutocomplete = ({ value, onChange, onSelect, placeholder = "Condomín
         }}
         onFocus={() => setOpen(true)}
         onKeyDown={handleKeyDown}
-        placeholder="Condomínio"
+        placeholder={placeholder}
         aria-autocomplete="list"
         aria-expanded={open}
         className={`${className} pr-8`}
