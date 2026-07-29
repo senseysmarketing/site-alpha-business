@@ -27,7 +27,7 @@ const CoverImage = ({
   const mobileSrc = mobile ?? desktopSrc;
 
   return (
-    <picture>
+    <picture className="block w-full h-full">
       <source media="(max-width: 767px)" srcSet={mobileSrc} />
       <img src={desktopSrc} alt={alt} loading={loading} className={className} />
     </picture>
