@@ -209,6 +209,12 @@ const PropertyCodeAutocomplete = ({ value, onChange, onSubmit }: Props) => {
               })}
             </ul>
           )}
+          {!loading && items.length > 0 && isDefaultList && (
+            <div className="px-4 py-2 border-t border-border text-body text-[10px] tracking-[0.08em] uppercase text-muted-foreground">
+              digite o código para buscar
+            </div>
+          )}
+
         </div>
       )}
     </div>
