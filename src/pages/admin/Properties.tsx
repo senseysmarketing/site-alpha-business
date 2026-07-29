@@ -56,7 +56,19 @@ type Property = {
   price: number | null;
   rental_price: number | null;
   status: string | null;
+  source: string | null;
 };
+
+const SOURCE_LABELS: Record<string, string> = {
+  kenlo: "Kenlo",
+  manual: "Manual",
+  import: "Importação",
+  importacao: "Importação",
+  csv: "Importação",
+};
+
+const formatSource = (source: string | null) =>
+  source ? SOURCE_LABELS[source.toLowerCase()] ?? source : "—";
 
 const transactionFilters = [
   { label: "Todos", value: "Todos" },
@@ -387,6 +399,7 @@ const Properties = () => {
               <TableHead className="font-[Inter] text-[10px] uppercase tracking-widest">Condomínio</TableHead>
               <TableHead className="font-[Inter] text-[10px] uppercase tracking-widest">Tipo</TableHead>
               <TableHead className="font-[Inter] text-[10px] uppercase tracking-widest">Preço</TableHead>
+              <TableHead className="font-[Inter] text-[10px] uppercase tracking-widest">Fonte</TableHead>
               <TableHead className="font-[Inter] text-[10px] uppercase tracking-widest">Status</TableHead>
               <TableHead className="font-[Inter] text-[10px] uppercase tracking-widest">Ações</TableHead>
             </TableRow>
@@ -394,13 +407,13 @@ const Properties = () => {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-12">
+                <TableCell colSpan={8} className="text-center py-12">
                   <p className="font-[Inter] text-sm text-muted-foreground">Carregando imóveis...</p>
                 </TableCell>
               </TableRow>
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-12">
+                <TableCell colSpan={8} className="text-center py-12">
                   <p className="font-[Inter] text-sm text-muted-foreground">Nenhum imóvel encontrado</p>
                 </TableCell>
               </TableRow>
@@ -412,7 +425,9 @@ const Properties = () => {
                   onClick={() => navigate(`/admin/imoveis/${property.id}`)}
                 >
                   <TableCell className="font-[Inter] text-xs font-medium">{property.code}</TableCell>
-                  <TableCell className="font-[Inter] text-sm">{property.title}</TableCell>
+                  <TableCell className="font-[Inter] text-sm max-w-[320px] xl:max-w-[420px]">
+                    <span className="block truncate" title={property.title}>{property.title}</span>
+                  </TableCell>
                   <TableCell className="font-[Inter] text-sm text-muted-foreground">{property.condominium ?? "—"}</TableCell>
                   <TableCell>
                     <Badge variant="outline" className="font-[Inter] text-[10px] uppercase">
@@ -431,6 +446,13 @@ const Properties = () => {
                       formatPrice(isRentalTransaction(property.transaction_type) ? property.rental_price ?? property.price : property.price)
                     )}
                   </TableCell>
+
+                  <TableCell>
+                    <Badge variant="outline" className="font-[Inter] text-[10px] uppercase">
+                      {formatSource(property.source)}
+                    </Badge>
+                  </TableCell>
+
 
                   <TableCell>
                     <Badge
