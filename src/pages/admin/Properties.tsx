@@ -133,14 +133,19 @@ const Properties = () => {
         .maybeSingle();
       if (data) {
         const meta = (data.metadata ?? {}) as Record<string, number>;
+        const plural = (n: number, s: string, p: string) => `${n} ${n === 1 ? s : p}`;
+        const parts = [
+          plural(meta.created ?? 0, "criado", "criados"),
+          plural(meta.updated ?? 0, "alterado", "alterados"),
+        ];
+        if (meta.unchanged != null) parts.push(`${meta.unchanged} sem mudança`);
+        parts.push(plural(meta.deactivated ?? 0, "inativado", "inativados"));
         setLastSync({
           at: data.created_at,
-          summary:
-            data.object_label === "Falha"
-              ? "falhou"
-              : `${meta.created ?? 0} criados · ${meta.updated ?? 0} atualizados · ${meta.deactivated ?? 0} inativados`,
+          summary: data.object_label === "Falha" ? "falhou" : parts.join(" · "),
         });
       }
+
     };
     fetchLastSync();
   }, [refreshTick]);
@@ -171,8 +176,9 @@ const Properties = () => {
       }
       toast({
         title: "Sincronização concluída",
-        description: `✓ ${data.created} criados, ${data.updated} atualizados, ${data.deactivated} desativados em ${(data.duration_ms / 1000).toFixed(1)}s${ip}`,
+        description: `✓ ${data.created} criados, ${data.updated} alterados, ${data.unchanged ?? 0} sem mudança, ${data.deactivated} desativados em ${(data.duration_ms / 1000).toFixed(1)}s${ip}`,
       });
+
       setRefreshTick((t) => t + 1);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
