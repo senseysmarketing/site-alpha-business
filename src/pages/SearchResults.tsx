@@ -585,27 +585,14 @@ const SearchResults = () => {
         onSortChange={setSortBy}
         onOpenFilters={() => setFiltersOpen(true)}
         propertyTypes={bounds.propertyTypes}
-
         chips={
-          (parsedFilters && !loading) || (tagParam && !loading) ? (
+          parsedFilters && !loading ? (
             <div className="flex items-center gap-3 flex-wrap">
-              {parsedFilters && !loading && <FilterChips filters={parsedFilters} />}
-              {tagParam && !loading && (
-                <Badge
-                  variant="outline"
-                  className="text-body text-xs gap-2 rounded-full border-primary/40 bg-primary/5 text-primary cursor-pointer hover:bg-primary/10"
-                  onClick={() => {
-                    const next = new URLSearchParams(searchParams);
-                    next.delete("tag");
-                    setSearchParams(next);
-                  }}
-                >
-                  Lifestyle: {tagParam} <span className="opacity-60">×</span>
-                </Badge>
-              )}
+              <FilterChips filters={parsedFilters} />
             </div>
           ) : null
         }
+
       />
 
       <section className="pt-2 md:pt-4 pb-16 md:pb-24">
