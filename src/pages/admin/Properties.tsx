@@ -292,6 +292,16 @@ const Properties = () => {
         <div>
           <h1 className="font-[Raleway] text-2xl font-semibold text-foreground tracking-tight">Imóveis</h1>
           <p className="font-[Inter] text-sm text-muted-foreground mt-1">Gerencie seu portfólio</p>
+          {lastSync && (
+            <p className="font-[Inter] text-xs text-muted-foreground/80 mt-1">
+              Última sincronização Kenlo:{" "}
+              {new Date(lastSync.at).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
+              {" · "}
+              {lastSync.summary}
+              {" · automática às 07h, 13h e 19h"}
+            </p>
+          )}
+
         </div>
         <div className="flex items-center gap-2">
           {canManageProperties && (
