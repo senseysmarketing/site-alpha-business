@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import type { Tables } from "@/integrations/supabase/types";
 import { useState } from "react";
 import { useBlogCategories } from "@/hooks/useBlogCategories";
+import CoverImage from "./CoverImage";
 
 interface BlogCardProps {
   post: Tables<"blog_posts">;
