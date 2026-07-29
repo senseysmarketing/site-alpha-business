@@ -19,6 +19,10 @@ const brl = new Intl.NumberFormat("pt-BR", {
 
 const LIMIT = 6;
 
+let defaultCache: Suggestion[] | null = null;
+let defaultInflight: Promise<Suggestion[]> | null = null;
+
+
 interface Props {
   value: string;
   onChange: (value: string) => void;
