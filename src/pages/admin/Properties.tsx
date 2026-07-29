@@ -399,6 +399,7 @@ const Properties = () => {
               <TableHead className="font-[Inter] text-[10px] uppercase tracking-widest">Condomínio</TableHead>
               <TableHead className="font-[Inter] text-[10px] uppercase tracking-widest">Tipo</TableHead>
               <TableHead className="font-[Inter] text-[10px] uppercase tracking-widest">Preço</TableHead>
+              <TableHead className="font-[Inter] text-[10px] uppercase tracking-widest">Fonte</TableHead>
               <TableHead className="font-[Inter] text-[10px] uppercase tracking-widest">Status</TableHead>
               <TableHead className="font-[Inter] text-[10px] uppercase tracking-widest">Ações</TableHead>
             </TableRow>
