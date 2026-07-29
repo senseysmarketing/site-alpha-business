@@ -6,6 +6,7 @@ import { ArrowLeft, Clock, Calendar } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { renderMarkdownContent } from "@/lib/markdown";
+import CoverImage from "@/components/blog/CoverImage";
 
 const categoryLabels: Record<string, string> = {
   "inside-alphaville": "Inside Alphaville",
@@ -93,15 +94,12 @@ const BlogPost = () => {
       <main className="bg-[hsl(30_33%_97%)]">
         <section className="relative min-h-[52vh] md:min-h-[56vh] flex items-center overflow-hidden pt-28 md:pt-32">
           <div className="absolute inset-0">
-            {post.cover_image ? (
-              <img
-                src={post.cover_image}
-                alt={post.title}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-bordeaux to-foreground" />
-            )}
+            <CoverImage
+              desktop={post.cover_image}
+              mobile={post.cover_image_mobile}
+              alt={post.title}
+              loading="eager"
+            />
             <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A]/95 via-[#0A0A0A]/55 to-[#0A0A0A]/15" />
           </div>
 
