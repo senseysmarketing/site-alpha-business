@@ -7,7 +7,11 @@ import { toast } from "sonner";
 import type { ParsedFilters } from "@/components/search/FilterChips";
 import AiSearchChatButton from "@/components/search/ai-chat/AiSearchChatButton";
 import AiSearchChatModal from "@/components/search/ai-chat/AiSearchChatModal";
+import SearchBreadcrumb from "@/components/search/SearchBreadcrumb";
+import GlobalControlsBar from "@/components/search/GlobalControlsBar";
+import ActiveFilterChips from "@/components/search/ActiveFilterChips";
 import { useState } from "react";
+
 import {
   Select,
   SelectContent,
