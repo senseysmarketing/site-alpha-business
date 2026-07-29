@@ -8,10 +8,13 @@ const LIMIT = 8;
 interface Props {
   value: string;
   onChange: (value: string) => void;
+  /** Chamado apenas quando o usuário escolhe um item da lista. */
+  onSelect?: (value: string) => void;
+  placeholder?: string;
   className?: string;
 }
 
-const CondoAutocomplete = ({ value, onChange, className = "" }: Props) => {
+const CondoAutocomplete = ({ value, onChange, onSelect, placeholder = "Condomínio", className = "" }: Props) => {
   const { condos, loading } = useCondoList();
   const [open, setOpen] = useState(false);
   const [highlight, setHighlight] = useState(-1);
@@ -41,9 +44,11 @@ const CondoAutocomplete = ({ value, onChange, className = "" }: Props) => {
 
   const select = (name: string) => {
     onChange(name);
+    onSelect?.(name);
     setOpen(false);
     setHighlight(-1);
   };
+
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Escape") {
@@ -75,7 +80,7 @@ const CondoAutocomplete = ({ value, onChange, className = "" }: Props) => {
         }}
         onFocus={() => setOpen(true)}
         onKeyDown={handleKeyDown}
-        placeholder="Condomínio"
+        placeholder={placeholder}
         aria-autocomplete="list"
         aria-expanded={open}
         className={`${className} pr-8`}
