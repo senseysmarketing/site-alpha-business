@@ -108,6 +108,30 @@ const Properties = () => {
     fetchProperties();
   }, [refreshTick]);
 
+  useEffect(() => {
+    const fetchLastSync = async () => {
+      const { data } = await supabase
+        .from("system_audit_logs")
+        .select("created_at, object_label, metadata")
+        .eq("object_type", "kenlo_sync")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (data) {
+        const meta = (data.metadata ?? {}) as Record<string, number>;
+        setLastSync({
+          at: data.created_at,
+          summary:
+            data.object_label === "Falha"
+              ? "falhou"
+              : `${meta.created ?? 0} criados · ${meta.updated ?? 0} atualizados · ${meta.deactivated ?? 0} inativados`,
+        });
+      }
+    };
+    fetchLastSync();
+  }, [refreshTick]);
+
+
   const handleSync = async () => {
     setSyncing(true);
     toast({ title: "Sincronizando com Kenlo...", description: "Buscando feed XML, isso pode levar alguns segundos." });
