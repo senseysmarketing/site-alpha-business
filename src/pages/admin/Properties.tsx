@@ -425,7 +425,9 @@ const Properties = () => {
                   onClick={() => navigate(`/admin/imoveis/${property.id}`)}
                 >
                   <TableCell className="font-[Inter] text-xs font-medium">{property.code}</TableCell>
-                  <TableCell className="font-[Inter] text-sm">{property.title}</TableCell>
+                  <TableCell className="font-[Inter] text-sm max-w-[320px] xl:max-w-[420px]">
+                    <span className="block truncate" title={property.title}>{property.title}</span>
+                  </TableCell>
                   <TableCell className="font-[Inter] text-sm text-muted-foreground">{property.condominium ?? "—"}</TableCell>
                   <TableCell>
                     <Badge variant="outline" className="font-[Inter] text-[10px] uppercase">
