@@ -177,19 +177,37 @@ const SearchHero = ({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <p className="text-body text-[10px] tracking-[0.25em] uppercase text-muted-foreground mb-3">
-            Busca · Resultados
-          </p>
-          <h1 className="text-display text-2xl md:text-3xl font-light text-foreground leading-tight">
+          <SearchBreadcrumb />
+
+          <h1 className="text-display text-2xl md:text-3xl font-light text-foreground leading-tight mt-3">
             {title}
           </h1>
-          <p className="text-body text-sm text-muted-foreground mt-2">
-            {totalCount > 0
-              ? `${totalCount} ${totalCount === 1 ? "imóvel encontrado" : "imóveis encontrados"} · ${subtitle}`
-              : subtitle}
-          </p>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2">
+            <p className="text-body text-sm text-muted-foreground">
+              {totalCount > 0
+                ? `${totalCount} ${totalCount === 1 ? "imóvel encontrado" : "imóveis encontrados"} · ${subtitle}`
+                : subtitle}
+            </p>
+            {hasAnyFilter && (
+              <button
+                onClick={() => setSearchParams(new URLSearchParams())}
+                className="text-body text-[11px] tracking-[0.1em] uppercase text-foreground underline underline-offset-4 hover:text-primary transition-colors"
+              >
+                Ver todos os imóveis
+              </button>
+            )}
+          </div>
 
-          {chips && <div className="mt-4">{chips}</div>}
+          <div className="mt-5">
+            <GlobalControlsBar propertyTypes={propertyTypes} />
+          </div>
+
+          <div className="mt-4">
+            <ActiveFilterChips />
+          </div>
+
+          {chips && <div className="mt-3">{chips}</div>}
+
 
           {/* Controls row */}
           <div className="mt-6 flex flex-wrap items-center gap-3">
