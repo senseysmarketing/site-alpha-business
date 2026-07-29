@@ -3,6 +3,7 @@ import { Clock, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { Tables } from "@/integrations/supabase/types";
 import { useBlogCategories } from "@/hooks/useBlogCategories";
+import CoverImage from "./CoverImage";
 
 interface BlogHeroProps {
   post: Tables<"blog_posts">;
