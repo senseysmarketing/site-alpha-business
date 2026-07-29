@@ -44,14 +44,43 @@ const PropertyCodeAutocomplete = ({ value, onChange, onSubmit }: Props) => {
     return () => document.removeEventListener("mousedown", onDown);
   }, []);
 
+  // Initial suggestions (loaded once, reused)
+  useEffect(() => {
+    if (value.trim().length >= 2) return;
+    let cancelled = false;
+    (async () => {
+      if (!defaultCache) {
+        if (!defaultInflight) {
+          defaultInflight = supabase
+            .from("properties")
+            .select("id, code, title, price, rental_price")
+            .eq("status", "ativo")
+            .order("is_featured", { ascending: false })
+            .order("created_at", { ascending: false })
+            .limit(LIMIT)
+            .then(({ data }) => {
+              defaultCache = (data as Suggestion[]) ?? [];
+              defaultInflight = null;
+              return defaultCache;
+            });
+        }
+        await defaultInflight;
+      }
+      if (!cancelled) {
+        setItems(defaultCache ?? []);
+        setHighlight(-1);
+        setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [value]);
+
   // Debounced search
   useEffect(() => {
     const term = value.trim();
-    if (term.length < 2) {
-      setItems([]);
-      setLoading(false);
-      return;
-    }
+    if (term.length < 2) return;
     let cancelled = false;
     setLoading(true);
     const timer = setTimeout(async () => {
@@ -73,6 +102,7 @@ const PropertyCodeAutocomplete = ({ value, onChange, onSubmit }: Props) => {
       clearTimeout(timer);
     };
   }, [value]);
+
 
   const select = useCallback(
     (item: Suggestion) => {
