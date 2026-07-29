@@ -56,7 +56,19 @@ type Property = {
   price: number | null;
   rental_price: number | null;
   status: string | null;
+  source: string | null;
 };
+
+const SOURCE_LABELS: Record<string, string> = {
+  kenlo: "Kenlo",
+  manual: "Manual",
+  import: "Importação",
+  importacao: "Importação",
+  csv: "Importação",
+};
+
+const formatSource = (source: string | null) =>
+  source ? SOURCE_LABELS[source.toLowerCase()] ?? source : "—";
 
 const transactionFilters = [
   { label: "Todos", value: "Todos" },
