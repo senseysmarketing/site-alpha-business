@@ -4,7 +4,10 @@ import React, { useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import AiSearchChatButton from "./search/ai-chat/AiSearchChatButton";
 import AiSearchChatModal from "./search/ai-chat/AiSearchChatModal";
+import PropertyCodeAutocomplete from "./search/PropertyCodeAutocomplete";
+import CondoAutocomplete from "./search/CondoAutocomplete";
 import { trackSearch } from "@/lib/metaPixel";
+
 
 const brlFormatter = new Intl.NumberFormat("pt-BR", {
   style: "currency",
