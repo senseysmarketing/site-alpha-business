@@ -46,6 +46,7 @@ export type AdminPropertyListRow = Pick<
   | "price"
   | "rental_price"
   | "status"
+  | "source"
   | "created_at"
 >;
 
