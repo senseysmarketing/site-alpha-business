@@ -41,6 +41,9 @@ const BLOG_POST_COLUMNS = [
   "cover_image",
   "published_at",
   "updated_at",
+].join(",");
+
+
 
 
 
