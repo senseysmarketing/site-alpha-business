@@ -9,9 +9,12 @@ const DEFAULT_SITE_URL = "https://rafaelalbuquerque.com.br";
 const DEFAULT_IMAGE =
   "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/528b0591-838e-4694-a846-24ed46939ad4/id-preview-cb84959c--0cf186fb-f62f-4492-936b-578d232fdcce.lovable.app-1775861065200.png";
 const PAGE_SIZE = 1000;
+// Publish rejects builds over 50k files; each record emits 2 files, so cap well below.
+const MAX_PRERENDER_PAGES = Number(process.env.MAX_PRERENDER_PAGES || 8000);
 
 const PROPERTY_COLUMNS = [
   "id",
+  "code",
   "title",
   "description",
   "condominium",
@@ -26,6 +29,7 @@ const PROPERTY_COLUMNS = [
   "parking_spots",
   "area_total",
   "photos",
+  "updated_at",
 ].join(",");
 
 const BLOG_POST_COLUMNS = [
@@ -33,9 +37,11 @@ const BLOG_POST_COLUMNS = [
   "title",
   "subtitle",
   "excerpt",
+  "content",
   "cover_image",
   "published_at",
 ].join(",");
+
 
 function loadEnvFile() {
   const envPath = path.resolve(".env");
