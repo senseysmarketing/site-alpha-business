@@ -40,7 +40,8 @@ const BLOG_POST_COLUMNS = [
   "content",
   "cover_image",
   "published_at",
-].join(",");
+  "updated_at",
+
 
 
 function loadEnvFile() {
