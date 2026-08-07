@@ -276,20 +276,31 @@ export function LeadDetailModal({ lead, open, onOpenChange, team = [], onRequest
     queryClient.invalidateQueries({ queryKey: ["leads"] });
   };
 
+  // Atualização otimista no cache para o modal refletir a mudança na hora
+  const patchLeadCache = (patch: Partial<Lead>) => {
+    if (!lead) return;
+    queryClient.setQueryData<Lead[]>(["leads"], (old) =>
+      old?.map((l) => (l.id === lead.id ? { ...l, ...patch } : l)) ?? old
+    );
+  };
+
   const handleReassign = async (newUserId: string) => {
     if (!lead || newUserId === lead.assigned_user_id) return;
     setReassigning(true);
+    const assignedAt = new Date().toISOString();
+    patchLeadCache({ assigned_user_id: newUserId, assigned_at: assignedAt, assignment_source: "manual" } as Partial<Lead>);
     const { error } = await supabase
       .from("leads")
       .update({
         assigned_user_id: newUserId,
-        assigned_at: new Date().toISOString(),
+        assigned_at: assignedAt,
         assignment_source: "manual",
       })
       .eq("id", lead.id);
     setReassigning(false);
     if (error) {
       toast({ title: "Erro ao reatribuir", description: error.message, variant: "destructive" });
+      invalidateLead();
       return;
     }
     toast({ title: "Lead reatribuído" });
@@ -299,12 +310,14 @@ export function LeadDetailModal({ lead, open, onOpenChange, team = [], onRequest
 
   const handleStageChange = async (newStage: string) => {
     if (!lead || newStage === lead.pipeline_stage) return;
+    patchLeadCache({ pipeline_stage: newStage });
     const { error } = await supabase
       .from("leads")
       .update({ pipeline_stage: newStage })
       .eq("id", lead.id);
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
+      invalidateLead();
       return;
     }
     toast({ title: "Estágio atualizado" });
@@ -313,9 +326,11 @@ export function LeadDetailModal({ lead, open, onOpenChange, team = [], onRequest
 
   const handleScoreChange = async (newScore: string) => {
     if (!lead || newScore === lead.score) return;
+    patchLeadCache({ score: newScore });
     const { error } = await supabase.from("leads").update({ score: newScore }).eq("id", lead.id);
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
+      invalidateLead();
       return;
     }
     toast({ title: "Score atualizado" });
@@ -327,6 +342,7 @@ export function LeadDetailModal({ lead, open, onOpenChange, team = [], onRequest
     const parsed = parseCurrencyInput(dealValueDraft);
     if (parsed === lead.deal_value) return;
     setSavingDeal(true);
+    patchLeadCache({ deal_value: parsed } as Partial<Lead>);
     const { error } = await supabase
       .from("leads")
       .update({ deal_value: parsed })
@@ -334,6 +350,7 @@ export function LeadDetailModal({ lead, open, onOpenChange, team = [], onRequest
     setSavingDeal(false);
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
+      invalidateLead();
       return;
     }
     setDealValueDraft(parsed != null ? formatCurrency(parsed) : "");
