@@ -21,7 +21,7 @@ function normalizePhone(input: string) {
   return input.replace(/\D/g, "").slice(-11);
 }
 
-export function GlobalAdminSearch() {
+export function GlobalAdminSearch({ onSelect }: { onSelect?: () => void }) {
   const navigate = useNavigate();
   const [term, setTerm] = useState("");
   const [open, setOpen] = useState(false);
@@ -116,12 +116,14 @@ export function GlobalAdminSearch() {
   const goLead = (id: string) => {
     setOpen(false);
     setTerm("");
+    if (onSelect) onSelect();
     navigate(`/admin/leads?leadId=${id}`);
   };
 
   const goProperty = (id: string) => {
     setOpen(false);
     setTerm("");
+    if (onSelect) onSelect();
     navigate(`/admin/imoveis/${id}`);
   };
 
@@ -181,6 +183,7 @@ export function GlobalAdminSearch() {
                 type="button"
                 onClick={() => {
                   setOpen(false);
+                  if (onSelect) onSelect();
                   navigate(`/admin/leads?q=${encodeURIComponent(term)}`);
                 }}
                 className="w-full px-3 py-1.5 text-left text-[11px] text-[#2A070C] hover:bg-muted/60"
@@ -218,6 +221,7 @@ export function GlobalAdminSearch() {
                 type="button"
                 onClick={() => {
                   setOpen(false);
+                  if (onSelect) onSelect();
                   navigate(`/admin/imoveis?q=${encodeURIComponent(term)}`);
                 }}
                 className="w-full px-3 py-1.5 text-left text-[11px] text-[#2A070C] hover:bg-muted/60"
