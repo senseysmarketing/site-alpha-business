@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,24 +6,28 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronsUpDown, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface NewLeadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   defaultStage: string;
   properties: { id: string; title: string; code: string }[];
+  team?: { user_id: string; full_name: string | null; avatar_url: string | null }[];
 }
 
 const normalize = (s: string) =>
   s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
-export function NewLeadDialog({ open, onOpenChange, defaultStage, properties }: NewLeadDialogProps) {
+export function NewLeadDialog({ open, onOpenChange, defaultStage, properties, team = [] }: NewLeadDialogProps) {
   const queryClient = useQueryClient();
+  const { user, role } = useAuth();
   const [loading, setLoading] = useState(false);
   const [propertyPopoverOpen, setPropertyPopoverOpen] = useState(false);
   const [form, setForm] = useState({
@@ -33,7 +37,18 @@ export function NewLeadDialog({ open, onOpenChange, defaultStage, properties }: 
     origin: "web",
     property_id: "",
     deal_value: "",
+    assigned_user_id: "",
   });
+
+  const canReassign = useMemo(() => {
+    return role === "admin" || role === "gerente";
+  }, [role]);
+
+  useEffect(() => {
+    if (user && !form.assigned_user_id) {
+      setForm((prev) => ({ ...prev, assigned_user_id: user.id }));
+    }
+  }, [user, form.assigned_user_id]);
 
   const selectedProperty = useMemo(
     () => properties.find((p) => p.id === form.property_id),
@@ -53,6 +68,7 @@ export function NewLeadDialog({ open, onOpenChange, defaultStage, properties }: 
       property_id: form.property_id || null,
       deal_value: form.deal_value ? Number(form.deal_value) : null,
       pipeline_stage: defaultStage,
+      assigned_user_id: form.assigned_user_id || user?.id || null,
     });
 
     setLoading(false);
@@ -61,7 +77,7 @@ export function NewLeadDialog({ open, onOpenChange, defaultStage, properties }: 
     } else {
       toast({ title: "Lead criado com sucesso" });
       queryClient.invalidateQueries({ queryKey: ["leads"] });
-      setForm({ name: "", phone: "", email: "", origin: "web", property_id: "", deal_value: "" });
+      setForm({ name: "", phone: "", email: "", origin: "web", property_id: "", deal_value: "", assigned_user_id: user?.id || "" });
       onOpenChange(false);
     }
   };
@@ -107,6 +123,45 @@ export function NewLeadDialog({ open, onOpenChange, defaultStage, properties }: 
               <Input type="number" value={form.deal_value} onChange={(e) => setForm({ ...form, deal_value: e.target.value })} placeholder="0" />
             </div>
           </div>
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              Responsável *
+              {!canReassign && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-xs">Você não tem permissão para atribuir leads a outras pessoas.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </Label>
+            <Select 
+              value={form.assigned_user_id} 
+              onValueChange={(v) => setForm({ ...form, assigned_user_id: v })}
+              disabled={!canReassign}
+            >
+              <SelectTrigger className={cn(!canReassign && "bg-muted cursor-not-allowed opacity-80")}>
+                <SelectValue placeholder="Selecione um responsável" />
+              </SelectTrigger>
+              <SelectContent>
+                {team.map((member) => (
+                  <SelectItem key={member.user_id} value={member.user_id}>
+                    {member.full_name || "Sem nome"}
+                  </SelectItem>
+                ))}
+                {!team.some(m => m.user_id === form.assigned_user_id) && form.assigned_user_id && user && (
+                   <SelectItem value={user.id}>
+                    {user.email?.split('@')[0]} (Você)
+                   </SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="space-y-2">
             <Label>Imóvel de Interesse</Label>
             <Popover open={propertyPopoverOpen} onOpenChange={setPropertyPopoverOpen}>

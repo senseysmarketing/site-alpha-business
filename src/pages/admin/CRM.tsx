@@ -401,6 +401,7 @@ export default function CRM() {
         onOpenChange={(open) => !open && setNewLeadStage(null)}
         defaultStage={newLeadStage || "novos"}
         properties={properties}
+        team={team.filter((t) => t.is_active)}
       />
 
       <LeadNotificationSettingsDialog open={notifyOpen} onOpenChange={setNotifyOpen} />
