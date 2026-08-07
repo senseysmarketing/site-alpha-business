@@ -164,7 +164,7 @@ export default function CRM() {
   );
 
   const handleCardClick = useCallback((lead: Lead) => {
-    setSelectedLead(lead);
+    setSelectedLeadId(lead.id);
     setSheetOpen(true);
   }, []);
 
