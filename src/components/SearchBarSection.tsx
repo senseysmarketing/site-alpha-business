@@ -112,7 +112,7 @@ const SearchBarSection = () => {
                   onClick={() => setMode("cognitive")}
                   className="hidden sm:inline-flex text-body text-[10px] tracking-[0.1em] uppercase px-4 py-2 rounded-full bg-muted text-muted-foreground hover:text-foreground transition-colors self-auto"
                 >
-                  Cognitivo
+                  Rafa IA
                 </button>
 
               </div>
@@ -214,7 +214,7 @@ const SearchBarSection = () => {
                   onClick={() => setMode("cognitive")}
                   className="text-body text-[10px] tracking-[0.1em] uppercase px-4 py-2 rounded-full bg-muted text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  Cognitivo
+                  Rafa IA
                 </button>
               </div>
 
