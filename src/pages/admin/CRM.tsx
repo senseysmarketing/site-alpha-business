@@ -388,7 +388,8 @@ export default function CRM() {
           if (selectedLead) setSheetOpen(true);
         }}
         onSaved={(updated) => {
-          setSelectedLead(updated);
+          setSelectedLeadId(updated.id);
+          queryClient.invalidateQueries({ queryKey: ["leads"] });
           setEditOpen(false);
           setSheetOpen(true);
         }}
