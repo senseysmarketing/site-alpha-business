@@ -29,7 +29,7 @@ const MAX_STEP = 24; // px por frame no auto-scroll
 export default function CRM() {
   const queryClient = useQueryClient();
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
-  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [newLeadStage, setNewLeadStage] = useState<string | null>(null);
