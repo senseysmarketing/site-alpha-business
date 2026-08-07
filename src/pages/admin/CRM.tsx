@@ -87,13 +87,18 @@ export default function CRM() {
     [rawLeads, teamMap]
   );
 
+  const selectedLead = useMemo(
+    () => (selectedLeadId ? leads.find((l) => l.id === selectedLeadId) ?? null : null),
+    [leads, selectedLeadId]
+  );
+
   // Auto-open lead vindo da busca global (?leadId=)
   useEffect(() => {
     const leadId = searchParams.get("leadId");
     if (!leadId || leads.length === 0) return;
     const target = leads.find((l) => l.id === leadId);
     if (target) {
-      setSelectedLead(target);
+      setSelectedLeadId(target.id);
       setSheetOpen(true);
       searchParams.delete("leadId");
       setSearchParams(searchParams, { replace: true });
