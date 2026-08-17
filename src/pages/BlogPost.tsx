@@ -51,9 +51,9 @@ const BlogPost = () => {
       <>
         <Header />
         <div className="min-h-screen flex flex-col items-center justify-center gap-4">
-          <p className="text-body text-muted-foreground">Artigo não encontrado.</p>
+          <p className="text-body text-muted-foreground">Notícia não encontrada.</p>
           <Link to="/blog" className="text-body text-sm text-foreground underline">
-            Voltar ao Blog
+            Voltar às Notícias
           </Link>
         </div>
       </>
@@ -111,7 +111,7 @@ const BlogPost = () => {
                 className="inline-flex items-center gap-2 text-body text-xs tracking-[0.15em] uppercase text-cashmere/60 hover:text-cashmere transition-colors mb-6"
               >
                 <ArrowLeft size={14} />
-                Voltar ao Blog
+                Voltar às Notícias
               </Link>
 
               <span className="block text-body text-xs tracking-[0.3em] uppercase text-cashmere/50 mb-4">
