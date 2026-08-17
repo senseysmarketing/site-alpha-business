@@ -72,7 +72,7 @@ const BlogHero = ({ post }: BlogHeroProps) => {
             to={`/blog/${post.slug}`}
             className="ml-auto inline-flex items-center gap-2 text-body text-xs tracking-[0.15em] uppercase text-cashmere hover:text-cashmere/80 transition-colors line-reveal pb-1"
           >
-            Ler matéria
+            Ler notícia
             <ArrowRight size={14} />
           </Link>
         </motion.div>
