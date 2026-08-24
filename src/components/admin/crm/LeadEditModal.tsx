@@ -204,11 +204,7 @@ export function LeadEditModal({
       .from("leads")
       .update(payload)
       .eq("id", lead.id)
-      .select(
-        `*,
-        assigned_user:team_profiles!leads_assigned_user_id_fkey(user_id, full_name, avatar_url),
-        properties:property_id(title, photos, code)`,
-      )
+      .select(`*, properties:property_id(title, photos, code)`)
       .maybeSingle();
 
     setSaving(false);
@@ -225,7 +221,7 @@ export function LeadEditModal({
     toast({ title: "Lead atualizado" });
     queryClient.invalidateQueries({ queryKey: ["leads"] });
     queryClient.invalidateQueries({ queryKey: ["lead_recurrence", lead.id] });
-    onSaved(data as unknown as Lead);
+    onSaved({ ...(data as unknown as Lead), assigned_user: lead.assigned_user ?? null });
   };
 
   const handleOpenChange = (next: boolean) => {
