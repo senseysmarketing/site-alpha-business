@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useLocation, useNavigate, useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { MessageCircle, Calendar, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 import whatsappIcon from "@/assets/whatsapp-icon.png.asset.json";
@@ -17,6 +17,7 @@ import { toTitleCase } from "@/lib/utils";
 import { normalizeCondoName } from "@/lib/lucideIconMap";
 import { fetchAllPages } from "@/lib/supabasePagination";
 import { isRentalTransaction } from "@/lib/propertyQueries";
+import { buildPropertyUrl, extractPropertyCodeFromSlug, isLegacyPropertyId } from "@/lib/propertyUrl";
 import { trackViewContent, trackContact } from "@/lib/metaPixel";
 import type { Database } from "@/integrations/supabase/types";
 import type { NeighborhoodHighlight } from "@/components/property/PropertyNeighborhood";
@@ -28,9 +29,6 @@ const fadeIn = {
   transition: { duration: 0.5 },
 };
 
-const isUUID = (s?: string) =>
-  !!s && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
-
 const PLACEHOLDER_IMAGE = "/placeholder.svg";
 const DEFAULT_BROKER = {
   name: "Rafael Albuquerque",
@@ -41,19 +39,25 @@ type DbProperty = Database["public"]["Tables"]["properties"]["Row"];
 type DbCondo = Database["public"]["Tables"]["condominiums"]["Row"];
 
 const PropertyDetail = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id, slug } = useParams<{ id?: string; categoria?: string; condominio?: string; slug?: string }>();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const routeCode = slug ? extractPropertyCodeFromSlug(slug) : null;
+  const legacyId = isLegacyPropertyId(id) ? id : null;
+  const routeKey = legacyId || routeCode || slug || id || "";
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [descExpanded, setDescExpanded] = useState(false);
   const [dbProperty, setDbProperty] = useState<DbProperty | null>(null);
   const [dbCondo, setDbCondo] = useState<DbCondo | null>(null);
   const [similarDb, setSimilarDb] = useState<DbProperty[]>([]);
-  const [loadingDb, setLoadingDb] = useState(isUUID(id));
+  const [loadingDb, setLoadingDb] = useState(Boolean(legacyId || routeCode));
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     setNotFound(false);
-    if (!isUUID(id)) {
+    setSimilarDb([]);
+    if (!legacyId && !routeCode) {
       setDbProperty(null);
       setDbCondo(null);
       setLoadingDb(false);
@@ -62,12 +66,16 @@ const PropertyDetail = () => {
     setLoadingDb(true);
     (async () => {
       const { supabase } = await import("@/integrations/supabase/client");
-      const { data } = await supabase
+      let query = supabase
         .from("properties")
         .select("*")
-        .eq("id", id)
-        .eq("status", "ativo")
-        .maybeSingle();
+        .eq("status", "ativo");
+
+      query = legacyId
+        ? query.eq("id", legacyId)
+        : query.ilike("code", routeCode!);
+
+      const { data } = await query.maybeSingle();
       if (cancelled) return;
       if (!data) {
         setNotFound(true);
@@ -98,6 +106,11 @@ const PropertyDetail = () => {
         setDbCondo(null);
       }
 
+      const canonicalPath = buildPropertyUrl(data);
+      if (location.pathname !== canonicalPath) {
+        navigate(canonicalPath, { replace: true });
+      }
+
       // Fetch similar with cascading criteria
       const isRental = data.transaction_type === "locacao" || data.transaction_type === "aluguel";
       const refPrice = isRental ? (data.rental_price ?? data.price ?? 0) : (data.price ?? data.rental_price ?? 0);
@@ -122,7 +135,7 @@ const PropertyDetail = () => {
         });
 
       const accumulator: DbProperty[] = [];
-      const seen = new Set<string>([id!]);
+      const seen = new Set<string>([data.id]);
       const push = (arr: DbProperty[]) => {
         for (const p of sortByRelevance(arr)) {
           if (accumulator.length >= 3) break;
@@ -132,11 +145,15 @@ const PropertyDetail = () => {
         }
       };
 
-      const runQuery = async (build: (q: any) => any) => {
-        let q = supabase.from("properties").select("*")
+      const buildSimilarQuery = () => supabase.from("properties").select("*")
           .eq("status", "ativo")
-          .neq("id", id!)
+          .neq("id", data.id)
           .in("transaction_type", txCompat);
+
+      type SimilarQuery = ReturnType<typeof buildSimilarQuery>;
+
+      const runQuery = async (build: (q: SimilarQuery) => SimilarQuery) => {
+        let q = buildSimilarQuery();
         q = build(q);
         const { data: r } = await q.limit(12);
         return r ?? [];
@@ -197,11 +214,11 @@ const PropertyDetail = () => {
       if (!cancelled) setSimilarDb(accumulator.slice(0, 3));
     })();
     return () => { cancelled = true; };
-  }, [id]);
+  }, [legacyId, location.pathname, navigate, routeCode]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, [id]);
+  }, [routeKey]);
 
   useEffect(() => {
     if (!dbProperty) return;
@@ -216,7 +233,7 @@ const PropertyDetail = () => {
   }, [dbProperty]);
 
   // Loading state for real DB fetches
-  if (isUUID(id) && loadingDb) {
+  if (loadingDb) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
@@ -233,7 +250,7 @@ const PropertyDetail = () => {
   }
 
   // Not found state
-  if (!isUUID(id) || notFound || !dbProperty) {
+  if (notFound || !dbProperty) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
@@ -265,6 +282,11 @@ const PropertyDetail = () => {
     dbProperty?.photos && dbProperty.photos.length > 0
       ? dbProperty.photos
       : [PLACEHOLDER_IMAGE];
+
+  const propertyExtras = dbProperty as DbProperty & {
+    condo_fee?: number | null;
+    iptu?: number | null;
+  };
 
   const property = {
         id: dbProperty.id,
@@ -303,8 +325,8 @@ const PropertyDetail = () => {
           highlights: condoHighlights,
         },
         video_url: dbProperty.video_url,
-        condo_fee: (dbProperty as any).condo_fee as number | null,
-        iptu: (dbProperty as any).iptu as number | null,
+        condo_fee: propertyExtras.condo_fee ?? null,
+        iptu: propertyExtras.iptu ?? null,
       };
 
 
@@ -321,6 +343,10 @@ const PropertyDetail = () => {
           code: p.code,
           title: p.title,
           property_type: p.property_type,
+          transaction_type: p.transaction_type,
+          condominium: p.condominium,
+          neighborhood: p.neighborhood,
+          city: p.city,
           transaction_label: label,
           is_rental: pureRental && !both,
           price,
@@ -336,7 +362,11 @@ const PropertyDetail = () => {
   const priceLabel = property.has_both
     ? `${formatPrice(property.sale_price)} (compra) / ${formatPrice(property.rental_price)}/mês (locação)`
     : `${formatPrice(property.price)}${isRentalTransaction(property.transaction_type) ? "/mês" : ""}`;
-  const waMessage = `Olá! Tenho interesse no imóvel ${toTitleCase(property.title)} (Cód: ${property.code}) — ${priceLabel}. Link: ${typeof window !== "undefined" ? window.location.href : ""}. Poderia me passar mais informações?`;
+  const currentPropertyPath = buildPropertyUrl(dbProperty);
+  const currentPropertyUrl = typeof window !== "undefined"
+    ? `${window.location.origin}${currentPropertyPath}`
+    : currentPropertyPath;
+  const waMessage = `Olá! Tenho interesse no imóvel ${toTitleCase(property.title)} (Cód: ${property.code}) — ${priceLabel}. Link: ${currentPropertyUrl}. Poderia me passar mais informações?`;
   const waHref = `https://wa.me/5511993116849?text=${encodeURIComponent(waMessage)}`;
 
   return (
@@ -536,7 +566,7 @@ const PropertyDetail = () => {
               brokerName={property.broker.name}
               brokerTitle={property.broker.title}
               propertyCode={property.code}
-              propertyId={id}
+              propertyId={dbProperty.id}
             />
           </div>
         </div>
@@ -552,7 +582,7 @@ const PropertyDetail = () => {
           {similarProperties.map((prop) => (
             <Link
               key={prop.id}
-              to={`/imovel/${prop.id}`}
+              to={buildPropertyUrl(prop)}
               className="group block bg-card border border-border/60 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
             >
               <div className="relative overflow-hidden aspect-[4/3]">
@@ -594,7 +624,7 @@ const PropertyDetail = () => {
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <ShareButton path={`/imovel/${prop.id}`} title={toTitleCase(prop.title)} />
+                    <ShareButton path={buildPropertyUrl(prop)} title={toTitleCase(prop.title)} />
                     <span className="text-body text-sm bg-foreground text-background px-4 md:px-5 py-2 rounded-md group-hover:bg-foreground/90 transition-colors whitespace-nowrap">
                       Saiba Mais
                     </span>
@@ -634,7 +664,7 @@ const PropertyDetail = () => {
         onOpenChange={setScheduleOpen}
         propertyCode={property.code}
         brokerName={property.broker.name}
-        propertyId={id}
+        propertyId={dbProperty.id}
       />
     </div>
   );

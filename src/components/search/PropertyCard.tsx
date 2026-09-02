@@ -3,6 +3,7 @@ import { Check } from "lucide-react";
 import ShareButton from "@/components/ShareButton";
 import { toTitleCase } from "@/lib/utils";
 import { hasRentalOffer, hasSaleOffer, hasBothTransactions } from "@/lib/propertyQueries";
+import { buildPropertyUrl } from "@/lib/propertyUrl";
 
 export type TransactionIntent = "venda" | "locacao" | "aluguel" | "all";
 
@@ -17,6 +18,7 @@ interface PropertyCardProps {
     price: number | null;
     rental_price: number | null;
     transaction_type: string;
+    property_type?: string | null;
     bedrooms: number | null;
     bathrooms: number | null;
     parking_spots?: number | null;
@@ -77,6 +79,7 @@ const PropertyCard = ({ property, isSelected = false, onToggleCompare, transacti
   const locationParts = [property.condominium, property.neighborhood, property.city]
     .filter(Boolean)
     .join(" · ");
+  const propertyUrl = buildPropertyUrl(property);
 
   return (
     <div className="relative h-full">
@@ -99,7 +102,7 @@ const PropertyCard = ({ property, isSelected = false, onToggleCompare, transacti
       )}
 
       <Link
-        to={`/imovel/${property.id}`}
+        to={propertyUrl}
         className="group block h-full bg-card border border-border/60 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
       >
         {/* Imagem */}
@@ -170,7 +173,7 @@ const PropertyCard = ({ property, isSelected = false, onToggleCompare, transacti
               </p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <ShareButton path={`/imovel/${property.id}`} title={toTitleCase(property.title)} />
+              <ShareButton path={propertyUrl} title={toTitleCase(property.title)} />
               <span className="text-body text-sm bg-foreground text-background px-5 py-2 rounded-md group-hover:bg-foreground/90 transition-colors whitespace-nowrap">
                 Saiba Mais
               </span>

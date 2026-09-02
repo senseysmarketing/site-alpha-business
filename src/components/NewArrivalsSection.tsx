@@ -8,6 +8,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import ShareButton from "@/components/ShareButton";
+import { buildPropertyUrl } from "@/lib/propertyUrl";
 
 const NewArrivalsSection = () => {
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -71,6 +72,13 @@ const NewArrivalsSection = () => {
           title: p.title,
           code: p.code,
           type: p.property_type || "Casa",
+          property_type: p.property_type,
+          transaction_type: p.transaction_type,
+          condominium: p.condominium,
+          neighborhood: p.neighborhood,
+          city: p.city,
+          bedrooms: p.bedrooms,
+          area_total: p.area_total,
           area: p.area_total,
           suites: p.bedrooms || 0,
           parking: p.parking_spots || 0,
@@ -152,7 +160,7 @@ const NewArrivalsSection = () => {
                 className="flex-[0_0_85%] md:flex-[0_0_calc(33.333%-16px)] min-w-0"
               >
                 <Link
-                  to={`/imovel/${prop.id}`}
+                  to={buildPropertyUrl(prop)}
                   className="group block bg-card border border-border/60 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
                 >
                   {/* Imagem */}
@@ -206,7 +214,7 @@ const NewArrivalsSection = () => {
                         </p>
                       </div>
                       <div className="flex items-center gap-2 w-full md:w-auto shrink-0">
-                        <ShareButton path={`/imovel/${prop.id}`} title={toTitleCase(prop.title)} />
+                        <ShareButton path={buildPropertyUrl(prop)} title={toTitleCase(prop.title)} />
                         <span className="flex-1 md:flex-none text-center text-body text-sm bg-foreground text-background px-5 py-2 rounded-md group-hover:bg-foreground/90 transition-colors whitespace-nowrap">
                           Saiba Mais
                         </span>

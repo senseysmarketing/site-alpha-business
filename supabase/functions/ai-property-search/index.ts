@@ -78,6 +78,7 @@ interface PropertyResult {
   price: number | null;
   rental_price: number | null;
   transaction_type: string;
+  property_type: string | null;
   bedrooms: number | null;
   bathrooms: number | null;
   parking_spots: number | null;
@@ -126,6 +127,81 @@ const norm = (s: unknown) =>
     .replace(/[^\p{L}\p{N}\s]/gu, " ")
     .replace(/\s+/g, " ")
     .trim();
+
+const slugify = (value: unknown, fallback = "imovel") => {
+  const slug = String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/&/g, " e ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .replace(/-{2,}/g, "-");
+  return slug || fallback;
+};
+
+const normalizePropertyCode = (code: unknown) =>
+  String(code ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]/gi, "")
+    .toUpperCase();
+
+const numberToken = (value: number | string | null | undefined, suffix: string) => {
+  if (value == null || value === "") return "";
+  const parsed = typeof value === "number" ? value : Number(String(value).replace(",", "."));
+  if (!Number.isFinite(parsed) || parsed <= 0) return "";
+  return `${Math.round(parsed)}${suffix}`;
+};
+
+const buildPropertyUrl = (property: {
+  id?: string | null;
+  code?: string | null;
+  title?: string | null;
+  property_type?: string | null;
+  transaction_type?: string | null;
+  condominium?: string | null;
+  neighborhood?: string | null;
+  city?: string | null;
+  area_total?: number | string | null;
+  bedrooms?: number | string | null;
+}) => {
+  const code = normalizePropertyCode(property.code);
+  if (!code && property.id) {
+    return `/imovel/${property.id}`;
+  }
+
+  const type = slugify(property.property_type, "imovel");
+  const transaction = String(property.transaction_type ?? "").toLowerCase();
+  const category = transaction === "locacao" || transaction === "aluguel"
+    ? `${type}-para-locacao`
+    : transaction === "ambos"
+      ? `${type}-venda-e-locacao`
+      : `${type}-a-venda`;
+  const condominium = slugify(
+    property.condominium || property.neighborhood || property.city,
+    "alphaville",
+  );
+  const titleSlug = slugify(property.title, "");
+  const titleHasRooms = /\b(suite|suites|quarto|quartos|dormitorio|dormitorios)\b/.test(titleSlug);
+  const titleHasArea = /\d+\s*m2|\d+m2/.test(titleSlug);
+  const base = slugify(
+    [
+      property.title,
+      titleHasRooms ? "" : numberToken(property.bedrooms, "suites"),
+      titleHasArea ? "" : numberToken(property.area_total, "m2"),
+      property.condominium || property.neighborhood || property.city || "",
+      property.city,
+    ].filter(Boolean).join(" "),
+    "imovel",
+  );
+  const codeSlug = slugify(code, "");
+  const slug = codeSlug && !base.endsWith(`-${codeSlug}`) && base !== codeSlug
+    ? `${base}-${codeSlug}`
+    : base;
+
+  return `/imovel/${category}/${condominium}/${slug}`;
+};
 
 // ---- Numerais por extenso (pt-BR) -> dígitos ----
 const NUM_UNIT: Record<string, number> = { um: 1, uma: 1, dois: 2, duas: 2, tres: 3, quatro: 4, cinco: 5, seis: 6, sete: 7, oito: 8, nove: 9 };
@@ -608,6 +684,7 @@ const mapRow = (p: any): PropertyResult => ({
   price: p.price,
   rental_price: p.rental_price,
   transaction_type: p.transaction_type,
+  property_type: p.property_type,
   bedrooms: p.bedrooms,
   bathrooms: p.bathrooms,
   parking_spots: p.parking_spots,
@@ -1379,6 +1456,7 @@ const buildPropertyResponse = (prop: PropertyResult, state: ConversationState) =
   const wantsRental = intent === "locacao";
   const price = wantsRental ? prop.rental_price : prop.price;
   const priceText = price ? `${fmtBRL(price)}${wantsRental ? "/mês" : ""}` : "Sob consulta";
+  const propertyUrl = buildPropertyUrl(prop);
 
   return {
     assistantMessage: `Encontrei o imóvel **${prop.code}**${prop.condominium ? ` no ${prop.condominium}` : ""} por ${priceText}. Quer ver os detalhes?`,
@@ -1387,9 +1465,9 @@ const buildPropertyResponse = (prop: PropertyResult, state: ConversationState) =
     updatedState: state,
     matchCount: 1,
     resultsPreview: [prop],
-    links: [{ label: "Ver detalhes do imóvel", url: `/imovel/${prop.id}`, type: "property" as const }],
+    links: [{ label: "Ver detalhes do imóvel", url: propertyUrl, type: "property" as const }],
     suggestedOptions: [
-      { label: "Ver detalhes", value: "view", kind: "navigate", url: `/imovel/${prop.id}` },
+      { label: "Ver detalhes", value: "view", kind: "navigate", url: propertyUrl },
       { label: "Nova busca", value: "reset", kind: "reset" },
     ],
     nextAction: "show" as const,
@@ -1909,6 +1987,7 @@ const rowToResult = (r: PropRow): PropertyResult => ({
   price: r.price,
   rental_price: r.rental_price,
   transaction_type: r.transaction_type,
+  property_type: r.property_type,
   bedrooms: r.bedrooms,
   bathrooms: r.bathrooms,
   parking_spots: r.parking_spots,
@@ -1989,9 +2068,9 @@ Regras críticas:
 7. **DESAMBIGUAÇÃO BAIRRO vs CONDOMÍNIO**: Os termos "Alphaville" e "Tamboré" SOZINHOS (sem número e sem outro condomínio citado) são AMBÍGUOS: podem significar a região como um todo OU um condomínio numerado específico. NESTE CASO, devolva APENAS o reply pedindo a clarificação ("Você quer ver imóveis da região de Alphaville como um todo ou de um condomínio específico, ex.: Alphaville 1, 2, 3…?"), com filters_patch vazio, e intent="clarify_region". NÃO tente adivinhar.
 8. Com número ("alphaville 1", "tamboré 2") use condominium normalmente.
 9. "granja viana", "raposo tavares", "km 26", "cotia" → use address_query (NÃO condominium). **NUNCA infira região/cidade/bairro a partir do NOME de um condomínio do catálogo** — por exemplo, "Alphaville Granja Viana" é um condomínio; isso NÃO significa que o usuário quer Granja Viana. Só preencha address_query, city ou neighborhood se a MENSAGEM ATUAL do usuário citar explicitamente o termo geográfico.
-10. **VENDA vs LOCAÇÃO**: Quando o usuário citar valor/orçamento, devolva APENAS o preço (minPrice/maxPrice) — o backend infere automaticamente venda x locação a partir dos limites reais do estoque (ex.: valor muito acima da maior locação → venda; muito abaixo da menor venda → locação). NUNCA chute `transactionType` sem que o usuário tenha dito "comprar/vender" ou "alugar/locação" nesta mensagem.
+10. **VENDA vs LOCAÇÃO**: Quando o usuário citar valor/orçamento, devolva APENAS o preço (minPrice/maxPrice) — o backend infere automaticamente venda x locação a partir dos limites reais do estoque (ex.: valor muito acima da maior locação → venda; muito abaixo da menor venda → locação). NUNCA chute "transactionType" sem que o usuário tenha dito "comprar/vender" ou "alugar/locação" nesta mensagem.
 11. Imóveis com transaction_type="ambos" estão disponíveis tanto para venda quanto para locação (mostre preço correto conforme a intenção do cliente).
-12. **CLARIFICAÇÃO PENDENTE**: Se o `Estado atual` tiver `pendingClarification` setado como "alphaville" ou "tambore", isso significa que a ambiguidade bairro vs condomínio ainda NÃO foi resolvida pelo usuário. NESTE TURNO, devolva intent="clarify_region", filters_patch vazio e uma reply re-perguntando — mesmo que o usuário tenha falado de outra coisa (preço, compra/aluguel etc.) você pode anotar esse filtro, mas DEVE re-perguntar a região.
+12. **CLARIFICAÇÃO PENDENTE**: Se o "Estado atual" tiver "pendingClarification" setado como "alphaville" ou "tambore", isso significa que a ambiguidade bairro vs condomínio ainda NÃO foi resolvida pelo usuário. NESTE TURNO, devolva intent="clarify_region", filters_patch vazio e uma reply re-perguntando — mesmo que o usuário tenha falado de outra coisa (preço, compra/aluguel etc.) você pode anotar esse filtro, mas DEVE re-perguntar a região.
 
 Exemplos:
 - Mensagem "casa no alphaville 1" → { filters_patch: { propertyType: "casa", condominium: "Alphaville 1" } }.

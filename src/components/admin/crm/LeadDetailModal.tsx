@@ -60,6 +60,7 @@ import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import type { Lead, AssignedUser } from "./LeadCard";
 import { usePipelineStages } from "@/hooks/usePipelineStages";
+import { buildPropertyUrl } from "@/lib/propertyUrl";
 
 interface LeadDetailModalProps {
   lead: Lead | null;
@@ -264,7 +265,9 @@ export function LeadDetailModal({ lead, open, onOpenChange, team = [], onRequest
   const whatsappLink = lead?.phone ? `https://wa.me/55${lead.phone.replace(/\D/g, "")}` : null;
   const telLink = lead?.phone ? `tel:+55${lead.phone.replace(/\D/g, "")}` : null;
   const mailLink = lead?.email ? `mailto:${lead.email}` : null;
-  const propertyHref = lead?.property_id ? `/imovel/${lead.property_id}` : null;
+  const propertyHref = lead?.property_id
+    ? buildPropertyUrl({ id: lead.property_id, ...lead.properties })
+    : null;
 
   const daysSinceContact = lead
     ? differenceInDays(new Date(), new Date(lead.last_contact_at))

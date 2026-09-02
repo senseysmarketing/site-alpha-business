@@ -57,6 +57,7 @@ const AnimatedRoutes = () => {
       <Suspense fallback={<div className="min-h-screen bg-background" />}>
         <Routes location={location} key={location.pathname}>
           <Route path="/" element={<Index />} />
+          <Route path="/imovel/:categoria/:condominio/:slug" element={<PropertyDetail />} />
           <Route path="/imovel/:id" element={<PropertyDetail />} />
           <Route path="/busca" element={<SearchResults />} />
           <Route path="/blog" element={<Blog />} />

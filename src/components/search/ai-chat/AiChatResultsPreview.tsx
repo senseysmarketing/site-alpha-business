@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import type { PropertyResult } from "./types";
+import { buildPropertyUrl } from "@/lib/propertyUrl";
 
 interface Props {
   results: PropertyResult[];
@@ -27,7 +28,7 @@ const AiChatResultsPreview = ({ results, onNavigate }: Props) => {
           return (
             <Link
               key={r.id}
-              to={`/imovel/${r.id}`}
+              to={buildPropertyUrl(r)}
               onClick={onNavigate}
               className="group block bg-card border border-border/60 rounded-lg overflow-hidden hover:shadow-md transition-shadow"
             >
