@@ -298,18 +298,38 @@ Deno.serve(async (req) => {
 
     }
 
-    // Fetch existing kenlo rows for protected fields preservation
-    const protectedSelect = ["id", "code", ...config.protected_fields].join(", ");
+    // Fetch existing kenlo rows (full comparable state + protected fields)
+    const COMPARE_FIELDS = [
+      "title", "description", "property_type", "condominium", "address", "city",
+      "neighborhood", "bedrooms", "bathrooms", "parking_spots", "area_total",
+      "area_built", "condo_fee", "iptu", "photos", "transaction_type", "price",
+      "rental_price", "status", "external_id",
+    ];
+    const existingSelect = Array.from(
+      new Set(["id", "code", ...COMPARE_FIELDS, ...config.protected_fields]),
+    ).join(", ");
     const existingRows = await fetchAllPages<ExistingKenloRow>(() =>
       admin
         .from("properties")
-        .select(protectedSelect)
+        .select(existingSelect)
         .eq("source", "kenlo")
     );
     const existingMap = new Map(existingRows.map((r) => [r.code, r]));
 
+    const norm = (v: unknown): string => {
+      if (v == null) return "";
+      if (Array.isArray(v)) return v.map((x) => String(x ?? "").trim()).join("|");
+      if (typeof v === "number") return String(v);
+      const s = String(v).trim();
+      const n = Number(s);
+      if (s !== "" && Number.isFinite(n)) return String(n);
+      return s;
+    };
+
     let created = 0;
     let updated = 0;
+    let unchanged = 0;
+    const changedFields: Record<string, number> = {};
     const BATCH = 100;
 
     for (let i = 0; i < rows.length; i += BATCH) {
@@ -334,10 +354,26 @@ Deno.serve(async (req) => {
       }
 
       for (const row of batch) {
-        if (existingMap.has(row.code)) updated++;
-        else created++;
+        const existing = existingMap.get(row.code);
+        if (!existing) {
+          created++;
+          continue;
+        }
+        const diffs = COMPARE_FIELDS.filter(
+          (f) =>
+            !config.protected_fields.includes(f) &&
+            f in row &&
+            norm(row[f]) !== norm(existing[f]),
+        );
+        if (diffs.length > 0) {
+          updated++;
+          for (const f of diffs) changedFields[f] = (changedFields[f] ?? 0) + 1;
+        } else {
+          unchanged++;
+        }
       }
     }
+
 
     let deactivated = 0;
     if (config.missing_behavior !== "manter" && seenCodes.size > 0) {
@@ -361,12 +397,24 @@ Deno.serve(async (req) => {
 
     const duration_ms = Date.now() - startedAt;
 
+    const topChangedFields = Object.fromEntries(
+      Object.entries(changedFields).sort((a, b) => b[1] - a[1]).slice(0, 8),
+    );
+
     await admin.from("system_audit_logs").insert({
       action: "sincronizou",
       object_type: "kenlo_sync",
       object_label: `${created + updated} imóveis`,
       user_name: "Sistema",
-      metadata: { created, updated, deactivated, duration_ms, outbound_ip: outboundIp },
+      metadata: {
+        created,
+        updated,
+        unchanged,
+        deactivated,
+        duration_ms,
+        outbound_ip: outboundIp,
+        changed_fields: topChangedFields,
+      },
     });
 
     return new Response(
@@ -374,11 +422,14 @@ Deno.serve(async (req) => {
         success: true,
         created,
         updated,
+        unchanged,
         deactivated,
+        changed_fields: topChangedFields,
         total_in_feed: imoveis.length,
         duration_ms,
         outbound_ip: outboundIp,
       }),
+
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (e) {

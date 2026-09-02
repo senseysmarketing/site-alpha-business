@@ -6,6 +6,7 @@ import { ArrowLeft, Clock, Calendar } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { renderMarkdownContent } from "@/lib/markdown";
+import CoverImage from "@/components/blog/CoverImage";
 
 const categoryLabels: Record<string, string> = {
   "inside-alphaville": "Inside Alphaville",
@@ -50,9 +51,9 @@ const BlogPost = () => {
       <>
         <Header />
         <div className="min-h-screen flex flex-col items-center justify-center gap-4">
-          <p className="text-body text-muted-foreground">Artigo não encontrado.</p>
+          <p className="text-body text-muted-foreground">Notícia não encontrada.</p>
           <Link to="/blog" className="text-body text-sm text-foreground underline">
-            Voltar ao Blog
+            Voltar às Notícias
           </Link>
         </div>
       </>
@@ -93,15 +94,12 @@ const BlogPost = () => {
       <main className="bg-[hsl(30_33%_97%)]">
         <section className="relative min-h-[52vh] md:min-h-[56vh] flex items-center overflow-hidden pt-28 md:pt-32">
           <div className="absolute inset-0">
-            {post.cover_image ? (
-              <img
-                src={post.cover_image}
-                alt={post.title}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-bordeaux to-foreground" />
-            )}
+            <CoverImage
+              desktop={post.cover_image}
+              mobile={post.cover_image_mobile}
+              alt={post.title}
+              loading="eager"
+            />
             <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A]/95 via-[#0A0A0A]/55 to-[#0A0A0A]/15" />
           </div>
 
@@ -113,7 +111,7 @@ const BlogPost = () => {
                 className="inline-flex items-center gap-2 text-body text-xs tracking-[0.15em] uppercase text-cashmere/60 hover:text-cashmere transition-colors mb-6"
               >
                 <ArrowLeft size={14} />
-                Voltar ao Blog
+                Voltar às Notícias
               </Link>
 
               <span className="block text-body text-xs tracking-[0.3em] uppercase text-cashmere/50 mb-4">

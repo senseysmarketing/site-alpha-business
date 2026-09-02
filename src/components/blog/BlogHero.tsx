@@ -3,6 +3,7 @@ import { Clock, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { Tables } from "@/integrations/supabase/types";
 import { useBlogCategories } from "@/hooks/useBlogCategories";
+import CoverImage from "./CoverImage";
 
 interface BlogHeroProps {
   post: Tables<"blog_posts">;
@@ -13,11 +14,12 @@ const BlogHero = ({ post }: BlogHeroProps) => {
   return (
     <section className="relative min-h-[60vh] md:min-h-[68vh] flex items-center overflow-hidden">
       <div className="absolute inset-0">
-        {post.cover_image ? (
-          <img src={post.cover_image} alt={post.title} className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-br from-bordeaux to-foreground" />
-        )}
+        <CoverImage
+          desktop={post.cover_image}
+          mobile={post.cover_image_mobile}
+          alt={post.title}
+          loading="eager"
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A]/95 via-[#0A0A0A]/55 to-[#0A0A0A]/15" />
       </div>
 
@@ -70,7 +72,7 @@ const BlogHero = ({ post }: BlogHeroProps) => {
             to={`/blog/${post.slug}`}
             className="ml-auto inline-flex items-center gap-2 text-body text-xs tracking-[0.15em] uppercase text-cashmere hover:text-cashmere/80 transition-colors line-reveal pb-1"
           >
-            Ler matéria
+            Ler notícia
             <ArrowRight size={14} />
           </Link>
         </motion.div>

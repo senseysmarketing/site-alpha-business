@@ -29,7 +29,7 @@ const MAX_STEP = 24; // px por frame no auto-scroll
 export default function CRM() {
   const queryClient = useQueryClient();
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
-  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [newLeadStage, setNewLeadStage] = useState<string | null>(null);
@@ -87,13 +87,18 @@ export default function CRM() {
     [rawLeads, teamMap]
   );
 
+  const selectedLead = useMemo(
+    () => (selectedLeadId ? leads.find((l) => l.id === selectedLeadId) ?? null : null),
+    [leads, selectedLeadId]
+  );
+
   // Auto-open lead vindo da busca global (?leadId=)
   useEffect(() => {
     const leadId = searchParams.get("leadId");
     if (!leadId || leads.length === 0) return;
     const target = leads.find((l) => l.id === leadId);
     if (target) {
-      setSelectedLead(target);
+      setSelectedLeadId(target.id);
       setSheetOpen(true);
       searchParams.delete("leadId");
       setSearchParams(searchParams, { replace: true });
@@ -159,7 +164,7 @@ export default function CRM() {
   );
 
   const handleCardClick = useCallback((lead: Lead) => {
-    setSelectedLead(lead);
+    setSelectedLeadId(lead.id);
     setSheetOpen(true);
   }, []);
 
@@ -383,7 +388,8 @@ export default function CRM() {
           if (selectedLead) setSheetOpen(true);
         }}
         onSaved={(updated) => {
-          setSelectedLead(updated);
+          setSelectedLeadId(updated.id);
+          queryClient.invalidateQueries({ queryKey: ["leads"] });
           setEditOpen(false);
           setSheetOpen(true);
         }}
@@ -395,6 +401,7 @@ export default function CRM() {
         onOpenChange={(open) => !open && setNewLeadStage(null)}
         defaultStage={newLeadStage || "novos"}
         properties={properties}
+        team={team.filter((t) => t.is_active)}
       />
 
       <LeadNotificationSettingsDialog open={notifyOpen} onOpenChange={setNotifyOpen} />

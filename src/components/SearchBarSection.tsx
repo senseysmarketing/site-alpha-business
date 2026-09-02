@@ -4,7 +4,10 @@ import React, { useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import AiSearchChatButton from "./search/ai-chat/AiSearchChatButton";
 import AiSearchChatModal from "./search/ai-chat/AiSearchChatModal";
+import PropertyCodeAutocomplete from "./search/PropertyCodeAutocomplete";
+import CondoAutocomplete from "./search/CondoAutocomplete";
 import { trackSearch } from "@/lib/metaPixel";
+
 
 const brlFormatter = new Intl.NumberFormat("pt-BR", {
   style: "currency",
@@ -100,31 +103,20 @@ const SearchBarSection = () => {
             <div className="space-y-5">
               {/* Linha 1 — Busca rápida por código + toggle */}
               <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
-                <div className="flex-1 relative">
-                  <Hash size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <input
-                    type="text"
-                    value={filterCode}
-                    onChange={(e) => setFilterCode(e.target.value.toUpperCase())}
-                    onKeyDown={(e) => { if (e.key === "Enter") handleCodeSearch(); }}
-                    placeholder="Buscar por código do imóvel (ex: AB1234)"
-                    className="w-full bg-background border border-border rounded-md pl-9 pr-24 py-2.5 text-body text-sm text-foreground outline-none focus:ring-1 focus:ring-primary tracking-wider"
-                  />
-                  <button
-                    onClick={handleCodeSearch}
-                    disabled={!filterCode.trim()}
-                    className="absolute right-1.5 top-1/2 -translate-y-1/2 inline-flex items-center gap-1 px-3 py-1.5 rounded text-body text-[10px] tracking-[0.1em] uppercase bg-foreground text-background disabled:opacity-30 disabled:cursor-not-allowed hover:bg-foreground/90 transition-colors"
-                  >
-                    Ir <ArrowRight size={12} />
-                  </button>
-                </div>
+                <PropertyCodeAutocomplete
+                  value={filterCode}
+                  onChange={setFilterCode}
+                  onSubmit={handleCodeSearch}
+                />
                 <button
                   onClick={() => setMode("cognitive")}
-                  className="text-body text-[10px] tracking-[0.1em] uppercase px-4 py-2 rounded-full bg-muted text-muted-foreground hover:text-foreground transition-colors self-end sm:self-auto"
+                  className="hidden sm:inline-flex text-body text-[10px] tracking-[0.1em] uppercase px-4 py-2 rounded-full bg-muted text-muted-foreground hover:text-foreground transition-colors self-auto"
                 >
-                  Cognitivo
+                  Rafa IA
                 </button>
+
               </div>
+
 
               {/* Linha 2 — Filtros principais */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -173,13 +165,12 @@ const SearchBarSection = () => {
 
               {/* Linha 3 — Filtros secundários */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <input
-                  type="text"
+                <CondoAutocomplete
                   value={filterCondo}
-                  onChange={(e) => setFilterCondo(e.target.value)}
-                  placeholder="Condomínio"
+                  onChange={setFilterCondo}
                   className={selectClass}
                 />
+
 
                 <select value={filterBedrooms} onChange={(e) => setFilterBedrooms(e.target.value)} className={selectClass}>
                   <option value="">Suítes (mínimo)</option>
@@ -217,6 +208,16 @@ const SearchBarSection = () => {
                 <Search size={14} />
                 Buscar imóveis
               </button>
+
+              <div className="flex sm:hidden justify-center">
+                <button
+                  onClick={() => setMode("cognitive")}
+                  className="text-body text-[10px] tracking-[0.1em] uppercase px-4 py-2 rounded-full bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Rafa IA
+                </button>
+              </div>
+
             </div>
           )}
         </motion.div>

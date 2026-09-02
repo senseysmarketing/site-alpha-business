@@ -62,6 +62,7 @@ const BlogEditor = () => {
     }
   }, [categories, isEditing, category]);
   const [coverImage, setCoverImage] = useState<string | null>(null);
+  const [coverImageMobile, setCoverImageMobile] = useState<string | null>(null);
   const [isFeatured, setIsFeatured] = useState(false);
   const [isExclusive, setIsExclusive] = useState(false);
   const [scheduleDate, setScheduleDate] = useState<Date | undefined>();
@@ -135,6 +136,7 @@ const BlogEditor = () => {
       setExcerpt(existingPost.excerpt ?? "");
       setCategory(existingPost.category);
       setCoverImage(existingPost.cover_image);
+      setCoverImageMobile(existingPost.cover_image_mobile);
       setIsFeatured(existingPost.is_featured);
       setIsExclusive(existingPost.is_exclusive);
       setSlugManual(true);
@@ -172,7 +174,7 @@ const BlogEditor = () => {
     mutationFn: async (publishedAt: string | null) => {
       const postData = {
         title, subtitle: subtitle || null, content, slug,
-        excerpt: excerpt || null, category, cover_image: coverImage,
+        excerpt: excerpt || null, category, cover_image: coverImage, cover_image_mobile: coverImageMobile,
         is_featured: isFeatured, is_exclusive: isExclusive,
         reading_time_min: readingTime,
         published_at: publishedAt ?? new Date(2099, 0, 1).toISOString(),
@@ -358,6 +360,7 @@ Cole, arraste ou use o botão de imagem para adicionar fotos."
           <TabsContent value="media" className="mt-0">
             <MediaSidebar
               coverImage={coverImage} onCoverImageChange={setCoverImage}
+              coverImageMobile={coverImageMobile} onCoverImageMobileChange={setCoverImageMobile}
               slug={slug} onSlugChange={(v) => { setSlugManual(true); setSlug(v); }}
               excerpt={excerpt} onExcerptChange={setExcerpt}
               category={category} onCategoryChange={setCategory}

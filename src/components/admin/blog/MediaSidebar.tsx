@@ -11,6 +11,8 @@ import { useBlogCategories } from "@/hooks/useBlogCategories";
 type Props = {
   coverImage: string | null;
   onCoverImageChange: (url: string | null) => void;
+  coverImageMobile: string | null;
+  onCoverImageMobileChange: (url: string | null) => void;
   slug: string;
   onSlugChange: (slug: string) => void;
   excerpt: string;
@@ -24,30 +26,33 @@ type Props = {
   readingTime: number;
 };
 
-const MediaSidebar = ({
-  coverImage, onCoverImageChange,
-  slug, onSlugChange,
-  excerpt, onExcerptChange,
-  category, onCategoryChange,
-  isFeatured, onFeaturedChange,
-  isExclusive, onExclusiveChange,
-  readingTime,
-}: Props) => {
+type CoverUploadBoxProps = {
+  value: string | null;
+  onChange: (url: string | null) => void;
+  label: string;
+  hint: string;
+  prefix: string;
+  previewClass: string;
+  emptyHint?: string;
+};
+
+const CoverUploadBox = ({
+  value, onChange, label, hint, prefix, previewClass, emptyHint,
+}: CoverUploadBoxProps) => {
   const [uploading, setUploading] = useState(false);
-  const { categories } = useBlogCategories();
 
   const handleUpload = useCallback(async (file: File) => {
     setUploading(true);
     const ext = file.name.split(".").pop();
-    const path = `covers/${Date.now()}.${ext}`;
+    const path = `covers/${prefix}${Date.now()}.${ext}`;
 
     const { error } = await supabase.storage.from("blog-media").upload(path, file);
     if (!error) {
       const { data: { publicUrl } } = supabase.storage.from("blog-media").getPublicUrl(path);
-      onCoverImageChange(publicUrl);
+      onChange(publicUrl);
     }
     setUploading(false);
-  }, [onCoverImageChange]);
+  }, [onChange, prefix]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -55,52 +60,99 @@ const MediaSidebar = ({
     if (file?.type.startsWith("image/")) handleUpload(file);
   }, [handleUpload]);
 
+  const openPicker = useCallback(() => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) handleUpload(file);
+    };
+    input.click();
+  }, [handleUpload]);
+
+  return (
+    <div>
+      <div className="flex items-baseline justify-between mb-1.5">
+        <span className="font-[Inter] text-[11px] font-medium text-foreground">{label}</span>
+        <span className="font-[Inter] text-[10px] text-muted-foreground">{hint}</span>
+      </div>
+      {value ? (
+        <div className="relative rounded-lg overflow-hidden group">
+          <img src={value} alt={label} className={`w-full object-cover ${previewClass}`} />
+          <div className="absolute top-2 right-2 flex gap-1">
+            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-600 text-white text-[9px] font-[Inter]">
+              <CheckCircle className="h-3 w-3" /> WebP otimizado
+            </span>
+            <button
+              onClick={() => onChange(null)}
+              className="p-1 rounded-full bg-foreground/70 text-white hover:bg-foreground transition-colors"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div
+          className={`border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-foreground/30 transition-colors ${previewClass}`}
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={handleDrop}
+          onClick={openPicker}
+        >
+          <Upload className="h-5 w-5 text-muted-foreground mb-2" />
+          <span className="font-[Inter] text-xs text-muted-foreground">
+            {uploading ? "Enviando..." : "Arraste ou clique"}
+          </span>
+          {emptyHint && (
+            <span className="font-[Inter] text-[10px] text-muted-foreground/70 mt-1 px-4 text-center">
+              {emptyHint}
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const MediaSidebar = ({
+  coverImage, onCoverImageChange,
+  coverImageMobile, onCoverImageMobileChange,
+  slug, onSlugChange,
+  excerpt, onExcerptChange,
+  category, onCategoryChange,
+  isFeatured, onFeaturedChange,
+  isExclusive, onExclusiveChange,
+  readingTime,
+}: Props) => {
+  const { categories } = useBlogCategories();
+
   return (
     <div>
       <div className="p-5 space-y-6">
         {/* Cover Image */}
-        <section>
-          <h3 className="font-[Inter] text-[10px] uppercase tracking-[0.15em] text-muted-foreground mb-3">
+        <section className="space-y-4">
+          <h3 className="font-[Inter] text-[10px] uppercase tracking-[0.15em] text-muted-foreground">
             Imagem de Capa
           </h3>
-          {coverImage ? (
-            <div className="relative rounded-lg overflow-hidden group">
-              <img src={coverImage} alt="Capa" className="w-full h-40 object-cover" />
-              <div className="absolute top-2 right-2 flex gap-1">
-                <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-600 text-white text-[9px] font-[Inter]">
-                  <CheckCircle className="h-3 w-3" /> WebP otimizado
-                </span>
-                <button
-                  onClick={() => onCoverImageChange(null)}
-                  className="p-1 rounded-full bg-foreground/70 text-white hover:bg-foreground transition-colors"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div
-              className="border-2 border-dashed border-border rounded-lg h-32 flex flex-col items-center justify-center cursor-pointer hover:border-foreground/30 transition-colors"
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={handleDrop}
-              onClick={() => {
-                const input = document.createElement("input");
-                input.type = "file";
-                input.accept = "image/*";
-                input.onchange = (e) => {
-                  const file = (e.target as HTMLInputElement).files?.[0];
-                  if (file) handleUpload(file);
-                };
-                input.click();
-              }}
-            >
-              <Upload className="h-5 w-5 text-muted-foreground mb-2" />
-              <span className="font-[Inter] text-xs text-muted-foreground">
-                {uploading ? "Enviando..." : "Arraste ou clique"}
-              </span>
-            </div>
-          )}
+          <CoverUploadBox
+            value={coverImage}
+            onChange={onCoverImageChange}
+            label="Desktop"
+            hint="1920×1080 · 16:9"
+            prefix=""
+            previewClass="h-40"
+          />
+          <CoverUploadBox
+            value={coverImageMobile}
+            onChange={onCoverImageMobileChange}
+            label="Mobile (opcional)"
+            hint="1080×1350 · 4:5"
+            prefix="mobile-"
+            previewClass="h-56"
+            emptyHint="Sem imagem: usa a de desktop"
+          />
         </section>
+
 
         {/* SEO */}
         <section>

@@ -56,7 +56,19 @@ type Property = {
   price: number | null;
   rental_price: number | null;
   status: string | null;
+  source: string | null;
 };
+
+const SOURCE_LABELS: Record<string, string> = {
+  kenlo: "Kenlo",
+  manual: "Manual",
+  import: "Importação",
+  importacao: "Importação",
+  csv: "Importação",
+};
+
+const formatSource = (source: string | null) =>
+  source ? SOURCE_LABELS[source.toLowerCase()] ?? source : "—";
 
 const transactionFilters = [
   { label: "Todos", value: "Todos" },
@@ -73,6 +85,8 @@ const Properties = () => {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [refreshTick, setRefreshTick] = useState(0);
+  const [lastSync, setLastSync] = useState<{ at: string; summary: string } | null>(null);
+
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [propertyToDelete, setPropertyToDelete] = useState<string | null>(null);
@@ -108,6 +122,35 @@ const Properties = () => {
     fetchProperties();
   }, [refreshTick]);
 
+  useEffect(() => {
+    const fetchLastSync = async () => {
+      const { data } = await supabase
+        .from("system_audit_logs")
+        .select("created_at, object_label, metadata")
+        .eq("object_type", "kenlo_sync")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (data) {
+        const meta = (data.metadata ?? {}) as Record<string, number>;
+        const plural = (n: number, s: string, p: string) => `${n} ${n === 1 ? s : p}`;
+        const parts = [
+          plural(meta.created ?? 0, "criado", "criados"),
+          plural(meta.updated ?? 0, "alterado", "alterados"),
+        ];
+        if (meta.unchanged != null) parts.push(`${meta.unchanged} sem mudança`);
+        parts.push(plural(meta.deactivated ?? 0, "inativado", "inativados"));
+        setLastSync({
+          at: data.created_at,
+          summary: data.object_label === "Falha" ? "falhou" : parts.join(" · "),
+        });
+      }
+
+    };
+    fetchLastSync();
+  }, [refreshTick]);
+
+
   const handleSync = async () => {
     setSyncing(true);
     toast({ title: "Sincronizando com Kenlo...", description: "Buscando feed XML, isso pode levar alguns segundos." });
@@ -133,8 +176,9 @@ const Properties = () => {
       }
       toast({
         title: "Sincronização concluída",
-        description: `✓ ${data.created} criados, ${data.updated} atualizados, ${data.deactivated} desativados em ${(data.duration_ms / 1000).toFixed(1)}s${ip}`,
+        description: `✓ ${data.created} criados, ${data.updated} alterados, ${data.unchanged ?? 0} sem mudança, ${data.deactivated} desativados em ${(data.duration_ms / 1000).toFixed(1)}s${ip}`,
       });
+
       setRefreshTick((t) => t + 1);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -266,6 +310,16 @@ const Properties = () => {
         <div>
           <h1 className="font-[Raleway] text-2xl font-semibold text-foreground tracking-tight">Imóveis</h1>
           <p className="font-[Inter] text-sm text-muted-foreground mt-1">Gerencie seu portfólio</p>
+          {lastSync && (
+            <p className="font-[Inter] text-xs text-muted-foreground/80 mt-1">
+              Última sincronização Kenlo:{" "}
+              {new Date(lastSync.at).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
+              {" · "}
+              {lastSync.summary}
+              {" · automática às 07h, 13h e 19h"}
+            </p>
+          )}
+
         </div>
         <div className="flex items-center gap-2">
           {canManageProperties && (
@@ -351,6 +405,7 @@ const Properties = () => {
               <TableHead className="font-[Inter] text-[10px] uppercase tracking-widest">Condomínio</TableHead>
               <TableHead className="font-[Inter] text-[10px] uppercase tracking-widest">Tipo</TableHead>
               <TableHead className="font-[Inter] text-[10px] uppercase tracking-widest">Preço</TableHead>
+              <TableHead className="font-[Inter] text-[10px] uppercase tracking-widest">Fonte</TableHead>
               <TableHead className="font-[Inter] text-[10px] uppercase tracking-widest">Status</TableHead>
               <TableHead className="font-[Inter] text-[10px] uppercase tracking-widest">Ações</TableHead>
             </TableRow>
@@ -358,13 +413,13 @@ const Properties = () => {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-12">
+                <TableCell colSpan={8} className="text-center py-12">
                   <p className="font-[Inter] text-sm text-muted-foreground">Carregando imóveis...</p>
                 </TableCell>
               </TableRow>
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-12">
+                <TableCell colSpan={8} className="text-center py-12">
                   <p className="font-[Inter] text-sm text-muted-foreground">Nenhum imóvel encontrado</p>
                 </TableCell>
               </TableRow>
@@ -376,7 +431,9 @@ const Properties = () => {
                   onClick={() => navigate(`/admin/imoveis/${property.id}`)}
                 >
                   <TableCell className="font-[Inter] text-xs font-medium">{property.code}</TableCell>
-                  <TableCell className="font-[Inter] text-sm">{property.title}</TableCell>
+                  <TableCell className="font-[Inter] text-sm max-w-[320px] xl:max-w-[420px]">
+                    <span className="block truncate" title={property.title}>{property.title}</span>
+                  </TableCell>
                   <TableCell className="font-[Inter] text-sm text-muted-foreground">{property.condominium ?? "—"}</TableCell>
                   <TableCell>
                     <Badge variant="outline" className="font-[Inter] text-[10px] uppercase">
@@ -395,6 +452,13 @@ const Properties = () => {
                       formatPrice(isRentalTransaction(property.transaction_type) ? property.rental_price ?? property.price : property.price)
                     )}
                   </TableCell>
+
+                  <TableCell>
+                    <Badge variant="outline" className="font-[Inter] text-[10px] uppercase">
+                      {formatSource(property.source)}
+                    </Badge>
+                  </TableCell>
+
 
                   <TableCell>
                     <Badge

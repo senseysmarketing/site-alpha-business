@@ -19,7 +19,7 @@ import CompareModal from "@/components/search/CompareModal";
 import FilterChips, { type ParsedFilters } from "@/components/search/FilterChips";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+
 import { useCondoList, resolveCanonicalCondo } from "@/hooks/useCondoList";
 import { matchCondo } from "@/lib/condoMatching";
 import {
@@ -225,7 +225,11 @@ const SearchResults = () => {
       if (filters.neighborhood !== "all" && r.neighborhood !== filters.neighborhood) return false;
       if (filters.onlyFeatured && !r.is_featured) return false;
       if (filters.condominium !== "all") {
-        if (!matchCondo(r.condominium, filters.condominium)) return false;
+        // Fallback: alguns imóveis chegam sem condomínio e trazem o nome apenas no bairro.
+        const condoOk =
+          matchCondo(r.condominium, filters.condominium) ||
+          (!r.condominium && matchCondo(r.neighborhood, filters.condominium));
+        if (!condoOk) return false;
       }
       if (tagNorm) {
         const haystack = [r.title || "", r.condominium || "", r.relevance_reason || ""]
@@ -251,30 +255,43 @@ const SearchResults = () => {
 
   const filteredResults = useMemo(() => {
     const intent = filters.transactionType;
+    // A faixa só é aplicada quando o usuário realmente a definiu (existe na URL).
+    // Faixa "cheia" (intocada) não pode aprovar um imóvel que falhou na faixa
+    // que o usuário definiu — era isso que deixava passar imóveis "ambos"
+    // fora da faixa de venda por causa do aluguel.
+    const saleFilterActive = hasUrlPriceRange;
+    const rentFilterActive = hasUrlRentRange;
+
     const filtered = nonRangeFiltered.filter((r) => {
-      // Per-channel price filter: a row passes if ANY channel accepted by the
-      // current intent is within its own bounds. This prevents a rental-only
-      // row (R$ 23.000/mês) from being killed by the sale range (millions)
-      // when intent is "all".
       const wantSale = intent === "all" || intent === "venda";
       const wantRent = intent === "all" || isRental(intent);
-      const saleOk = wantSale && hasSaleOffer(r.transaction_type) && r.price != null
-        ? r.price >= filters.priceRange[0] && r.price <= filters.priceRange[1]
+      const saleApplicable = wantSale && hasSaleOffer(r.transaction_type) && r.price != null;
+      const rentApplicable = wantRent && hasRentalOffer(r.transaction_type) && r.rental_price != null;
+
+      const saleOk = saleApplicable
+        ? (r.price as number) >= filters.priceRange[0] && (r.price as number) <= filters.priceRange[1]
         : false;
-      const rentOk = wantRent && hasRentalOffer(r.transaction_type) && r.rental_price != null
-        ? r.rental_price >= filters.rentalRange[0] && r.rental_price <= filters.rentalRange[1]
+      const rentOk = rentApplicable
+        ? (r.rental_price as number) >= filters.rentalRange[0] &&
+          (r.rental_price as number) <= filters.rentalRange[1]
         : false;
-      // If neither channel is applicable (e.g. row has no price at all), keep it.
-      const hasAnyApplicable =
-        (wantSale && hasSaleOffer(r.transaction_type) && r.price != null) ||
-        (wantRent && hasRentalOffer(r.transaction_type) && r.rental_price != null);
-      if (hasAnyApplicable && !saleOk && !rentOk) return false;
+
+      // Só considera "em avaliação" os canais que o usuário filtrou E que o
+      // imóvel oferece. Um imóvel só de locação nunca é morto pela faixa de venda.
+      const saleChecked = saleFilterActive && saleApplicable;
+      const rentChecked = rentFilterActive && rentApplicable;
+      if (saleChecked || rentChecked) {
+        const passes = (saleChecked && saleOk) || (rentChecked && rentOk);
+        if (!passes) return false;
+      }
+
       if (r.area_total != null) {
         if (r.area_total < filters.areaRange[0] || r.area_total > filters.areaRange[1]) return false;
       }
       return true;
-
     });
+
+
 
     const lq = normalize(localQuery);
     const searched = lq
@@ -311,7 +328,7 @@ const SearchResults = () => {
         sorted.sort((a, b) => terrenoRank(a) - terrenoRank(b) || (b.photo ? 1 : 0) - (a.photo ? 1 : 0));
     }
     return sorted;
-  }, [nonRangeFiltered, filters.priceRange, filters.rentalRange, filters.areaRange, filters.transactionType, localQuery, sortBy]);
+  }, [nonRangeFiltered, filters.priceRange, filters.rentalRange, filters.areaRange, filters.transactionType, hasUrlPriceRange, hasUrlRentRange, localQuery, sortBy]);
 
   // Reset pagination whenever the filtered set changes.
   useEffect(() => {
@@ -358,12 +375,12 @@ const SearchResults = () => {
     const roundUp = (n: number, step: number) => Math.ceil(n / step) * step;
     const roundDown = (n: number, step: number) => Math.floor(n / step) * step;
 
-    const saleMin = salePrices.length ? roundDown(Math.min(...salePrices), 100_000) : 0;
-    const saleMax = salePrices.length ? roundUp(percentileCap(salePrices), 100_000) : 50_000_000;
-    const rentMin = rentPrices.length ? roundDown(Math.min(...rentPrices), 1_000) : 0;
-    const rentMax = rentPrices.length ? roundUp(percentileCap(rentPrices), 1_000) : 50_000;
+    const saleMin = salePrices.length ? roundDown(Math.min(...salePrices), 50_000) : 0;
+    const saleMax = salePrices.length ? roundUp(Math.max(...salePrices), 50_000) : 50_000_000;
+    const rentMin = rentPrices.length ? roundDown(Math.min(...rentPrices), 500) : 0;
+    const rentMax = rentPrices.length ? roundUp(Math.max(...rentPrices), 500) : 50_000;
     const areaMin = areas.length ? roundDown(Math.min(...areas), 10) : 0;
-    const areaMax = areas.length ? roundUp(percentileCap(areas), 10) : 5000;
+    const areaMax = areas.length ? roundUp(Math.max(...areas), 10) : 5000;
 
     // Property type / city / neighborhood options must stay global so the user
     // can switch between categories — they don't depend on the current filter.
@@ -567,26 +584,15 @@ const SearchResults = () => {
         sortBy={sortBy}
         onSortChange={setSortBy}
         onOpenFilters={() => setFiltersOpen(true)}
+        propertyTypes={bounds.propertyTypes}
         chips={
-          (parsedFilters && !loading) || (tagParam && !loading) ? (
+          parsedFilters && !loading ? (
             <div className="flex items-center gap-3 flex-wrap">
-              {parsedFilters && !loading && <FilterChips filters={parsedFilters} />}
-              {tagParam && !loading && (
-                <Badge
-                  variant="outline"
-                  className="text-body text-xs gap-2 rounded-full border-primary/40 bg-primary/5 text-primary cursor-pointer hover:bg-primary/10"
-                  onClick={() => {
-                    const next = new URLSearchParams(searchParams);
-                    next.delete("tag");
-                    setSearchParams(next);
-                  }}
-                >
-                  Lifestyle: {tagParam} <span className="opacity-60">×</span>
-                </Badge>
-              )}
+              <FilterChips filters={parsedFilters} />
             </div>
           ) : null
         }
+
       />
 
       <section className="pt-2 md:pt-4 pb-16 md:pb-24">

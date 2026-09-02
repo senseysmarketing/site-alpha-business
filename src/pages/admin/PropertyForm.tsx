@@ -18,6 +18,13 @@ import { Eye } from "lucide-react";
 
 const CONDOMINIUMS = ["Residencial 1", "Residencial 2", "Tamboré", "Alphaville 11", "Alphaville 0", "Outro"];
 
+const parseCurrencyInput = (value: string): string => value.replace(/\D/g, "");
+const formatCurrencyInput = (digits: string): string => {
+  const clean = (digits ?? "").toString().replace(/\D/g, "");
+  if (!clean) return "";
+  return `R$ ${Number(clean).toLocaleString("pt-BR")}`;
+};
+
 const PropertyForm = () => {
   const { id } = useParams();
   const isEditing = !!id;
@@ -458,24 +465,48 @@ const PropertyForm = () => {
               {(transactionType === "venda" || transactionType === "ambos") && (
                 <div className="space-y-2">
                   <Label className={labelClass}>Preço Venda (R$)</Label>
-                  <Input value={price} onChange={(e) => setPrice(e.target.value)} className={inputClass} placeholder="2500000" />
+                  <Input
+                    value={formatCurrencyInput(price)}
+                    onChange={(e) => setPrice(parseCurrencyInput(e.target.value))}
+                    className={inputClass}
+                    placeholder="R$ 2.500.000"
+                    inputMode="numeric"
+                  />
                 </div>
               )}
 
               <div className="space-y-2">
                 <Label className={labelClass}>Condomínio (R$/mês)</Label>
-                <Input value={condoFee} onChange={(e) => setCondoFee(e.target.value)} className={inputClass} placeholder="1800" />
+                <Input
+                  value={formatCurrencyInput(condoFee)}
+                  onChange={(e) => setCondoFee(parseCurrencyInput(e.target.value))}
+                  className={inputClass}
+                  placeholder="R$ 1.800"
+                  inputMode="numeric"
+                />
               </div>
               <div className="space-y-2">
                 <Label className={labelClass}>IPTU (R$/ano)</Label>
-                <Input value={iptu} onChange={(e) => setIptu(e.target.value)} className={inputClass} placeholder="12000" />
+                <Input
+                  value={formatCurrencyInput(iptu)}
+                  onChange={(e) => setIptu(parseCurrencyInput(e.target.value))}
+                  className={inputClass}
+                  placeholder="R$ 12.000"
+                  inputMode="numeric"
+                />
                 <p className="text-[10px] text-muted-foreground/70 font-[Inter]">Será exibido também o valor mensal estimado (÷12).</p>
               </div>
 
               {(transactionType === "locacao" || transactionType === "ambos") && (
                 <div className="space-y-2">
                   <Label className={labelClass}>Preço Locação (R$/mês)</Label>
-                  <Input value={rentalPrice} onChange={(e) => setRentalPrice(e.target.value)} className={inputClass} placeholder="15000" />
+                  <Input
+                    value={formatCurrencyInput(rentalPrice)}
+                    onChange={(e) => setRentalPrice(parseCurrencyInput(e.target.value))}
+                    className={inputClass}
+                    placeholder="R$ 15.000"
+                    inputMode="numeric"
+                  />
                 </div>
               )}
 
