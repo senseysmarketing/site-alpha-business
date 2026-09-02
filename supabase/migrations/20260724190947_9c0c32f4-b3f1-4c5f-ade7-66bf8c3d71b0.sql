@@ -16,10 +16,10 @@ DROP POLICY IF EXISTS "Team can insert leads" ON public.leads;
 CREATE POLICY "Team can insert leads" ON public.leads
 FOR INSERT TO authenticated
 WITH CHECK (
-  has_role(auth.uid(), 'admin'::app_role)
-  OR has_role(auth.uid(), 'gerente'::app_role)
-  OR has_role(auth.uid(), 'corretor'::app_role)
-  OR has_role(auth.uid(), 'assistente'::app_role)
+  has_role(auth.uid(), 'admin'::public.app_role)
+  OR has_role(auth.uid(), 'gerente'::public.app_role)
+  OR has_role(auth.uid(), 'corretor'::public.app_role)
+  OR has_role(auth.uid(), 'assistente'::public.app_role)
 );
 
 -- Auto-assign lead to the creating user when they are corretor/assistente and no assignee is set
@@ -31,9 +31,9 @@ SET search_path = public
 AS $$
 BEGIN
   IF NEW.assigned_user_id IS NULL AND auth.uid() IS NOT NULL THEN
-    IF has_role(auth.uid(), 'corretor'::app_role)
-       OR has_role(auth.uid(), 'assistente'::app_role)
-       OR has_role(auth.uid(), 'gerente'::app_role) THEN
+    IF has_role(auth.uid(), 'corretor'::public.app_role)
+       OR has_role(auth.uid(), 'assistente'::public.app_role)
+       OR has_role(auth.uid(), 'gerente'::public.app_role) THEN
       NEW.assigned_user_id := auth.uid();
     END IF;
   END IF;
