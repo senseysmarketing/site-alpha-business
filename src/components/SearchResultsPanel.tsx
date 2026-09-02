@@ -4,6 +4,7 @@ import { Bed, Bath, Maximize, X, Building2, ArrowRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { type ParsedFilters } from "@/components/search/FilterChips";
 import { toTitleCase } from "@/lib/utils";
+import { buildPropertyUrl } from "@/lib/propertyUrl";
 
 interface SearchResult {
   id: string;
@@ -15,6 +16,7 @@ interface SearchResult {
   price: number | null;
   rental_price: number | null;
   transaction_type: string;
+  property_type?: string | null;
   bedrooms: number | null;
   bathrooms: number | null;
   area_total: number | null;
@@ -98,7 +100,7 @@ const SearchResultsPanel = ({ results, loading, visible, onClose, query = "" }: 
                 transition={{ delay: i * 0.08, duration: 0.3, ease: "easeOut" }}
                 onClick={() => {
                   onClose();
-                  navigate(`/imovel/${result.id}`);
+                  navigate(buildPropertyUrl(result));
                 }}
                 className="w-full flex gap-3 p-2 rounded-sm hover:bg-foreground/[0.03] transition-colors text-left group relative"
               >

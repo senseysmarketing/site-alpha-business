@@ -3,12 +3,20 @@ import { Sparkles, X } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toTitleCase } from "@/lib/utils";
+import { buildPropertyUrl } from "@/lib/propertyUrl";
 
 interface Property {
   id: string;
+  code?: string | null;
   title: string;
   photo: string | null;
   condominium: string | null;
+  neighborhood?: string | null;
+  city?: string | null;
+  property_type?: string | null;
+  transaction_type?: string | null;
+  bedrooms?: number | null;
+  area_total?: number | null;
   price: number | null;
 }
 
@@ -65,7 +73,7 @@ const ConciergeSidebar = ({ suggestions, visible }: ConciergeSidebarProps) => {
           {suggestions.slice(0, 3).map((p) => (
             <button
               key={p.id}
-              onClick={() => navigate(`/imovel/${p.id}`)}
+              onClick={() => navigate(buildPropertyUrl(p))}
               className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors text-left"
             >
               <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-muted">

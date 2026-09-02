@@ -15,6 +15,7 @@ interface SearchResult {
   price: number | null;
   rental_price: number | null;
   transaction_type: string;
+  property_type?: string | null;
   bedrooms: number | null;
   bathrooms: number | null;
   parking_spots?: number | null;

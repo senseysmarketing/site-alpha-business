@@ -12,6 +12,7 @@ const PAGE_SIZE = 1000;
 
 const PROPERTY_COLUMNS = [
   "id",
+  "code",
   "title",
   "description",
   "condominium",
@@ -108,6 +109,82 @@ function stripMarkup(value) {
 
 function cleanText(value) {
   return stripMarkup(value ?? "").replace(/\s+/g, " ").trim();
+}
+
+function slugify(value, fallback = "imovel") {
+  const slug = String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/&/g, " e ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .replace(/-{2,}/g, "-");
+
+  return slug || fallback;
+}
+
+function normalizePropertyCode(code) {
+  return String(code ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]/gi, "")
+    .toUpperCase();
+}
+
+function buildPropertyCategory(property) {
+  const type = slugify(property.property_type, "imovel");
+  const transaction = String(property.transaction_type ?? "").toLowerCase();
+
+  if (transaction === "locacao" || transaction === "aluguel") {
+    return `${type}-para-locacao`;
+  }
+
+  if (transaction === "ambos") {
+    return `${type}-venda-e-locacao`;
+  }
+
+  return `${type}-a-venda`;
+}
+
+function buildCondominiumSlug(property) {
+  return slugify(
+    property.condominium || property.neighborhood || property.city,
+    "alphaville",
+  );
+}
+
+function numberToken(value, suffix) {
+  if (value == null || value === "") return "";
+  const parsed = typeof value === "number" ? value : Number(String(value).replace(",", "."));
+  if (!Number.isFinite(parsed) || parsed <= 0) return "";
+  return `${Math.round(parsed)}${suffix}`;
+}
+
+function buildPropertyUrl(property) {
+  const code = normalizePropertyCode(property.code);
+  if (!code && property.id) {
+    return `/imovel/${property.id}`;
+  }
+
+  const location = property.condominium || property.neighborhood || property.city || "";
+  const titleSlug = slugify(property.title, "");
+  const titleHasRooms = /\b(suite|suites|quarto|quartos|dormitorio|dormitorios)\b/.test(titleSlug);
+  const titleHasArea = /\d+\s*m2|\d+m2/.test(titleSlug);
+  const pieces = [
+    property.title,
+    titleHasRooms ? "" : numberToken(property.bedrooms, "suites"),
+    titleHasArea ? "" : numberToken(property.area_total, "m2"),
+    location,
+    property.city,
+  ].filter(Boolean);
+  const base = slugify(pieces.join(" "), "imovel");
+  const codeSlug = slugify(code, "");
+  const slug = codeSlug && !base.endsWith(`-${codeSlug}`) && base !== codeSlug
+    ? `${base}-${codeSlug}`
+    : base;
+
+  return `/imovel/${buildPropertyCategory(property)}/${buildCondominiumSlug(property)}/${slug}`;
 }
 
 function truncate(value, maxLength = 220) {
@@ -215,15 +292,57 @@ function propertyDescription(property) {
 
 function propertyMeta(property) {
   const title = titleCaseFallback(property.title) || "Imovel exclusivo em Alphaville";
-  const route = `/imovel/${encodeURIComponent(property.id)}`;
+  const route = buildPropertyUrl(property);
   const image = absoluteUrl(firstMediaUrl(property.photos));
+  const description = propertyDescription(property);
+  const canonical = `${siteUrl()}${route}`;
 
   return {
     title: `${title} | Alpha Business`,
-    description: propertyDescription(property),
-    canonical: `${siteUrl()}${route}`,
+    description,
+    canonical,
     ogType: "website",
     image,
+    jsonLd: propertyJsonLd(property, { title, description, canonical, image }),
+  };
+}
+
+function propertyJsonLd(property, meta) {
+  const transaction = cleanText(property.transaction_type).toLocaleLowerCase("pt-BR");
+  const numericPrice = transaction === "locacao" || transaction === "aluguel"
+    ? property.rental_price
+    : property.price;
+  const hasPrice = typeof numericPrice === "number" && Number.isFinite(numericPrice);
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "RealEstateListing",
+    name: meta.title,
+    description: meta.description,
+    url: meta.canonical,
+    image: meta.image,
+    identifier: normalizePropertyCode(property.code) || property.id,
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: cleanText(property.city) || undefined,
+      addressRegion: "SP",
+      addressCountry: "BR",
+    },
+    floorSize: property.area_total
+      ? {
+          "@type": "QuantitativeValue",
+          value: property.area_total,
+          unitCode: "MTK",
+        }
+      : undefined,
+    numberOfRooms: property.bedrooms || undefined,
+    offers: {
+      "@type": "Offer",
+      url: meta.canonical,
+      price: hasPrice ? numericPrice : undefined,
+      priceCurrency: hasPrice ? "BRL" : undefined,
+      availability: "https://schema.org/InStock",
+    },
   };
 }
 
@@ -248,7 +367,7 @@ function metaBlock(meta) {
   const canonical = escapeHtml(meta.canonical);
   const image = escapeHtml(meta.image);
 
-  return [
+  const tags = [
     `    <title>${title}</title>`,
     `    <meta name="description" content="${description}" />`,
     `    <link rel="canonical" href="${canonical}" />`,
@@ -261,7 +380,14 @@ function metaBlock(meta) {
     `    <meta name="twitter:title" content="${title}" />`,
     `    <meta name="twitter:description" content="${description}" />`,
     `    <meta name="twitter:image" content="${image}" />`,
-  ].join("\n");
+  ];
+
+  if (meta.jsonLd) {
+    const json = JSON.stringify(meta.jsonLd).replace(/</g, "\\u003c");
+    tags.push(`    <script type="application/ld+json">${json}</script>`);
+  }
+
+  return tags.join("\n");
 }
 
 function removeManagedMeta(html) {
@@ -283,6 +409,7 @@ function removeManagedMeta(html) {
   return html
     .replace(/\s*<title>[\s\S]*?<\/title>\s*/i, "\n")
     .replace(/\s*<link\b(?=[^>]*\brel=["']canonical["'])[^>]*>\s*/gi, "\n")
+    .replace(/\s*<script\b(?=[^>]*\btype=["']application\/ld\+json["'])[^>]*>[\s\S]*?<\/script>\s*/gi, "\n")
     .replace(new RegExp(`\\s*<meta\\b(?=[^>]*\\bname=["'](?:${managedMetaNames})["'])[^>]*>\\s*`, "gi"), "\n")
     .replace(new RegExp(`\\s*<meta\\b(?=[^>]*\\bproperty=["'](?:${managedMetaProperties})["'])[^>]*>\\s*`, "gi"), "\n")
     .replace(/\n{3,}/g, "\n\n");
@@ -298,12 +425,51 @@ function withMeta(html, meta) {
   return cleanedHtml.replace("</head>", `${metaBlock(meta)}\n  </head>`);
 }
 
-function writeRouteHtml(routeType, routeId, html) {
-  const safeRouteId = encodeURIComponent(routeId.trim());
-  const outputDir = path.join(DIST_DIR, routeType, safeRouteId);
+function writeRouteHtml(routePath, html) {
+  const segments = routePath
+    .split("/")
+    .filter(Boolean)
+    .map((segment) => encodeURIComponent(segment));
+  const outputDir = path.join(DIST_DIR, ...segments);
+  const fileName = segments.at(-1);
+
   mkdirSync(outputDir, { recursive: true });
   writeFileSync(path.join(outputDir, "index.html"), html, "utf8");
-  writeFileSync(path.join(DIST_DIR, routeType, `${safeRouteId}.html`), html, "utf8");
+  if (fileName && segments.length > 1) {
+    writeFileSync(path.join(DIST_DIR, ...segments.slice(0, -1), `${fileName}.html`), html, "utf8");
+  }
+}
+
+function sitemapUrl(loc, priority = "0.7") {
+  return [
+    "  <url>",
+    `    <loc>${escapeHtml(`${siteUrl()}${loc}`)}</loc>`,
+    "    <changefreq>weekly</changefreq>",
+    `    <priority>${priority}</priority>`,
+    "  </url>",
+  ].join("\n");
+}
+
+function writeSitemap(properties, posts) {
+  const urls = [
+    sitemapUrl("/", "1.0"),
+    sitemapUrl("/busca", "0.8"),
+    sitemapUrl("/blog", "0.7"),
+    ...properties.map((property) => sitemapUrl(buildPropertyUrl(property), "0.9")),
+    ...posts
+      .filter((post) => cleanText(post.slug))
+      .map((post) => sitemapUrl(`/blog/${encodeURIComponent(post.slug)}`, "0.6")),
+  ];
+
+  const xml = [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+    ...urls,
+    "</urlset>",
+    "",
+  ].join("\n");
+
+  writeFileSync(path.join(DIST_DIR, "sitemap.xml"), xml, "utf8");
 }
 
 async function main() {
@@ -351,15 +517,20 @@ async function main() {
   );
 
   for (const property of properties) {
-    writeRouteHtml("imovel", property.id, withMeta(baseHtml, propertyMeta(property)));
+    const html = withMeta(baseHtml, propertyMeta(property));
+    writeRouteHtml(buildPropertyUrl(property), html);
+    writeRouteHtml(`/imovel/${property.id}`, html);
   }
 
   for (const post of posts) {
     if (!cleanText(post.slug)) continue;
-    writeRouteHtml("blog", post.slug, withMeta(baseHtml, blogMeta(post)));
+    writeRouteHtml(`/blog/${post.slug}`, withMeta(baseHtml, blogMeta(post)));
   }
 
+  writeSitemap(properties, posts);
+
   console.log(`Generated Open Graph HTML pages: ${properties.length} properties, ${posts.length} blog posts.`);
+  console.log("Generated sitemap.xml with friendly property URLs.");
 }
 
 main().catch((error) => {

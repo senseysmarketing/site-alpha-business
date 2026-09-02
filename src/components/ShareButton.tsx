@@ -4,7 +4,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { toast } from "sonner";
 
 interface ShareButtonProps {
-  /** Path to the property page, e.g. `/imovel/123` */
+  /** Path to the public page, preferably the canonical property URL. */
   path: string;
   title: string;
   className?: string;
