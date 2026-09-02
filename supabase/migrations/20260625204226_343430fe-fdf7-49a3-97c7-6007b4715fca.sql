@@ -84,7 +84,16 @@ DO $$
 DECLARE
   v_admin uuid;
 BEGIN
-  SELECT user_id INTO v_admin FROM public.user_roles WHERE role = 'admin' ORDER BY user_id LIMIT 1;
+  SELECT ur.user_id INTO v_admin
+  FROM public.user_roles ur
+  WHERE ur.role = 'admin'
+    AND EXISTS (
+      SELECT 1
+      FROM auth.users au
+      WHERE au.id = ur.user_id
+    )
+  ORDER BY ur.user_id
+  LIMIT 1;
   IF v_admin IS NOT NULL THEN
     UPDATE public.crm_settings SET fallback_user_id = v_admin WHERE fallback_user_id IS NULL;
     UPDATE public.leads
