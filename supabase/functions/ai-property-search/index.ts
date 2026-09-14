@@ -6,6 +6,7 @@
 //   { query: string }                                              -> legacy free text
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { buildPropertyUrl } from "../_shared/property-url.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -127,82 +128,6 @@ const norm = (s: unknown) =>
     .replace(/[^\p{L}\p{N}\s]/gu, " ")
     .replace(/\s+/g, " ")
     .trim();
-
-const slugify = (value: unknown, fallback = "imovel") => {
-  const slug = String(value ?? "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/&/g, " e ")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .replace(/-{2,}/g, "-");
-  return slug || fallback;
-};
-
-const normalizePropertyCode = (code: unknown) =>
-  String(code ?? "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]/gi, "")
-    .toUpperCase();
-
-const isLegacyPropertyId = (value: unknown) =>
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(value ?? ""));
-
-const buildPropertyUrl = (property: {
-  id?: string | null;
-  code?: string | null;
-  title?: string | null;
-  property_type?: string | null;
-  transaction_type?: string | null;
-  condominium?: string | null;
-  neighborhood?: string | null;
-  city?: string | null;
-  area_total?: number | string | null;
-  bedrooms?: number | string | null;
-  region?: string | null;
-}) => {
-  const code = normalizePropertyCode(property.code);
-  if (!code && property.id && isLegacyPropertyId(property.id)) {
-    return `/imovel/${property.id}`;
-  }
-
-  const pluralByType: Record<string, string> = {
-    apartamento: "apartamentos",
-    apartamentos: "apartamentos",
-    casa: "casas",
-    casas: "casas",
-    cobertura: "coberturas",
-    coberturas: "coberturas",
-    galpao: "galpoes",
-    galpoes: "galpoes",
-    terreno: "terrenos",
-    terrenos: "terrenos",
-  };
-  const type = pluralByType[slugify(property.property_type, "")] ?? "imoveis";
-  const regionSource = slugify(
-    [property.region, property.condominium, property.neighborhood, property.city]
-      .filter(Boolean)
-      .join(" "),
-    "",
-  );
-  const region = ["granja-viana", "cotia", "carapicuiba"].some((term) => regionSource.includes(term))
-    ? "granja-viana"
-    : "alphaville";
-  const category = `${type}-em-${region}`;
-  const condominium = slugify(
-    property.condominium || property.neighborhood || property.city,
-    "alphaville",
-  );
-  const base = slugify(property.title, "imovel");
-  const codeSlug = slugify(code, "");
-  const slug = codeSlug && !base.endsWith(`-${codeSlug}`) && base !== codeSlug
-    ? `${base}-${codeSlug}`
-    : base;
-
-  return `/imovel/${category}/${condominium}/${slug}`;
-};
 
 // ---- Numerais por extenso (pt-BR) -> dígitos ----
 const NUM_UNIT: Record<string, number> = { um: 1, uma: 1, dois: 2, duas: 2, tres: 3, quatro: 4, cinco: 5, seis: 6, sete: 7, oito: 8, nove: 9 };
