@@ -141,19 +141,39 @@ function normalizePropertyCode(code) {
     .toUpperCase();
 }
 
+function isLegacyPropertyId(value) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    String(value ?? ""),
+  );
+}
+
+function buildPropertySeoRegion(property) {
+  const location = slugify(
+    [property.region, property.condominium, property.neighborhood, property.city]
+      .filter(Boolean)
+      .join(" "),
+    "",
+  );
+  return ["granja-viana", "cotia", "carapicuiba"].some((term) => location.includes(term))
+    ? "granja-viana"
+    : "alphaville";
+}
+
 function buildPropertyCategory(property) {
-  const type = slugify(property.property_type, "imovel");
-  const transaction = String(property.transaction_type ?? "").toLowerCase();
-
-  if (transaction === "locacao" || transaction === "aluguel") {
-    return `${type}-para-locacao`;
-  }
-
-  if (transaction === "ambos") {
-    return `${type}-venda-e-locacao`;
-  }
-
-  return `${type}-a-venda`;
+  const pluralByType = {
+    apartamento: "apartamentos",
+    apartamentos: "apartamentos",
+    casa: "casas",
+    casas: "casas",
+    cobertura: "coberturas",
+    coberturas: "coberturas",
+    galpao: "galpoes",
+    galpoes: "galpoes",
+    terreno: "terrenos",
+    terrenos: "terrenos",
+  };
+  const type = pluralByType[slugify(property.property_type, "")] ?? "imoveis";
+  return `${type}-em-${buildPropertySeoRegion(property)}`;
 }
 
 function buildCondominiumSlug(property) {
@@ -163,31 +183,13 @@ function buildCondominiumSlug(property) {
   );
 }
 
-function numberToken(value, suffix) {
-  if (value == null || value === "") return "";
-  const parsed = typeof value === "number" ? value : Number(String(value).replace(",", "."));
-  if (!Number.isFinite(parsed) || parsed <= 0) return "";
-  return `${Math.round(parsed)}${suffix}`;
-}
-
 function buildPropertyUrl(property) {
   const code = normalizePropertyCode(property.code);
-  if (!code && property.id) {
+  if (!code && property.id && isLegacyPropertyId(property.id)) {
     return `/imovel/${property.id}`;
   }
 
-  const location = property.condominium || property.neighborhood || property.city || "";
-  const titleSlug = slugify(property.title, "");
-  const titleHasRooms = /\b(suite|suites|quarto|quartos|dormitorio|dormitorios)\b/.test(titleSlug);
-  const titleHasArea = /\d+\s*m2|\d+m2/.test(titleSlug);
-  const pieces = [
-    property.title,
-    titleHasRooms ? "" : numberToken(property.bedrooms, "suites"),
-    titleHasArea ? "" : numberToken(property.area_total, "m2"),
-    location,
-    property.city,
-  ].filter(Boolean);
-  const base = slugify(pieces.join(" "), "imovel");
+  const base = slugify(property.title, "imovel");
   const codeSlug = slugify(code, "");
   const slug = codeSlug && !base.endsWith(`-${codeSlug}`) && base !== codeSlug
     ? `${base}-${codeSlug}`

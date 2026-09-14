@@ -6,6 +6,7 @@
 //   { query: string }                                              -> legacy free text
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { buildPropertyUrl } from "../_shared/property-url.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -127,81 +128,6 @@ const norm = (s: unknown) =>
     .replace(/[^\p{L}\p{N}\s]/gu, " ")
     .replace(/\s+/g, " ")
     .trim();
-
-const slugify = (value: unknown, fallback = "imovel") => {
-  const slug = String(value ?? "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/&/g, " e ")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .replace(/-{2,}/g, "-");
-  return slug || fallback;
-};
-
-const normalizePropertyCode = (code: unknown) =>
-  String(code ?? "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]/gi, "")
-    .toUpperCase();
-
-const numberToken = (value: number | string | null | undefined, suffix: string) => {
-  if (value == null || value === "") return "";
-  const parsed = typeof value === "number" ? value : Number(String(value).replace(",", "."));
-  if (!Number.isFinite(parsed) || parsed <= 0) return "";
-  return `${Math.round(parsed)}${suffix}`;
-};
-
-const buildPropertyUrl = (property: {
-  id?: string | null;
-  code?: string | null;
-  title?: string | null;
-  property_type?: string | null;
-  transaction_type?: string | null;
-  condominium?: string | null;
-  neighborhood?: string | null;
-  city?: string | null;
-  area_total?: number | string | null;
-  bedrooms?: number | string | null;
-}) => {
-  const code = normalizePropertyCode(property.code);
-  if (!code && property.id) {
-    return `/imovel/${property.id}`;
-  }
-
-  const type = slugify(property.property_type, "imovel");
-  const transaction = String(property.transaction_type ?? "").toLowerCase();
-  const category = transaction === "locacao" || transaction === "aluguel"
-    ? `${type}-para-locacao`
-    : transaction === "ambos"
-      ? `${type}-venda-e-locacao`
-      : `${type}-a-venda`;
-  const condominium = slugify(
-    property.condominium || property.neighborhood || property.city,
-    "alphaville",
-  );
-  const titleSlug = slugify(property.title, "");
-  const titleHasRooms = /\b(suite|suites|quarto|quartos|dormitorio|dormitorios)\b/.test(titleSlug);
-  const titleHasArea = /\d+\s*m2|\d+m2/.test(titleSlug);
-  const base = slugify(
-    [
-      property.title,
-      titleHasRooms ? "" : numberToken(property.bedrooms, "suites"),
-      titleHasArea ? "" : numberToken(property.area_total, "m2"),
-      property.condominium || property.neighborhood || property.city || "",
-      property.city,
-    ].filter(Boolean).join(" "),
-    "imovel",
-  );
-  const codeSlug = slugify(code, "");
-  const slug = codeSlug && !base.endsWith(`-${codeSlug}`) && base !== codeSlug
-    ? `${base}-${codeSlug}`
-    : base;
-
-  return `/imovel/${category}/${condominium}/${slug}`;
-};
 
 // ---- Numerais por extenso (pt-BR) -> dígitos ----
 const NUM_UNIT: Record<string, number> = { um: 1, uma: 1, dois: 2, duas: 2, tres: 3, quatro: 4, cinco: 5, seis: 6, sete: 7, oito: 8, nove: 9 };

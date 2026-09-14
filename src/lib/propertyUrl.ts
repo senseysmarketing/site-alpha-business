@@ -14,6 +14,7 @@ export interface PropertyUrlSource {
   city?: string | null;
   area_total?: number | string | null;
   bedrooms?: number | string | null;
+  region?: string | null;
 }
 
 export function slugify(value: unknown, fallback = "imovel"): string {
@@ -49,18 +50,34 @@ export function extractPropertyCodeFromSlug(slug: unknown): string | null {
 }
 
 export function buildPropertyCategory(property: PropertyUrlSource): string {
-  const type = slugify(property.property_type, "imovel");
-  const transaction = String(property.transaction_type ?? "").toLowerCase();
+  const type = slugify(property.property_type, "");
+  const pluralByType: Record<string, string> = {
+    apartamento: "apartamentos",
+    apartamentos: "apartamentos",
+    casa: "casas",
+    casas: "casas",
+    cobertura: "coberturas",
+    coberturas: "coberturas",
+    galpao: "galpoes",
+    galpoes: "galpoes",
+    terreno: "terrenos",
+    terrenos: "terrenos",
+  };
+  return `${pluralByType[type] ?? "imoveis"}-em-${buildPropertySeoRegion(property)}`;
+}
 
-  if (transaction === "locacao" || transaction === "aluguel") {
-    return `${type}-para-locacao`;
-  }
+export function buildPropertySeoRegion(property: PropertyUrlSource): string {
+  const location = slugify(
+    [property.region, property.condominium, property.neighborhood, property.city]
+      .filter(Boolean)
+      .join(" "),
+    "",
+  );
 
-  if (transaction === "ambos") {
-    return `${type}-venda-e-locacao`;
-  }
-
-  return `${type}-a-venda`;
+  const isGranjaViana = ["granja-viana", "cotia", "carapicuiba"].some((term) =>
+    location.includes(term),
+  );
+  return isGranjaViana ? "granja-viana" : "alphaville";
 }
 
 export function buildCondominiumSlug(property: PropertyUrlSource): string {
@@ -70,28 +87,9 @@ export function buildCondominiumSlug(property: PropertyUrlSource): string {
   );
 }
 
-function numberToken(value: number | string | null | undefined, suffix: string): string {
-  if (value == null || value === "") return "";
-  const parsed = typeof value === "number" ? value : Number(String(value).replace(",", "."));
-  if (!Number.isFinite(parsed) || parsed <= 0) return "";
-  return `${Math.round(parsed)}${suffix}`;
-}
-
 function buildMainSlug(property: PropertyUrlSource): string {
   const code = normalizePropertyCode(property.code);
-  const location = property.condominium || property.neighborhood || property.city || "";
-  const titleSlug = slugify(property.title, "");
-  const titleHasRooms = /\b(suite|suites|quarto|quartos|dormitorio|dormitorios)\b/.test(titleSlug);
-  const titleHasArea = /\d+\s*m2|\d+m2/.test(titleSlug);
-  const pieces = [
-    property.title,
-    titleHasRooms ? "" : numberToken(property.bedrooms, "suites"),
-    titleHasArea ? "" : numberToken(property.area_total, "m2"),
-    location,
-    property.city,
-  ].filter(Boolean);
-
-  const base = slugify(pieces.join(" "), "imovel");
+  const base = slugify(property.title, "imovel");
   const codeSlug = slugify(code, "");
 
   if (!codeSlug) {

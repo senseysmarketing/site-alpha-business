@@ -2,6 +2,7 @@ import { ArrowRight, Hash, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { buildPropertyUrl } from "@/lib/propertyUrl";
 
 interface Suggestion {
   id: string;
@@ -9,6 +10,11 @@ interface Suggestion {
   title: string;
   price: number | null;
   rental_price: number | null;
+  property_type: string;
+  transaction_type: string;
+  condominium: string | null;
+  neighborhood: string | null;
+  city: string | null;
 }
 
 const brl = new Intl.NumberFormat("pt-BR", {
@@ -58,7 +64,7 @@ const PropertyCodeAutocomplete = ({ value, onChange, onSubmit }: Props) => {
           defaultInflight = (async () => {
             const { data } = await supabase
               .from("properties")
-              .select("id, code, title, price, rental_price")
+              .select("id, code, title, price, rental_price, property_type, transaction_type, condominium, neighborhood, city")
               .eq("status", "ativo")
               .order("is_featured", { ascending: false })
               .order("created_at", { ascending: false })
@@ -92,7 +98,7 @@ const PropertyCodeAutocomplete = ({ value, onChange, onSubmit }: Props) => {
       const safe = term.replace(/[%,()]/g, "");
       const { data } = await supabase
         .from("properties")
-        .select("id, code, title, price, rental_price")
+        .select("id, code, title, price, rental_price, property_type, transaction_type, condominium, neighborhood, city")
         .eq("status", "ativo")
         .or(`code.ilike.%${safe}%,title.ilike.%${safe}%`)
         .order("code", { ascending: true })
@@ -112,7 +118,7 @@ const PropertyCodeAutocomplete = ({ value, onChange, onSubmit }: Props) => {
   const select = useCallback(
     (item: Suggestion) => {
       setOpen(false);
-      navigate(`/imovel/${item.id}`);
+      navigate(buildPropertyUrl(item));
     },
     [navigate],
   );
