@@ -147,12 +147,8 @@ const normalizePropertyCode = (code: unknown) =>
     .replace(/[^a-z0-9]/gi, "")
     .toUpperCase();
 
-const numberToken = (value: number | string | null | undefined, suffix: string) => {
-  if (value == null || value === "") return "";
-  const parsed = typeof value === "number" ? value : Number(String(value).replace(",", "."));
-  if (!Number.isFinite(parsed) || parsed <= 0) return "";
-  return `${Math.round(parsed)}${suffix}`;
-};
+const isLegacyPropertyId = (value: unknown) =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(value ?? ""));
 
 const buildPropertyUrl = (property: {
   id?: string | null;
@@ -165,36 +161,41 @@ const buildPropertyUrl = (property: {
   city?: string | null;
   area_total?: number | string | null;
   bedrooms?: number | string | null;
+  region?: string | null;
 }) => {
   const code = normalizePropertyCode(property.code);
-  if (!code && property.id) {
+  if (!code && property.id && isLegacyPropertyId(property.id)) {
     return `/imovel/${property.id}`;
   }
 
-  const type = slugify(property.property_type, "imovel");
-  const transaction = String(property.transaction_type ?? "").toLowerCase();
-  const category = transaction === "locacao" || transaction === "aluguel"
-    ? `${type}-para-locacao`
-    : transaction === "ambos"
-      ? `${type}-venda-e-locacao`
-      : `${type}-a-venda`;
+  const pluralByType: Record<string, string> = {
+    apartamento: "apartamentos",
+    apartamentos: "apartamentos",
+    casa: "casas",
+    casas: "casas",
+    cobertura: "coberturas",
+    coberturas: "coberturas",
+    galpao: "galpoes",
+    galpoes: "galpoes",
+    terreno: "terrenos",
+    terrenos: "terrenos",
+  };
+  const type = pluralByType[slugify(property.property_type, "")] ?? "imoveis";
+  const regionSource = slugify(
+    [property.region, property.condominium, property.neighborhood, property.city]
+      .filter(Boolean)
+      .join(" "),
+    "",
+  );
+  const region = ["granja-viana", "cotia", "carapicuiba"].some((term) => regionSource.includes(term))
+    ? "granja-viana"
+    : "alphaville";
+  const category = `${type}-em-${region}`;
   const condominium = slugify(
     property.condominium || property.neighborhood || property.city,
     "alphaville",
   );
-  const titleSlug = slugify(property.title, "");
-  const titleHasRooms = /\b(suite|suites|quarto|quartos|dormitorio|dormitorios)\b/.test(titleSlug);
-  const titleHasArea = /\d+\s*m2|\d+m2/.test(titleSlug);
-  const base = slugify(
-    [
-      property.title,
-      titleHasRooms ? "" : numberToken(property.bedrooms, "suites"),
-      titleHasArea ? "" : numberToken(property.area_total, "m2"),
-      property.condominium || property.neighborhood || property.city || "",
-      property.city,
-    ].filter(Boolean).join(" "),
-    "imovel",
-  );
+  const base = slugify(property.title, "imovel");
   const codeSlug = slugify(code, "");
   const slug = codeSlug && !base.endsWith(`-${codeSlug}`) && base !== codeSlug
     ? `${base}-${codeSlug}`
