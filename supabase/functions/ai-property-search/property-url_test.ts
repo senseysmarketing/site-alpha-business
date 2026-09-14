@@ -1,5 +1,5 @@
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { buildPropertyUrl } from "./property-url.ts";
+import { buildPropertyUrl } from "../_shared/property-url.ts";
 
 Deno.test("gera a mesma URL canônica de CA1020 usada no frontend", () => {
   assertEquals(
