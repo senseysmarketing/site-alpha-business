@@ -9,7 +9,7 @@ O Lovable oferece duas superfícies relacionadas, porém diferentes:
 1. **Publicação nativa:** o site publicado é um snapshot. Mudanças posteriores só entram em produção por **Publish changes** ou por um pedido de publicação no chat. Não há webhook de rebuild documentado. [Publicação](https://docs.lovable.dev/features/publish) · [Hospedagem](https://docs.lovable.dev/features/hosting)
 2. **Lovable MCP Server:** disponibiliza a ferramenta `deploy_project`, mas usa OAuth de usuário. Clientes hospedados precisam ter o endereço de retorno aprovado pelo Lovable. A documentação não oferece credencial de serviço, client credentials ou token pessoal para uma Edge Function atuar de forma autônoma. [Lovable MCP Server](https://docs.lovable.dev/integrations/lovable-mcp-server)
 
-Portanto, o fluxo exato abaixo **não está disponível como integração nativa pronta**:
+Portanto, o flux exato abaixo **não está disponível como integração nativa pronta**:
 
 ```text
 Supabase → Edge Function → deploy hook Lovable → build → produção
