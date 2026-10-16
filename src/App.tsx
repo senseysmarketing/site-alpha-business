@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import FloatingWhatsApp from "./components/FloatingWhatsApp";
 import MetaPixelRouteTracker from "./components/MetaPixelRouteTracker";
+import RouteScrollManager from "./components/RouteScrollManager";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
@@ -100,6 +101,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <RouteScrollManager />
           <AnimatedRoutes />
           <FloatingWhatsApp />
         </BrowserRouter>
