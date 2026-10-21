@@ -2,6 +2,46 @@ import { createClient } from "@supabase/supabase-js";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
+import { createHash } from "node:crypto";
+import sharp from "sharp";
+
+/* ---------- Lightweight share images (WhatsApp drops previews > ~600 KB) ---------- */
+const OG_IMAGE_MAP = new Map();
+const OG_TIME_BUDGET_MS = Number(process.env.OG_IMAGE_BUDGET_MS || 150000);
+
+async function optimizeShareImage(sourceUrl) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15000);
+  try {
+    const res = await fetch(sourceUrl, { signal: controller.signal });
+    if (!res.ok) return;
+    const input = Buffer.from(await res.arrayBuffer());
+    const output = await sharp(input)
+      .rotate()
+      .resize(1200, 630, { fit: "cover", position: "attention" })
+      .jpeg({ quality: 78, mozjpeg: true })
+      .toBuffer();
+    const name = createHash("sha1").update(sourceUrl).digest("hex").slice(0, 16);
+    const dir = path.join(DIST_DIR, "og");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(path.join(dir, `${name}.jpg`), output);
+    OG_IMAGE_MAP.set(sourceUrl, `${siteUrl()}/og/${name}.jpg`);
+  } catch {
+    // keep original URL as fallback
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function optimizeShareImages(urls) {
+  const queue = [...new Set(urls)].filter((u) => u && u !== DEFAULT_IMAGE && /^https?:/i.test(u));
+  const deadline = Date.now() + OG_TIME_BUDGET_MS;
+  const worker = async () => {
+    while (queue.length && Date.now() < deadline) await optimizeShareImage(queue.shift());
+  };
+  await Promise.all(Array.from({ length: 12 }, worker));
+  console.log(`Optimized ${OG_IMAGE_MAP.size} share images (${queue.length} skipped).`);
+}
 
 const DIST_DIR = path.resolve("dist");
 const INDEX_HTML_PATH = path.join(DIST_DIR, "index.html");
@@ -376,7 +416,8 @@ function metaBlock(meta) {
   const title = escapeHtml(meta.title);
   const description = escapeHtml(meta.description);
   const canonical = escapeHtml(meta.canonical);
-  const image = escapeHtml(meta.image);
+  const optimized = OG_IMAGE_MAP.get(meta.image);
+  const image = escapeHtml(optimized || meta.image);
 
   const tags = [
     `    <title>${title}</title>`,
@@ -387,6 +428,14 @@ function metaBlock(meta) {
     `    <meta property="og:title" content="${title}" />`,
     `    <meta property="og:description" content="${description}" />`,
     `    <meta property="og:image" content="${image}" />`,
+    `    <meta property="og:image:secure_url" content="${image}" />`,
+    ...(optimized
+      ? [
+          `    <meta property="og:image:type" content="image/jpeg" />`,
+          `    <meta property="og:image:width" content="1200" />`,
+          `    <meta property="og:image:height" content="630" />`,
+        ]
+      : []),
     `    <meta name="twitter:card" content="summary_large_image" />`,
     `    <meta name="twitter:title" content="${title}" />`,
     `    <meta name="twitter:description" content="${description}" />`,
@@ -415,6 +464,10 @@ function removeManagedMeta(html) {
     "og:title",
     "og:description",
     "og:image",
+    "og:image:secure_url",
+    "og:image:type",
+    "og:image:width",
+    "og:image:height",
   ].join("|");
 
   return html
@@ -751,6 +804,11 @@ async function main() {
       `Prerender cap reached: ${properties.length}/${allProperties.length} properties rendered (MAX_PRERENDER_PAGES=${MAX_PRERENDER_PAGES}).`
     );
   }
+
+  await optimizeShareImages([
+    ...posts.map((post) => absoluteUrl(post.cover_image)),
+    ...properties.map((property) => absoluteUrl(firstMediaUrl(property.photos))),
+  ]);
 
   for (const [index, property] of properties.entries()) {
     const related = properties
