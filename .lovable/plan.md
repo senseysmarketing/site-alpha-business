@@ -15,7 +15,7 @@ Portanto, o flux exato abaixo **não está disponível como integração nativa 
 Supabase → Edge Function → deploy hook Lovable → build → produção
 ```
 
-## Respostas objetivas
+## Respostas objetivas abc
 
 ### Existe API, webhook ou deploy hook oficial?
 
