@@ -4,7 +4,7 @@
 
 Ao salvar a edição de um lead, o modal pede ao banco que devolva o lead já com os dados do responsável através de um relacionamento direto entre a tabela de leads e a tabela de perfis da equipe. Esse relacionamento não existe no banco: o campo de responsável do lead aponta para os usuários de autenticação, não para os perfis da equipe. Por isso o banco responde com "Could not find a relationship ... 'team_profiles'" e a alteração aparece como erro — mesmo o telefone tendo sido atualizado.
 
-O restante do CRM não sofre disso porque a tela de leads busca os perfis da equipe separadamente e cruza os dados no próprio aplicativo.
+O restante do CRM não sofre disso porque a tela de leads busca os perfis da equipe separadamente e cruza os dados no próprio aplicativo. ABC
 
 ## Correção
 
