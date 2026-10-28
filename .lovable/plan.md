@@ -1,16 +1,17 @@
 # Finalizar prévias ao vivo (WhatsApp) via Cloudflare
 
 ## Situação verificada agora
-- O domínio www.rafaelalbuquerque.com.br está conectado e no ar.
-- Porém os servidores de DNS públicos ainda são do Registro.br (`a.sec.dns.br`, `c.sec.dns.br`), não da Cloudflare. Ou seja: a conta Cloudflare existe, mas o domínio ainda não passa por ela. Sem isso o Worker de prévias não roda.
+- O domínio já passa pela Cloudflare (servidores `jasper` e `nia.ns.cloudflare.com`) e o site continua no ar.
+- Os registros do site ainda aparecem sem o "proxy laranja" da Cloudflare. Sem ele, o robô que monta as prévias não é acionado.
 
-## Passos
-1. **Você (Registro.br):** em "DNS" do domínio, trocar os servidores pelos dois que a Cloudflare mostra ao adicionar o site (ex.: `xxx.ns.cloudflare.com`). Antes, conferir na Cloudflare que existem os registros: A `@` → 185.158.133.1, A `www` → 185.158.133.1, TXT `_lovable` e `_lovable.www` (valores atuais), e e-mail (MX/SPF/DKIM) se houver.
-2. **Aguardar** a Cloudflare marcar o site como "Active" (minutos a algumas horas). Eu confirmo pela verificação de domínio.
-3. **Eu (com sua aprovação):** conectar a Cloudflare ao projeto e publicar o Worker `cloudflare/og-worker.js` com as rotas `rafaelalbuquerque.com.br/imovel/*`, `/blog/*`, `/sitemap.xml` (e as mesmas para `www.`). Mantém proxy laranja nos registros A; SSL "Full".
-4. **Teste:** abrir um imóvel e uma notícia recém-editados e confirmar que título, preço e foto vêm atualizados sem novo deploy (cabeçalho `x-og-source: live`); validar no depurador do Facebook/WhatsApp.
+## Passos (você já autorizou)
+1. Conectar sua conta Cloudflare ao projeto (aparece um cartão para escolher/criar a conexão com um token).
+2. Conferir os registros do domínio (A `@` e `www` → 185.158.133.1, TXT `_lovable`, e-mail) e ligar o proxy laranja nos dois registros A. SSL em "Full".
+3. Publicar o robô de prévias com as rotas `/imovel/*`, `/blog/*` e `/sitemap.xml`, para `rafaelalbuquerque.com.br` e `www.`.
+4. Testar um imóvel e uma notícia: título, preço e foto atualizados sem novo deploy; conferir que o site e o painel continuam abrindo normalmente.
 
 ## Detalhes técnicos
-- Token Cloudflare necessário: Zone Read, DNS Read, Workers Scripts Edit, Workers Routes Edit.
-- Qualquer falha do Worker devolve a página original (sem risco de derrubar o site).
+- Token Cloudflare: Zone Read, DNS Edit, Zone Settings Read, Workers Scripts Edit, Workers Routes Edit.
+- Worker = `cloudflare/og-worker.js`; em qualquer falha devolve a página original. Resposta marcada com `x-og-source: live`.
+- Ativar proxy pode deixar o domínio no Lovable como "proxy"; se a verificação reclamar, ajustar com a opção "Uses Cloudflare or similar proxy".
 - Nada muda em banco, CRM ou admin.
