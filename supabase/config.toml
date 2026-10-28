@@ -1,1 +1,6 @@
 project_id = "cnzmxxvqmvhdtyqbqnlf"
+[functions.og-meta]
+verify_jwt = false
+
+[functions.social-image]
+verify_jwt = false
