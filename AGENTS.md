@@ -1,0 +1,2 @@
+- Live social/SEO metadata for /imovel/* and /blog/* comes from the `og-meta` edge function (rules in `supabase/functions/_shared/og-meta.ts`), injected by the Cloudflare Worker in `cloudflare/og-worker.js`; the build-time static pages are only a fallback. Why: content changes must not need a redeploy.
+- Share images are generated once per photo/cover change by the `social-image` edge function (DB trigger) into `blog-media/social/` and stored in `social_image_url`. Why: no image processing per preview request.
