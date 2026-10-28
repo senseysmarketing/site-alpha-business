@@ -17,4 +17,4 @@ No modal de edição de lead (`src/components/admin/crm/LeadEditModal.tsx`):
 
 ## Verificação
 
-Abrir um lead em /admin/leads, alterar o telefone e salvar: deve exibir "Lead atualizado" e o card refletir o novo número, com o responsável intacto.
+Abrir um lead em /admin/leads, alterar o telefone e salvar: deve exibir "Lead atualizado" e o card refletir o novo número, com o responsável intacto.123
