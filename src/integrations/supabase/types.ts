@@ -57,6 +57,7 @@ export type Database = {
           published_at: string
           reading_time_min: number
           slug: string
+          social_image_url: string | null
           subtitle: string | null
           title: string
           updated_at: string
@@ -76,6 +77,7 @@ export type Database = {
           published_at?: string
           reading_time_min?: number
           slug: string
+          social_image_url?: string | null
           subtitle?: string | null
           title: string
           updated_at?: string
@@ -95,6 +97,7 @@ export type Database = {
           published_at?: string
           reading_time_min?: number
           slug?: string
+          social_image_url?: string | null
           subtitle?: string | null
           title?: string
           updated_at?: string
@@ -636,6 +639,7 @@ export type Database = {
           price: number | null
           property_type: string
           rental_price: number | null
+          social_image_url: string | null
           source: string
           status: string | null
           title: string
@@ -668,6 +672,7 @@ export type Database = {
           price?: number | null
           property_type?: string
           rental_price?: number | null
+          social_image_url?: string | null
           source?: string
           status?: string | null
           title: string
@@ -700,6 +705,7 @@ export type Database = {
           price?: number | null
           property_type?: string
           rental_price?: number | null
+          social_image_url?: string | null
           source?: string
           status?: string | null
           title?: string
