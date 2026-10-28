@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.request_social_image() FROM PUBLIC, anon, authenticated;
